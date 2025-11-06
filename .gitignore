@@ -13,6 +13,10 @@ node_modules/
 dist/
 build/
 
+#referências
+_reference/
+
+
 # Logs
 *.log
 
@@ -26,4 +30,3 @@ build/
 Thumbs.db
 
 # Reference folder
-_reference/

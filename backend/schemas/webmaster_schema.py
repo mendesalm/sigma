@@ -1,35 +1,26 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List
 
 class WebmasterBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=255, description="Unique username for the webmaster.")
-    email: EmailStr = Field(..., description="Email of the webmaster.")
-    is_active: bool = True
+    username: str
+    email: EmailStr
+    is_active: Optional[bool] = True
     lodge_id: Optional[int] = None
     obedience_id: Optional[int] = None
 
 class WebmasterCreate(WebmasterBase):
-    password: str = Field(..., min_length=8, description="Password for the webmaster.")
+    password: str
 
 class WebmasterUpdate(BaseModel):
-    username: Optional[str] = Field(None, min_length=3, max_length=255, description="New username for the webmaster.")
-    email: Optional[EmailStr] = Field(None, description="New email for the webmaster.")
-    password: Optional[str] = Field(None, min_length=8, description="New password for the webmaster.")
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     lodge_id: Optional[int] = None
     obedience_id: Optional[int] = None
+    password: Optional[str] = None
 
-class WebmasterResponse(WebmasterBase):
+class Webmaster(WebmasterBase):
     id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
-
-class WebmasterUpdateEmail(BaseModel):
-    email: EmailStr = Field(..., description="New email for the webmaster.")
-
-class WebmasterResetPasswordMessage(BaseModel):
-    message: str
+        orm_mode = True

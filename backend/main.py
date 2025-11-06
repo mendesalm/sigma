@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 import sqlalchemy as sa
 from database import get_db
-from routes import obedience_routes, lodge_routes, role_routes, permission_routes, auth_routes, super_admin_routes # Adicionado super_admin_routes
+from routes import obedience_routes, lodge_routes, role_routes, permission_routes, auth_routes, super_admin_routes, webmaster_routes, member_routes
 
 app = FastAPI(
     title="SiGMa API",
@@ -16,7 +16,9 @@ app.include_router(obedience_routes.router)
 app.include_router(lodge_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
-app.include_router(super_admin_routes.router) # Inclui as rotas de Super Admins
+app.include_router(super_admin_routes.router)
+app.include_router(webmaster_routes.router)
+app.include_router(member_routes.router)
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
