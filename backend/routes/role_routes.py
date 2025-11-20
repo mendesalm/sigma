@@ -1,39 +1,77 @@
-from fastapi import APIRouter, Depends, status
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from schemas.role_schema import RoleCreate, RoleUpdate, RoleResponse
-from services import role_service
-from middleware.dependencies import get_current_super_admin
+from .. import database, dependencies
+from ..services import role_service
+from ..schemas import role_schema
 
 router = APIRouter(
     prefix="/roles",
-    tags=["Roles"]
+    tags=["Roles"],
 )
 
-@router.post("/", response_model=RoleResponse, status_code=status.HTTP_201_CREATED, summary="Cria um novo Cargo (Role)")
-def create_role_route(role: RoleCreate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Cria um novo Cargo (Role) no sistema."""
+# Dependency for Super Admin check
+def get_current_super_admin(payload: dict = Depends(dependencies.get_current_user_payload)):
+    if payload.get("user_type") != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action."
+        )
+    return payload
+
+@router.post("/", response_model=role_schema.RoleResponse, status_code=status.HTTP_201_CREATED)
+def create_role(
+    role: role_schema.RoleCreate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    db_role = role_service.get_role_by_name(db, name=role.name)
+    if db_role:
+        raise HTTPException(status_code=400, detail="Role name already exists")
     return role_service.create_role(db=db, role=role)
 
-@router.get("/", response_model=List[RoleResponse], summary="Lista todos os Cargos")
-def get_all_roles_route(db: Session = Depends(get_db)):
-    """Retorna uma lista de todos os Cargos."""
-    return role_service.get_all_roles(db=db)
+@router.get("/", response_model=List[role_schema.RoleResponse])
+def read_roles(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    roles = role_service.get_roles(db, skip=skip, limit=limit)
+    return roles
 
-@router.get("/{role_id}", response_model=RoleResponse, summary="Busca um Cargo por ID")
-def get_role_route(role_id: int, db: Session = Depends(get_db)):
-    """Busca um Cargo específico pelo seu ID."""
-    return role_service.get_role(db=db, role_id=role_id)
+@router.get("/{role_id}", response_model=role_schema.RoleResponse)
+def read_role(
+    role_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    db_role = role_service.get_role(db, role_id=role_id)
+    if db_role is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return db_role
 
-@router.put("/{role_id}", response_model=RoleResponse, summary="Atualiza um Cargo")
-def update_role_route(role_id: int, role_update: RoleUpdate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Atualiza as informações de um Cargo existente."""
-    return role_service.update_role(db=db, role_id=role_id, role_update=role_update)
+@router.put("/{role_id}", response_model=role_schema.RoleResponse)
+def update_role(
+    role_id: int,
+    role: role_schema.RoleUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    db_role = role_service.update_role(db, role_id=role_id, role_update=role)
+    if db_role is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return db_role
 
-@router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Deleta um Cargo")
-def delete_role_route(role_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Deleta um Cargo pelo seu ID."""
-    role_service.delete_role(db=db, role_id=role_id)
-    return
+@router.delete("/{role_id}", response_model=role_schema.RoleResponse)
+def delete_role(
+    role_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    db_role = role_service.delete_role(db, role_id=role_id)
+    if db_role is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+    return db_role

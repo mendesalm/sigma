@@ -8,10 +8,12 @@ Este documento serve como um guia técnico abrangente para a arquitetura, funcio
 
 O backend é construído em **Python** usando o framework **FastAPI**, escolhido por sua alta performance, tipagem moderna e geração automática de documentação interativa (Swagger UI).
 
-A arquitetura segue um padrão de **duas camadas principais** para a lógica da aplicação, visando um equilíbrio entre organização e pragmatismo:
+A arquitetura segue um padrão de **camadas de serviço (service-oriented)**, visando uma clara separação de responsabilidades:
 
 - **Camada de Rotas (`routes/`):** Responsável por definir os endpoints da API, lidar com a comunicação HTTP (métodos, status codes) e validar os dados de entrada/saída usando Schemas Pydantic. Esta camada orquestra as requisições, chamando os serviços apropriados.
 - **Camada de Serviços (`services/`):** Contém a lógica de negócio principal e as interações com o banco de dados. É aqui que as regras são aplicadas e as consultas são executadas através do SQLAlchemy ORM.
+
+O diretório `controllers/` existe mas está atualmente em desuso, pois a lógica que ele abrigaria foi absorvida pela camada de serviços para simplificar a arquitetura.
 
 ### 1.1. Estrutura de Pastas
 
@@ -28,7 +30,6 @@ backend/
 ├── .env                  # Arquivo para variáveis de ambiente (credenciais)
 ├── alembic.ini           # Arquivo de configuração do Alembic
 ├── main.py               # Ponto de entrada da aplicação FastAPI
-└── requirements.txt      # Lista de dependências Python
 ```
 
 --- 
@@ -38,10 +39,7 @@ backend/
 Para executar o projeto, siga os seguintes passos:
 
 1.  **Instalar Dependências:**
-    ```bash
-    # Navegue até a pasta `backend`
-    pip install -r requirements.txt
-    ```
+    As dependências do projeto são gerenciadas pelo ambiente virtual. Certifique-se de que o `venv` está ativo. Se precisar instalar uma nova biblioteca, use `pip install <biblioteca>`.
 2.  **Configurar Variáveis de Ambiente:**
     - Crie ou edite o arquivo `.env` na raiz da pasta `backend`. Ele deve conter pelo menos as seguintes chaves:
       ```
@@ -56,11 +54,7 @@ Para executar o projeto, siga os seguintes passos:
       python -m alembic upgrade head
       ```
 
-4.  **Dados Iniciais (Seeding):**
-    - Para criar o primeiro SuperAdmin e poder testar a API, execute o script de seed:
-      ```bash
-      python seed_super_admin.py
-      ```
+
 5.  **Iniciar o Servidor:**
     ```bash
     # Use o reload para desenvolvimento, para que o servidor reinicie a cada mudança
@@ -110,9 +104,9 @@ A seguir, a lista de módulos com endpoints CRUD implementados.
 *Nota: Em geral, as rotas de leitura (`GET`) são públicas, enquanto as de modificação (`POST`, `PUT`, `DELETE`) requerem autenticação de SuperAdmin.*
 
 - **Authentication (`/token`, `/token/select`):** Endpoints de login e seleção de contexto.
-- **Health Check (`/health`):** Endpoint público para verificação de status.
+- **Health Check (`/`):** Endpoint público para verificação de status.
 - **Obediences (`/obediences`):** CRUD completo para gerenciamento de Potências/Obediências.
 - **Lodges (`/lodges`):** CRUD completo para gerenciamento de Lojas.
+- **Members (`/members`):** CRUD para gerenciamento de Membros de uma loja.
 - **Roles (`/roles`):** CRUD completo para gerenciamento de Cargos.
 - **Permissions (`/permissions`):** CRUD completo para gerenciamento de Permissões.
-- **Super Admins (`/super-admins`):** CRUD completo para gerenciamento de Super Administradores.

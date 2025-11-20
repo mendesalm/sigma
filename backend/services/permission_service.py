@@ -1,52 +1,44 @@
-# backend/services/permission_service.py
 
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from models.models import Permission
-from schemas.permission_schema import PermissionCreate, PermissionUpdate
-from fastapi import HTTPException, status
+from ..models import models
+from ..schemas import permission_schema
 
-def create_permission(db: Session, permission: PermissionCreate) -> Permission:
-    """Cria uma nova Permissão (Permission)."""
-    db_permission = db.query(Permission).filter(Permission.action == permission.action).first()
-    if db_permission:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A permission with this action already exists.")
+def get_permission(db: Session, permission_id: int) -> Optional[models.Permission]:
+    return db.query(models.Permission).filter(models.Permission.id == permission_id).first()
 
-    new_permission = Permission(**permission.model_dump())
-    db.add(new_permission)
-    db.commit()
-    db.refresh(new_permission)
-    return new_permission
+def get_permission_by_action(db: Session, action: str) -> Optional[models.Permission]:
+    return db.query(models.Permission).filter(models.Permission.action == action).first()
 
-def get_permission(db: Session, permission_id: int) -> Optional[Permission]:
-    """Busca uma única permissão pelo ID."""
-    db_permission = db.query(Permission).filter(Permission.id == permission_id).first()
-    if not db_permission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found.")
-    return db_permission
+def get_permissions(db: Session, skip: int = 0, limit: int = 100) -> List[models.Permission]:
+    return db.query(models.Permission).offset(skip).limit(limit).all()
 
-def get_all_permissions(db: Session) -> List[Permission]:
-    """Retorna todas as permissões."""
-    return db.query(Permission).all()
-
-def update_permission(db: Session, permission_id: int, permission_update: PermissionUpdate) -> Permission:
-    """Atualiza uma permissão existente."""
-    db_permission = get_permission(db, permission_id)
-
-    update_data = permission_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_permission, key, value)
-
+def create_permission(db: Session, permission: permission_schema.PermissionCreate) -> models.Permission:
+    db_permission = models.Permission(**permission.model_dump())
     db.add(db_permission)
     db.commit()
     db.refresh(db_permission)
     return db_permission
 
-def delete_permission(db: Session, permission_id: int):
-    """Deleta uma permissão."""
+def update_permission(db: Session, permission_id: int, permission_update: permission_schema.PermissionUpdate) -> Optional[models.Permission]:
     db_permission = get_permission(db, permission_id)
+    if not db_permission:
+        return None
+    
+    update_data = permission_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_permission, key, value)
+    
+    db.commit()
+    db.refresh(db_permission)
+    return db_permission
 
+def delete_permission(db: Session, permission_id: int) -> Optional[models.Permission]:
+    db_permission = get_permission(db, permission_id)
+    if not db_permission:
+        return None
+        
     db.delete(db_permission)
     db.commit()
-    return {"message": "Permission deleted successfully."}
+    return db_permission

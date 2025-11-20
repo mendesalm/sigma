@@ -1,54 +1,54 @@
-# backend/services/lodge_service.py
 
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import uuid
 
-from models.models import Lodge
-from schemas.lodge_schema import LodgeCreate, LodgeUpdate
-from fastapi import HTTPException, status
+from ..models import models
+from ..schemas import lodge_schema
 
-def create_lodge(db: Session, lodge: LodgeCreate) -> Lodge:
-    """Cria uma nova Loja."""
-    db_lodge = db.query(Lodge).filter(Lodge.lodge_code == lodge.lodge_code).first()
-    if db_lodge:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A lodge with this code already exists.")
+def get_lodge(db: Session, lodge_id: int) -> Optional[models.Lodge]:
+    """Fetches a single lodge by its ID."""
+    return db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
 
-    new_lodge = Lodge(**lodge.model_dump())
-    db.add(new_lodge)
-    db.commit()
-    db.refresh(new_lodge)
-    return new_lodge
+def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> List[models.Lodge]:
+    """Fetches all lodges with pagination."""
+    return db.query(models.Lodge).offset(skip).limit(limit).all()
 
-def get_lodge(db: Session, lodge_id: int) -> Optional[Lodge]:
-    """Busca uma única loja pelo ID."""
-    db_lodge = db.query(Lodge).filter(Lodge.id == lodge_id).first()
-    if not db_lodge:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lodge not found.")
-    return db_lodge
-
-def get_all_lodges(db: Session) -> List[Lodge]:
-    """Retorna todas as lojas."""
-    return db.query(Lodge).all()
-
-def update_lodge(db: Session, lodge_id: int, lodge_update: LodgeUpdate) -> Lodge:
-    """Atualiza uma loja existente."""
-    db_lodge = get_lodge(db, lodge_id)
-
-    update_data = lodge_update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_lodge, key, value)
-
+def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
+    """Creates a new lodge with a unique lodge_code."""
+    # Generate a unique code for the lodge
+    unique_code = str(uuid.uuid4()) # Simple unique code generation
+    
+    db_lodge = models.Lodge(
+        **lodge.model_dump(),
+        lodge_code=unique_code,
+        is_active=True # Set default active status
+    )
     db.add(db_lodge)
     db.commit()
     db.refresh(db_lodge)
     return db_lodge
 
-def delete_lodge(db: Session, lodge_id: int):
-    """Deleta uma loja."""
+def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpdate) -> Optional[models.Lodge]:
+    """Updates an existing lodge."""
     db_lodge = get_lodge(db, lodge_id)
+    if not db_lodge:
+        return None
+    
+    update_data = lodge_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_lodge, key, value)
+    
+    db.commit()
+    db.refresh(db_lodge)
+    return db_lodge
 
-    # Lógica de verificação de dependências pode ser adicionada aqui
-
+def delete_lodge(db: Session, lodge_id: int) -> Optional[models.Lodge]:
+    """Deletes a lodge."""
+    db_lodge = get_lodge(db, lodge_id)
+    if not db_lodge:
+        return None
+        
     db.delete(db_lodge)
     db.commit()
-    return {"message": "Lodge deleted successfully."}
+    return db_lodge

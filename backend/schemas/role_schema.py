@@ -1,28 +1,26 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
-from datetime import datetime
 
-from models.models import RoleTypeEnum, RiteEnum # Import new enums
+from ..models.models import RoleTypeEnum
+from .permission_schema import PermissionResponse
 
 class RoleBase(BaseModel):
-    name: str = Field(..., max_length=255, description="Name of the role.")
-    role_type: RoleTypeEnum = Field(..., description="Type of the role (Ritualistic or Obedience).")
-    applicable_rites: Optional[List[RiteEnum]] = Field(None, description="List of rites to which the ritualistic role applies.")
-    obedience_ids: Optional[List[int]] = Field(None, description="List of Obedience IDs to which the Obedience role applies.")
+    name: str = Field(..., max_length=255)
+    role_type: RoleTypeEnum
+    applicable_rites: Optional[str] = Field(None, max_length=255, description="Comma-separated list of applicable rites, e.g., 'REAA,YORK'")
 
 class RoleCreate(RoleBase):
-    pass
+    permission_ids: List[int] = Field([], description="A list of permission IDs to associate with this role.")
 
 class RoleUpdate(BaseModel):
-    name: Optional[str] = Field(None, max_length=255, description="New name of the role.")
-    role_type: Optional[RoleTypeEnum] = Field(None, description="New type of the role.")
-    applicable_rites: Optional[List[RiteEnum]] = Field(None, description="New list of rites to which the ritualistic role applies.")
-    obedience_ids: Optional[List[int]] = Field(None, description="New list of Obedience IDs to which the Obedience role applies.")
+    name: Optional[str] = Field(None, max_length=255)
+    role_type: Optional[RoleTypeEnum] = None
+    applicable_rites: Optional[str] = Field(None, max_length=255)
+    permission_ids: Optional[List[int]] = Field(None, description="A new list of permission IDs to associate with this role.")
 
 class RoleResponse(RoleBase):
     id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+    permissions: List[PermissionResponse] = []
 
     class Config:
         from_attributes = True

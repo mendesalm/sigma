@@ -1,33 +1,35 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-import sqlalchemy as sa
-from database import get_db
-from routes import obedience_routes, lodge_routes, role_routes, permission_routes, auth_routes, super_admin_routes, webmaster_routes, member_routes
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .routes import auth_routes, obedience_routes, lodge_routes, member_routes
 
 app = FastAPI(
-    title="SiGMa API",
-    description="Sistema de Gestão Maçônica",
-    version="0.1.0"
+    title="Sigma Backend",
+    description="Backend for the Sigma project.",
+    version="1.0.0"
 )
 
-# Inclui as rotas
+# Configure CORS
+# IMPORTANT: In production, you should restrict the origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Include routers
 app.include_router(auth_routes.router)
 app.include_router(obedience_routes.router)
 app.include_router(lodge_routes.router)
-app.include_router(role_routes.router)
-app.include_router(permission_routes.router)
-app.include_router(super_admin_routes.router)
-app.include_router(webmaster_routes.router)
 app.include_router(member_routes.router)
 
-@app.get("/health")
-def health_check(db: Session = Depends(get_db)):
-    """
-    Endpoint para verificar a saúde da aplicação e a conexão com o banco de dados.
-    """
-    try:
-        # Tenta executar uma query simples para verificar a conexão com o DB
-        db.execute(sa.text("SELECT 1"))
-        return {"status": "ok", "database_connection": "successful"}
-    except Exception as e:
-        return {"status": "error", "database_connection": f"failed: {e}"}
+@app.get("/", tags=["Root"])
+def read_root():
+    """A simple health check endpoint."""
+    return {"message": "Welcome to the Sigma Backend"}
+
+# To run this application:
+# uvicorn main:app --reload

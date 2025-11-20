@@ -1,20 +1,24 @@
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.models import Base
-from config.settings import settings
+from dotenv import load_dotenv
+import os
 
-# Cria o engine do SQLAlchemy usando a URL do arquivo de configuração
-engine = create_engine(settings.DATABASE_URL)
+load_dotenv()
 
-# Cria uma fábrica de sessões
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+# Escape the URL for configparser if needed, though not directly used by SQLAlchemy here
+if DATABASE_URL and '%' in DATABASE_URL:
+    # This is more for alembic.ini, but good practice to be aware of.
+    # SQLAlchemy handles URL encoding directly.
+    pass
+
+engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Dependência do FastAPI para obter a sessão do banco de dados
 def get_db():
-    """
-    Cria e fornece uma sessão de banco de dados por requisição.
-    Garante que a sessão seja sempre fechada após o uso.
-    """
     db = SessionLocal()
     try:
         yield db

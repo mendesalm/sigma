@@ -1,3 +1,14 @@
+import sys
+from os.path import abspath, dirname
+# Add the project root directory to the Python path
+sys.path.insert(0, dirname(dirname(abspath(__file__))))
+
+# --- Added for .env support ---
+from dotenv import load_dotenv
+import os
+load_dotenv()
+# -----------------------------
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -9,6 +20,17 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+# --- Added for .env support ---
+# Set the database URL from the environment variable
+# This will override the sqlalchemy.url in alembic.ini
+db_url = os.getenv("DATABASE_URL")
+if db_url:
+    # Escape the '%' character for configparser
+    escaped_db_url = db_url.replace('%', '%%')
+    config.set_main_option("sqlalchemy.url", escaped_db_url)
+# -----------------------------
+
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -16,19 +38,8 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-import os
-import sys
-sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
-from models.models import Base
+from models.models import Base  # Import Base from your models
 target_metadata = Base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

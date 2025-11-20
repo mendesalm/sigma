@@ -1,39 +1,77 @@
-from fastapi import APIRouter, Depends, status
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from database import get_db
-from schemas.obedience_schema import ObedienceCreate, ObedienceUpdate, ObedienceResponse
-from services import obedience_service
-from middleware.dependencies import get_current_super_admin
+from .. import database, dependencies
+from ..services import obedience_service
+from ..schemas import obedience_schema
 
 router = APIRouter(
     prefix="/obediences",
-    tags=["Obediences"]
+    tags=["Obediences"],
 )
 
-@router.post("/", response_model=ObedienceResponse, status_code=status.HTTP_201_CREATED, summary="Cria uma nova Obediência")
-def create_obedience_route(obedience: ObedienceCreate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Cria uma nova Obediência no sistema."""
+# Dependency to check for super admin role
+def get_current_super_admin(payload: dict = Depends(dependencies.get_current_user_payload)):
+    if payload.get("user_type") != "super_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to perform this action."
+        )
+    return payload
+
+@router.post("/", response_model=obedience_schema.ObedienceResponse, status_code=status.HTTP_201_CREATED)
+def create_obedience(
+    obedience: obedience_schema.ObedienceCreate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    """Create a new obedience. Only accessible by super admins."""
     return obedience_service.create_obedience(db=db, obedience=obedience)
 
-@router.get("/", response_model=List[ObedienceResponse], summary="Lista todas as Obediências")
-def get_all_obediences_route(db: Session = Depends(get_db)):
-    """Retorna uma lista de todas as Obediências."""
-    return obedience_service.get_all_obediences(db=db)
+@router.get("/", response_model=List[obedience_schema.ObedienceResponse])
+def read_obediences(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(database.get_db)
+):
+    """Retrieve all obediences. Publicly accessible."""
+    obediences = obedience_service.get_obediences(db, skip=skip, limit=limit)
+    return obediences
 
-@router.get("/{obedience_id}", response_model=ObedienceResponse, summary="Busca uma Obediência por ID")
-def get_obedience_route(obedience_id: int, db: Session = Depends(get_db)):
-    """Busca uma Obediência específica pelo seu ID."""
-    return obedience_service.get_obedience(db=db, obedience_id=obedience_id)
+@router.get("/{obedience_id}", response_model=obedience_schema.ObedienceResponse)
+def read_obedience(
+    obedience_id: int,
+    db: Session = Depends(database.get_db)
+):
+    """Retrieve a single obedience by ID. Publicly accessible."""
+    db_obedience = obedience_service.get_obedience(db, obedience_id=obedience_id)
+    if db_obedience is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Obedience not found")
+    return db_obedience
 
-@router.put("/{obedience_id}", response_model=ObedienceResponse, summary="Atualiza uma Obediência")
-def update_obedience_route(obedience_id: int, obedience_update: ObedienceUpdate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Atualiza as informações de uma Obediência existente."""
-    return obedience_service.update_obedience(db=db, obedience_id=obedience_id, obedience_update=obedience_update)
+@router.put("/{obedience_id}", response_model=obedience_schema.ObedienceResponse)
+def update_obedience(
+    obedience_id: int,
+    obedience: obedience_schema.ObedienceUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    """Update an obedience. Only accessible by super admins."""
+    db_obedience = obedience_service.update_obedience(db, obedience_id=obedience_id, obedience_update=obedience)
+    if db_obedience is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Obedience not found")
+    return db_obedience
 
-@router.delete("/{obedience_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Deleta uma Obediência")
-def delete_obedience_route(obedience_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_super_admin)):
-    """Deleta uma Obediência pelo seu ID."""
-    obedience_service.delete_obedience(db=db, obedience_id=obedience_id)
-    return
+@router.delete("/{obedience_id}", response_model=obedience_schema.ObedienceResponse)
+def delete_obedience(
+    obedience_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(get_current_super_admin)
+):
+    """Delete an obedience. Only accessible by super admins."""
+    db_obedience = obedience_service.delete_obedience(db, obedience_id=obedience_id)
+    if db_obedience is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Obedience not found")
+    return db_obedience
