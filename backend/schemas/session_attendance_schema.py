@@ -8,6 +8,9 @@ class SessionAttendanceBase(BaseModel):
     visitor_id: Optional[int] = None
     attendance_status: str
     check_in_datetime: Optional[datetime] = None
+    check_in_method: Optional[str] = None
+    check_in_latitude: Optional[float] = None
+    check_in_longitude: Optional[float] = None
 
 class SessionAttendanceCreate(SessionAttendanceBase):
     session_id: int

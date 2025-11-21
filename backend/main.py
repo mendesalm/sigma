@@ -2,13 +2,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import auth_routes, obedience_routes, lodge_routes, member_routes
+from .routes import auth_routes, obedience_routes, lodge_routes, member_routes, document_routes, event_routes, financial_routes, session_routes, attendance_routes, check_in_routes
+from .scheduler import initialize_scheduler, shutdown_scheduler
 
 app = FastAPI(
     title="Sigma Backend",
     description="Backend for the Sigma project.",
     version="1.0.0"
 )
+
+@app.on_event("startup")
+def startup_event():
+    """Inicia o agendador de tarefas quando a aplicação é iniciada."""
+    initialize_scheduler()
+
+@app.on_event("shutdown")
+def shutdown_event():
+    """Desliga o agendador de tarefas quando a aplicação é encerrada."""
+    shutdown_scheduler()
 
 # Configure CORS
 # IMPORTANT: In production, you should restrict the origins.
@@ -25,6 +36,12 @@ app.include_router(auth_routes.router)
 app.include_router(obedience_routes.router)
 app.include_router(lodge_routes.router)
 app.include_router(member_routes.router)
+app.include_router(document_routes.router)
+app.include_router(event_routes.router)
+app.include_router(financial_routes.router)
+app.include_router(session_routes.router)
+app.include_router(attendance_routes.router)
+app.include_router(check_in_routes.router)
 
 @app.get("/", tags=["Root"])
 def read_root():

@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+mysqlclient
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+
+# Novas dependências adicionadas
+apscheduler
+geopy
+weasyprint
+jinja2

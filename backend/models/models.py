@@ -287,9 +287,11 @@ class MasonicSession(BaseModel):
     session_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
+    status = Column(SQLAlchemyEnum('AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', name='session_status_enum'), nullable=False, default='AGENDADA')
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="masonic_sessions")
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
+    documents = relationship("Document", back_populates="session") # Relacionamento com Documentos
 
 class SessionAttendance(BaseModel):
     __tablename__ = "session_attendances"
@@ -299,6 +301,9 @@ class SessionAttendance(BaseModel):
     visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
     attendance_status = Column(String(50), nullable=False)
     check_in_datetime = Column(DateTime(timezone=True), nullable=True)
+    check_in_method = Column(SQLAlchemyEnum('MANUAL', 'QR_CODE', name='check_in_method_enum'), nullable=True)
+    check_in_latitude = Column(Float, nullable=True)
+    check_in_longitude = Column(Float, nullable=True)
     session = relationship("MasonicSession", back_populates="attendances")
     member = relationship("Member", backref="session_attendances")
     visitor = relationship("Visitor", backref="session_attendances")
@@ -312,3 +317,79 @@ class Visitor(BaseModel):
     cpf = Column(String(14), unique=True, nullable=True)
     origin_lodge = Column(String(255), nullable=True)
     remarks = Column(Text, nullable=True)
+
+class Calendar(BaseModel):
+    __tablename__ = "calendars"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    # Ensuring multitenancy by associating with a lodge
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    lodge = relationship("Lodge", backref="calendars")
+
+class Event(BaseModel):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    is_public = Column(Boolean, default=False)
+    # Ensuring multitenancy by associating with a lodge
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    lodge = relationship("Lodge", backref="events")
+    # Link to a specific calendar (optional)
+    calendar_id = Column(Integer, ForeignKey("calendars.id"), nullable=True)
+    calendar = relationship("Calendar", backref="events")
+
+class FinancialTransaction(BaseModel):
+    __tablename__ = "financial_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    transaction_type = Column(String(50), nullable=False) # e.g., "debit", "credit"
+    amount = Column(Float, nullable=False)
+    description = Column(Text, nullable=True)
+    transaction_date = Column(DateTime(timezone=True), server_default=func.now())
+    # Ensuring multitenancy by associating with a lodge
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    member = relationship("Member", backref="financial_transactions")
+    lodge = relationship("Lodge", backref="financial_transactions")
+
+class Document(BaseModel):
+    __tablename__ = "documents"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    document_type = Column(String(50), nullable=True, index=True) # e.g. BALAUSTRE, EDITAL
+    file_path = Column(String(512), nullable=False) # Path to the stored file
+    file_name = Column(String(255), nullable=False)
+    file_type = Column(String(50), nullable=True)
+    upload_date = Column(DateTime(timezone=True), server_default=func.now())
+    # Ensuring multitenancy by associating with a lodge
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    uploaded_by_member_id = Column(Integer, ForeignKey("members.id"), nullable=True) # Optional: who uploaded it
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=True, index=True) # Link to a session
+    lodge = relationship("Lodge", backref="documents")
+    uploaded_by = relationship("Member", backref="uploaded_documents")
+    session = relationship("MasonicSession", back_populates="documents") # Back-populates from MasonicSession
+
+class Visit(BaseModel):
+    __tablename__ = "visits"
+    id = Column(Integer, primary_key=True, index=True)
+    visit_date = Column(Date, nullable=False, index=True)
+    
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    home_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja de origem do membro
+    visited_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja que foi visitada
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=False)
+
+    member = relationship("Member", backref="visits")
+    home_lodge = relationship("Lodge", foreign_keys=[home_lodge_id], backref="home_visits")
+    visited_lodge = relationship("Lodge", foreign_keys=[visited_lodge_id], backref="visiting_members")
+    session = relationship("MasonicSession", backref="visits")
+
+    __table_args__ = (
+        UniqueConstraint('member_id', 'session_id', name='_member_session_visit_uc'),
+    )
+
+
+

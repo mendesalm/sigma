@@ -1,11 +1,10 @@
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from ..utils import auth_utils
-from .. import database
-from ..services import auth_service
+from .utils import auth_utils
+from . import database
+from .services import auth_service
 
 # This tells FastAPI which URL to check for the token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
@@ -24,9 +23,10 @@ def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
         raise credentials_exception
     return payload
 
-def get_current_lodge_webmaster(payload: dict = Depends(get_current_user_payload)) -> int:
+def get_session_manager(payload: dict = Depends(get_current_user_payload)) -> dict:
     """
-    Checks if the current user is a webmaster associated with a lodge and returns the lodge_id.
+    Verifica se o usuário tem permissão para gerenciar uma sessão.
+    Por enquanto, permite webmasters de loja. A lógica pode ser expandida para outros cargos.
     """
     user_type = payload.get("user_type")
     lodge_id = payload.get("lodge_id")
@@ -34,14 +34,6 @@ def get_current_lodge_webmaster(payload: dict = Depends(get_current_user_payload
     if user_type != "webmaster" or not lodge_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access restricted to Lodge Webmasters."
+            detail="Acesso restrito a administradores da loja."
         )
-    return lodge_id
-
-
-# You can create more specific dependencies based on this, for example:
-# def get_current_super_admin(payload: dict = Depends(get_current_user_payload)):
-#     if payload.get("user_type") != "super_admin":
-#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a super admin")
-#     return payload
-
+    return payload
