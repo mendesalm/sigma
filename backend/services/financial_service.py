@@ -1,10 +1,9 @@
-from typing import List, Optional
-from datetime import datetime
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from models import models
-from schemas import financial_transaction_schema
+from ..models import models
+from ..schemas import financial_transaction_schema
 
 # --- Funções de Serviço para Transações Financeiras ---
 
@@ -28,7 +27,7 @@ def create_financial_transaction(
         models.MemberLodgeAssociation.member_id == transaction_data.member_id,
         models.MemberLodgeAssociation.lodge_id == lodge_id
     ).first()
-    
+
     if not member:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -62,23 +61,23 @@ def get_financial_transaction_by_id(
 def get_financial_transactions_by_lodge(
     db: Session,
     current_user_payload: dict,
-    member_id: Optional[int] = None,
-    transaction_type: Optional[financial_transaction_schema.TransactionTypeEnum] = None
-) -> List[models.FinancialTransaction]:
+    member_id: int | None = None,
+    transaction_type: financial_transaction_schema.TransactionTypeEnum | None = None
+) -> list[models.FinancialTransaction]:
     """
     Lista todas as transações financeiras associadas à loja do usuário, opcionalmente filtrando por membro e tipo.
     """
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
         return []
-    
+
     query = db.query(models.FinancialTransaction).filter(models.FinancialTransaction.lodge_id == lodge_id)
-    
+
     if member_id:
         query = query.filter(models.FinancialTransaction.member_id == member_id)
     if transaction_type:
         query = query.filter(models.FinancialTransaction.transaction_type == transaction_type)
-        
+
     return query.all()
 
 def update_financial_transaction(
@@ -103,10 +102,10 @@ def update_financial_transaction(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Novo membro especificado não pertence à loja da transação."
             )
-    
+
     for key, value in transaction_update.model_dump(exclude_unset=True).items():
         setattr(db_transaction, key, value)
-    
+
     db.commit()
     db.refresh(db_transaction)
     return db_transaction

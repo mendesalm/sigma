@@ -1,11 +1,11 @@
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from .. import database, dependencies
-from ..services import obedience_service
 from ..schemas import obedience_schema
+from ..services import obedience_service
 
 router = APIRouter(
     prefix="/obediences",
@@ -30,7 +30,7 @@ def create_obedience(
     """Create a new obedience. Only accessible by super admins."""
     return obedience_service.create_obedience(db=db, obedience=obedience)
 
-@router.get("/", response_model=List[obedience_schema.ObedienceResponse])
+@router.get("/", response_model=list[obedience_schema.ObedienceResponse])
 def read_obediences(
     skip: int = 0,
     limit: int = 100,

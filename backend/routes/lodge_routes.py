@@ -1,11 +1,11 @@
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from .. import database, dependencies
-from ..services import lodge_service
 from ..schemas import lodge_schema
+from ..services import lodge_service
 
 router = APIRouter(
     prefix="/lodges",
@@ -31,7 +31,7 @@ def create_lodge(
     """Create a new lodge. Only accessible by super admins."""
     return lodge_service.create_lodge(db=db, lodge=lodge)
 
-@router.get("/", response_model=List[lodge_schema.LodgeResponse])
+@router.get("/", response_model=list[lodge_schema.LodgeResponse])
 def read_lodges(
     skip: int = 0,
     limit: int = 100,

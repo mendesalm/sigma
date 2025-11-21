@@ -2,7 +2,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routes import auth_routes, obedience_routes, lodge_routes, member_routes, document_routes, event_routes, financial_routes, session_routes, attendance_routes, check_in_routes
+from .routes import (
+    attendance_routes,
+    auth_routes,
+    check_in_routes,
+    document_routes,
+    event_routes,
+    financial_routes,
+    lodge_routes,
+    member_routes,
+    obedience_routes,
+    session_routes,
+)
 from .scheduler import initialize_scheduler, shutdown_scheduler
 
 app = FastAPI(

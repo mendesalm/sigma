@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 # Schemas for MemberLodgeAssociation
 class MemberLodgeAssociationBase(BaseModel):
     member_id: int = Field(..., description="ID of the Member to be associated.")

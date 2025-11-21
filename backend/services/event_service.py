@@ -1,10 +1,10 @@
-from typing import List, Optional
 from datetime import datetime
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from models import models
-from schemas import event_schema, calendar_schema
+from ..models import models
+from ..schemas import calendar_schema, event_schema
 
 # --- Funções de Serviço para Calendário ---
 
@@ -50,7 +50,7 @@ def get_calendar_by_id(
 def get_calendars_by_lodge(
     db: Session,
     current_user_payload: dict
-) -> List[models.Calendar]:
+) -> list[models.Calendar]:
     """
     Lista todos os calendários associados à loja do usuário.
     """
@@ -69,10 +69,10 @@ def update_calendar(
     Atualiza um calendário existente, garantindo que pertença à loja do usuário.
     """
     db_calendar = get_calendar_by_id(db, calendar_id, current_user_payload) # Valida propriedade
-    
+
     for key, value in calendar_update.model_dump(exclude_unset=True).items():
         setattr(db_calendar, key, value)
-    
+
     db.commit()
     db.refresh(db_calendar)
     return db_calendar
@@ -144,23 +144,23 @@ def get_event_by_id(
 def get_events_by_lodge(
     db: Session,
     current_user_payload: dict,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
-) -> List[models.Event]:
+    start_date: datetime | None = None,
+    end_date: datetime | None = None
+) -> list[models.Event]:
     """
     Lista todos os eventos associados à loja do usuário, opcionalmente filtrando por data.
     """
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
         return []
-    
+
     query = db.query(models.Event).filter(models.Event.lodge_id == lodge_id)
-    
+
     if start_date:
         query = query.filter(models.Event.start_time >= start_date)
     if end_date:
         query = query.filter(models.Event.end_time <= end_date)
-        
+
     return query.all()
 
 def update_event(
@@ -182,10 +182,10 @@ def update_event(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Novo calendário especificado não pertence à loja do evento."
             )
-    
+
     for key, value in event_update.model_dump(exclude_unset=True).items():
         setattr(db_event, key, value)
-    
+
     db.commit()
     db.refresh(db_event)
     return db_event

@@ -1,11 +1,11 @@
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from .. import database, dependencies
-from ..services import permission_service
 from ..schemas import permission_schema
+from ..services import permission_service
 
 router = APIRouter(
     prefix="/permissions",
@@ -32,7 +32,7 @@ def create_permission(
         raise HTTPException(status_code=400, detail="Permission action already exists")
     return permission_service.create_permission(db=db, permission=permission)
 
-@router.get("/", response_model=List[permission_schema.PermissionResponse])
+@router.get("/", response_model=list[permission_schema.PermissionResponse])
 def read_permissions(
     skip: int = 0,
     limit: int = 100,

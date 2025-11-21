@@ -1,12 +1,12 @@
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from database import get_db
-from services import financial_service
-from schemas import financial_transaction_schema
-from dependencies import get_current_user_payload
+from ..database import get_db
+from ..dependencies import get_current_user_payload
+from ..schemas import financial_transaction_schema
+from ..services import financial_service
 
 router = APIRouter(
     prefix="/financial-transactions",
@@ -30,20 +30,20 @@ def create_new_financial_transaction(
 
 @router.get(
     "/",
-    response_model=List[financial_transaction_schema.FinancialTransactionInDB],
+    response_model=list[financial_transaction_schema.FinancialTransactionInDB],
     summary="Listar Transações Financeiras da Loja",
     description="Retorna uma lista de todas as transações financeiras associadas à loja do usuário autenticado, com filtros opcionais."
 )
 def list_financial_transactions(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
-    member_id: Optional[int] = Query(None, description="Filtrar transações por ID de membro."),
-    transaction_type: Optional[financial_transaction_schema.TransactionTypeEnum] = Query(None, description="Filtrar transações por tipo (débito/crédito).")
+    member_id: int | None = Query(None, description="Filtrar transações por ID de membro."),
+    transaction_type: financial_transaction_schema.TransactionTypeEnum | None = Query(None, description="Filtrar transações por tipo (débito/crédito).")
 ):
     return financial_service.get_financial_transactions_by_lodge(
-        db=db, 
-        current_user_payload=current_user_payload, 
-        member_id=member_id, 
+        db=db,
+        current_user_payload=current_user_payload,
+        member_id=member_id,
         transaction_type=transaction_type
     )
 

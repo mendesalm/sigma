@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+
 
 # Schema for login request body
 class SuperAdminLogin(BaseModel):
@@ -14,10 +15,10 @@ class SuperAdminCreate(BaseModel):
 
 # Schema for updating a SuperAdmin
 class SuperAdminUpdate(BaseModel):
-    username: Optional[str] = Field(None, min_length=3, description="New username.")
-    email: Optional[EmailStr] = None
-    password: Optional[str] = Field(None, min_length=8, description="New password (if changing).")
-    is_active: Optional[bool] = None
+    username: str | None = Field(None, min_length=3, description="New username.")
+    email: EmailStr | None = None
+    password: str | None = Field(None, min_length=8, description="New password (if changing).")
+    is_active: bool | None = None
 
 # Schema for response when getting SuperAdmin data (without password)
 class SuperAdminResponse(BaseModel):

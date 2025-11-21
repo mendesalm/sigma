@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+from ..database import get_db
+from ..schemas.auth_schema import Token  # Using a generic Token schema for response
 from ..services import auth_service
 from ..utils import auth_utils
-from ..database import get_db
-from ..schemas.auth_schema import Token # Using a generic Token schema for response
 
 router = APIRouter(
     prefix="/auth",
@@ -29,7 +29,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user, user_type = user_auth_data
 
     # Create the data for the JWT payload
@@ -45,7 +45,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             access_token_data["lodge_id"] = user.lodge_id
         if user.obedience_id:
             access_token_data["obedience_id"] = user.obedience_id
-    
+
     # For members, you might want to add their associations later
     # if they belong to multiple lodges/obediences.
 

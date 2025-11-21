@@ -1,12 +1,12 @@
-from typing import List
 from datetime import datetime, timedelta
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-from geopy.distance import geodesic # Dependência para cálculo de distância
 
-from models import models
-from schemas import attendance_schema
-from . import session_service # Reutilizando o serviço de sessão
+from fastapi import HTTPException, status
+from geopy.distance import geodesic  # Dependência para cálculo de distância
+from sqlalchemy.orm import Session
+
+from ..models import models
+from ..schemas import attendance_schema
+from . import session_service  # Reutilizando o serviço de sessão
 
 # --- Funções de Serviço para Presença ---
 
@@ -25,7 +25,7 @@ def record_manual_attendance(
     if session.status != 'EM_ANDAMENTO':
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Não é possível registrar presença. A sessão não está em andamento."
+            detail="Não é possível registrar presença. A sessão não está em andamento."
         )
 
     attendance_record = db.query(models.SessionAttendance).filter(
@@ -35,11 +35,11 @@ def record_manual_attendance(
 
     if not attendance_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro de presença para este membro não encontrado na sessão.")
-    
+
     attendance_record.attendance_status = attendance_update.attendance_status
     attendance_record.check_in_method = 'MANUAL'
     attendance_record.check_in_datetime = datetime.utcnow()
-    
+
     db.commit()
     db.refresh(attendance_record)
     return attendance_record
@@ -58,14 +58,14 @@ def record_visitor_attendance(
     if session.status != 'EM_ANDAMENTO':
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Não é possível registrar visitantes. A sessão não está em andamento."
+            detail="Não é possível registrar visitantes. A sessão não está em andamento."
         )
 
     # Cria ou encontra o visitante
     visitor = None
     if visitor_data.cpf:
         visitor = db.query(models.Visitor).filter(models.Visitor.cpf == visitor_data.cpf).first()
-    
+
     if not visitor:
         visitor = models.Visitor(**visitor_data.model_dump())
         db.add(visitor)
@@ -104,24 +104,24 @@ def record_qr_code_attendance(
     # 2. Validação de Janela de Tempo
     if not session.session_date or not session.start_time:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Data ou hora da sessão não configurada.")
-        
+
     session_start_datetime = datetime.combine(session.session_date, session.start_time)
     check_in_window_start = session_start_datetime - timedelta(minutes=30) # Configurável
     check_in_window_end = session_start_datetime + timedelta(minutes=60) # Configurável
-    
+
     if not (check_in_window_start <= datetime.now() <= check_in_window_end):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Fora da janela de tempo para check-in.")
 
     # 3. Validação de Geolocalização
     lodge_coords = (session.lodge.latitude, session.lodge.longitude)
     user_coords = (check_in_data.latitude, check_in_data.longitude)
-    
+
     if not lodge_coords[0] or not lodge_coords[1]:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Geolocalização da loja não configurada.")
-        
+
     distance_km = geodesic(lodge_coords, user_coords).kilometers
     MAX_DISTANCE_KM = 0.2 # Raio de 200 metros (Configurável)
-    
+
     if distance_km > MAX_DISTANCE_KM:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Check-in realizado fora da localização permitida.")
 
@@ -145,7 +145,7 @@ def record_qr_code_attendance(
         user_as_member = db.query(models.Member).filter(models.Member.id == check_in_data.user_id).first()
         if not user_as_member:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado no sistema.")
-        
+
         visitor = db.query(models.Visitor).filter(models.Visitor.cpf == user_as_member.cpf).first()
         if not visitor:
             visitor = models.Visitor(
@@ -156,7 +156,7 @@ def record_qr_code_attendance(
             )
             db.add(visitor)
             db.flush()
-        
+
         # Cria ou encontra o registro de presença para o visitante
         attendance_record = db.query(models.SessionAttendance).filter(
             models.SessionAttendance.session_id == session.id,

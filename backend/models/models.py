@@ -1,9 +1,25 @@
-from sqlalchemy import (Column, Integer, String, Boolean, DateTime, Enum as SQLAlchemyEnum, Time,
-                        Text, ForeignKey, func, Date, Table, Float, UniqueConstraint, CheckConstraint)
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 import enum
 import uuid
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    Time,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -376,7 +392,7 @@ class Visit(BaseModel):
     __tablename__ = "visits"
     id = Column(Integer, primary_key=True, index=True)
     visit_date = Column(Date, nullable=False, index=True)
-    
+
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     home_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja de origem do membro
     visited_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja que foi visitada

@@ -1,6 +1,7 @@
 
 import os
 
+
 class Settings:
     # Security settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", os.urandom(32).hex())

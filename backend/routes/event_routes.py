@@ -1,13 +1,13 @@
-from typing import List, Optional
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from database import get_db
-from services import event_service
-from schemas import event_schema, calendar_schema
-from dependencies import get_current_user_payload
+from ..database import get_db
+from ..dependencies import get_current_user_payload
+from ..schemas import calendar_schema, event_schema
+from ..services import event_service
 
 router = APIRouter(
     prefix="/events",
@@ -33,7 +33,7 @@ def create_new_calendar(
 
 @router.get(
     "/calendars",
-    response_model=List[calendar_schema.CalendarInDB],
+    response_model=list[calendar_schema.CalendarInDB],
     summary="Listar Calendários da Loja",
     description="Retorna uma lista de todos os calendários associados à loja do usuário autenticado."
 )
@@ -102,20 +102,20 @@ def create_new_event(
 
 @router.get(
     "/",
-    response_model=List[event_schema.EventInDB],
+    response_model=list[event_schema.EventInDB],
     summary="Listar Eventos da Loja",
     description="Retorna uma lista de todos os eventos associados à loja do usuário autenticado, com filtros opcionais de data."
 )
 def list_events(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
-    start_date: Optional[datetime] = Query(None, description="Data de início para filtrar eventos."),
-    end_date: Optional[datetime] = Query(None, description="Data de fim para filtrar eventos.")
+    start_date: datetime | None = Query(None, description="Data de início para filtrar eventos."),
+    end_date: datetime | None = Query(None, description="Data de fim para filtrar eventos.")
 ):
     return event_service.get_events_by_lodge(
-        db=db, 
-        current_user_payload=current_user_payload, 
-        start_date=start_date, 
+        db=db,
+        current_user_payload=current_user_payload,
+        start_date=start_date,
         end_date=end_date
     )
 

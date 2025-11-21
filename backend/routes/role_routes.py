@@ -1,11 +1,11 @@
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from .. import database, dependencies
-from ..services import role_service
 from ..schemas import role_schema
+from ..services import role_service
 
 router = APIRouter(
     prefix="/roles",
@@ -32,7 +32,7 @@ def create_role(
         raise HTTPException(status_code=400, detail="Role name already exists")
     return role_service.create_role(db=db, role=role)
 
-@router.get("/", response_model=List[role_schema.RoleResponse])
+@router.get("/", response_model=list[role_schema.RoleResponse])
 def read_roles(
     skip: int = 0,
     limit: int = 100,

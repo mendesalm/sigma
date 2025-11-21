@@ -1,5 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+
+from pydantic import BaseModel, EmailStr
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 class EmailSchema(BaseModel):
     email: EmailStr
@@ -24,11 +29,11 @@ class LodgeMemberAuthResponse(BaseModel):
     user_type: str
     user_id: int
     email: EmailStr
-    full_name: Optional[str] = None
-    lodge_id: Optional[int] = None
-    lodge_name: Optional[str] = None
-    role_id: Optional[int] = None
-    role_name: Optional[str] = None
+    full_name: str | None = None
+    lodge_id: int | None = None
+    lodge_name: str | None = None
+    role_id: int | None = None
+    role_name: str | None = None
 
 
 class WebmasterLogin(BaseModel):

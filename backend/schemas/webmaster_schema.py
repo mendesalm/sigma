@@ -1,23 +1,24 @@
+
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+
 
 class WebmasterBase(BaseModel):
     username: str
     email: EmailStr
-    is_active: Optional[bool] = True
-    lodge_id: Optional[int] = None
-    obedience_id: Optional[int] = None
+    is_active: bool | None = True
+    lodge_id: int | None = None
+    obedience_id: int | None = None
 
 class WebmasterCreate(WebmasterBase):
     password: str
 
 class WebmasterUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-    lodge_id: Optional[int] = None
-    obedience_id: Optional[int] = None
-    password: Optional[str] = None
+    username: str | None = None
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    lodge_id: int | None = None
+    obedience_id: int | None = None
+    password: str | None = None
 
 class Webmaster(WebmasterBase):
     id: int

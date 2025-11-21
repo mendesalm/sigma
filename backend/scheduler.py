@@ -1,11 +1,11 @@
+from datetime import date, datetime, timedelta
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import text
-from datetime import datetime, timedelta, date
 
 # Importações do projeto
-from database import SessionLocal
-from services import session_service
-from models import models
+from .database import SessionLocal
+from .services import session_service
+from .models import models
 
 # Cria uma instância do agendador que rodará com asyncio
 scheduler = AsyncIOScheduler()
@@ -19,10 +19,10 @@ def check_and_start_sessions_job():
     db = SessionLocal()
     try:
         now = datetime.now()
-        
+
         # Busca por sessões agendadas para hoje ou ontem (para pegar casos de madrugada)
         relevant_dates = [date.today(), date.today() - timedelta(days=1)]
-        
+
         sessions_to_check = db.query(models.MasonicSession).filter(
             models.MasonicSession.status == 'AGENDADA',
             models.MasonicSession.session_date.in_(relevant_dates)
@@ -38,7 +38,7 @@ def check_and_start_sessions_job():
 
             # Combina a data da sessão com a hora de início para ter um datetime completo
             session_start_datetime = datetime.combine(session.session_date, session.start_time)
-            
+
             # Define o limite de 2 horas antes para iniciar
             two_hours_before_start = session_start_datetime - timedelta(hours=2)
 
@@ -46,7 +46,7 @@ def check_and_start_sessions_job():
             if two_hours_before_start <= now:
                 print(f"Iniciando sessão agendada ID: {session.id} - {session.title}")
                 session_service.start_scheduled_session(db, session.id)
-            
+
     except Exception as e:
         print(f"Erro ao executar a tarefa agendada de sessões: {e}")
     finally:

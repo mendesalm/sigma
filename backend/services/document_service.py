@@ -1,13 +1,14 @@
-import shutil
 import uuid
 from pathlib import Path
-from fastapi import UploadFile, HTTPException, status
+
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from models import models
-from schemas import document_schema
-from utils.path_utils import get_tenant_path
+from ..models import models
+from ..schemas import document_schema
+from ..utils.path_utils import get_tenant_path
+
 
 # Assumindo que o `current_user_payload` é um dicionário vindo do token JWT,
 # contendo 'sub' (user_id), 'lodge_id', e 'user_type'.
@@ -15,10 +16,10 @@ async def create_document(
     db: Session,
     title: str,
     current_user_payload: dict,
-    file: Optional[UploadFile] = None, # Arquivo de upload, se houver
-    file_content_bytes: Optional[bytes] = None, # Conteúdo do arquivo em bytes, se gerado internamente
-    filename: Optional[str] = None, # Nome do arquivo para conteúdo em bytes
-    content_type: Optional[str] = None # Tipo de conteúdo para bytes
+    file: UploadFile | None = None, # Arquivo de upload, se houver
+    file_content_bytes: bytes | None = None, # Conteúdo do arquivo em bytes, se gerado internamente
+    filename: str | None = None, # Nome do arquivo para conteúdo em bytes
+    content_type: str | None = None # Tipo de conteúdo para bytes
 ) -> models.Document:
     """
     Salva um arquivo no diretório do tenant e cria um registro no banco de dados.
@@ -89,11 +90,11 @@ async def create_document(
     )
 
     db_document = models.Document(**db_document_data.model_dump(), lodge_id=lodge_id)
-    
+
     db.add(db_document)
     db.commit()
     db.refresh(db_document)
-    
+
     return db_document
 
 def get_document_by_id(
@@ -109,7 +110,7 @@ def get_document_by_id(
 
     if not document or document.lodge_id != lodge_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado.")
-    
+
     return document
 
 def get_documents_by_lodge(db: Session, current_user_payload: dict) -> list[models.Document]:
@@ -126,7 +127,7 @@ def delete_document(db: Session, document_id: int, current_user_payload: dict) -
     Apaga um documento do banco de dados e do sistema de arquivos.
     """
     document_to_delete = get_document_by_id(db, document_id, current_user_payload) # Reutiliza a lógica de verificação
-    
+
     # 1. Apagar o arquivo físico
     try:
         file_path = Path(document_to_delete.file_path)
@@ -135,9 +136,9 @@ def delete_document(db: Session, document_id: int, current_user_payload: dict) -
     except Exception as e:
         # Opcional: logar que o arquivo físico não pode ser removido, mas prosseguir.
         print(f"Aviso: O arquivo físico {document_to_delete.file_path} não pôde ser removido: {e}")
-    
+
     # 2. Apagar o registro do banco
     db.delete(document_to_delete)
     db.commit()
-    
+
     return document_to_delete

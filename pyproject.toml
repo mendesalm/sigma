@@ -1,0 +1,23 @@
+# pyproject.toml
+
+[tool.ruff]
+# Define a versão do Python para a qual o código é escrito.
+target-version = "py311"
+
+# Define os diretórios que o ruff deve analisar.
+src = ["backend"]
+
+# Define o comprimento máximo da linha.
+line-length = 120
+
+[tool.ruff.lint]
+# Seleciona os conjuntos de regras a serem aplicados:
+# E, W: Erros e avisos do pycodestyle
+# F: Erros do Pyflakes (variáveis não usadas, importações não usadas, etc.)
+# I: Regras de ordenação de importações (isort)
+# UP: Regras do pyupgrade (sugere sintaxe mais moderna)
+select = ["E", "W", "F", "I", "UP"]
+
+# Você pode ignorar regras específicas aqui se necessário.
+# Ex: ignore = ["E501"] # Ignora erro de linha muito longa
+ignore = []

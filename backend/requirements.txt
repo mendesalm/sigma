@@ -2,13 +2,17 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 alembic
-mysqlclient
+pymysql
 passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
+pydantic-settings # Adicionado para resolver o erro
 
 # Novas dependências adicionadas
 apscheduler
 geopy
-weasyprint
+pyppeteer # Substituindo weasyprint
 jinja2
+
+# Ferramentas de Desenvolvimento
+ruff

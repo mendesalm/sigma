@@ -1,13 +1,13 @@
-from typing import List, Optional
-from datetime import date, datetime
-from fastapi import APIRouter, Depends, Query, status, BackgroundTasks
+from datetime import date
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from database import get_db
-from services import session_service # Certifique-se de que o nome do arquivo corresponde
-from schemas import masonic_session_schema
-from dependencies import get_current_user_payload
+from ..database import get_db
+from ..dependencies import get_current_user_payload
+from ..schemas import masonic_session_schema
+from ..services import session_service
 
 router = APIRouter(
     prefix="/masonic-sessions",
@@ -31,16 +31,16 @@ def create_new_masonic_session(
 
 @router.get(
     "/",
-    response_model=List[masonic_session_schema.MasonicSessionResponse],
+    response_model=list[masonic_session_schema.MasonicSessionResponse],
     summary="Listar Sessões Maçônicas da Loja",
     description="Retorna uma lista de todas as sessões maçônicas associadas à loja do usuário, com filtros opcionais."
 )
 def list_masonic_sessions(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
-    start_date: Optional[date] = Query(None, description="Data de início para filtrar sessões."),
-    end_date: Optional[date] = Query(None, description="Data de fim para filtrar sessões."),
-    session_status: Optional[str] = Query(None, description="Filtrar sessões por status (AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA).")
+    start_date: date | None = Query(None, description="Data de início para filtrar sessões."),
+    end_date: date | None = Query(None, description="Data de fim para filtrar sessões."),
+    session_status: str | None = Query(None, description="Filtrar sessões por status (AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA).")
 ):
     return session_service.get_sessions_by_lodge(
         db=db,

@@ -1,16 +1,17 @@
 
-from sqlalchemy.orm import Session
-from typing import List, Optional
 import uuid
+
+from sqlalchemy.orm import Session
 
 from ..models import models
 from ..schemas import lodge_schema
 
-def get_lodge(db: Session, lodge_id: int) -> Optional[models.Lodge]:
+
+def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
     """Fetches a single lodge by its ID."""
     return db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
 
-def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> List[models.Lodge]:
+def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodge]:
     """Fetches all lodges with pagination."""
     return db.query(models.Lodge).offset(skip).limit(limit).all()
 
@@ -18,7 +19,7 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     """Creates a new lodge with a unique lodge_code."""
     # Generate a unique code for the lodge
     unique_code = str(uuid.uuid4()) # Simple unique code generation
-    
+
     db_lodge = models.Lodge(
         **lodge.model_dump(),
         lodge_code=unique_code,
@@ -29,26 +30,26 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     db.refresh(db_lodge)
     return db_lodge
 
-def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpdate) -> Optional[models.Lodge]:
+def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpdate) -> models.Lodge | None:
     """Updates an existing lodge."""
     db_lodge = get_lodge(db, lodge_id)
     if not db_lodge:
         return None
-    
+
     update_data = lodge_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_lodge, key, value)
-    
+
     db.commit()
     db.refresh(db_lodge)
     return db_lodge
 
-def delete_lodge(db: Session, lodge_id: int) -> Optional[models.Lodge]:
+def delete_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
     """Deletes a lodge."""
     db_lodge = get_lodge(db, lodge_id)
     if not db_lodge:
         return None
-        
+
     db.delete(db_lodge)
     db.commit()
     return db_lodge

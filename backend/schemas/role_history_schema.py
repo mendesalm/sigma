@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import date
+
+from pydantic import BaseModel, Field
+
 
 # Nested schema to represent the Role in the response
 class SimpleRoleResponse(BaseModel):
@@ -14,7 +15,7 @@ class SimpleRoleResponse(BaseModel):
 class RoleHistoryBase(BaseModel):
     role_id: int = Field(..., description="ID of the role held.")
     start_date: date = Field(..., description="Start date in the role.")
-    end_date: Optional[date] = Field(None, description="End date in the role (if applicable).")
+    end_date: date | None = Field(None, description="End date in the role (if applicable).")
 
 # Schema for creation (requires member ID)
 class RoleHistoryCreate(RoleHistoryBase):
@@ -22,8 +23,8 @@ class RoleHistoryCreate(RoleHistoryBase):
 
 # Schema for update (only dates are updatable)
 class RoleHistoryUpdate(BaseModel):
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: date | None = None
+    end_date: date | None = None
 
 # Schema for API response (includes the role object)
 class RoleHistoryResponse(RoleHistoryBase):

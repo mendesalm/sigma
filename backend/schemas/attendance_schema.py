@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+
 
 class ManualAttendanceUpdate(BaseModel):
     member_id: int
@@ -7,9 +8,9 @@ class ManualAttendanceUpdate(BaseModel):
 
 class VisitorCreate(BaseModel):
     full_name: str
-    email: Optional[EmailStr] = None
-    origin_lodge: Optional[str] = None
-    cpf: Optional[str] = None
+    email: EmailStr | None = None
+    origin_lodge: str | None = None
+    cpf: str | None = None
 
 class QrCheckInRequest(BaseModel):
     user_id: int

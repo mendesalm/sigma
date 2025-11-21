@@ -1,12 +1,12 @@
-from typing import List
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from database import get_db
-from services import document_service
-from schemas import document_schema
-from dependencies import get_current_user_payload
+from ..database import get_db
+from ..dependencies import get_current_user_payload
+from ..schemas import document_schema
+from ..services import document_service
 
 router = APIRouter(
     prefix="/documents",
@@ -31,15 +31,15 @@ async def upload_document(
     específico do tenant (loja) e os metadados são salvos no banco de dados.
     """
     return await document_service.create_document(
-        db=db, 
-        file=file, 
-        title=title, 
+        db=db,
+        file=file,
+        title=title,
         current_user_payload=current_user_payload
     )
 
 @router.get(
     "/",
-    response_model=List[document_schema.DocumentInDB],
+    response_model=list[document_schema.DocumentInDB],
     summary="Listar Documentos da Loja",
     description="Retorna uma lista de todos os documentos associados à loja do usuário."
 )
@@ -67,8 +67,8 @@ def read_document(
     verificando se o documento pertence à loja do usuário.
     """
     return document_service.get_document_by_id(
-        db=db, 
-        document_id=document_id, 
+        db=db,
+        document_id=document_id,
         current_user_payload=current_user_payload
     )
 
@@ -86,7 +86,7 @@ def remove_document(
     Endpoint para excluir um documento do banco de dados e do sistema de arquivos.
     """
     return document_service.delete_document(
-        db=db, 
-        document_id=document_id, 
+        db=db,
+        document_id=document_id,
         current_user_payload=current_user_payload
     )

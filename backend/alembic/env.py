@@ -1,18 +1,20 @@
 import sys
 from os.path import abspath, dirname
+
 # Add the project root directory to the Python path
 sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 # --- Added for .env support ---
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+
 load_dotenv()
 # -----------------------------
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -39,6 +41,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from models.models import Base  # Import Base from your models
+
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:

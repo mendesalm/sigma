@@ -1,11 +1,11 @@
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from .. import database, dependencies
-from ..services import member_service
 from ..schemas import member_schema
+from ..services import member_service
 
 router = APIRouter(
     prefix="/members",
@@ -28,7 +28,7 @@ def create_member(
     # You might also want to check if the role_id is valid for this lodge
     return member_service.create_member_for_lodge(db=db, member_data=member)
 
-@router.get("/", response_model=List[member_schema.MemberResponse])
+@router.get("/", response_model=list[member_schema.MemberResponse])
 def read_members_for_lodge(
     skip: int = 0,
     limit: int = 100,

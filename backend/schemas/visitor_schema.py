@@ -1,13 +1,14 @@
+
 from pydantic import BaseModel
-from typing import Optional
 from pydantic_settings import SettingsConfigDict
+
 
 class VisitorBase(BaseModel):
     full_name: str
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    cim: Optional[str] = None
-    external_lodge_id: Optional[int] = None
+    email: str | None = None
+    phone: str | None = None
+    cim: str | None = None
+    external_lodge_id: int | None = None
 
 class VisitorCreate(VisitorBase):
     pass

@@ -1,14 +1,15 @@
-from typing import Optional
 from datetime import datetime
+
 from pydantic import BaseModel
+
 
 class EventBase(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     start_time: datetime
     end_time: datetime
     is_public: bool = False
-    calendar_id: Optional[int] = None # Optional link to a specific calendar
+    calendar_id: int | None = None # Optional link to a specific calendar
 
 class EventCreate(EventBase):
     pass

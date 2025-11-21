@@ -1,13 +1,13 @@
 
-from sqlalchemy.orm import Session
+
 from sqlalchemy import or_
+from sqlalchemy.orm import Session
 
 from ..models import models
 from ..utils import password_utils
-from typing import Optional, Tuple
 
 
-def authenticate_user(db: Session, identifier: str, password: str) -> Optional[Tuple[any, str]]:
+def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any, str] | None:
     """
     Authenticates a user by checking credentials against SuperAdmin, Webmaster, and Member tables.
 

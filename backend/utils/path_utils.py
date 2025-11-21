@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 # TODO: Esta variável deve ser configurada via variáveis de ambiente ou um arquivo de configuração.

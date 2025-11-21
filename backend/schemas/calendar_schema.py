@@ -1,10 +1,11 @@
-from typing import Optional
 from datetime import datetime
+
 from pydantic import BaseModel
+
 
 class CalendarBase(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
 
 class CalendarCreate(CalendarBase):
     pass

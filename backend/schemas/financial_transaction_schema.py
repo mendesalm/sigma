@@ -1,7 +1,8 @@
-from typing import Optional
-from datetime import datetime
-from pydantic import BaseModel
 import enum
+from datetime import datetime
+
+from pydantic import BaseModel
+
 
 class TransactionTypeEnum(str, enum.Enum):
     DEBIT = "debit"
@@ -11,7 +12,7 @@ class FinancialTransactionBase(BaseModel):
     member_id: int
     transaction_type: TransactionTypeEnum
     amount: float
-    description: Optional[str] = None
+    description: str | None = None
 
 class FinancialTransactionCreate(FinancialTransactionBase):
     pass

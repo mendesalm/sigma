@@ -1,12 +1,12 @@
-from typing import List, Optional
-from datetime import datetime, date, time
-from fastapi import HTTPException, status, BackgroundTasks
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from datetime import date, datetime, time
+from typing import Dict, List, Optional
 
-from models import models
-from schemas import masonic_session_schema
-from .document_generation_service import DocumentGenerationService, get_document_generation_service # Importar o novo serviço
+from fastapi import BackgroundTasks, HTTPException, status
+from sqlalchemy.orm import Session
+
+from ..models import models
+from ..schemas import masonic_session_schema
+from .document_generation_service import DocumentGenerationService  # Importar o novo serviço
 
 # --- Funções de Serviço para Sessões Maçônicas ---
 
@@ -42,7 +42,7 @@ def create_session(
         **session_data.model_dump(exclude_unset=True),
         lodge_id=lodge_id
     )
-    
+
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -75,26 +75,26 @@ def get_session_by_id(
 def get_sessions_by_lodge(
     db: Session,
     current_user_payload: dict,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    status: Optional[str] = None
-) -> List[models.MasonicSession]:
+    start_date: date | None = None,
+    end_date: date | None = None,
+    status: str | None = None
+) -> list[models.MasonicSession]:
     """
     Lista todas as sessões associadas à loja do usuário, com filtros opcionais.
     """
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
         return []
-    
+
     query = db.query(models.MasonicSession).filter(models.MasonicSession.lodge_id == lodge_id)
-    
+
     if start_date:
         query = query.filter(models.MasonicSession.session_date >= start_date)
     if end_date:
         query = query.filter(models.MasonicSession.session_date <= end_date)
     if status:
         query = query.filter(models.MasonicSession.status == status)
-        
+
     return query.all()
 
 def update_session(
@@ -121,10 +121,10 @@ def update_session(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Já existe outra sessão agendada para esta nova data nesta loja."
             )
-            
+
     for key, value in session_update.model_dump(exclude_unset=True).items():
         setattr(db_session, key, value)
-    
+
     db.commit()
     db.refresh(db_session)
     return db_session
@@ -165,7 +165,7 @@ def _start_session_internal(db: Session, db_session: models.MasonicSession) -> m
         db.add_all(new_attendances)
         db.commit()
         db.refresh(db_session)
-    
+
     return db_session
 
 def start_session(
@@ -179,7 +179,7 @@ def start_session(
     db_session = get_session_by_id(db, session_id, current_user_payload) # Valida permissão
     return _start_session_internal(db, db_session)
 
-def start_scheduled_session(db: Session, session_id: int) -> Optional[models.MasonicSession]:
+def start_scheduled_session(db: Session, session_id: int) -> models.MasonicSession | None:
     """
     Inicia uma sessão maçônica (chamado pelo agendador).
     Não levanta exceção HTTP, apenas retorna ou loga o erro.
@@ -207,7 +207,7 @@ def end_session(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Sessão não pode ser finalizada. Status atual: {db_session.status}."
         )
-    
+
     db_session.status = 'REALIZADA'
     db.commit()
     db.refresh(db_session)
@@ -236,7 +236,7 @@ def cancel_session(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Sessão já realizada não pode ser cancelada."
         )
-    
+
     db_session.status = 'CANCELADA'
     db.commit()
     db.refresh(db_session)
