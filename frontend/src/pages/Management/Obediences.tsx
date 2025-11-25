@@ -12,7 +12,7 @@ const Obediences = () => {
         const response = await api.get('/obediences');
         setObediences(response.data);
       } catch (error) {
-        console.error('Failed to fetch obediences', error);
+        console.error('Falha ao buscar obediências', error);
       }
     };
 
@@ -24,7 +24,7 @@ const Obediences = () => {
       <Typography variant="h4" gutterBottom>
         Obediências
       </Typography>
-      <Button component={Link} to="/dashboard/obediences/new" variant="contained" color="primary">
+      <Button component={Link} to="/dashboard/management/obediences/new" variant="contained" color="primary">
         Nova Obediência
       </Button>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
@@ -32,7 +32,11 @@ const Obediences = () => {
           <TableHead>
             <TableRow>
               <TableCell>Nome</TableCell>
-              <TableCell>Grande Oriente</TableCell>
+              <TableCell>Sigla</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Telefone</TableCell>
+              <TableCell>Website</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -40,9 +44,13 @@ const Obediences = () => {
             {obediences.map((obedience: any) => (
               <TableRow key={obedience.id}>
                 <TableCell>{obedience.name}</TableCell>
-                <TableCell>{obedience.grand_orient}</TableCell>
+                <TableCell>{obedience.acronym}</TableCell>
+                <TableCell>{obedience.type}</TableCell>
+                <TableCell>{obedience.email}</TableCell>
+                <TableCell>{obedience.phone}</TableCell>
+                <TableCell>{obedience.website}</TableCell>
                 <TableCell>
-                  <Button component={Link} to={`/dashboard/obediences/edit/${obedience.id}`} variant="contained" color="secondary">
+                  <Button component={Link} to={`/dashboard/management/obediences/edit/${obedience.id}`} variant="contained" color="secondary">
                     Editar
                   </Button>
                 </TableCell>

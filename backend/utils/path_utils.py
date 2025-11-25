@@ -1,9 +1,8 @@
 from pathlib import Path
+from ..config import settings
 
-# TODO: Esta variável deve ser configurada via variáveis de ambiente ou um arquivo de configuração.
-# Por enquanto, estamos assumindo um diretório 'storage' no nível raiz do projeto,
-# relativo ao diretório 'backend'.
-STORAGE_ROOT = Path(__file__).parent.parent.parent / "storage"
+# The root path for all stored files, configured in config.py
+STORAGE_ROOT = Path(settings.STORAGE_BASE_PATH)
 
 def get_tenant_path(id_obediencia: int, id_loja: int, resource_type: str) -> Path:
     """

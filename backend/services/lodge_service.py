@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..models import models
 from ..schemas import lodge_schema
+from ..services import auth_service
 
 
 def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
@@ -16,7 +17,9 @@ def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodg
     return db.query(models.Lodge).offset(skip).limit(limit).all()
 
 def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
-    """Creates a new lodge with a unique lodge_code."""
+    """
+    Creates a new lodge with a unique lodge_code and an associated Webmaster user for its technical contact.
+    """
     # Generate a unique code for the lodge
     unique_code = str(uuid.uuid4()) # Simple unique code generation
 
@@ -28,6 +31,15 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     db.add(db_lodge)
     db.commit()
     db.refresh(db_lodge)
+
+    # Now, create the associated webmaster user
+    auth_service._create_webmaster_user(
+        db=db,
+        name=lodge.technical_contact_name,
+        email=lodge.technical_contact_email,
+        lodge_id=db_lodge.id
+    )
+
     return db_lodge
 
 def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpdate) -> models.Lodge | None:

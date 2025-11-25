@@ -85,10 +85,16 @@ def update_masonic_session(
 )
 def start_masonic_session(
     session_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload)
 ):
-    return session_service.start_session(db=db, session_id=session_id, current_user_payload=current_user_payload)
+    return session_service.start_session(
+        db=db, 
+        session_id=session_id, 
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks
+    )
 
 @router.post(
     "/{session_id}/end",
@@ -98,9 +104,9 @@ def start_masonic_session(
 )
 def end_masonic_session(
     session_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user_payload: dict = Depends(get_current_user_payload),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    current_user_payload: dict = Depends(get_current_user_payload)
 ):
     return session_service.end_session(
         db=db,
@@ -129,9 +135,9 @@ def cancel_masonic_session(
 )
 async def generate_balaustre_for_session(
     session_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user_payload: dict = Depends(get_current_user_payload),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    current_user_payload: dict = Depends(get_current_user_payload)
 ):
     return await session_service.generate_session_document(
         db=db,
@@ -148,9 +154,9 @@ async def generate_balaustre_for_session(
 )
 async def generate_edital_for_session(
     session_id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user_payload: dict = Depends(get_current_user_payload),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    current_user_payload: dict = Depends(get_current_user_payload)
 ):
     return await session_service.generate_session_document(
         db=db,

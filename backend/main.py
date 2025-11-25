@@ -1,4 +1,7 @@
 
+from dotenv import load_dotenv
+load_dotenv() # Carrega as variáveis de ambiente do arquivo .env
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,6 +16,8 @@ from .routes import (
     member_routes,
     obedience_routes,
     session_routes,
+    super_admin_routes,
+    webmaster_routes,
 )
 from .scheduler import initialize_scheduler, shutdown_scheduler
 
@@ -53,6 +58,8 @@ app.include_router(financial_routes.router)
 app.include_router(session_routes.router)
 app.include_router(attendance_routes.router)
 app.include_router(check_in_routes.router)
+app.include_router(super_admin_routes.router)
+app.include_router(webmaster_routes.router)
 
 @app.get("/", tags=["Root"])
 def read_root():

@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Container, TextField, Typography, Switch, FormControlLabel } from '@mui/material';
-
-// Mock data for a single SuperAdmin
-const mockSuperAdmin = {
-  id: 1,
-  username: 'superadmin1',
-  email: 'superadmin1@example.com',
-  is_active: true,
-};
+import api from '../../services/api';
 
 const SuperAdminForm: React.FC = () => {
   const [formState, setFormState] = useState({
@@ -22,8 +15,15 @@ const SuperAdminForm: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      // In a real implementation, you would fetch this data from the API
-      setFormState({ ...mockSuperAdmin, password: '' });
+      const fetchSuperAdmin = async () => {
+        try {
+          const response = await api.get(`/super-admins/${id}`);
+          setFormState({ ...response.data, password: '' });
+        } catch (error) {
+          console.error('Falha ao buscar super admin', error);
+        }
+      };
+      fetchSuperAdmin();
     }
   }, [id]);
 
@@ -35,22 +35,30 @@ const SuperAdminForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // In a real implementation, you would call the API to save the super admin
-    window.alert(`Simulating save for super admin:\n${JSON.stringify(formState, null, 2)}`);
-    navigate('/dashboard/management/super-admins');
+    try {
+      if (id) {
+        await api.put(`/super-admins/${id}`, formState);
+      } else {
+        await api.post('/super-admins', formState);
+      }
+      navigate('/dashboard/management/super-admins');
+    } catch (error) {
+      console.error('Falha ao salvar super admin', error);
+      alert('Falha ao salvar super admin.');
+    }
   };
 
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        {id ? 'Edit Super Admin' : 'New Super Admin'}
+        {id ? 'Editar Super Admin' : 'Novo Super Admin'}
       </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
           name="username"
-          label="Username"
+          label="Usuário"
           value={formState.username}
           onChange={handleChange}
           fullWidth
@@ -67,20 +75,20 @@ const SuperAdminForm: React.FC = () => {
         />
         <TextField
           name="password"
-          label="Password"
+          label="Senha"
           type="password"
           value={formState.password}
           onChange={handleChange}
           fullWidth
           margin="normal"
-          helperText={id ? 'Leave blank to keep the same password' : ''}
+          helperText={id ? 'Deixe em branco para manter a mesma senha' : ''}
         />
         <FormControlLabel
           control={<Switch name="is_active" checked={formState.is_active} onChange={handleChange} />} 
-          label="Active"
+          label="Ativo"
         />
         <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
-          Save
+          Salvar
         </Button>
       </form>
     </Container>

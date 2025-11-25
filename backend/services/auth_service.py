@@ -20,28 +20,98 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
         A tuple containing the user object and their role as a string (e.g., 'super_admin', 'webmaster', 'member'),
         or None if authentication fails.
     """
+    print(f"Authenticating user with identifier: {identifier}")
 
     # 1. Check for SuperAdmin
     super_admin = db.query(models.SuperAdmin).filter(
         or_(models.SuperAdmin.username == identifier, models.SuperAdmin.email == identifier)
     ).first()
-    if super_admin and password_utils.verify_password(password, super_admin.password_hash):
-        return super_admin, "super_admin"
+    if super_admin:
+        print(f"Found super_admin: {super_admin.username}")
+        password_verified = password_utils.verify_password(password, super_admin.password_hash)
+        print(f"Password verified: {password_verified}")
+        if password_verified:
+            return super_admin, "super_admin"
 
     # 2. Check for Webmaster
     webmaster = db.query(models.Webmaster).filter(
         or_(models.Webmaster.username == identifier, models.Webmaster.email == identifier)
     ).first()
-    if webmaster and password_utils.verify_password(password, webmaster.password_hash):
-        return webmaster, "webmaster"
+    if webmaster:
+        print(f"Found webmaster: {webmaster.username}")
+        password_verified = password_utils.verify_password(password, webmaster.password_hash)
+        print(f"Password verified: {password_verified}")
+        if password_verified:
+            return webmaster, "webmaster"
 
     # 3. Check for Member (by email or CIM)
     member = db.query(models.Member).filter(
         or_(models.Member.email == identifier, models.Member.cim == identifier)
     ).first()
-    if member and password_utils.verify_password(password, member.password_hash):
-        return member, "member"
+    if member:
+        print(f"Found member: {member.full_name}")
+        password_verified = password_utils.verify_password(password, member.password_hash)
+        print(f"Password verified: {password_verified}")
+        if password_verified:
+            return member, "member"
 
     # 4. If no user is found or password does not match
+    print("User not found or password does not match.")
     return None
+
+
+def _create_webmaster_user(
+    db: Session,
+    name: str,
+    email: str,
+    obedience_id: int | None = None,
+    lodge_id: int | None = None
+) -> tuple[models.Webmaster, str]:
+    """
+    Creates a new Webmaster user, generates a temporary password, and associates
+    them with an obedience or a lodge.
+
+    Args:
+        db: The database session.
+        name: The full name of the webmaster.
+        email: The webmaster's email address, used as the username.
+        obedience_id: The ID of the obedience to associate with.
+        lodge_id: The ID of the lodge to associate with.
+
+    Returns:
+        A tuple containing the created Webmaster object and the plain text temporary password.
+    """
+    import secrets
+    import string
+
+    # 1. Generate a temporary password
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
+
+    # 2. Hash the password
+    password_hash = password_utils.hash_password(temp_password)
+
+    # 3. Create the Webmaster instance
+    db_webmaster = models.Webmaster(
+        name=name,
+        email=email,
+        username=email,  # Use email as username by default
+        password_hash=password_hash,
+        is_active=True,
+        obedience_id=obedience_id,
+        lodge_id=lodge_id
+    )
+
+    db.add(db_webmaster)
+    db.commit()
+    db.refresh(db_webmaster)
+
+    # TODO: Implement actual email sending logic here
+    print("--- CUIDADO: SENHA TEMPORÁRIA GERADA ---")
+    print(f"Usuário Webmaster: {email}")
+    print(f"Senha Temporária: {temp_password}")
+    print("-----------------------------------------")
+
+
+    return db_webmaster, temp_password
 

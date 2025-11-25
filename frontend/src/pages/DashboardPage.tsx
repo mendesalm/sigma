@@ -1,19 +1,45 @@
-import React from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Box, Toolbar, Typography, AppBar } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import GavelIcon from '@mui/icons-material/Gavel';
+import { useAuth } from '../hooks/useAuth';
 
 const drawerWidth = 240;
 
 const DashboardPage: React.FC = () => {
+  const { user, requiresSelection } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (requiresSelection) {
+      navigate('/select-lodge');
+    } else if (user) {
+      switch (user.role) {
+        case 'super_admin':
+          // Already on the correct dashboard
+          break;
+        case 'webmaster':
+          navigate('/dashboard/webmaster-dashboard');
+          break;
+        case 'member':
+          navigate('/dashboard/member-dashboard');
+          break;
+        default:
+          // Handle unknown role by navigating to a safe page or showing an error
+          navigate('/login');
+          break;
+      }
+    }
+  }, [user, requiresSelection, navigate]);
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <Typography variant="h6" noWrap component="div">
-            Sigma Dashboard
+            Painel Sigma
           </Typography>
         </Toolbar>
       </AppBar>
@@ -28,13 +54,13 @@ const DashboardPage: React.FC = () => {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            <ListItem button component={Link} to="/dashboard/obediences">
+            <ListItem button component={Link} to="/dashboard/management/obediences">
               <ListItemIcon>
                 <BusinessIcon />
               </ListItemIcon>
               <ListItemText primary="Obediências" />
             </ListItem>
-            <ListItem button component={Link} to="/dashboard/lodges">
+            <ListItem button component={Link} to="/dashboard/management/lodges">
               <ListItemIcon>
                 <GavelIcon />
               </ListItemIcon>

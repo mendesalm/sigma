@@ -7,16 +7,12 @@ import Footer from '../../components/layout/Footer';
 const drawerWidth = 240;
 
 const navItems = [
-  { text: 'Home', path: '/dashboard' },
-  { text: 'Obediências', path: '/dashboard/management/obediences' },
-  { text: 'Lojas', path: '/dashboard/management/lodges' },
-  { text: 'Membros', path: '/dashboard/management/members' },
-  { text: 'Super Admins', path: '/dashboard/management/super-admins' },
-  { text: 'Webmasters', path: '/dashboard/management/webmasters' },
-  { text: 'Sessões', path: '/dashboard/sessions' },
+  { text: 'Home', path: '/dashboard/webmaster-dashboard' },
+  { text: 'Membros', path: '/dashboard/webmaster-dashboard/members' }, // TODO: Update path to actual member management for webmaster
+  { text: 'Sessões', path: '/dashboard/webmaster-dashboard/sessions' }, // TODO: Update path to actual session management for webmaster
 ];
 
-const DashboardLayout: React.FC = () => {
+const WebmasterDashboardLayout: React.FC = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -55,4 +51,4 @@ const DashboardLayout: React.FC = () => {
   );
 };
 
-export default DashboardLayout;
+export default WebmasterDashboardLayout;

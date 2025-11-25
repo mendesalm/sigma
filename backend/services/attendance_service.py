@@ -2,43 +2,95 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException, status
 from geopy.distance import geodesic  # Dependência para cálculo de distância
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from ..models import models
-from ..schemas import attendance_schema
+from ..schemas import attendance_schema, session_attendance_schema
 from . import session_service  # Reutilizando o serviço de sessão
 
+# --- Helper Functions ---
+
+def _validate_session_access(db: Session, session_id: int, current_member: models.Member) -> models.MasonicSession:
+    """
+    Valida se a sessão existe e se o membro atual pertence à loja da sessão.
+    Retorna o objeto da sessão se a validação for bem-sucedida.
+    """
+    session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
+
+    admin_association = db.query(models.MemberLodgeAssociation).filter(
+        models.MemberLodgeAssociation.member_id == current_member.id,
+        models.MemberLodgeAssociation.lodge_id == session.lodge_id
+    ).first()
+    if not admin_association:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O usuário não tem permissão para acessar os dados desta sessão."
+        )
+    return session
+
 # --- Funções de Serviço para Presença ---
+
+def get_attendance_for_session(db: Session, session_id: int, current_member: models.Member) -> list[models.SessionAttendance]:
+    """
+    Retorna todos os registros de presença para uma sessão específica,
+    incluindo os detalhes dos membros, após validar o acesso.
+    """
+    _validate_session_access(db, session_id, current_member) # Valida o acesso
+    return db.query(models.SessionAttendance).options(
+        joinedload(models.SessionAttendance.member)
+    ).filter(models.SessionAttendance.session_id == session_id).all()
 
 def record_manual_attendance(
     db: Session,
     session_id: int,
     attendance_update: attendance_schema.ManualAttendanceUpdate,
-    current_user_payload: dict
+    current_member: models.Member
 ) -> models.SessionAttendance:
     """
     Registra ou atualiza manualmente a presença de um membro em uma sessão.
+    Ação permitida para usuários com a permissão 'manage_attendance'.
     """
-    # Garante que o usuário tem permissão sobre a sessão e que a sessão existe
-    session = session_service.get_session_by_id(db, session_id, current_user_payload)
+    session = _validate_session_access(db, session_id, current_member) # Valida o acesso
 
-    if session.status != 'EM_ANDAMENTO':
+    # Valida o status da sessão
+    if session.status not in ['AGENDADA', 'EM_ANDAMENTO']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível registrar presença. A sessão não está em andamento."
+            detail="Não é possível registrar presença. A sessão não está agendada ou em andamento."
+        )
+    
+    # Valida se o membro-alvo pertence à mesma loja
+    target_member_id = attendance_update.member_id
+    target_association = db.query(models.MemberLodgeAssociation).filter(
+        models.MemberLodgeAssociation.member_id == target_member_id,
+        models.MemberLodgeAssociation.lodge_id == session.lodge_id
+    ).first()
+    if not target_association:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="O membro alvo não pertence a esta loja."
         )
 
+    # Procura ou cria o registro de presença
     attendance_record = db.query(models.SessionAttendance).filter(
         models.SessionAttendance.session_id == session_id,
-        models.SessionAttendance.member_id == attendance_update.member_id
+        models.SessionAttendance.member_id == target_member_id
     ).first()
 
     if not attendance_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registro de presença para este membro não encontrado na sessão.")
+        # Cria o registro se não existir
+        attendance_record = models.SessionAttendance(
+            session_id=session_id,
+            member_id=target_member_id,
+        )
+        db.add(attendance_record)
 
+    # Atualiza o registro
     attendance_record.attendance_status = attendance_update.attendance_status
     attendance_record.check_in_method = 'MANUAL'
-    attendance_record.check_in_datetime = datetime.utcnow()
+    attendance_record.check_in_datetime = datetime.utcnow() if attendance_update.attendance_status == "Presente" else None
 
     db.commit()
     db.refresh(attendance_record)
@@ -48,17 +100,17 @@ def record_visitor_attendance(
     db: Session,
     session_id: int,
     visitor_data: attendance_schema.VisitorCreate,
-    current_user_payload: dict
+    current_member: models.Member
 ) -> models.SessionAttendance:
     """
     Registra a presença de um visitante em uma sessão.
     """
-    session = session_service.get_session_by_id(db, session_id, current_user_payload)
+    session = _validate_session_access(db, session_id, current_member)
 
-    if session.status != 'EM_ANDAMENTO':
+    if session.status not in ['AGENDADA', 'EM_ANDAMENTO']:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível registrar visitantes. A sessão não está em andamento."
+            detail="Não é possível registrar visitantes. A sessão não está agendada ou em andamento."
         )
 
     # Cria ou encontra o visitante
@@ -206,3 +258,4 @@ def record_qr_code_attendance(
     db.commit()
     db.refresh(attendance_record)
     return attendance_record
+

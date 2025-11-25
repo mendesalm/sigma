@@ -31,34 +31,34 @@ class BaseModel(Base):
 # --- ENUMS ---
 class ObedienceTypeEnum(str, enum.Enum):
     FEDERAL = "Federal"
-    STATE = "State"
+    STATE = "Estadual"
 
 class RiteEnum(str, enum.Enum):
     REAA = "REAA"
     YORK = "YORK"
     SCHRODER = "Schroder"
-    BRAZILIAN = "Brazilian"
-    MODERN = "Modern"
+    BRAZILIAN = "Brasileiro"
+    MODERN = "Moderno"
 
 class RoleTypeEnum(str, enum.Enum):
-    RITUALISTIC = "Ritualistic"
-    OBEDIENCE = "Obedience"
+    RITUALISTIC = "Ritualístico"
+    OBEDIENCE = "Obediência"
 
 class RelationshipTypeEnum(str, enum.Enum):
-    SPOUSE = "Spouse"
-    SON = "Son"
-    DAUGHTER = "Daughter"
+    SPOUSE = "Esposa"
+    SON = "Filho"
+    DAUGHTER = "Filha"
 
 class DegreeEnum(str, enum.Enum):
-    APPRENTICE = "Apprentice"
-    FELLOW = "Fellow"
-    MASTER = "Master"
-    INSTALLED_MASTER = "Installed Master"
+    APPRENTICE = "Aprendiz"
+    FELLOW = "Companheiro"
+    MASTER = "Mestre"
+    INSTALLED_MASTER = "Mestre Instalado"
 
 class RegistrationStatusEnum(str, enum.Enum):
-    PENDING = "Pending"
-    APPROVED = "Approved"
-    REJECTED = "Rejected"
+    PENDING = "Pendente"
+    APPROVED = "Aprovado"
+    REJECTED = "Rejeitado"
 
 
 # --- ASSOCIATION TABLES ---
@@ -137,8 +137,8 @@ class Lodge(BaseModel):
     user_limit = Column(Integer)
     is_active = Column(Boolean, default=True)
     status = Column(String(255))
-    session_day = Column(SQLAlchemyEnum('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', name='session_day_enum'))
-    periodicity = Column(SQLAlchemyEnum('Weekly', 'Biweekly', 'Monthly', name='periodicity_enum'))
+    session_day = Column(SQLAlchemyEnum('Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', name='session_day_enum'))
+    periodicity = Column(SQLAlchemyEnum('Semanal', 'Quinzenal', 'Mensal', name='periodicity_enum'))
     session_time = Column(Time)
     obedience = relationship("Obedience", backref="lodges")
     technical_contact_name = Column(String(255), nullable=False)

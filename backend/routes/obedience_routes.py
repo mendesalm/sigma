@@ -14,10 +14,10 @@ router = APIRouter(
 
 # Dependency to check for super admin role
 def get_current_super_admin(payload: dict = Depends(dependencies.get_current_user_payload)):
-    if payload.get("user_type") != "super_admin":
+    if payload.get("role") != "super_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to perform this action."
+            detail="Você não tem permissão para realizar esta ação."
         )
     return payload
 

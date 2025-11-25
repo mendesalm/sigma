@@ -1,12 +1,53 @@
-from datetime import date, datetime, time
-from typing import Dict, List, Optional
+from datetime import date
 
 from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from ..models import models
 from ..schemas import masonic_session_schema
-from .document_generation_service import DocumentGenerationService  # Importar o novo serviço
+from .document_generation_service import DocumentGenerationService
+from ..config import settings
+
+def _create_attendance_records_task(db_url: str, session_id: int, lodge_id: int):
+    """
+    Background task to create session attendance records for active members.
+    Creates its own database session to ensure thread safety.
+    """
+    engine = create_engine(db_url)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    db = SessionLocal()
+    try:
+        db_session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+        if not db_session:
+            print(f"Background task: Session {session_id} not found.")
+            return
+
+        active_members = db.query(models.MemberLodgeAssociation).filter(
+            models.MemberLodgeAssociation.lodge_id == lodge_id
+        ).all()
+
+        existing_attendances = {att.member_id for att in db_session.attendances if att.member_id}
+        members_to_add = [
+            assoc.member_id for assoc in active_members if assoc.member_id not in existing_attendances
+        ]
+
+        new_attendances = [
+            models.SessionAttendance(
+                session_id=session_id,
+                member_id=member_id,
+                attendance_status="Ausente"  # Status inicial
+            ) for member_id in members_to_add
+        ]
+
+        if new_attendances:
+            db.add_all(new_attendances)
+            db.commit()
+            print(f"Background task: Created {len(new_attendances)} attendance records for session {session_id}.")
+    finally:
+        db.close()
+
 
 # --- Funções de Serviço para Sessões Maçônicas ---
 
@@ -46,11 +87,6 @@ def create_session(
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
-
-    # TODO: Para otimização, a criação de SessionAttendance para membros ativos
-    # pode ser feita de forma assíncrona ou ao iniciar a sessão.
-    # Por agora, faremos de forma síncrona se a regra for criar no agendamento.
-    # Se a regra for ao iniciar, este bloco deve ser movido para start_session.
 
     return db_session
 
@@ -129,13 +165,16 @@ def update_session(
     db.refresh(db_session)
     return db_session
 
-def _start_session_internal(db: Session, db_session: models.MasonicSession) -> models.MasonicSession:
+def _start_session_internal(
+    db: Session, 
+    db_session: models.MasonicSession,
+    background_tasks: BackgroundTasks
+) -> models.MasonicSession:
     """
     Lógica interna e centralizada para iniciar uma sessão.
-    Muda o status e cria os registros de presença.
+    Muda o status e dispara a criação dos registros de presença em background.
     """
     if db_session.status != 'AGENDADA':
-        # Para o scheduler, podemos apenas logar e retornar em vez de levantar uma exceção HTTP
         print(f"Tentativa de iniciar sessão {db_session.id} que não está 'AGENDADA'. Status atual: {db_session.status}.")
         return db_session
 
@@ -143,41 +182,27 @@ def _start_session_internal(db: Session, db_session: models.MasonicSession) -> m
     db.commit()
     db.refresh(db_session)
 
-    # Geração de SessionAttendance para membros ativos que ainda não possuem registro
-    active_members = db.query(models.MemberLodgeAssociation).filter(
-        models.MemberLodgeAssociation.lodge_id == db_session.lodge_id
-    ).all()
-
-    existing_attendances = {att.member_id for att in db_session.attendances if att.member_id}
-    members_to_add = [
-        assoc.member_id for assoc in active_members if assoc.member_id not in existing_attendances
-    ]
-
-    new_attendances = [
-        models.SessionAttendance(
-            session_id=db_session.id,
-            member_id=member_id,
-            attendance_status="Ausente" # Status inicial
-        ) for member_id in members_to_add
-    ]
-
-    if new_attendances:
-        db.add_all(new_attendances)
-        db.commit()
-        db.refresh(db_session)
+    # Dispara a criação de registros de presença em background
+    background_tasks.add_task(
+        _create_attendance_records_task,
+        settings.DATABASE_URL,
+        db_session.id,
+        db_session.lodge_id
+    )
 
     return db_session
 
 def start_session(
     db: Session,
     session_id: int,
-    current_user_payload: dict
+    current_user_payload: dict,
+    background_tasks: BackgroundTasks
 ) -> models.MasonicSession:
     """
     Inicia uma sessão maçônica (chamado via API).
     """
-    db_session = get_session_by_id(db, session_id, current_user_payload) # Valida permissão
-    return _start_session_internal(db, db_session)
+    db_session = get_session_by_id(db, session_id, current_user_payload)
+    return _start_session_internal(db, db_session, background_tasks)
 
 def start_scheduled_session(db: Session, session_id: int) -> models.MasonicSession | None:
     """
@@ -188,13 +213,16 @@ def start_scheduled_session(db: Session, session_id: int) -> models.MasonicSessi
     if not db_session:
         print(f"Agendador: Sessão {session_id} não encontrada para iniciar.")
         return None
-    return _start_session_internal(db, db_session)
+    
+    # O agendador precisa de sua própria instância de BackgroundTasks
+    background_tasks = BackgroundTasks()
+    return _start_session_internal(db, db_session, background_tasks)
 
 def end_session(
     db: Session,
     session_id: int,
     current_user_payload: dict,
-    background_tasks: BackgroundTasks # Adicionado para tarefas em background
+    background_tasks: BackgroundTasks 
 ) -> models.MasonicSession:
     """
     Finaliza uma sessão maçônica, mudando seu status para 'REALIZADA'.
@@ -213,7 +241,7 @@ def end_session(
     db.refresh(db_session)
 
     # Dispara a geração do Balaústre em background
-    doc_gen_service = DocumentGenerationService() # Cria uma instância do serviço
+    doc_gen_service = DocumentGenerationService()
     background_tasks.add_task(
         doc_gen_service.generate_balaustre_pdf_task,
         session_id, current_user_payload
@@ -253,16 +281,15 @@ def delete_session(
     db_session = get_session_by_id(db, session_id, current_user_payload) # Valida propriedade
     db.delete(db_session)
     db.commit()
-    # Não retorna db_session após commit, pois o objeto pode estar em estado transiente/detached
     return None
 
 async def generate_session_document(
     db: Session,
     session_id: int,
-    document_type: str, # "BALAUSTRE" ou "EDITAL"
+    document_type: str, 
     current_user_payload: dict,
     background_tasks: BackgroundTasks
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """
     Dispara a geração de um documento específico para uma sessão em background.
     """

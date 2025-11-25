@@ -12,6 +12,7 @@ import Members from './pages/Management/Members';
 import MemberForm from './pages/Management/MemberForm';
 import SuperAdminsManagement from './pages/Management/SuperAdminsManagement';
 import SuperAdminForm from './pages/Management/SuperAdminForm';
+import WebmastersManagement from './pages/Management/WebmastersManagement';
 import Classes from './pages/Management/Classes';
 import ClassForm from './pages/Management/ClassForm';
 import DecorationForm from './pages/Management/DecorationForm';
@@ -24,9 +25,13 @@ import MemberRegistryPage from './pages/MemberRegistryPage';
 import PermissionsPage from './pages/PermissionsPage';
 import RolesPage from './pages/RolesPage';
 import RolesPermissionsPage from './pages/RolesPermissionsPage';
-import WebmasterDashboardPage from './pages/WebmasterDashboardPage';
+import WebmasterDashboard from './pages/Dashboard/WebmasterDashboard';
+import WebmasterDashboardLayout from './pages/Dashboard/WebmasterDashboardLayout';
 import WebmasterRoleAssignmentPage from './pages/WebmasterRoleAssignmentPage';
 import DashboardLayout from './pages/Dashboard/DashboardLayout';
+import SessionsPage from './pages/Sessions/SessionsPage';
+import SessionDetailsPage from './pages/Sessions/SessionDetailsPage';
+import LodgeSelectionPage from './pages/LodgeSelectionPage';
 
 const router = createBrowserRouter([
   {
@@ -39,6 +44,10 @@ const router = createBrowserRouter([
       {
         path: '/login',
         element: <LoginPage />,
+      },
+      {
+        path: '/select-lodge',
+        element: <LodgeSelectionPage />,
       },
       {
         path: '/dashboard',
@@ -63,6 +72,7 @@ const router = createBrowserRouter([
               { path: 'super-admins', element: <SuperAdminsManagement /> },
               { path: 'super-admins/new', element: <SuperAdminForm /> },
               { path: 'super-admins/edit/:id', element: <SuperAdminForm /> },
+              { path: 'webmasters', element: <WebmastersManagement /> },
               { path: 'classes', element: <Classes /> },
               { path: 'classes/new', element: <ClassForm /> },
               { path: 'classes/edit/:id', element: <ClassForm /> },
@@ -73,6 +83,14 @@ const router = createBrowserRouter([
               { path: 'role-history/new', element: <RoleHistoryForm /> },
               { path: 'role-history/edit/:id', element: <RoleHistoryForm /> },
             ],
+          },
+          {
+            path: 'sessions',
+            element: <SessionsPage />,
+          },
+          {
+            path: 'sessions/:id',
+            element: <SessionDetailsPage />,
           },
           {
             path: 'administrative-processes',
@@ -104,7 +122,13 @@ const router = createBrowserRouter([
           },
           {
             path: 'webmaster-dashboard',
-            element: <WebmasterDashboardPage />,
+            element: <WebmasterDashboardLayout />,
+            children: [
+              {
+                index: true,
+                element: <WebmasterDashboard />,
+              }
+            ]
           },
           {
             path: 'webmaster-role-assignment',

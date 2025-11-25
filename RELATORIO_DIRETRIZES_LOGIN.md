@@ -18,14 +18,26 @@ O sistema utiliza um fluxo de autenticação moderno e seguro baseado em tokens.
 
 ---
 
-## 2. Endpoint de Login
+## 2. Endpoints de Autenticação
 
-- **URL**: `/auth/token`
+### 2.1. Endpoint de Login
+
+- **URL**: `/auth/login`
 - **Método**: `POST`
 - **Arquivo de Rota**: `backend/routes/auth_routes.py`
 - **Formato do Request**: O endpoint segue o padrão OAuth2 e espera um formulário do tipo `application/x-www-form-urlencoded` com os seguintes campos:
     - `username`: O identificador do usuário.
     - `password`: A senha do usuário.
+
+### 2.2. Endpoint de Seleção de Associação
+
+- **URL**: `/auth/token/select-association`
+- **Método**: `POST`
+- **Arquivo de Rota**: `backend/routes/auth_routes.py`
+- **Descrição**: Utilizado quando um membro possui múltiplas afiliações. Após o login inicial, o frontend chama este endpoint para obter um novo token com o contexto da loja ou obediência selecionada.
+- **Formato do Request**: JSON com os campos:
+    - `association_id`: ID da loja ou obediência selecionada.
+    - `association_type`: "lodge" ou "obedience".
 
 ---
 
@@ -65,8 +77,12 @@ Se a autenticação for bem-sucedida, um token JWT é gerado com as seguintes in
 - `sub` (Subject): O `email` do usuário, servindo como identificador principal dentro do token.
 - `exp` (Expiration Time): A data e hora de expiração do token. Por padrão, está configurado para expirar em **7 dias**.
 - `user_id`: O ID numérico do usuário na sua respectiva tabela.
-- `user_type`: Uma string que identifica o perfil do usuário. Pode ser `"super_admin"`, `"webmaster"` ou `"member"`. Este campo é essencial para o frontend decidir qual dashboard ou interface apresentar.
-- **Contexto Adicional**: Para usuários do tipo `webmaster`, o payload também inclui `lodge_id` ou `obedience_id`, permitindo que o sistema isole os dados corretamente.
+- `role`: Uma string que identifica o perfil do usuário. Pode ser `"super_admin"`, `"webmaster"` ou `"member"`. Este campo é essencial para o frontend decidir qual dashboard ou interface apresentar.
+- **Contexto Adicional**:
+    - Para usuários do tipo `webmaster`, o payload também inclui `lodge_id` ou `obedience_id`.
+    - Para usuários do tipo `member` com múltiplas afiliações, o payload inclui:
+        - `requires_selection: true`: Um booleano que sinaliza ao frontend a necessidade de exibir a tela de seleção.
+        - `associations`: Uma lista de objetos, cada um representando uma loja ou obediência à qual o membro pertence.
 
 ---
 

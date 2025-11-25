@@ -1,6 +1,5 @@
 import os
 from datetime import date
-from typing import Dict, List
 
 import pyppeteer  # pip install pyppeteer
 from fastapi import Depends, HTTPException, status
@@ -10,6 +9,7 @@ from sqlalchemy.orm import Session
 from ..database import SessionLocal, get_db
 from ..models import models
 from ..services import document_service
+
 
 # (O código das funções auxiliares e dos templates permanece o mesmo)
 def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date) -> dict[str, str]:
@@ -215,11 +215,11 @@ class DocumentGenerationService:
         session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
         if not session:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
-        
+
         lodge = db.query(models.Lodge).filter(models.Lodge.id == session.lodge_id).first()
         if not lodge:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Loja da sessão não encontrada.")
-        
+
         obedience = db.query(models.Obedience).filter(models.Obedience.id == lodge.obedience_id).first()
         obedience_name = obedience.name if obedience else "Obediência não especificada"
 
@@ -251,10 +251,10 @@ class DocumentGenerationService:
             session_data = await self._collect_session_data(db, session_id)
             html_content = self._render_template("balaustre_template.html", session_data)
             pdf_bytes = await self._generate_pdf_from_html(html_content)
-            
+
             title = f"Balaústre da Sessão {session_data.get('session_title', '')} - {session_data.get('session_date_formatted', '')}"
             filename = f"balaustre_sessao_{session_id}_{session_data.get('session_date').strftime('%Y%m%d')}.pdf"
-            
+
             new_doc = await document_service.create_document(
                 db=db, title=title, current_user_payload=current_user_payload,
                 file_content_bytes=pdf_bytes, filename=filename, content_type="application/pdf"
@@ -275,7 +275,7 @@ class DocumentGenerationService:
             session_data = await self._collect_session_data(db, session_id)
             html_content = self._render_template("edital_template.html", session_data)
             pdf_bytes = await self._generate_pdf_from_html(html_content)
-            
+
             title = f"Edital de Convocação {session_data.get('session_title', '')} - {session_data.get('session_date_formatted', '')}"
             filename = f"edital_sessao_{session_id}_{session_data.get('session_date').strftime('%Y%m%d')}.pdf"
 

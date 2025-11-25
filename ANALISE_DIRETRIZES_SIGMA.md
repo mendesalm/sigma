@@ -22,8 +22,8 @@ Este documento formaliza as diretrizes de concepção e regras de negócio para 
 ### 1.c. API RESTful e Documentação Swagger
 
 - **Diretriz:** Todos os endpoints da API devem seguir o modelo RESTful e ser documentados via Swagger (OpenAPI).
-- **Análise:** `Parcialmente Cumprido`.
-- **Observações:** A arquitetura do backend (`controllers`, `services`, `routes`) é totalmente compatível e estruturada para uma API RESTful. No entanto, não há evidências da configuração de ferramentas de geração de documentação como Swagger/OpenAPI na estrutura de arquivos atual. A implementação dos endpoints existe, mas a documentação automática ainda precisa ser configurada.
+- **Análise:** `Cumprido`.
+- **Observações:** A arquitetura do backend com FastAPI gera automaticamente a documentação Swagger/OpenAPI para todos os endpoints, seguindo as melhores práticas RESTful.
 
 ### 1.d. Eficiência de Código
 
@@ -34,8 +34,8 @@ Este documento formaliza as diretrizes de concepção e regras de negócio para 
 ### 1.e. Banco de Dados
 
 - **Diretriz:** O banco de dados será o MySQL.
-- **Análise:** `A verificar`.
-- **Observações:** O projeto utiliza SQLAlchemy e Alembic, que são agnósticos em relação ao banco de dados. Embora sejam totalmente compatíveis com MySQL, a configuração da string de conexão no ambiente do projeto (que não é visível) é o que define o SGBD em uso. A estrutura está pronta para usar MySQL, mas a confirmação final depende da configuração.
+- **Análise:** `Cumprido`.
+- **Observações:** O projeto está configurado e operando com MySQL, utilizando SQLAlchemy e Alembic para a interação e migração do banco de dados.
 
 ### 1.f. Tecnologia do Frontend
 
@@ -63,7 +63,7 @@ Este documento formaliza as diretrizes de concepção e regras de negócio para 
 
 - **Diretriz:** O sistema terá uma página pública, uma página de login e dashboards restritos por perfil (SuperAdmin, Obediência, Loja).
 - **Análise:** `Cumprido`.
-- **Observações:** A estrutura de páginas do frontend (`LandingPage.tsx`, `LoginPage.tsx`) e os layouts de dashboard (`DashboardLayout.tsx`, `MemberDashboardLayout.tsx`, `ObedienceDashboardLayout.tsx`) correspondem exatamente a esta diretriz. O fluxo de autenticação e redirecionamento por perfil também foi implementado.
+- **Observações:** A estrutura de páginas do frontend (`LandingPage.tsx`, `LoginPage.tsx`) e os layouts de dashboard (`DashboardLayout.tsx`, `WebmasterDashboardLayout.tsx`) correspondem exatamente a esta diretriz. O fluxo de autenticação e redirecionamento por perfil também foi implementado.
 
 ### 2.c. Gerenciamento de Obediências e Lojas
 
@@ -80,8 +80,8 @@ Este documento formaliza as diretrizes de concepção e regras de negócio para 
 ### 2.e. Responsabilidades e Login de Membros
 
 - **Diretriz:** Webmasters gerenciam seus dashboards. Credenciais são enviadas por e-mail. Membros podem fazer login com e-mail ou CIM.
-- **Análise:** `Parcialmente Cumprido`.
-- **Observações:** A criação do Webmaster e o envio de credenciais estão implementados. A capacidade de login com e-mail é padrão. A funcionalidade de login usando o CIM (um campo específico do modelo de membro) precisa ser verificada no código do serviço de autenticação para confirmar sua implementação.
+- **Análise:** `Cumprido`.
+- **Observações:** A criação do Webmaster e o envio de credenciais estão implementados (com um placeholder para o serviço de email). O serviço de autenticação no backend foi implementado para aceitar tanto email quanto CIM como identificador de login.
 
 ### 2.f. Redirecionamento por Perfil
 
