@@ -33,21 +33,28 @@ import SessionsPage from './pages/Sessions/SessionsPage';
 import SessionDetailsPage from './pages/Sessions/SessionDetailsPage';
 import LodgeSelectionPage from './pages/LodgeSelectionPage';
 
+import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
+
 const router = createBrowserRouter([
   {
     element: <App />,
     children: [
       {
-        path: '/',
-        element: <LandingPage />,
-      },
-      {
-        path: '/login',
-        element: <LoginPage />,
-      },
-      {
-        path: '/select-lodge',
-        element: <LodgeSelectionPage />,
+        element: <PublicLayout />, // Wrap public routes with PublicLayout
+        children: [
+          {
+            path: '/',
+            element: <LandingPage />,
+          },
+          {
+            path: '/login',
+            element: <LoginPage />,
+          },
+          {
+            path: '/select-lodge',
+            element: <LodgeSelectionPage />,
+          },
+        ]
       },
       {
         path: '/dashboard',

@@ -15,7 +15,13 @@ const Footer: React.FC = () => {
     >
       <Container maxWidth="lg">
         <Typography variant="body2" color="text.secondary" align="center">
-          &copy; {new Date().getFullYear()} Sigma. All rights reserved.
+          &copy; {new Date().getFullYear()} SiGMa. Todos os direitos reservados.
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center">
+          Desenvolvido por [Seu Nome/Empresa]
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center">
+          Contato: suporte@sigma.com.br
         </Typography>
       </Container>
     </Box>
