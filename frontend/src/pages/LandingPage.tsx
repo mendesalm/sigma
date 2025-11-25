@@ -39,15 +39,11 @@ const LandingPage: React.FC = () => {
   return (
     <Box
       sx={{
-        backgroundColor: "background.default",
-        color: "text.primary",
+        color: "text.primary", // Keep text color for contrast
         minHeight: '100vh', // Ensure the entire page takes at least full viewport height
         display: 'flex',
         flexDirection: 'column',
-        backgroundImage: `url('/src/assets/images/network_background.svg')`,
-        backgroundSize: 'cover', // Cover the entire background
-        backgroundPosition: 'center', // Center the background image
-        backgroundRepeat: 'no-repeat', // Do not repeat the image
+        background: 'linear-gradient(to bottom, #333333, #555555)', // Metallic graphite gray gradient
       }}
     >
       <Box
