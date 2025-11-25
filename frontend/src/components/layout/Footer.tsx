@@ -11,6 +11,8 @@ const Footer: React.FC = () => {
         mt: 'auto',
         backgroundColor: (theme) =>
           theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[200],
+        scrollSnapAlign: 'start', // Enable scroll snapping to the start
+        scrollSnapStop: 'always', // Always snap to this element
       }}
     >
       <Container maxWidth="lg">
@@ -18,7 +20,7 @@ const Footer: React.FC = () => {
           &copy; {new Date().getFullYear()} SiGMa. Todos os direitos reservados.
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center">
-          Desenvolvido por [Seu Nome/Empresa]
+          Desenvolvido por Dantec
         </Typography>
         <Typography variant="body2" color="text.secondary" align="center">
           Contato: suporte@sigma.com.br

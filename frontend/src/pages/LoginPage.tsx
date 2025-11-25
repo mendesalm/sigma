@@ -12,7 +12,9 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
+  useTheme, // Import useTheme
 } from '@mui/material';
+import logoSigma from "../assets/images/SigmaLogo.png";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -23,6 +25,7 @@ const LoginPage: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const theme = useTheme(); // Initialize useTheme
 
   const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -41,88 +44,136 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs" sx={{ margin: 'auto', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box
+      sx={{
+        color: "text.primary", // Revert to theme's primary text color
+        minHeight: "100vh", // Ensure the entire page takes at least full viewport height
+        display: "flex",
+        flexDirection: "column",
+        backgroundImage: `url('/src/assets/images/bg.jpg')`, // Use Sigma.jpg as background
+        backgroundSize: "cover", // Cover the entire background
+        backgroundPosition: "center", // Center the background image
+        backgroundRepeat: "no-repeat", // Do not repeat the image
+        backgroundAttachment: "fixed", // Keep the background fixed during scroll
+        position: 'relative', // Needed for absolute positioning of the blur box
+        pt: { xs: 7, sm: 8, md: 9 }, // Account for header height
+      }}
+    >
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          backgroundColor: 'background.paper',
-          p: 4,
-          borderRadius: 2,
-          boxShadow: 3,
-          width: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: theme.mixins.toolbar.minHeight, // Use toolbar height
+          [theme.breakpoints.up('sm')]: {
+            height: (theme.mixins.toolbar[theme.breakpoints.up('sm')] as any)?.minHeight || theme.mixins.toolbar.minHeight,
+          },
+          backdropFilter: 'blur(5px)', // Apply blur effect
+          backgroundColor: 'rgba(0, 0, 0, 0.1)', // Subtle overlay
+          zIndex: theme.zIndex.drawer, // Ensure it's above content but below app bar
         }}
-      >
-        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-          Área Restrita
-        </Typography>
-        <Box component="form" onSubmit={handleFormSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-            variant="outlined"
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Senha"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            variant="outlined"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                value="remember"
-                color="primary"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
-              />
-            }
-            label="Lembrar-me"
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={isLoading}
-          >
-            {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
-          </Button>
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mt: 2 }}>
-            <Link component={Link} to="/forgot-password" variant="body2">
-              Esqueci a senha
-            </Link>
-            <Link component={Link} to="/register" variant="body2">
-              Não tem uma conta? Solicitar cadastro
-            </Link>
+      />
+      <Container component="main" maxWidth="xs" sx={{
+        margin: 'auto',
+        display: 'flex',
+        flexDirection: 'column', // Align items in a column
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexGrow: 1, // Allow it to grow and center content vertically
+        py: 4, // Add some vertical padding
+      }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)', // More transparent white
+            backdropFilter: 'blur(10px)', // Glassmorphism blur
+            border: '1px solid rgba(255, 255, 255, 0.1)', // More transparent subtle border
+            p: 4,
+            borderRadius: 2,
+            boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.2)', // Lighter glassmorphism shadow
+            width: '100%',
+            maxWidth: '600px', // Limit the width of the form box
+          }}
+        >
+          <Box sx={{ mb: 3 }}> {/* Box for the logo */}
+            <img
+              src={logoSigma}
+              alt="Sigma Logo"
+              style={{ maxHeight: "120px", width: "auto", filter: "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.5))" }}
+            />
+          </Box>
+          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+            Área Restrita
+          </Typography>
+          <Box component="form" onSubmit={handleFormSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              variant="outlined"
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Senha"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              variant="outlined"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  value="remember"
+                  color="primary"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={isLoading}
+                />
+              }
+              label="Lembrar-me"
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+              disabled={isLoading}
+            >
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+            </Button>
+            {error && (
+              <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: 2, gap: 1 }}>
+                                                <Link component={Link} to="/forgot-password" variant="body2" sx={{ textAlign: 'center' }}>
+                                                  Esqueci a senha
+                                                </Link>
+                                                <Link component={Link} to="/register" variant="body2" sx={{ textAlign: 'center' }}>
+                                                  Não tem uma conta? Solicitar cadastro
+                                                </Link>            </Box>
           </Box>
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
