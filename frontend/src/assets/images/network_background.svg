@@ -1,0 +1,55 @@
+<svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style type="text/css">
+      <![CDATA[
+        .node { fill: #4a4a4a; animation: pulse 2s infinite alternate; }
+        .line { stroke: #3a3a3a; stroke-width: 0.2; }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.2); }
+        }
+      ]]>
+    </style>
+  </defs>
+  <rect x="0" y="0" width="100" height="100" fill="#2a2a2a"/>
+  
+  <!-- Grid of nodes and lines -->
+  <g id="network-grid">
+    <script type="text/ecmascript">
+      <![CDATA[
+        for (let i = 0; i <= 10; i++) {
+          for (let j = 0; j <= 10; j++) {
+            const x = i * 10;
+            const y = j * 10;
+
+            const node = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            node.setAttribute('cx', x);
+            node.setAttribute('cy', y);
+            node.setAttribute('r', 0.5);
+            node.setAttribute('class', 'node');
+            document.getElementById('network-grid').appendChild(node);
+
+            if (i > 0) {
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', x - 10);
+              line.setAttribute('y1', y);
+              line.setAttribute('x2', x);
+              line.setAttribute('y2', y);
+              line.setAttribute('class', 'line');
+              document.getElementById('network-grid').appendChild(line);
+            }
+            if (j > 0) {
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', x);
+              line.setAttribute('y1', y - 10);
+              line.setAttribute('x2', x);
+              line.setAttribute('y2', y);
+              line.setAttribute('class', 'line');
+              document.getElementById('network-grid').appendChild(line);
+            }
+          }
+        }
+      ]]>
+    </script>
+  </g>
+</svg>

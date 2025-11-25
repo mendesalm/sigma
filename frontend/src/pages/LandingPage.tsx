@@ -41,12 +41,13 @@ const LandingPage: React.FC = () => {
       sx={{
         backgroundColor: "background.default",
         color: "text.primary",
-        minHeight: "100vh", // Ensure the entire page takes at least full viewport height
-        display: "flex",
-        flexDirection: "column",
-        backgroundImage: `url('/src/assets/images/technology_pattern.svg')`,
-        backgroundRepeat: "repeat",
-        backgroundSize: "100px 100px", // Adjust size as needed
+        minHeight: '100vh', // Ensure the entire page takes at least full viewport height
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundImage: `url('/src/assets/images/network_background.svg')`,
+        backgroundSize: 'cover', // Cover the entire background
+        backgroundPosition: 'center', // Center the background image
+        backgroundRepeat: 'no-repeat', // Do not repeat the image
       }}
     >
       <Box
