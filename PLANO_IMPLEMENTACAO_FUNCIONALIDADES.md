@@ -157,7 +157,7 @@ Uma refatoração completa da estilização do frontend foi realizada para garan
     *   **`Footer.tsx`:** O componente de rodapé foi simplificado, utilizando `Box` e `Typography` do Material-UI, e sua integração ao layout foi ajustada.
     *   **`WebmasterDashboardLayout.tsx`:** Similar ao `DashboardLayout`, foi refatorado para usar componentes do Material-UI, corrigindo problemas de layout e dependências de CSS.
 *   **Páginas Principais Refatoradas:**
-    *   **`LandingPage.tsx`:** A página inicial foi completamente reescrita com componentes do Material-UI (`Box`, `Container`, `Typography`, `Grid`, `Paper`, `AppBar`, `Toolbar`, `Button`), garantindo um design full-width, responsivo e aderente ao tema escuro.
+    *   **`LandingPage.tsx`:** A página inicial foi completamente reescrita com componentes do Material-UI (`Box`, `Container`, `Typography`, `Grid`, `Paper`, `AppBar`, `Toolbar`, `Button`), garantindo um design full-width, responsivo e aderente ao tema escuro. Adição do logotipo Sigma centralizado acima dos títulos na seção hero.
     *   **`LoginPage.tsx`:** A página de login foi refatorada para usar componentes do Material-UI (`Container`, `Box`, `Typography`, `TextField`, `Button`, `Link`, `CircularProgress`, `FormControlLabel`, `Checkbox`, `Alert`), resolvendo problemas de alinhamento e estilização.
 *   **Limpeza de Código:** Todos os arquivos `.css` customizados associados aos componentes refatorados (`DashboardLayout.css`, `Header.css`, `Footer.css`, `LandingPage.css`, `LoginPage.css`) foram removidos para evitar conflitos e manter a consistência com a abordagem do Material-UI.
 *   **Correção de Alinhamento Global:** Ajustes foram feitos em `frontend/src/index.css` para remover estilos `body` conflitantes, permitindo que a centralização de componentes (como o formulário de login) funcione corretamente via Material-UI.
@@ -175,7 +175,7 @@ Diversos ajustes foram realizados no backend para resolver problemas de autentic
 *   **Erro na Criação de Webmaster (`TypeError`):**
     *   **Problema:** Ao criar uma nova obediência, o sistema tentava criar um `Webmaster` associado usando um argumento `name` inválido para o modelo `Webmaster`.
     *   **Solução:** A função `_create_webmaster_user` em `backend/services/auth_service.py` foi ajustada para usar os argumentos corretos (`username`, `email`) ao instanciar o modelo `Webmaster`, resolvendo o `TypeError`.
-*   **Erro de Hashing de Senha (`AttributeError`):**
+*   **Erro de Hashing de Senha (`AttributeError`):
     *   **Problema:** A função `_create_webmaster_user` chamava `password_utils.get_password_hash`, que não existia.
     *   **Solução:** A chamada foi corrigida para `password_utils.hash_password`, a função correta de hashing.
 *   **Tratamento de Entrada Duplicada (`500 Internal Server Error` -> `409 Conflict`):**
