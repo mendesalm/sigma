@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 from pydantic_settings import SettingsConfigDict
 
@@ -10,8 +9,10 @@ class VisitorBase(BaseModel):
     cim: str | None = None
     external_lodge_id: int | None = None
 
+
 class VisitorCreate(VisitorBase):
     pass
+
 
 class VisitorResponse(VisitorBase):
     id: int

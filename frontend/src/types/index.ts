@@ -17,6 +17,16 @@ export enum RelationshipTypeEnum {
   DAUGHTER = "Daughter",
 }
 
+export enum RiteEnum {
+  REAA = "Rito Escocês Antigo e Aceito",
+  YORK = "Rito York",
+  SCHRODER = "Rito Schroder",
+  BRAZILIAN = "Rito Brasileiro",
+  MODERN = "Rito Moderno",
+  ADONHIRAMITE = "Rito Adonhiramita",
+  RER = "Rito Escocês Retificado",
+}
+
 export interface FamilyMemberResponse {
   id: number;
   full_name: string;
@@ -42,6 +52,13 @@ export interface RoleHistoryResponse {
   end_date?: string;
   member_id: number;
   role_id: number;
+  lodge_id: number;
+}
+
+export interface MemberLodgeAssociationResponse {
+  lodge_id: number;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface MemberResponse {
@@ -61,8 +78,7 @@ export interface MemberResponse {
   place_of_birth?: string;
   nationality?: string;
   religion?: string;
-  fathers_name?: string;
-  mothers_name?: string;
+
   education_level?: string;
   occupation?: string;
   workplace?: string;
@@ -83,6 +99,7 @@ export interface MemberResponse {
   family_members: FamilyMemberResponse[];
   decorations: DecorationResponse[];
   role_history: RoleHistoryResponse[];
+  lodge_associations: MemberLodgeAssociationResponse[];
 }
 
 export interface SuperAdminResponse {

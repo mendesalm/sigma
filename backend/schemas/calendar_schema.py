@@ -7,11 +7,14 @@ class CalendarBase(BaseModel):
     title: str
     description: str | None = None
 
+
 class CalendarCreate(CalendarBase):
     pass
 
+
 class CalendarUpdate(CalendarBase):
     pass
+
 
 class CalendarInDB(CalendarBase):
     id: int

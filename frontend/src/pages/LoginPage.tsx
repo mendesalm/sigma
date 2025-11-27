@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import {
   Container,
@@ -33,8 +33,22 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password, rememberMe);
-      navigate('/dashboard');
+      const user = await login(email, password);
+      if (user.requires_selection) {
+        navigate('/select-lodge');
+      } else if (user.user_type === 'super_admin') {
+        navigate('/dashboard');
+      } else if (user.user_type === 'webmaster') {
+        if (user.obedience_id) {
+          navigate('/dashboard/obedience-dashboard');
+        } else {
+          navigate('/dashboard/lodge-dashboard');
+        }
+      } else if (user.user_type === 'member') {
+        navigate('/dashboard/member-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Login failed. Please check your credentials.';
       setError(errorMessage);
@@ -164,10 +178,10 @@ const LoginPage: React.FC = () => {
               </Alert>
             )}
                       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: 2, gap: 1 }}>
-                                                <Link component={Link} to="/forgot-password" variant="body2" sx={{ textAlign: 'center' }}>
+                                                <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ textAlign: 'center' }}>
                                                   Esqueci a senha
                                                 </Link>
-                                                <Link component={Link} to="/register" variant="body2" sx={{ textAlign: 'center' }}>
+                                                <Link component={RouterLink} to="/register" variant="body2" sx={{ textAlign: 'center' }}>
                                                   Não tem uma conta? Solicitar cadastro
                                                 </Link>            </Box>
           </Box>

@@ -19,35 +19,43 @@ from sqlalchemy import (
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 Base = declarative_base()
+
 
 class BaseModel(Base):
     __abstract__ = True
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 # --- ENUMS ---
 class ObedienceTypeEnum(str, enum.Enum):
     FEDERAL = "Federal"
     STATE = "Estadual"
 
+
 class RiteEnum(str, enum.Enum):
-    REAA = "REAA"
-    YORK = "YORK"
-    SCHRODER = "Schroder"
-    BRAZILIAN = "Brasileiro"
-    MODERN = "Moderno"
+    REAA = "Rito Escocês Antigo e Aceito"
+    YORK = "Rito York"
+    SCHRODER = "Rito Schroder"
+    BRAZILIAN = "Rito Brasileiro"
+    MODERN = "Rito Moderno"
+    ADONHIRAMITE = "Rito Adonhiramita"
+    RER = "Rito Escocês Retificado"
+
 
 class RoleTypeEnum(str, enum.Enum):
-    RITUALISTIC = "Ritualístico"
+    LODGE = "Loja"
     OBEDIENCE = "Obediência"
+    SUBOBEDIENCE = "Subobediência"
 
 class RelationshipTypeEnum(str, enum.Enum):
     SPOUSE = "Esposa"
     SON = "Filho"
     DAUGHTER = "Filha"
+
 
 class DegreeEnum(str, enum.Enum):
     APPRENTICE = "Aprendiz"
@@ -55,35 +63,42 @@ class DegreeEnum(str, enum.Enum):
     MASTER = "Mestre"
     INSTALLED_MASTER = "Mestre Instalado"
 
+
 class RegistrationStatusEnum(str, enum.Enum):
     PENDING = "Pendente"
     APPROVED = "Aprovado"
     REJECTED = "Rejeitado"
 
 
+class ExceptionTypeEnum(str, enum.Enum):
+    GRANT = "Concedida"
+    REVOKE = "Revogada"
+
+
 # --- ASSOCIATION TABLES ---
 roles_permissions = Table(
-    'roles_permissions',
+    "roles_permissions",
     Base.metadata,
-    Column('role_id', ForeignKey('roles.id'), primary_key=True),
-    Column('permission_id', ForeignKey('permissions.id'), primary_key=True)
+    Column("role_id", ForeignKey("roles.id"), primary_key=True),
+    Column("permission_id", ForeignKey("permissions.id"), primary_key=True),
 )
 
 webmasters_roles = Table(
-    'webmasters_roles',
+    "webmasters_roles",
     Base.metadata,
-    Column('webmaster_id', ForeignKey('webmasters.id'), primary_key=True),
-    Column('role_id', ForeignKey('roles.id'), primary_key=True)
+    Column("webmaster_id", ForeignKey("webmasters.id"), primary_key=True),
+    Column("role_id", ForeignKey("roles.id"), primary_key=True),
 )
 
 obediences_roles_association = Table(
-    'obediences_roles_association',
+    "obediences_roles_association",
     Base.metadata,
-    Column('role_id', ForeignKey('roles.id'), primary_key=True),
-    Column('obedience_id', ForeignKey('obediences.id'), primary_key=True)
+    Column("role_id", ForeignKey("roles.id"), primary_key=True),
+    Column("obedience_id", ForeignKey("obediences.id"), primary_key=True),
 )
 
 # --- MAIN MODELS ---
+
 
 class Obedience(BaseModel):
     __tablename__ = "obediences"
@@ -91,7 +106,7 @@ class Obedience(BaseModel):
     name = Column(String(255), unique=True, nullable=False)
     acronym = Column(String(50), unique=True, nullable=True)
     type = Column(SQLAlchemyEnum(ObedienceTypeEnum), nullable=False)
-    parent_obedience_id = Column(Integer, ForeignKey('obediences.id'), nullable=True)
+    parent_obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
     cnpj = Column(String(18), unique=True, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -107,17 +122,20 @@ class Obedience(BaseModel):
     technical_contact_email = Column(String(255), nullable=False)
     parent_obedience = relationship("Obedience", remote_side=[id], backref="subordinate_obediences")
     roles = relationship("Role", secondary=obediences_roles_association, back_populates="obediences")
-    member_associations = relationship("MemberObedienceAssociation", back_populates="obedience", cascade="all, delete-orphan")
+    member_associations = relationship(
+        "MemberObedienceAssociation", back_populates="obedience", cascade="all, delete-orphan"
+    )
+
 
 class Lodge(BaseModel):
     __tablename__ = "lodges"
     id = Column(Integer, primary_key=True, index=True)
     lodge_name = Column(String(255), nullable=False)
-    lodge_code = Column(String(32), unique=True, index=True, nullable=False)
+    lodge_code = Column(String(36), unique=True, index=True, nullable=False)
     lodge_number = Column(String(255))
     foundation_date = Column(Date, nullable=True)
     rite = Column(SQLAlchemyEnum(RiteEnum), nullable=True)
-    obedience_id = Column(Integer, ForeignKey('obediences.id'), nullable=False)
+    obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=False)
     cnpj = Column(String(18), unique=True, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -132,35 +150,53 @@ class Lodge(BaseModel):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     qr_code_id = Column(String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
-    custom_domain = Column(String(255), unique=True)
-    plan = Column(String(255))
-    user_limit = Column(Integer)
+    custom_domain = Column(String(255), unique=True, nullable=True)
+    plan = Column(String(255), nullable=True)
+    user_limit = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True)
-    status = Column(String(255))
-    session_day = Column(SQLAlchemyEnum('Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', name='session_day_enum'))
-    periodicity = Column(SQLAlchemyEnum('Semanal', 'Quinzenal', 'Mensal', name='periodicity_enum'))
-    session_time = Column(Time)
+    status = Column(String(255), nullable=True)
+    session_day = Column(
+        SQLAlchemyEnum(
+            "Domingo",
+            "Segunda-feira",
+            "Terça-feira",
+            "Quarta-feira",
+            "Quinta-feira",
+            "Sexta-feira",
+            "Sábado",
+            name="session_day_enum",
+        ),
+        nullable=True,
+    )
+    periodicity = Column(SQLAlchemyEnum("Semanal", "Quinzenal", "Mensal", name="periodicity_enum"), nullable=True)
+    session_time = Column(Time, nullable=True)
     obedience = relationship("Obedience", backref="lodges")
     technical_contact_name = Column(String(255), nullable=False)
     technical_contact_email = Column(String(255), nullable=False)
     associations = relationship("MemberLodgeAssociation", back_populates="lodge", cascade="all, delete-orphan")
 
+
 class Role(BaseModel):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, nullable=False)
-    role_type = Column(SQLAlchemyEnum(RoleTypeEnum), nullable=False)
+    role_type = Column(SQLAlchemyEnum(RoleTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)  # Acts as 'scope'
+    level = Column(Integer, nullable=False, default=1)  # 1-9 hierarchy
+    base_credential = Column(Integer, nullable=False, default=10)  # Base value for calculation
     applicable_rites = Column(String(255), nullable=True)
     obediences = relationship("Obedience", secondary=obediences_roles_association, back_populates="roles")
     permissions = relationship("Permission", secondary=roles_permissions, back_populates="roles")
     webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="roles")
+
 
 class Permission(BaseModel):
     __tablename__ = "permissions"
     id = Column(Integer, primary_key=True, index=True)
     action = Column(String(255), unique=True, nullable=False)
     description = Column(String(255))
+    min_credential = Column(Integer, nullable=False, default=0)  # Minimum credential required
     roles = relationship("Role", secondary=roles_permissions, back_populates="permissions")
+
 
 class SuperAdmin(BaseModel):
     __tablename__ = "super_admins"
@@ -170,31 +206,33 @@ class SuperAdmin(BaseModel):
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
 
+
 class Webmaster(BaseModel):
-    __tablename__ = 'webmasters'
+    __tablename__ = "webmasters"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
 
-    lodge_id = Column(Integer, ForeignKey('lodges.id'), nullable=True)
-    obedience_id = Column(Integer, ForeignKey('obediences.id'), nullable=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
+    obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
 
-    lodge = relationship('Lodge', backref='webmasters')
-    obedience = relationship('Obedience', backref='webmasters')
+    lodge = relationship("Lodge", backref=backref("webmasters", cascade="all, delete-orphan"))
+    obedience = relationship("Obedience", backref=backref("webmasters", cascade="all, delete-orphan"))
 
     roles = relationship("Role", secondary=webmasters_roles, back_populates="webmasters")
 
     __table_args__ = (
         CheckConstraint(
-            '(lodge_id IS NOT NULL AND obedience_id IS NULL) OR (lodge_id IS NULL AND obedience_id IS NOT NULL)',
-            name='chk_webmaster_single_instance'
+            "(lodge_id IS NOT NULL AND obedience_id IS NULL) OR (lodge_id IS NULL AND obedience_id IS NOT NULL)",
+            name="chk_webmaster_single_instance",
         ),
     )
 
+
 class Member(BaseModel):
-    __tablename__ = 'members'
+    __tablename__ = "members"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
@@ -212,48 +250,80 @@ class Member(BaseModel):
     place_of_birth = Column(String(100), nullable=True)
     nationality = Column(String(100), nullable=True)
     religion = Column(String(100), nullable=True)
-    fathers_name = Column(String(255), nullable=True)
-    mothers_name = Column(String(255), nullable=True)
+
     education_level = Column(String(255), nullable=True)
     occupation = Column(String(255), nullable=True)
     workplace = Column(String(255), nullable=True)
     profile_picture_path = Column(String(255), nullable=True)
     cim = Column(String(50), unique=True, nullable=True, index=True)
-    status = Column(String(50), nullable=True, default='Active')
-    degree = Column(SQLAlchemyEnum(DegreeEnum, name='degree_enum'), nullable=True)
+    status = Column(String(50), nullable=True, default="Active")
+    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum"), nullable=True)
     initiation_date = Column(Date, nullable=True)
     elevation_date = Column(Date, nullable=True)
     exaltation_date = Column(Date, nullable=True)
     affiliation_date = Column(Date, nullable=True)
     regularization_date = Column(Date, nullable=True)
     philosophical_degree = Column(String(100), nullable=True)
-    registration_status = Column(SQLAlchemyEnum(RegistrationStatusEnum, name='registration_status_enum'), nullable=False, default='Pending')
+    registration_status = Column(
+        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum"), nullable=False, default="Pending"
+    )
     last_login = Column(DateTime(timezone=True), nullable=True)
     lodge_associations = relationship("MemberLodgeAssociation", back_populates="member", cascade="all, delete-orphan")
-    obedience_associations = relationship("MemberObedienceAssociation", back_populates="member", cascade="all, delete-orphan")
+    obedience_associations = relationship(
+        "MemberObedienceAssociation", back_populates="member", cascade="all, delete-orphan"
+    )
+
 
 class MemberLodgeAssociation(BaseModel):
-    __tablename__ = 'member_lodge_associations'
+    __tablename__ = "member_lodge_associations"
     id = Column(Integer, primary_key=True, index=True)
-    member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
-    lodge_id = Column(Integer, ForeignKey('lodges.id'), nullable=False)
-    role_id = Column(Integer, ForeignKey('roles.id'), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
+
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
     member = relationship("Member", back_populates="lodge_associations")
     lodge = relationship("Lodge", back_populates="associations")
-    role = relationship("Role")
-    __table_args__ = (UniqueConstraint('member_id', 'lodge_id', name='_member_lodge_uc'),)
+    __table_args__ = (UniqueConstraint("member_id", "lodge_id", name="_member_lodge_uc"),)
 
 
 class MemberObedienceAssociation(BaseModel):
-    __tablename__ = 'member_obedience_associations'
+    __tablename__ = "member_obedience_associations"
     id = Column(Integer, primary_key=True, index=True)
-    member_id = Column(Integer, ForeignKey('members.id'), nullable=False)
-    obedience_id = Column(Integer, ForeignKey('obediences.id'), nullable=False)
-    role_id = Column(Integer, ForeignKey('roles.id'), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=False)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
+    start_date = Column(Date, nullable=True)
+    end_date = Column(Date, nullable=True)
     member = relationship("Member", back_populates="obedience_associations")
     obedience = relationship("Obedience", back_populates="member_associations")
     role = relationship("Role")
-    __table_args__ = (UniqueConstraint('member_id', 'obedience_id', name='_member_obedience_uc'),)
+    __table_args__ = (UniqueConstraint("member_id", "obedience_id", name="_member_obedience_uc"),)
+
+
+class MemberPermissionException(BaseModel):
+    __tablename__ = "member_permission_exceptions"
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
+    obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
+    exception_type = Column(SQLAlchemyEnum(ExceptionTypeEnum), nullable=False)
+
+    member = relationship("Member", backref="permission_exceptions")
+    permission = relationship("Permission")
+    lodge = relationship("Lodge")
+    obedience = relationship("Obedience")
+
+    __table_args__ = (
+        CheckConstraint(
+            "(lodge_id IS NOT NULL AND obedience_id IS NULL) OR (lodge_id IS NULL AND obedience_id IS NOT NULL)",
+            name="chk_exception_single_context",
+        ),
+        UniqueConstraint(
+            "member_id", "permission_id", "lodge_id", "obedience_id", name="_member_permission_context_uc"
+        ),
+    )
 
 
 class AdministrativeProcess(BaseModel):
@@ -265,6 +335,7 @@ class AdministrativeProcess(BaseModel):
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="administrative_processes")
 
+
 class Decoration(BaseModel):
     __tablename__ = "decorations"
     id = Column(Integer, primary_key=True, index=True)
@@ -274,17 +345,19 @@ class Decoration(BaseModel):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     member = relationship("Member", backref="decorations")
 
+
 class FamilyMember(BaseModel):
     __tablename__ = "family_members"
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String(255), nullable=False)
-    relationship_type = Column(SQLAlchemyEnum(RelationshipTypeEnum, name='relationship_type_enum'), nullable=False)
+    relationship_type = Column(SQLAlchemyEnum(RelationshipTypeEnum, name="relationship_type_enum"), nullable=False)
     birth_date = Column(Date, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
     is_deceased = Column(Boolean, default=False)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     member = relationship("Member", backref="family_members")
+
 
 class RoleHistory(BaseModel):
     __tablename__ = "role_history"
@@ -293,8 +366,11 @@ class RoleHistory(BaseModel):
     end_date = Column(Date, nullable=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     member = relationship("Member", backref="role_history")
     role = relationship("Role", backref="member_role_history")
+    lodge = relationship("Lodge", backref="role_history")
+
 
 class MasonicSession(BaseModel):
     __tablename__ = "masonic_sessions"
@@ -303,11 +379,16 @@ class MasonicSession(BaseModel):
     session_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
-    status = Column(SQLAlchemyEnum('AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', name='session_status_enum'), nullable=False, default='AGENDADA')
+    status = Column(
+        SQLAlchemyEnum("AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA","CANCELADA", name="session_status_enum"),
+        nullable=False,
+        default="AGENDADA",
+    )
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="masonic_sessions")
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
-    documents = relationship("Document", back_populates="session") # Relacionamento com Documentos
+    documents = relationship("Document", back_populates="session")  # Relacionamento com Documentos
+
 
 class SessionAttendance(BaseModel):
     __tablename__ = "session_attendances"
@@ -317,12 +398,13 @@ class SessionAttendance(BaseModel):
     visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
     attendance_status = Column(String(50), nullable=False)
     check_in_datetime = Column(DateTime(timezone=True), nullable=True)
-    check_in_method = Column(SQLAlchemyEnum('MANUAL', 'QR_CODE', name='check_in_method_enum'), nullable=True)
+    check_in_method = Column(SQLAlchemyEnum("MANUAL", "QR_CODE", name="check_in_method_enum"), nullable=True)
     check_in_latitude = Column(Float, nullable=True)
     check_in_longitude = Column(Float, nullable=True)
     session = relationship("MasonicSession", back_populates="attendances")
     member = relationship("Member", backref="session_attendances")
     visitor = relationship("Visitor", backref="session_attendances")
+
 
 class Visitor(BaseModel):
     __tablename__ = "visitors"
@@ -334,6 +416,7 @@ class Visitor(BaseModel):
     origin_lodge = Column(String(255), nullable=True)
     remarks = Column(Text, nullable=True)
 
+
 class Calendar(BaseModel):
     __tablename__ = "calendars"
     id = Column(Integer, primary_key=True, index=True)
@@ -342,6 +425,7 @@ class Calendar(BaseModel):
     # Ensuring multitenancy by associating with a lodge
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     lodge = relationship("Lodge", backref="calendars")
+
 
 class Event(BaseModel):
     __tablename__ = "events"
@@ -358,11 +442,12 @@ class Event(BaseModel):
     calendar_id = Column(Integer, ForeignKey("calendars.id"), nullable=True)
     calendar = relationship("Calendar", backref="events")
 
+
 class FinancialTransaction(BaseModel):
     __tablename__ = "financial_transactions"
     id = Column(Integer, primary_key=True, index=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    transaction_type = Column(String(50), nullable=False) # e.g., "debit", "credit"
+    transaction_type = Column(String(50), nullable=False)  # e.g., "debit", "credit"
     amount = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
     transaction_date = Column(DateTime(timezone=True), server_default=func.now())
@@ -371,22 +456,24 @@ class FinancialTransaction(BaseModel):
     member = relationship("Member", backref="financial_transactions")
     lodge = relationship("Lodge", backref="financial_transactions")
 
+
 class Document(BaseModel):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    document_type = Column(String(50), nullable=True, index=True) # e.g. BALAUSTRE, EDITAL
-    file_path = Column(String(512), nullable=False) # Path to the stored file
+    document_type = Column(String(50), nullable=True, index=True)  # e.g. BALAUSTRE, EDITAL
+    file_path = Column(String(512), nullable=False)  # Path to the stored file
     file_name = Column(String(255), nullable=False)
     file_type = Column(String(50), nullable=True)
     upload_date = Column(DateTime(timezone=True), server_default=func.now())
     # Ensuring multitenancy by associating with a lodge
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
-    uploaded_by_member_id = Column(Integer, ForeignKey("members.id"), nullable=True) # Optional: who uploaded it
-    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=True, index=True) # Link to a session
+    uploaded_by_member_id = Column(Integer, ForeignKey("members.id"), nullable=True)  # Optional: who uploaded it
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=True, index=True)  # Link to a session
     lodge = relationship("Lodge", backref="documents")
     uploaded_by = relationship("Member", backref="uploaded_documents")
-    session = relationship("MasonicSession", back_populates="documents") # Back-populates from MasonicSession
+    session = relationship("MasonicSession", back_populates="documents")  # Back-populates from MasonicSession
+
 
 class Visit(BaseModel):
     __tablename__ = "visits"
@@ -394,8 +481,8 @@ class Visit(BaseModel):
     visit_date = Column(Date, nullable=False, index=True)
 
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    home_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja de origem do membro
-    visited_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False) # Loja que foi visitada
+    home_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)  # Loja de origem do membro
+    visited_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)  # Loja que foi visitada
     session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=False)
 
     member = relationship("Member", backref="visits")
@@ -403,9 +490,4 @@ class Visit(BaseModel):
     visited_lodge = relationship("Lodge", foreign_keys=[visited_lodge_id], backref="visiting_members")
     session = relationship("MasonicSession", backref="visits")
 
-    __table_args__ = (
-        UniqueConstraint('member_id', 'session_id', name='_member_session_visit_uc'),
-    )
-
-
-
+    __table_args__ = (UniqueConstraint("member_id", "session_id", name="_member_session_visit_uc"),)

@@ -9,13 +9,16 @@ class EventBase(BaseModel):
     start_time: datetime
     end_time: datetime
     is_public: bool = False
-    calendar_id: int | None = None # Optional link to a specific calendar
+    calendar_id: int | None = None  # Optional link to a specific calendar
+
 
 class EventCreate(EventBase):
     pass
 
+
 class EventUpdate(EventBase):
     pass
+
 
 class EventInDB(EventBase):
     id: int

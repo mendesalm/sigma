@@ -10,6 +10,7 @@ from .services import session_service
 # Cria uma instância do agendador que rodará com asyncio
 scheduler = AsyncIOScheduler()
 
+
 def check_and_start_sessions_job():
     """
     Esta é a tarefa que o agendador executará.
@@ -23,10 +24,11 @@ def check_and_start_sessions_job():
         # Busca por sessões agendadas para hoje ou ontem (para pegar casos de madrugada)
         relevant_dates = [date.today(), date.today() - timedelta(days=1)]
 
-        sessions_to_check = db.query(models.MasonicSession).filter(
-            models.MasonicSession.status == 'AGENDADA',
-            models.MasonicSession.session_date.in_(relevant_dates)
-        ).all()
+        sessions_to_check = (
+            db.query(models.MasonicSession)
+            .filter(models.MasonicSession.status == "AGENDADA", models.MasonicSession.session_date.in_(relevant_dates))
+            .all()
+        )
 
         if not sessions_to_check:
             print("Nenhuma sessão candidata para iniciar no momento.")
@@ -52,17 +54,18 @@ def check_and_start_sessions_job():
     finally:
         db.close()
 
+
 def initialize_scheduler():
     """Inicializa o agendador e adiciona a tarefa."""
     # Adiciona a tarefa para ser executada a cada 5 minutos
-    scheduler.add_job(check_and_start_sessions_job, 'interval', minutes=5, id="check_sessions_job")
+    scheduler.add_job(check_and_start_sessions_job, "interval", minutes=5, id="check_sessions_job")
     if not scheduler.running:
         scheduler.start()
         print("Agendador de tarefas iniciado. A verificação de sessões será executada a cada 5 minutos.")
+
 
 def shutdown_scheduler():
     """Desliga o agendador de forma limpa."""
     if scheduler.running:
         scheduler.shutdown()
         print("Agendador de tarefas desligado.")
-

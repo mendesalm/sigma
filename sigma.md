@@ -84,7 +84,7 @@ O sistema possui um fluxo de autenticação flexível e seguro projetado para su
     - `sub`: O `email` do usuário.
     - `exp`: Timestamp de expiração do token.
     - `user_id`: O ID do usuário.
-    - `role`: Define o "perfil" do usuário (ex: `super_admin`, `webmaster`, `member`).
+    - `user_type`: Define o "perfil" do usuário (ex: `super_admin`, `webmaster`, `member`).
     - `lodge_id` / `obedience_id`: IDs de contexto, quando aplicável.
 - **Proteção de Endpoints:**
     - A pasta `dependencies.py` contém as funções de segurança.
@@ -102,7 +102,7 @@ A seguir, a lista de módulos com endpoints implementados.
 - **Authentication (`/auth`):** Endpoints de login e seleção de contexto.
 - **Health Check (`/`):** Endpoint público para verificação de status.
 - **Super Admins (`/super-admins`):** CRUD completo para gerenciamento de Super Admins e reset de senha.
-- **Webmasters (`/webmasters`):** Listagem e reset de senha para Webmasters.
+- **Webmasters (`/webmasters`):** CRUD completo para gerenciamento de Webmasters e reset de senha.
 - **Obediences (`/obediences`):** CRUD completo para gerenciamento de Potências/Obediências.
 - **Lodges (`/lodges`):** CRUD completo para gerenciamento de Lojas.
 - **Members (`/members`):** CRUD para gerenciamento de Membros de uma loja.

@@ -14,7 +14,7 @@ const Members = () => {
         const response = await api.get('/members');
         setMembers(response.data);
       } catch (error) {
-        console.error('Failed to fetch members', error);
+        console.error('Falha ao buscar membros', error);
       }
     };
 
@@ -22,12 +22,12 @@ const Members = () => {
   }, []);
 
   const handleDelete = async (memberId: number) => {
-    if (window.confirm('Are you sure you want to delete this member association?')) {
+    if (window.confirm('Tem certeza que deseja excluir esta associação de membro?')) {
       try {
         await api.delete(`/members/${memberId}`);
         setMembers(members.filter((member) => member.id !== memberId));
       } catch (error) {
-        console.error('Failed to delete member association', error);
+        console.error('Falha ao excluir associação de membro', error);
       }
     }
   };
@@ -35,20 +35,20 @@ const Members = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Members
+        Membros
       </Typography>
       <Button component={Link} to="/dashboard/management/members/new" variant="contained" color="primary">
-        New Member
+        Novo Membro
       </Button>
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell>Nome</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Degree</TableCell>
+              <TableCell>Grau</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

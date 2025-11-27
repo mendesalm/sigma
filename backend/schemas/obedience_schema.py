@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, EmailStr, Field
 
 from ..models.models import ObedienceTypeEnum
@@ -23,8 +22,10 @@ class ObedienceBase(BaseModel):
     technical_contact_name: str = Field(..., max_length=255)
     technical_contact_email: EmailStr
 
+
 class ObedienceCreate(ObedienceBase):
     pass
+
 
 class ObedienceUpdate(BaseModel):
     name: str | None = Field(None, max_length=255)
@@ -44,6 +45,7 @@ class ObedienceUpdate(BaseModel):
     zip_code: str | None = Field(None, max_length=9)
     technical_contact_name: str | None = Field(None, max_length=255)
     technical_contact_email: EmailStr | None = None
+
 
 class ObedienceResponse(ObedienceBase):
     id: int

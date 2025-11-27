@@ -12,11 +12,12 @@ interface AuthContextType {
   user: any;
   associations: Association[];
   requiresSelection: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<any>;
   logout: () => void;
   selectAssociation: (association: Association) => Promise<void>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -58,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setRequiresSelection(false);
       setAssociations([]);
     }
+    return decodedUser;
   };
 
   const selectAssociation = async (association: Association) => {

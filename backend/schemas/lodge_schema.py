@@ -6,11 +6,12 @@ from pydantic import BaseModel, EmailStr, Field
 # For now, we define it here if it's specific to lodges.
 # from ..models.models import RiteEnum # This would be ideal
 
+
 class LodgeBase(BaseModel):
     lodge_name: str = Field(..., max_length=255)
     lodge_number: str | None = Field(None, max_length=255)
     foundation_date: date | None = None
-    rite: str | None = Field(None, max_length=50) # Or RiteEnum if defined
+    rite: str | None = Field(None, max_length=50)  # Or RiteEnum if defined
     obedience_id: int
     cnpj: str | None = Field(None, max_length=18)
     email: EmailStr | None = None
@@ -27,15 +28,17 @@ class LodgeBase(BaseModel):
     longitude: float | None = None
     technical_contact_name: str = Field(..., max_length=255)
     technical_contact_email: EmailStr
-    session_day: str | None = None # Consider Enum: 'Sunday', 'Monday', ...
-    periodicity: str | None = None # Consider Enum: 'Weekly', 'Biweekly', 'Monthly'
+    session_day: str | None = None  # Consider Enum: 'Sunday', 'Monday', ...
+    periodicity: str | None = None  # Consider Enum: 'Weekly', 'Biweekly', 'Monthly'
     session_time: time | None = None
+
 
 class LodgeCreate(LodgeBase):
     # The lodge_code should be generated automatically or follow a specific rule
     # For now, we might not require it from the user on creation, or we might.
     # Let's assume it's not required on creation and generated in the service.
     pass
+
 
 class LodgeUpdate(BaseModel):
     lodge_name: str | None = Field(None, max_length=255)
@@ -62,6 +65,7 @@ class LodgeUpdate(BaseModel):
     session_day: str | None = None
     periodicity: str | None = None
     session_time: time | None = None
+
 
 class LodgeResponse(LodgeBase):
     id: int

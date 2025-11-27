@@ -10,8 +10,10 @@ class VisitBase(BaseModel):
     visited_lodge_id: int
     session_id: int
 
+
 class VisitCreate(VisitBase):
     pass
+
 
 class VisitInDB(VisitBase):
     id: int

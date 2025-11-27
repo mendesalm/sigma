@@ -1,5 +1,3 @@
-
-
 from sqlalchemy.orm import Session, joinedload
 
 from ..models import models
@@ -9,14 +7,17 @@ from ..schemas import role_schema
 def get_role(db: Session, role_id: int) -> models.Role | None:
     return db.query(models.Role).options(joinedload(models.Role.permissions)).filter(models.Role.id == role_id).first()
 
+
 def get_role_by_name(db: Session, name: str) -> models.Role | None:
     return db.query(models.Role).filter(models.Role.name == name).first()
+
 
 def get_roles(db: Session, skip: int = 0, limit: int = 100) -> list[models.Role]:
     return db.query(models.Role).options(joinedload(models.Role.permissions)).offset(skip).limit(limit).all()
 
+
 def create_role(db: Session, role: role_schema.RoleCreate) -> models.Role:
-    role_data = role.model_dump(exclude={'permission_ids'})
+    role_data = role.model_dump(exclude={"permission_ids"})
     db_role = models.Role(**role_data)
 
     # Fetch and assign permissions
@@ -29,12 +30,13 @@ def create_role(db: Session, role: role_schema.RoleCreate) -> models.Role:
     db.refresh(db_role)
     return db_role
 
+
 def update_role(db: Session, role_id: int, role_update: role_schema.RoleUpdate) -> models.Role | None:
     db_role = get_role(db, role_id)
     if not db_role:
         return None
 
-    update_data = role_update.model_dump(exclude_unset=True, exclude={'permission_ids'})
+    update_data = role_update.model_dump(exclude_unset=True, exclude={"permission_ids"})
     for key, value in update_data.items():
         setattr(db_role, key, value)
 
@@ -46,6 +48,7 @@ def update_role(db: Session, role_id: int, role_update: role_schema.RoleUpdate) 
     db.commit()
     db.refresh(db_role)
     return db_role
+
 
 def delete_role(db: Session, role_id: int) -> models.Role | None:
     db_role = get_role(db, role_id)

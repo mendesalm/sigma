@@ -28,7 +28,7 @@ config = context.config
 db_url = os.getenv("DATABASE_URL")
 if db_url:
     # Escape the '%' character for configparser
-    escaped_db_url = db_url.replace('%', '%%')
+    escaped_db_url = db_url.replace("%", "%%")
     config.set_main_option("sqlalchemy.url", escaped_db_url)
 # -----------------------------
 
@@ -43,6 +43,7 @@ if config.config_file_name is not None:
 from models.models import Base  # Import Base from your models
 
 target_metadata = Base.metadata
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -82,9 +83,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

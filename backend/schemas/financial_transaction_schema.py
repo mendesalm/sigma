@@ -8,17 +8,21 @@ class TransactionTypeEnum(str, enum.Enum):
     DEBIT = "debit"
     CREDIT = "credit"
 
+
 class FinancialTransactionBase(BaseModel):
     member_id: int
     transaction_type: TransactionTypeEnum
     amount: float
     description: str | None = None
 
+
 class FinancialTransactionCreate(FinancialTransactionBase):
     pass
 
+
 class FinancialTransactionUpdate(FinancialTransactionBase):
     pass
+
 
 class FinancialTransactionInDB(FinancialTransactionBase):
     id: int

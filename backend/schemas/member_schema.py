@@ -15,12 +15,35 @@ class DegreeEnum(str, enum.Enum):
     MASTER = "Master"
     INSTALLED_MASTER = "Installed Master"
 
+
 class RegistrationStatusEnum(str, enum.Enum):
     PENDING = "Pending"
     APPROVED = "Approved"
     REJECTED = "Rejected"
 
+
 # --- Schemas ---
+
+
+class MemberLodgeAssociationResponse(BaseModel):
+    lodge_id: int
+
+    start_date: date | None
+    end_date: date | None
+
+    class Config:
+        from_attributes = True
+
+
+class MemberObedienceAssociationResponse(BaseModel):
+    obedience_id: int
+    role_id: int
+    start_date: date | None
+    end_date: date | None
+
+    class Config:
+        from_attributes = True
+
 
 class MemberBase(BaseModel):
     # Personal Data
@@ -39,8 +62,7 @@ class MemberBase(BaseModel):
     place_of_birth: str | None = Field(None, max_length=100)
     nationality: str | None = Field(None, max_length=100)
     religion: str | None = Field(None, max_length=100)
-    fathers_name: str | None = Field(None, max_length=255)
-    mothers_name: str | None = Field(None, max_length=255)
+
     education_level: str | None = Field(None, max_length=255)
     occupation: str | None = Field(None, max_length=255)
     workplace: str | None = Field(None, max_length=255)
@@ -48,7 +70,7 @@ class MemberBase(BaseModel):
 
     # Masonic Data
     cim: str | None = Field(None, max_length=50)
-    status: str | None = Field('Active', max_length=50)
+    status: str | None = Field("Active", max_length=50)
     degree: DegreeEnum | None = None
     initiation_date: date | None = None
     elevation_date: date | None = None
@@ -64,9 +86,14 @@ class MemberBase(BaseModel):
 class MemberCreate(MemberBase):
     password: str = Field(..., min_length=8, description="Password for the member's first access.")
 
+
+from .family_member_schema import FamilyMemberCreate
+
 class MemberCreateWithAssociation(MemberCreate):
     lodge_id: int = Field(..., description="ID of the Lodge to which the member will be associated.")
     role_id: int = Field(..., description="ID of the Role the member will hold in the lodge.")
+    family_members: list[FamilyMemberCreate] = []
+
 
 class MemberUpdate(BaseModel):
     full_name: str | None = Field(None, max_length=255)
@@ -84,8 +111,7 @@ class MemberUpdate(BaseModel):
     place_of_birth: str | None = Field(None, max_length=100)
     nationality: str | None = Field(None, max_length=100)
     religion: str | None = Field(None, max_length=100)
-    fathers_name: str | None = Field(None, max_length=255)
-    mothers_name: str | None = Field(None, max_length=255)
+
     education_level: str | None = Field(None, max_length=255)
     occupation: str | None = Field(None, max_length=255)
     workplace: str | None = Field(None, max_length=255)
@@ -102,6 +128,7 @@ class MemberUpdate(BaseModel):
     registration_status: RegistrationStatusEnum | None = None
     password: str | None = Field(None, min_length=8)
 
+
 class MemberResponse(MemberBase):
     id: int
     created_at: datetime
@@ -110,6 +137,14 @@ class MemberResponse(MemberBase):
     family_members: list[FamilyMemberResponse] = []
     decorations: list[DecorationResponse] = []
     role_history: list[RoleHistoryResponse] = []
+    lodge_associations: list[MemberLodgeAssociationResponse] = []
+    obedience_associations: list[MemberObedienceAssociationResponse] = []
 
     class Config:
         from_attributes = True
+
+
+class RoleHistoryCreate(BaseModel):
+    role_id: int
+    start_date: date
+    end_date: date | None = None

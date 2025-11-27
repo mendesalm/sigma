@@ -12,10 +12,12 @@ class MasonicSessionBase(BaseModel):
     session_date: date
     start_time: time | None = None
     end_time: time | None = None
-    status: str = 'AGENDADA'
+    status: str = "AGENDADA"
+
 
 class MasonicSessionCreate(MasonicSessionBase):
     pass
+
 
 class MasonicSessionUpdate(BaseModel):
     title: str | None = None
@@ -23,6 +25,7 @@ class MasonicSessionUpdate(BaseModel):
     start_time: time | None = None
     end_time: time | None = None
     status: str | None = None
+
 
 class MasonicSessionResponse(MasonicSessionBase):
     id: int

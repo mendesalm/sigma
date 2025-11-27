@@ -183,5 +183,25 @@ Diversos ajustes foram realizados no backend para resolver problemas de autentic
     *   **Problema:** A tentativa de criar uma obediência com um nome já existente resultava em um `sqlalchemy.exc.IntegrityError`, que não era tratado e resultava em um `500 Internal Server Error` no backend, travando o frontend.
     *   **Solução:** Um bloco `try-except` foi adicionado à função `create_obedience` em `backend/services/obedience_service.py` para capturar `IntegrityError`. Agora, ao detectar uma entrada duplicada pelo `name`, o backend retorna um `HTTPException` com `status.HTTP_409_CONFLICT` e uma mensagem clara: "Já existe uma obediência com este nome.", fornecendo feedback adequado ao frontend.
 
+### 5.3. Implementação do Histórico de Cargos (Nov. 2025)
+
+Foi implementada a funcionalidade completa de gerenciamento de histórico de cargos para membros, permitindo o registro preciso da trajetória maçônica.
+
+*   **Backend:**
+    *   **Novos Endpoints:** Foram criados endpoints específicos em `backend/routes/member_routes.py`:
+        *   `POST /members/{member_id}/roles`: Para adicionar um novo registro de cargo.
+        *   `DELETE /members/{member_id}/roles/{role_history_id}`: Para remover um registro incorreto.
+    *   **Serviço:** Funções `add_role_to_member` e `delete_role_history` foram adicionadas ao `member_service.py` para encapsular a lógica de negócio e interação com o banco de dados.
+    *   **Schema:** Criado o schema `RoleHistoryCreate` para validação dos dados de entrada.
+
+*   **Frontend:**
+    *   **Interface de Gestão:** O formulário de membros (`MemberForm.tsx`) foi atualizado com uma seção dedicada "Adicionar Novo Cargo".
+    *   **Funcionalidade:**
+        *   Permite selecionar um cargo de uma lista pré-definida.
+        *   Define data de início e término (opcional).
+        *   Exibe uma tabela com o histórico completo do membro.
+        *   Permite a exclusão de registros de histórico diretamente na interface.
+    *   **Integração:** A interface conecta-se diretamente aos novos endpoints do backend, garantindo que as alterações sejam persistidas imediatamente, independente da atualização dos outros dados do membro.
+
 ## 6. Próximos Passos
 [Mantenha esta seção atualizada com as próximas tarefas planejadas.]

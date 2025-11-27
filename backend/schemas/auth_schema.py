@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, EmailStr
 
 
@@ -6,22 +5,28 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class EmailSchema(BaseModel):
     email: EmailStr
+
 
 class LodgeMemberLogin(BaseModel):
     email: EmailStr
     password: str
 
+
 class LodgeMemberSelectLodge(BaseModel):
     lodge_id: int
+
 
 class LodgeMemberForgotPassword(BaseModel):
     email: EmailStr
 
+
 class LodgeMemberResetPassword(BaseModel):
     token: str
     new_password: str
+
 
 class LodgeMemberAuthResponse(BaseModel):
     access_token: str
@@ -49,6 +54,7 @@ class WebmasterAuthResponse(BaseModel):
 
 class WebmasterForgotPassword(BaseModel):
     email: EmailStr
+
 
 class WebmasterResetPassword(BaseModel):
     token: str

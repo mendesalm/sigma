@@ -12,7 +12,8 @@ const Header: React.FC = () => {
       position="fixed"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: "#000000",
+        backgroundColor: (theme) => theme.palette.background.default,
+        borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
       }}
     >
       <Toolbar>

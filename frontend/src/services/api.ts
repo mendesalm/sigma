@@ -29,6 +29,33 @@ export const getSessionDetails = (sessionId: number) => {
   return api.get(`/masonic-sessions/${sessionId}`);
 };
 
+export const startSession = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/start`);
+};
+
+export const endSession = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/end`);
+};
+
+export const cancelSession = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/cancel`);
+};
+
+export const generateBalaustre = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/generate-balaustre`);
+};
+
+export const generateEdital = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/generate-edital`);
+};
+
+// --- Document Management ---
+export const downloadDocument = (documentId: number) => {
+  return api.get(`/documents/${documentId}/download`, {
+    responseType: 'blob', // Important for file downloads
+  });
+};
+
 // --- Attendance Management ---
 export const getSessionAttendance = (sessionId: number) => {
   return api.get(`/masonic-sessions/${sessionId}/attendance`);
@@ -39,6 +66,10 @@ export const updateManualAttendance = (sessionId: number, memberId: number, stat
     member_id: memberId,
     attendance_status: status,
   });
+};
+
+export const registerVisitorAttendance = (sessionId: number, visitorData: any) => {
+  return api.post(`/masonic-sessions/${sessionId}/attendance/visitor`, visitorData);
 };
 
 

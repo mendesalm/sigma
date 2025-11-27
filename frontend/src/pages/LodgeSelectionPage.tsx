@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Button, Container, Typography, List, ListItem, ListItemText } from '@mui/material';
+import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
 
 const LodgeSelectionPage: React.FC = () => {
   const { associations, selectAssociation } = useAuth();

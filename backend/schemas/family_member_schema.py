@@ -9,6 +9,7 @@ class RelationshipTypeEnum(str, enum.Enum):
     SON = "Son"
     DAUGHTER = "Daughter"
 
+
 # Base schema with common fields
 class FamilyMemberBase(BaseModel):
     full_name: str = Field(..., max_length=255, description="Full name of the family member.")
@@ -18,9 +19,11 @@ class FamilyMemberBase(BaseModel):
     phone: str | None = Field(None, max_length=20)
     is_deceased: bool = Field(False, description="Indicates if the family member is deceased.")
 
+
 # Schema for creating a new family member (requires member ID)
 class FamilyMemberCreate(FamilyMemberBase):
     pass
+
 
 # Schema for update (all fields are optional)
 class FamilyMemberUpdate(FamilyMemberBase):
@@ -29,6 +32,7 @@ class FamilyMemberUpdate(FamilyMemberBase):
     email: EmailStr | None = None
     phone: str | None = None
     is_deceased: bool | None = None
+
 
 # Schema for API response (includes database-generated fields)
 class FamilyMemberResponse(FamilyMemberBase):

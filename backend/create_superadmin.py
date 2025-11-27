@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import sys
@@ -6,20 +5,23 @@ import sys
 from sqlalchemy.orm import Session
 
 # Add the project root to the Python path to allow for absolute imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from backend.database import get_db
 from backend.models import models
 from backend.utils.password_utils import hash_password
+
 
 def create_super_admin(db_session: Session, username: str, email: str, password: str):
     """
     Creates a new SuperAdmin user in the database.
     """
     # Check if user already exists
-    existing_user = db_session.query(models.SuperAdmin).filter(
-        (models.SuperAdmin.username == username) | (models.SuperAdmin.email == email)
-    ).first()
+    existing_user = (
+        db_session.query(models.SuperAdmin)
+        .filter((models.SuperAdmin.username == username) | (models.SuperAdmin.email == email))
+        .first()
+    )
 
     if existing_user:
         print(f"Error: SuperAdmin with username '{username}' or email '{email}' already exists.")
@@ -29,12 +31,7 @@ def create_super_admin(db_session: Session, username: str, email: str, password:
     password_hash = hash_password(password)
 
     # Create the new SuperAdmin
-    new_super_admin = models.SuperAdmin(
-        username=username,
-        email=email,
-        password_hash=password_hash,
-        is_active=True
-    )
+    new_super_admin = models.SuperAdmin(username=username, email=email, password_hash=password_hash, is_active=True)
 
     db_session.add(new_super_admin)
     db_session.commit()

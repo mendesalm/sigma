@@ -28,18 +28,27 @@ def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date) ->
     }
 
     for role_name in officer_roles.keys():
-        officer_history = db.query(models.RoleHistory).join(models.Role).filter(
-            models.RoleHistory.member_id.isnot(None),
-            models.Role.name == role_name,
-            models.RoleHistory.start_date <= target_date,
-            (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None)),
-            models.MemberLodgeAssociation.lodge_id == lodge_id # Garante que o oficial era daquela loja
-        ).join(models.MemberLodgeAssociation, models.RoleHistory.member_id == models.MemberLodgeAssociation.member_id).first()
+        officer_history = (
+            db.query(models.RoleHistory)
+            .join(models.Role)
+            .filter(
+                models.RoleHistory.member_id.isnot(None),
+                models.Role.name == role_name,
+                models.RoleHistory.start_date <= target_date,
+                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None)),
+                models.MemberLodgeAssociation.lodge_id == lodge_id,  # Garante que o oficial era daquela loja
+            )
+            .join(
+                models.MemberLodgeAssociation, models.RoleHistory.member_id == models.MemberLodgeAssociation.member_id
+            )
+            .first()
+        )
 
         if officer_history and officer_history.member:
             officer_roles[role_name] = officer_history.member.full_name
 
     return officer_roles
+
 
 def get_attendees_for_session(db: Session, session_id: int) -> list[str]:
     """
@@ -48,22 +57,32 @@ def get_attendees_for_session(db: Session, session_id: int) -> list[str]:
     attendees = []
 
     # Membros presentes
-    members_present = db.query(models.Member).join(models.SessionAttendance).filter(
-        models.SessionAttendance.session_id == session_id,
-        models.SessionAttendance.member_id == models.Member.id,
-        models.SessionAttendance.attendance_status == "Presente"
-    ).all()
+    members_present = (
+        db.query(models.Member)
+        .join(models.SessionAttendance)
+        .filter(
+            models.SessionAttendance.session_id == session_id,
+            models.SessionAttendance.member_id == models.Member.id,
+            models.SessionAttendance.attendance_status == "Presente",
+        )
+        .all()
+    )
     attendees.extend([m.full_name for m in members_present])
 
     # Visitantes presentes
-    visitors_present = db.query(models.Visitor).join(models.SessionAttendance).filter(
-        models.SessionAttendance.session_id == session_id,
-        models.SessionAttendance.visitor_id == models.Visitor.id,
-        models.SessionAttendance.attendance_status == "Presente"
-    ).all()
+    visitors_present = (
+        db.query(models.Visitor)
+        .join(models.SessionAttendance)
+        .filter(
+            models.SessionAttendance.session_id == session_id,
+            models.SessionAttendance.visitor_id == models.Visitor.id,
+            models.SessionAttendance.attendance_status == "Presente",
+        )
+        .all()
+    )
     attendees.extend([v.full_name for v in visitors_present])
 
-    return sorted(attendees) # Retorna em ordem alfabética
+    return sorted(attendees)  # Retorna em ordem alfabética
 
 
 # --- HTML Templates (Provisório - idealmente carregados de arquivos .html) ---
@@ -188,6 +207,7 @@ EDITAL_TEMPLATE_HTML = """
 </html>
 """
 
+
 class DocumentGenerationService:
     def __init__(self, db_session: Session | None = None):
         self.db = db_session
@@ -203,10 +223,10 @@ class DocumentGenerationService:
 
     async def _generate_pdf_from_html(self, html_content: str) -> bytes:
         """Converte conteúdo HTML em PDF usando pyppeteer (headless Chrome)."""
-        browser = await pyppeteer.launch(args=['--no-sandbox', '--disable-setuid-sandbox'])
+        browser = await pyppeteer.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
         page = await browser.newPage()
-        await page.setContent(html_content, {'waitUntil': 'networkidle0'})
-        pdf_bytes = await page.pdf({'format': 'A4', 'printBackground': True})
+        await page.setContent(html_content, {"waitUntil": "networkidle0"})
+        pdf_bytes = await page.pdf({"format": "A4", "printBackground": True})
         await browser.close()
         return pdf_bytes
 
@@ -231,17 +251,31 @@ class DocumentGenerationService:
         session_end_time_formatted = session.end_time.strftime("%Hh%Mmin") if session.end_time else "N/D"
 
         return {
-            "session_id": session.id, "session_title": session.title, "session_date": session.session_date,
-            "session_date_formatted": session_date_formatted, "session_date_day": session.session_date.day,
-            "session_date_month": session.session_date.strftime("%B"), "session_date_year": session.session_date.year,
-            "session_year_vl": session.session_date.year + 4000, "session_start_time_formatted": session_start_time_formatted,
-            "session_end_time_formatted": session_end_time_formatted, "session_status": session.status,
-            "lodge_name": lodge.lodge_name, "lodge_number": lodge.lodge_number, "lodge_city": lodge.city,
-            "obedience_name": obedience_name, "veneravel_mestre_name": officers.get("Venerável Mestre"),
-            "primeiro_vigilante_name": officers.get("Primeiro Vigilante"), "segundo_vigilante_name": officers.get("Segundo Vigilante"),
-            "orador_name": officers.get("Orador"), "secretario_name": officers.get("Secretário"),
-            "tesoureiro_name": officers.get("Tesoureiro"), "attendees": attendees, "current_date_day": date.today().day,
-            "current_date_month": date.today().strftime("%B"), "current_date_year": date.today().year,
+            "session_id": session.id,
+            "session_title": session.title,
+            "session_date": session.session_date,
+            "session_date_formatted": session_date_formatted,
+            "session_date_day": session.session_date.day,
+            "session_date_month": session.session_date.strftime("%B"),
+            "session_date_year": session.session_date.year,
+            "session_year_vl": session.session_date.year + 4000,
+            "session_start_time_formatted": session_start_time_formatted,
+            "session_end_time_formatted": session_end_time_formatted,
+            "session_status": session.status,
+            "lodge_name": lodge.lodge_name,
+            "lodge_number": lodge.lodge_number,
+            "lodge_city": lodge.city,
+            "obedience_name": obedience_name,
+            "veneravel_mestre_name": officers.get("Venerável Mestre"),
+            "primeiro_vigilante_name": officers.get("Primeiro Vigilante"),
+            "segundo_vigilante_name": officers.get("Segundo Vigilante"),
+            "orador_name": officers.get("Orador"),
+            "secretario_name": officers.get("Secretário"),
+            "tesoureiro_name": officers.get("Tesoureiro"),
+            "attendees": attendees,
+            "current_date_day": date.today().day,
+            "current_date_month": date.today().strftime("%B"),
+            "current_date_year": date.today().year,
         }
 
     async def generate_balaustre_pdf_task(self, session_id: int, current_user_payload: dict):
@@ -256,8 +290,12 @@ class DocumentGenerationService:
             filename = f"balaustre_sessao_{session_id}_{session_data.get('session_date').strftime('%Y%m%d')}.pdf"
 
             new_doc = await document_service.create_document(
-                db=db, title=title, current_user_payload=current_user_payload,
-                file_content_bytes=pdf_bytes, filename=filename, content_type="application/pdf"
+                db=db,
+                title=title,
+                current_user_payload=current_user_payload,
+                file_content_bytes=pdf_bytes,
+                filename=filename,
+                content_type="application/pdf",
             )
             new_doc.document_type = "BALAUSTRE"
             new_doc.session_id = session_id
@@ -280,8 +318,12 @@ class DocumentGenerationService:
             filename = f"edital_sessao_{session_id}_{session_data.get('session_date').strftime('%Y%m%d')}.pdf"
 
             new_doc = await document_service.create_document(
-                db=db, title=title, current_user_payload=current_user_payload,
-                file_content_bytes=pdf_bytes, filename=filename, content_type="application/pdf"
+                db=db,
+                title=title,
+                current_user_payload=current_user_payload,
+                file_content_bytes=pdf_bytes,
+                filename=filename,
+                content_type="application/pdf",
             )
             new_doc.document_type = "EDITAL"
             new_doc.session_id = session_id
@@ -291,6 +333,7 @@ class DocumentGenerationService:
             print(f"ERRO ao gerar edital para sessão {session_id}: {e}")
         finally:
             db.close()
+
 
 def get_document_generation_service(db: Session = Depends(get_db)):
     return DocumentGenerationService(db)

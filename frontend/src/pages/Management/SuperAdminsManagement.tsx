@@ -1,91 +1,162 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button, Container, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from '@mui/material';
-import { Edit, Delete, VpnKey } from '@mui/icons-material';
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Chip,
+  Tooltip,
+  CircularProgress
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  AdminPanelSettings as AdminIcon,
+  LockReset as LockResetIcon
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
+interface SuperAdmin {
+  id: number;
+  email: string;
+  is_active: boolean;
+}
+
 const SuperAdminsManagement: React.FC = () => {
-  const [superAdmins, setSuperAdmins] = useState([]);
+  const [admins, setAdmins] = useState<SuperAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSuperAdmins();
+    fetchAdmins();
   }, []);
 
-  const fetchSuperAdmins = async () => {
+  const fetchAdmins = async () => {
     try {
-      const response = await api.get('/super-admins');
-      console.log(response.data);
-      setSuperAdmins(response.data);
+      const response = await api.get('/super-admins/');
+      setAdmins(response.data);
     } catch (error) {
-      console.error('Falha ao buscar super admins', error);
+      console.error('Erro ao buscar super admins:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja remover este super admin?')) {
+    if (window.confirm('Tem certeza que deseja excluir este Super Admin?')) {
       try {
         await api.delete(`/super-admins/${id}`);
-        fetchSuperAdmins();
+        fetchAdmins();
       } catch (error) {
-        console.error('Falha ao remover super admin', error);
-        alert('Falha ao remover super admin.');
-      }
-    }
-  };
-
-  const handleResetPassword = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja resetar a senha deste super admin? Uma nova senha será enviada para o email cadastrado.')) {
-      try {
-        await api.post(`/super-admins/${id}/reset-password`);
-        alert('Senha resetada com sucesso! A nova senha foi enviada para o email do usuário.');
-      } catch (error) {
-        console.error('Falha ao resetar a senha do super admin', error);
-        alert('Falha ao resetar a senha do super admin.');
+        console.error('Erro ao excluir super admin:', error);
       }
     }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Gerenciamento de Super Admins
-      </Typography>
-      <Button component={Link} to="/dashboard/management/super-admins/new" variant="contained" color="primary">
-        Novo Super Admin
-      </Button>
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Usuário</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {superAdmins.map((admin: any) => (
-              <TableRow key={admin.id}>
-                <TableCell>{admin.username}</TableCell>
-                <TableCell>{admin.email}</TableCell>
-                <TableCell>{admin.is_active ? 'Ativo' : 'Inativo'}</TableCell>
-                <TableCell>
-                  <IconButton component={Link} to={`/dashboard/management/super-admins/edit/${admin.id}`} color="primary">
-                    <Edit />
-                  </IconButton>
-                  <IconButton onClick={() => handleResetPassword(admin.id)} color="warning">
-                    <VpnKey />
-                  </IconButton>
-                  <IconButton onClick={() => handleDelete(admin.id)} color="secondary">
-                    <Delete />
-                  </IconButton>
-                </TableCell>
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" color="primary" gutterBottom>
+            Super Administradores
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Gerencie os administradores globais do sistema.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/dashboard/management/super-admins/new')}
+          sx={{ px: 3, py: 1 }}
+        >
+          Novo Admin
+        </Button>
+      </Box>
+
+      <TableContainer component={Paper} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        {loading ? (
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Table>
+            <TableHead sx={{ bgcolor: 'rgba(212, 175, 55, 0.05)' }}>
+              <TableRow>
+                <TableCell>Email</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="right">Ações</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {admins.map((admin) => (
+                <TableRow key={admin.id} hover>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ 
+                        p: 1, 
+                        borderRadius: 1, 
+                        bgcolor: 'rgba(255, 255, 255, 0.05)', 
+                        mr: 2,
+                        display: 'flex'
+                      }}>
+                        <AdminIcon color="primary" fontSize="small" />
+                      </Box>
+                      <Typography variant="body1" fontWeight="medium">
+                        {admin.email}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={admin.is_active ? 'Ativo' : 'Inativo'} 
+                      color={admin.is_active ? 'success' : 'default'}
+                      size="small" 
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="Resetar Senha">
+                      <IconButton 
+                        color="warning"
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        <LockResetIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Excluir">
+                      <IconButton 
+                        onClick={() => handleDelete(admin.id)}
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {admins.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary">Nenhum administrador encontrado.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
       </TableContainer>
-    </Container>
+    </Box>
   );
 };
 

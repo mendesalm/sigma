@@ -10,6 +10,7 @@ def send_email(to: str, subject: str, body: str):
     print(f"Body: {body}")
     print("------------------------------------")
 
+
 def send_password_reset_email(to: str, new_password: str):
     """
     Sends a password reset email.

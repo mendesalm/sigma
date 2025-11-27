@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel, EmailStr
 
 
@@ -9,8 +8,10 @@ class WebmasterBase(BaseModel):
     lodge_id: int | None = None
     obedience_id: int | None = None
 
+
 class WebmasterCreate(WebmasterBase):
     password: str
+
 
 class WebmasterUpdate(BaseModel):
     username: str | None = None
@@ -20,8 +21,9 @@ class WebmasterUpdate(BaseModel):
     obedience_id: int | None = None
     password: str | None = None
 
+
 class Webmaster(WebmasterBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

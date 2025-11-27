@@ -1,5 +1,3 @@
-
-
 from sqlalchemy.orm import Session
 
 from ..models import models
@@ -9,11 +7,14 @@ from ..schemas import permission_schema
 def get_permission(db: Session, permission_id: int) -> models.Permission | None:
     return db.query(models.Permission).filter(models.Permission.id == permission_id).first()
 
+
 def get_permission_by_action(db: Session, action: str) -> models.Permission | None:
     return db.query(models.Permission).filter(models.Permission.action == action).first()
 
+
 def get_permissions(db: Session, skip: int = 0, limit: int = 100) -> list[models.Permission]:
     return db.query(models.Permission).offset(skip).limit(limit).all()
+
 
 def create_permission(db: Session, permission: permission_schema.PermissionCreate) -> models.Permission:
     db_permission = models.Permission(**permission.model_dump())
@@ -22,7 +23,10 @@ def create_permission(db: Session, permission: permission_schema.PermissionCreat
     db.refresh(db_permission)
     return db_permission
 
-def update_permission(db: Session, permission_id: int, permission_update: permission_schema.PermissionUpdate) -> models.Permission | None:
+
+def update_permission(
+    db: Session, permission_id: int, permission_update: permission_schema.PermissionUpdate
+) -> models.Permission | None:
     db_permission = get_permission(db, permission_id)
     if not db_permission:
         return None
@@ -34,6 +38,7 @@ def update_permission(db: Session, permission_id: int, permission_update: permis
     db.commit()
     db.refresh(db_permission)
     return db_permission
+
 
 def delete_permission(db: Session, permission_id: int) -> models.Permission | None:
     db_permission = get_permission(db, permission_id)

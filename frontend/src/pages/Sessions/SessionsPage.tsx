@@ -43,9 +43,18 @@ const SessionsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Sessões Maçônicas
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Sessões Maçônicas
+        </Typography>
+        <Button
+          variant="contained"
+          component={Link}
+          to="/dashboard/sessions/new"
+        >
+          Nova Sessão
+        </Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
           <TableHead>

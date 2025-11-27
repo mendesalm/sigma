@@ -3,12 +3,23 @@ from datetime import datetime
 from pydantic import BaseModel
 from pydantic_settings import SettingsConfigDict
 
+
 # Schema for basic member info to be nested in the response
 class MemberInfo(BaseModel):
     id: int
     full_name: str
 
     model_config = SettingsConfigDict(from_attributes=True)
+
+
+# Schema for basic visitor info to be nested in the response
+class VisitorInfo(BaseModel):
+    id: int
+    full_name: str
+    origin_lodge: str | None = None
+
+    model_config = SettingsConfigDict(from_attributes=True)
+
 
 class SessionAttendanceBase(BaseModel):
     member_id: int | None = None
@@ -19,8 +30,10 @@ class SessionAttendanceBase(BaseModel):
     check_in_latitude: float | None = None
     check_in_longitude: float | None = None
 
+
 class SessionAttendanceCreate(SessionAttendanceBase):
     session_id: int
+
 
 class SessionAttendanceResponse(SessionAttendanceBase):
     id: int
@@ -28,5 +41,7 @@ class SessionAttendanceResponse(SessionAttendanceBase):
 
     model_config = SettingsConfigDict(from_attributes=True)
 
+
 class SessionAttendanceWithMemberResponse(SessionAttendanceResponse):
     member: MemberInfo | None = None
+    visitor: VisitorInfo | None = None
