@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..schemas import permission_schema
+from models import models
+from schemas import permission_schema
 
 
 def get_permission(db: Session, permission_id: int) -> models.Permission | None:

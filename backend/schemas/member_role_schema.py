@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, model_validator
 
-from ..models.models import ExceptionTypeEnum
+from models.models import ExceptionTypeEnum
 
 
 class MemberRoleAssign(BaseModel):

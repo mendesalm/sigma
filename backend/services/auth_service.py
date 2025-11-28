@@ -1,8 +1,8 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..utils import password_utils
+from models import models
+from utils import password_utils
 
 
 def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any, str] | None:

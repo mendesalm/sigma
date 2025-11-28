@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .. import database, dependencies
-from ..schemas import lodge_schema
-from ..services import lodge_service
+import database, dependencies
+from schemas import lodge_schema
+from services import lodge_service
 
 router = APIRouter(
     prefix="/lodges",

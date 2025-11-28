@@ -4,9 +4,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..schemas import obedience_schema
-from ..services import auth_service
+from models import models
+from schemas import obedience_schema
+from services import auth_service
 
 
 def get_obedience(db: Session, obedience_id: int) -> models.Obedience | None:

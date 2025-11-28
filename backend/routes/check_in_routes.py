@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..schemas import attendance_schema
-from ..schemas.session_attendance_schema import SessionAttendanceResponse
-from ..services import attendance_service
+from database import get_db
+from schemas import attendance_schema
+from schemas.session_attendance_schema import SessionAttendanceResponse
+from services import attendance_service
 
 router = APIRouter(prefix="/check-in", tags=["Check-in"], responses={404: {"description": "Não encontrado"}})
 

@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from .database import get_db
-from .models.models import Member
-from .utils import auth_utils
+from database import get_db
+from models.models import Member
+from utils import auth_utils
 
 # This tells FastAPI which URL to check for the token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
@@ -45,7 +45,7 @@ async def get_current_active_member(
     return member
 
 
-from .models.models import ExceptionTypeEnum, Member, MemberPermissionException, Permission, SuperAdmin, Webmaster
+from models.models import ExceptionTypeEnum, Member, MemberPermissionException, Permission, SuperAdmin, Webmaster
 
 # ... imports ...
 

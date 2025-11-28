@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..dependencies import require_permission
-from ..models.models import Member
-from ..schemas import attendance_schema
-from ..schemas.session_attendance_schema import SessionAttendanceResponse, SessionAttendanceWithMemberResponse
-from ..services import attendance_service
+from database import get_db
+from dependencies import require_permission
+from models.models import Member
+from schemas import attendance_schema
+from schemas.session_attendance_schema import SessionAttendanceResponse, SessionAttendanceWithMemberResponse
+from services import attendance_service
 
 router = APIRouter(
     prefix="/masonic-sessions/{session_id}/attendance",

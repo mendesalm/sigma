@@ -6,9 +6,9 @@ from fastapi import Depends, HTTPException, status
 from jinja2 import Environment, FileSystemLoader  # pip install Jinja2
 from sqlalchemy.orm import Session
 
-from ..database import SessionLocal, get_db
-from ..models import models
-from ..services import document_service
+from database import SessionLocal, get_db
+from models import models
+from services import document_service
 
 
 # (O código das funções auxiliares e dos templates permanece o mesmo)

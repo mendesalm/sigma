@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
 
-from ..config import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 

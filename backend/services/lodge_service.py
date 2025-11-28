@@ -3,9 +3,9 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..schemas import lodge_schema
-from ..services import auth_service
+from models import models
+from schemas import lodge_schema
+from services import auth_service
 
 
 def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:

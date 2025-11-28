@@ -4,9 +4,9 @@ from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from ..config import settings
-from ..models import models
-from ..schemas import masonic_session_schema
+from config import settings
+from models import models
+from schemas import masonic_session_schema
 from .document_generation_service import DocumentGenerationService
 
 

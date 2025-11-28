@@ -3,8 +3,8 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..schemas import calendar_schema, event_schema
+from models import models
+from schemas import calendar_schema, event_schema
 
 # --- Funções de Serviço para Calendário ---
 

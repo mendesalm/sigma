@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
-from ..models.models import RoleTypeEnum
-from .permission_schema import PermissionResponse
+from models.models import RoleTypeEnum
+from schemas.permission_schema import PermissionResponse
 
 
 class RoleBase(BaseModel):

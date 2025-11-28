@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..dependencies import get_current_user_payload
-from ..schemas import calendar_schema, event_schema
-from ..services import event_service
+from database import get_db
+from dependencies import get_current_user_payload
+from schemas import calendar_schema, event_schema
+from services import event_service
 
 router = APIRouter(prefix="/events", tags=["Eventos e Calendários"], responses={404: {"description": "Não encontrado"}})
 

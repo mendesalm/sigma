@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 
-from ..models import models
-from ..schemas import role_schema
+from models import models
+from schemas import role_schema
 
 
 def get_role(db: Session, role_id: int) -> models.Role | None:

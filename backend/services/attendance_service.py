@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 from geopy.distance import geodesic  # Dependência para cálculo de distância
 from sqlalchemy.orm import Session, joinedload
 
-from ..models import models
-from ..schemas import attendance_schema
+from models import models
+from schemas import attendance_schema
 
 # --- Helper Functions ---
 

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ..config import settings
+from config import settings
 
 # The root path for all stored files, configured in config.py
 STORAGE_ROOT = Path(settings.STORAGE_BASE_PATH)

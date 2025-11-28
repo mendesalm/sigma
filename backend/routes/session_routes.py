@@ -4,10 +4,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..dependencies import get_current_user_payload
-from ..schemas import masonic_session_schema
-from ..services import session_service
+from database import get_db
+from dependencies import get_current_user_payload
+from schemas import masonic_session_schema
+from services import session_service
 
 router = APIRouter(
     prefix="/masonic-sessions", tags=["Sessões Maçônicas"], responses={404: {"description": "Não encontrado"}}

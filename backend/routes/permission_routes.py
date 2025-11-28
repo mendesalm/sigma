@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .. import database, dependencies
-from ..schemas import permission_schema
-from ..services import permission_service
+import database, dependencies
+from schemas import permission_schema
+from services import permission_service
 
 router = APIRouter(
     prefix="/permissions",

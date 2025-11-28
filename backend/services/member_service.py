@@ -1,14 +1,14 @@
 from datetime import date
 from sqlalchemy.orm import Session
 
-from ..models import models
-from ..schemas import member_schema
-from ..utils.password_utils import hash_password
+from models import models
+from schemas import member_schema
+from utils.password_utils import hash_password
 
 
 def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int = 100) -> list[models.Member]:
     """Fetches all members associated with a specific lodge."""
-    return (
+    members = (
         db.query(models.Member)
         .join(models.MemberLodgeAssociation)
         .filter(models.MemberLodgeAssociation.lodge_id == lodge_id)
@@ -16,6 +16,7 @@ def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int =
         .limit(limit)
         .all()
     )
+    return members
 
 
 def get_member_in_lodge(db: Session, member_id: int, lodge_id: int) -> models.Member | None:
@@ -47,15 +48,16 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
     association = models.MemberLodgeAssociation(member_id=db_member.id, lodge_id=lodge_id)
     db.add(association)
 
-    # Create Initial Role History
-    role_history = models.RoleHistory(
-        member_id=db_member.id,
-        role_id=role_id,
-        lodge_id=lodge_id,
-        start_date=date.today(),
-        end_date=None
-    )
-    db.add(role_history)
+    # Create Initial Role History (only if role_id is provided)
+    if role_id:
+        role_history = models.RoleHistory(
+            member_id=db_member.id,
+            role_id=role_id,
+            lodge_id=lodge_id,
+            start_date=date.today(),
+            end_date=None
+        )
+        db.add(role_history)
 
     # Create Family Members
     if family_members_data:

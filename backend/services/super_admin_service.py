@@ -3,9 +3,9 @@ import string
 
 from sqlalchemy.orm import Session
 
-from .. import models
-from ..schemas import super_admin_schema
-from ..utils import password_utils
+import models
+from schemas import super_admin_schema
+from utils import password_utils
 from . import email_service
 
 

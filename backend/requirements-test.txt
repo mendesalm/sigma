@@ -1,0 +1,24 @@
+# Dependências para testes do backend Sigma
+
+# Testing framework
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+
+# HTTP testing
+httpx==0.25.2
+requests==2.31.0
+
+# Coverage
+coverage==7.3.2
+
+# Mocking and fixtures
+faker==20.1.0
+factory-boy==3.3.0
+
+# Assertions
+assertpy==1.1
+
+# Para testes de API
+fastapi[all]==0.104.1

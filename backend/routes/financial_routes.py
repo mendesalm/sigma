@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..dependencies import get_current_user_payload
-from ..schemas import financial_transaction_schema
-from ..services import financial_service
+from database import get_db
+from dependencies import get_current_user_payload
+from schemas import financial_transaction_schema
+from services import financial_service
 
 router = APIRouter(
     prefix="/financial-transactions",

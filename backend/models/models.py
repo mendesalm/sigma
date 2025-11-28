@@ -175,6 +175,12 @@ class Lodge(BaseModel):
     technical_contact_email = Column(String(255), nullable=False)
     associations = relationship("MemberLodgeAssociation", back_populates="lodge", cascade="all, delete-orphan")
 
+    __table_args__ = (
+        CheckConstraint("latitude >= -90 AND latitude <= 90", name="chk_lodge_latitude"),
+        CheckConstraint("longitude >= -180 AND longitude <= 180", name="chk_lodge_longitude"),
+        CheckConstraint("user_limit > 0", name="chk_lodge_user_limit"),
+    )
+
 
 class Role(BaseModel):
     __tablename__ = "roles"
@@ -186,7 +192,11 @@ class Role(BaseModel):
     applicable_rites = Column(String(255), nullable=True)
     obediences = relationship("Obedience", secondary=obediences_roles_association, back_populates="roles")
     permissions = relationship("Permission", secondary=roles_permissions, back_populates="roles")
-    webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="roles")
+    webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="webmasters")
+
+    __table_args__ = (
+        CheckConstraint("level >= 1 AND level <= 9", name="chk_role_level"),
+    )
 
 
 class Permission(BaseModel):
@@ -268,10 +278,15 @@ class Member(BaseModel):
         SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum"), nullable=False, default="Pending"
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
     lodge_associations = relationship("MemberLodgeAssociation", back_populates="member", cascade="all, delete-orphan")
     obedience_associations = relationship(
         "MemberObedienceAssociation", back_populates="member", cascade="all, delete-orphan"
     )
+    family_members = relationship("FamilyMember", back_populates="member", cascade="all, delete-orphan")
+    decorations = relationship("Decoration", back_populates="member", cascade="all, delete-orphan")
+    role_history = relationship("RoleHistory", back_populates="member", cascade="all, delete-orphan")
 
 
 class MemberLodgeAssociation(BaseModel):
@@ -284,7 +299,11 @@ class MemberLodgeAssociation(BaseModel):
     end_date = Column(Date, nullable=True)
     member = relationship("Member", back_populates="lodge_associations")
     lodge = relationship("Lodge", back_populates="associations")
-    __table_args__ = (UniqueConstraint("member_id", "lodge_id", name="_member_lodge_uc"),)
+    
+    __table_args__ = (
+        UniqueConstraint("member_id", "lodge_id", name="_member_lodge_uc"),
+        CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_lodge_assoc_dates"),
+    )
 
 
 class MemberObedienceAssociation(BaseModel):
@@ -298,7 +317,11 @@ class MemberObedienceAssociation(BaseModel):
     member = relationship("Member", back_populates="obedience_associations")
     obedience = relationship("Obedience", back_populates="member_associations")
     role = relationship("Role")
-    __table_args__ = (UniqueConstraint("member_id", "obedience_id", name="_member_obedience_uc"),)
+    
+    __table_args__ = (
+        UniqueConstraint("member_id", "obedience_id", name="_member_obedience_uc"),
+        CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_obedience_assoc_dates"),
+    )
 
 
 class MemberPermissionException(BaseModel):
@@ -343,7 +366,7 @@ class Decoration(BaseModel):
     award_date = Column(Date, nullable=False)
     remarks = Column(Text, nullable=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    member = relationship("Member", backref="decorations")
+    member = relationship("Member", back_populates="decorations")
 
 
 class FamilyMember(BaseModel):
@@ -356,7 +379,7 @@ class FamilyMember(BaseModel):
     phone = Column(String(20), nullable=True)
     is_deceased = Column(Boolean, default=False)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    member = relationship("Member", backref="family_members")
+    member = relationship("Member", back_populates="family_members")
 
 
 class RoleHistory(BaseModel):
@@ -367,9 +390,13 @@ class RoleHistory(BaseModel):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
-    member = relationship("Member", backref="role_history")
-    role = relationship("Role", backref="member_role_history")
-    lodge = relationship("Lodge", backref="role_history")
+    member = relationship("Member", back_populates="role_history")
+    role = relationship("Role")
+    lodge = relationship("Lodge")
+
+    __table_args__ = (
+        CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_role_history_dates"),
+    )
 
 
 class MasonicSession(BaseModel):
@@ -442,6 +469,10 @@ class Event(BaseModel):
     calendar_id = Column(Integer, ForeignKey("calendars.id"), nullable=True)
     calendar = relationship("Calendar", backref="events")
 
+    __table_args__ = (
+        CheckConstraint("end_time > start_time", name="chk_event_dates"),
+    )
+
 
 class FinancialTransaction(BaseModel):
     __tablename__ = "financial_transactions"
@@ -455,6 +486,11 @@ class FinancialTransaction(BaseModel):
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     member = relationship("Member", backref="financial_transactions")
     lodge = relationship("Lodge", backref="financial_transactions")
+
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="chk_transaction_amount_positive"),
+        CheckConstraint("transaction_type IN ('debit', 'credit')", name="chk_transaction_type"),
+    )
 
 
 class Document(BaseModel):

@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..database import get_db
-from ..dependencies import get_current_user_payload
-from ..schemas import document_schema
-from ..services import document_service
+from database import get_db
+from dependencies import get_current_user_payload
+from schemas import document_schema
+from services import document_service
 
 router = APIRouter(prefix="/documents", tags=["Documentos"], responses={404: {"description": "Não encontrado"}})
 

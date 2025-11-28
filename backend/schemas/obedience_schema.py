@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 
-from ..models.models import ObedienceTypeEnum
+from models.models import ObedienceTypeEnum
 
 
 class ObedienceBase(BaseModel):

@@ -5,9 +5,9 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 # Importações do projeto
-from ..models import models
-from ..schemas import document_schema
-from ..utils.path_utils import get_tenant_path
+from models import models
+from schemas import document_schema
+from utils.path_utils import get_tenant_path
 
 
 # Assumindo que o `current_user_payload` é um dicionário vindo do token JWT,

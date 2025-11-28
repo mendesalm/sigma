@@ -3,9 +3,9 @@ from datetime import date, datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Importações do projeto
-from .database import SessionLocal
-from .models import models
-from .services import session_service
+from database import SessionLocal
+from models import models
+from services import session_service
 
 # Cria uma instância do agendador que rodará com asyncio
 scheduler = AsyncIOScheduler()

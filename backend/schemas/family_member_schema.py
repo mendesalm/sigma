@@ -5,9 +5,10 @@ from pydantic import BaseModel, EmailStr, Field
 
 
 class RelationshipTypeEnum(str, enum.Enum):
-    SPOUSE = "Spouse"
-    SON = "Son"
-    DAUGHTER = "Daughter"
+    SPOUSE = "Esposa"
+    SON = "Filho"
+    DAUGHTER = "Filha"
+
 
 
 # Base schema with common fields
