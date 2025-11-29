@@ -120,8 +120,8 @@ const LodgeDashboard: React.FC = () => {
             border: '1px solid rgba(255,255,255,0.1)', 
             p: 0.5,
             position: 'relative',
-            backgroundColor: 'rgba(255,255,255,0.02)',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)', cursor: 'pointer' },
+            backgroundColor: 'transparent',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)', cursor: 'pointer' },
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
@@ -308,7 +308,7 @@ const LodgeDashboard: React.FC = () => {
               </Box>
 
               {/* Calendar Grid */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridTemplateRows: '30px repeat(6, 1fr)', gap: '1px', bgcolor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', flexGrow: 1, overflow: 'hidden' }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridTemplateRows: '30px repeat(6, 1fr)', gap: '1px', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, overflow: 'hidden' }}>
                 {/* Weekdays */}
                 {['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'].map(day => (
                   <Box key={day} sx={{ p: 0.5, textAlign: 'center', bgcolor: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
