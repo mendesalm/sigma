@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_, and_
 from typing import List, Optional
 from datetime import date, datetime, timedelta
@@ -137,7 +137,7 @@ def get_calendar_events(
     active_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
         models.MemberLodgeAssociation.lodge_id == lodge_id,
         models.Member.status == "Active"
-    ).all()
+    ).options(joinedload(models.Member.family_members)).all()
     
     calendar_events = []
     

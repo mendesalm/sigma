@@ -15,7 +15,8 @@ def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
 
 def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodge]:
     """Fetches all lodges with pagination."""
-    return db.query(models.Lodge).offset(skip).limit(limit).all()
+    from sqlalchemy.orm import joinedload
+    return db.query(models.Lodge).options(joinedload(models.Lodge.obedience)).offset(skip).limit(limit).all()
 
 
 def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:

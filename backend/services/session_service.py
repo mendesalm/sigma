@@ -113,11 +113,15 @@ def get_sessions_by_lodge(
     """
     Lista todas as sessões associadas à loja do usuário, com filtros opcionais.
     """
+    from sqlalchemy.orm import joinedload
+    
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
         return []
 
-    query = db.query(models.MasonicSession).filter(models.MasonicSession.lodge_id == lodge_id)
+    query = db.query(models.MasonicSession).filter(models.MasonicSession.lodge_id == lodge_id).options(
+        joinedload(models.MasonicSession.attendances)
+    )
 
     if start_date:
         query = query.filter(models.MasonicSession.session_date >= start_date)
