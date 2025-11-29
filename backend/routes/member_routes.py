@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 
 import database, dependencies
@@ -57,7 +57,16 @@ def read_members(
     user_type = current_user.get("user_type")
 
     if user_type == "super_admin":
-        members = db.query(Member).offset(skip).limit(limit).all()
+        members = (
+            db.query(Member)
+            .options(
+                joinedload(Member.role_history).joinedload(RoleHistory.role),
+                joinedload(Member.family_members)
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
         return members
     elif user_type == "webmaster":
         lodge_id = current_user.get("lodge_id")

@@ -1,5 +1,5 @@
 from datetime import date
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from models import models
 from schemas import member_schema
@@ -7,11 +7,15 @@ from utils.password_utils import hash_password
 
 
 def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int = 100) -> list[models.Member]:
-    """Fetches all members associated with a specific lodge."""
+    """Fetches all members associated with a specific lodge with optimized eager loading."""
     members = (
         db.query(models.Member)
         .join(models.MemberLodgeAssociation)
         .filter(models.MemberLodgeAssociation.lodge_id == lodge_id)
+        .options(
+            joinedload(models.Member.role_history).joinedload(models.RoleHistory.role),
+            joinedload(models.Member.family_members)
+        )
         .order_by(models.Member.full_name)
         .offset(skip)
         .limit(limit)
