@@ -1,20 +1,20 @@
 export enum DegreeEnum {
-  APPRENTICE = "Apprentice",
-  FELLOW = "Fellow",
-  MASTER = "Master",
-  INSTALLED_MASTER = "Installed Master",
+  APPRENTICE = "Aprendiz",
+  FELLOW = "Companheiro",
+  MASTER = "Mestre",
+  INSTALLED_MASTER = "Mestre Instalado",
 }
 
 export enum RegistrationStatusEnum {
-  PENDING = "Pending",
-  APPROVED = "Approved",
-  REJECTED = "Rejected",
+  PENDING = "Pendente",
+  APPROVED = "Aprovado",
+  REJECTED = "Rejeitado",
 }
 
 export enum RelationshipTypeEnum {
-  SPOUSE = "Spouse",
-  SON = "Son",
-  DAUGHTER = "Daughter",
+  SPOUSE = "Esposa",
+  SON = "Filho",
+  DAUGHTER = "Filha",
 }
 
 export enum RiteEnum {
@@ -53,6 +53,10 @@ export interface RoleHistoryResponse {
   member_id: number;
   role_id: number;
   lodge_id: number;
+  role?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface MemberLodgeAssociationResponse {

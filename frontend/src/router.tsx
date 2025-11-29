@@ -70,7 +70,31 @@ const router = createBrowserRouter([
               {
                 index: true,
                 element: <LodgeDashboard />,
-              }
+              },
+              {
+                path: 'management',
+                children: [
+                  { path: 'members', element: <Members /> },
+                  { path: 'members/new', element: <MemberForm /> },
+                  { path: 'members/edit/:id', element: <MemberForm /> },
+                ],
+              },
+              {
+                path: 'sessions',
+                element: <SessionsPage />,
+              },
+              {
+                path: 'sessions/new',
+                element: <SessionForm />,
+              },
+              {
+                path: 'sessions/edit/:id',
+                element: <SessionForm />,
+              },
+              {
+                path: 'sessions/:id',
+                element: <SessionDetailsPage />,
+              },
             ]
           },
 

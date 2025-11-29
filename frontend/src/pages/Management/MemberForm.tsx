@@ -4,14 +4,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
   InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert, 
-  Avatar, Stack, Checkbox, FormControlLabel, IconButton 
+  Avatar, Stack, Checkbox, FormControlLabel, Tooltip, IconButton
 } from '@mui/material';
-import { PhotoCamera, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { PhotoCamera, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Save as SaveIcon } from '@mui/icons-material';
 import api from '../../services/api';
 import { MemberResponse, DegreeEnum, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse } from '../../types';
 import { formatCPF, formatPhone, formatCEP } from '../../utils/formatters';
 import { validateCPF, validateEmail } from '../../utils/validators';
 import RoleAssignmentDialog from '../../components/RoleAssignmentDialog';
+import { fetchAddressByCep } from '../../services/cepService';
 
 import { useAuth } from '../../hooks/useAuth';
 
@@ -77,9 +78,26 @@ const MemberForm: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [roles, setRoles] = useState<Role[]>([]);
   const [openRoleDialog, setOpenRoleDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+
+  const handleCepBlur = async () => {
+    if (formState.zip_code) {
+      const address = await fetchAddressByCep(formState.zip_code);
+      if (address) {
+        setFormState((prev: any) => ({
+          ...prev,
+          street_address: address.logradouro,
+          neighborhood: address.bairro,
+          city: address.localidade,
+        }));
+      } else {
+        setSnackbar({ open: true, message: 'CEP não encontrado.', severity: 'error' });
+      }
+    }
+  };
 
   useEffect(() => {
     if (user?.user_type === 'webmaster' && user?.lodge_id) {
@@ -200,30 +218,49 @@ const MemberForm: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await api.post(`/members/${id}/roles`, {
+    if (id) {
+      try {
+        const response = await api.post(`/members/${id}/roles`, {
+          role_id: Number(newRole.role_id),
+          start_date: newRole.start_date,
+          end_date: newRole.end_date || null
+        });
+
+        setRoleHistory([...roleHistory, response.data]);
+        setNewRole({ role_id: '', start_date: '', end_date: '' });
+        setSnackbar({ open: true, message: 'Cargo adicionado com sucesso!', severity: 'success' });
+      } catch (error) {
+        console.error('Failed to add role', error);
+        setSnackbar({ open: true, message: 'Erro ao adicionar cargo.', severity: 'error' });
+      }
+    } else {
+      // Local state for new member
+      const newHistoryItem: RoleHistoryResponse = {
+        id: Date.now() * -1, // Temporary negative ID
         role_id: Number(newRole.role_id),
         start_date: newRole.start_date,
-        end_date: newRole.end_date || null
-      });
-
-      setRoleHistory([...roleHistory, response.data]);
+        end_date: newRole.end_date || undefined,
+        member_id: 0, // Placeholder
+        lodge_id: Number(formState.lodge_id)
+      };
+      setRoleHistory([...roleHistory, newHistoryItem]);
       setNewRole({ role_id: '', start_date: '', end_date: '' });
-      setSnackbar({ open: true, message: 'Cargo adicionado com sucesso!', severity: 'success' });
-    } catch (error) {
-      console.error('Failed to add role', error);
-      setSnackbar({ open: true, message: 'Erro ao adicionar cargo.', severity: 'error' });
     }
   };
 
   const handleDeleteRole = async (roleHistoryId: number) => {
-    try {
-      await api.delete(`/members/${id}/roles/${roleHistoryId}`);
+    if (id && roleHistoryId > 0) {
+      try {
+        await api.delete(`/members/${id}/roles/${roleHistoryId}`);
+        setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
+        setSnackbar({ open: true, message: 'Cargo removido com sucesso!', severity: 'success' });
+      } catch (error) {
+        console.error('Failed to delete role', error);
+        setSnackbar({ open: true, message: 'Erro ao remover cargo.', severity: 'error' });
+      }
+    } else {
+      // Local state removal
       setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
-      setSnackbar({ open: true, message: 'Cargo removido com sucesso!', severity: 'success' });
-    } catch (error) {
-      console.error('Failed to delete role', error);
-      setSnackbar({ open: true, message: 'Erro ao remover cargo.', severity: 'error' });
     }
   };
 
@@ -240,23 +277,67 @@ const MemberForm: React.FC = () => {
       return;
     }
 
+    // Sanitize form data
+    const sanitizedFormState = Object.entries(formState).reduce((acc, [key, value]) => {
+      if (value === '' || value === null) {
+        acc[key] = undefined;
+      } else {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
+
     const memberData = { 
-      ...formState,
+      ...sanitizedFormState,
+      role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
+      lodge_id: Number(sanitizedFormState.lodge_id),
       family_members: familyMembers 
     };
 
     try {
+      let targetId = id;
+
       if (id) {
         await api.put(`/members/${id}`, memberData);
         setSnackbar({ open: true, message: 'Membro atualizado com sucesso!', severity: 'success' });
       } else {
-        await api.post('/members', memberData);
+        const response = await api.post('/members', memberData);
+        targetId = response.data.id;
+
+        // Persist roles for new member
+        if (roleHistory.length > 0) {
+          for (const role of roleHistory) {
+            await api.post(`/members/${targetId}/roles`, {
+              role_id: role.role_id,
+              start_date: role.start_date,
+              end_date: role.end_date || null
+            });
+          }
+        }
+
         setSnackbar({ open: true, message: 'Membro criado com sucesso!', severity: 'success' });
       }
+
+      // Upload profile picture if selected
+      if (selectedFile && targetId) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        await api.post(`/members/${targetId}/photo`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
+
       setTimeout(() => navigate('/dashboard/management/members'), 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save member', error);
-      setSnackbar({ open: true, message: 'Erro ao salvar membro. Verifique os dados.', severity: 'error' });
+      const errorMessage = error.response?.data?.detail 
+        ? (typeof error.response.data.detail === 'object' 
+            ? JSON.stringify(error.response.data.detail) 
+            : error.response.data.detail)
+        : 'Erro ao salvar membro. Verifique os dados.';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
@@ -280,12 +361,12 @@ const MemberForm: React.FC = () => {
           <Grid item xs={12} md={9}>
             
             {/* DADOS PESSOAIS */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
               {renderSectionTitle('Dados Pessoais')}
-              <Grid container spacing={3}>
+              <Grid container spacing={2}>
                 <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Avatar
-                    sx={{ width: 150, height: 150, mb: 2 }}
+                    sx={{ width: 120, height: 120, mb: 2 }}
                     src={formState.profile_picture_path}
                     alt={formState.full_name}
                   />
@@ -294,9 +375,24 @@ const MemberForm: React.FC = () => {
                     startIcon={<PhotoCamera />}
                     component="label"
                     size="small"
+                    sx={{ fontSize: '0.75rem' }}
                   >
+
                     Alterar Foto
-                    <input hidden accept="image/*" type="file" />
+                    <input 
+                      hidden 
+                      accept="image/*" 
+                      type="file" 
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setSelectedFile(file);
+                          // Create a preview URL
+                          const previewUrl = URL.createObjectURL(file);
+                          setFormState({ ...formState, profile_picture_path: previewUrl });
+                        }
+                      }}
+                    />
                   </Button>
                 </Grid>
                 <Grid item xs={12} md={9}>
@@ -310,6 +406,9 @@ const MemberForm: React.FC = () => {
                         fullWidth
                         required
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -322,6 +421,9 @@ const MemberForm: React.FC = () => {
                         error={!!errors.cpf}
                         helperText={errors.cpf}
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -335,6 +437,9 @@ const MemberForm: React.FC = () => {
                         error={!!errors.email}
                         helperText={errors.email}
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -345,6 +450,9 @@ const MemberForm: React.FC = () => {
                         onChange={handleChange}
                         fullWidth
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -355,8 +463,10 @@ const MemberForm: React.FC = () => {
                         value={formState.birth_date || ''}
                         onChange={handleChange}
                         fullWidth
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -367,8 +477,10 @@ const MemberForm: React.FC = () => {
                         value={formState.marriage_date || ''}
                         onChange={handleChange}
                         fullWidth
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -379,28 +491,75 @@ const MemberForm: React.FC = () => {
                         onChange={handleChange}
                         fullWidth
                         variant="outlined"
+                        size="small"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                   </Grid>
                 </Grid>
               </Grid>
+            </Paper>
 
-              {/* CONDECORAÇÕES */}
-              <Box mt={4}>
-                {renderSectionTitle('Condecorações')}
-                <Box sx={{ p: 2, border: '1px dashed grey', borderRadius: 1, textAlign: 'center' }}>
-                  <Button variant="contained" color="primary" startIcon={<AddIcon />}>
-                    Adicionar Condecoração
-                  </Button>
-                </Box>
-              </Box>
+            {/* INFORMAÇÕES DE ACESSO */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              {renderSectionTitle('Informações de Acesso')}
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel sx={{ fontSize: '0.9rem' }}>Credencial</InputLabel>
+                    <Select
+                      value="Webmaster" // Placeholder
+                      label="Credencial"
+                      disabled
+                      sx={{ fontSize: '0.9rem' }}
+                    >
+                      <MenuItem value="Webmaster">Webmaster</MenuItem>
+                      <MenuItem value="Admin">Admin</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                   <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel sx={{ fontSize: '0.9rem' }}>Status</InputLabel>
+                    <Select
+                      name="registration_status"
+                      value={formState.registration_status}
+                      label="Status"
+                      onChange={handleChange}
+                      sx={{ fontSize: '0.9rem' }}
+                    >
+                      <MenuItem value={RegistrationStatusEnum.PENDING}>Pendente</MenuItem>
+                      <MenuItem value={RegistrationStatusEnum.APPROVED}>Aprovado</MenuItem>
+                      <MenuItem value={RegistrationStatusEnum.REJECTED}>Rejeitado</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                {!id && (
+                  <Grid item xs={12}>
+                    <TextField
+                      name="password"
+                      label="Senha Inicial *"
+                      type="password"
+                      value={formState.password}
+                      onChange={handleChange}
+                      fullWidth
+                      required
+                      variant="outlined"
+                      size="small"
+                      InputProps={{ style: { fontSize: '0.9rem' } }}
+                      InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                    />
+                  </Grid>
+                )}
+              </Grid>
             </Paper>
 
             {/* FAMILIARES */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
               {renderSectionTitle('Familiares')}
               {familyMembers.map((member, index) => (
-                <Box key={index} sx={{ mb: 3, p: 2, border: '1px solid #333', borderRadius: 1 }}>
+                <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #333', borderRadius: 1 }}>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={3}>
                       <TextField
@@ -410,15 +569,18 @@ const MemberForm: React.FC = () => {
                         fullWidth
                         size="small"
                         variant="outlined"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
                       <FormControl fullWidth size="small">
-                        <InputLabel>Parentesco</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.9rem' }}>Parentesco</InputLabel>
                         <Select
                           value={member.relationship_type}
                           label="Parentesco"
                           onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)}
+                          sx={{ fontSize: '0.9rem' }}
                         >
                           <MenuItem value={RelationshipTypeEnum.SPOUSE}>Cônjuge</MenuItem>
                           <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
@@ -434,8 +596,9 @@ const MemberForm: React.FC = () => {
                         onChange={(e) => handleFamilyMemberChange(index, 'birth_date', e.target.value)}
                         fullWidth
                         size="small"
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
                         variant="outlined"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
@@ -446,6 +609,8 @@ const MemberForm: React.FC = () => {
                         fullWidth
                         size="small"
                         variant="outlined"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
@@ -456,9 +621,11 @@ const MemberForm: React.FC = () => {
                         fullWidth
                         size="small"
                         variant="outlined"
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
-                    <Grid item xs={12} md={1}>
+                    <Grid item xs={12} md={1} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                       <FormControlLabel
                         control={
                           <Checkbox
@@ -467,40 +634,43 @@ const MemberForm: React.FC = () => {
                             size="small"
                           />
                         }
-                        label="Falecido(a)?"
+                        label="Falecido?"
                         sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
                       />
-                    </Grid>
-                    <Grid item xs={12} md={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <Button 
-                        variant="contained" 
-                        color="error" 
-                        size="small" 
-                        onClick={() => removeFamilyMember(index)}
-                      >
-                        Remover
-                      </Button>
+                      <Tooltip title="Remover Familiar">
+                        <IconButton onClick={() => removeFamilyMember(index)} color="error" size="small">
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Grid>
                   </Grid>
                 </Box>
               ))}
-              <Button variant="contained" color="secondary" startIcon={<AddIcon />} onClick={addFamilyMember}>
-                Adicionar Familiar
-              </Button>
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Tooltip title="Adicionar Familiar">
+                  <IconButton onClick={addFamilyMember} color="secondary" size="large">
+                    <AddIcon fontSize="large" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Paper>
 
             {/* ENDEREÇO */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
               {renderSectionTitle('Endereço')}
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={2}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={3}>
                   <TextField
                     name="zip_code"
                     label="CEP"
                     value={formState.zip_code}
                     onChange={handleChange}
+                    onBlur={handleCepBlur}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -511,9 +681,12 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
-                <Grid item xs={12} md={2}>
+                <Grid item xs={12} md={3}>
                   <TextField
                     name="street_number"
                     label="Número"
@@ -521,9 +694,12 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     name="neighborhood"
                     label="Bairro"
@@ -531,9 +707,12 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     name="city"
                     label="Cidade"
@@ -541,84 +720,18 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                  />
-                </Grid>
-              </Grid>
-            </Paper>
-
-            {/* DADOS MAÇÔNICOS */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              {renderSectionTitle('Dados Maçônicos')}
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    name="cim"
-                    label="CIM"
-                    value={formState.cim}
-                    onChange={handleChange}
-                    fullWidth
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <FormControl fullWidth variant="outlined">
-                    <InputLabel>Grau</InputLabel>
-                    <Select
-                      name="degree"
-                      value={formState.degree}
-                      label="Grau"
-                      onChange={handleChange}
-                    >
-                      <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
-                      <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
-                      <MenuItem value={DegreeEnum.MASTER}>Mestre</MenuItem>
-                      <MenuItem value={DegreeEnum.INSTALLED_MASTER}>Mestre Instalado</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    name="initiation_date"
-                    label="Data de Iniciação"
-                    type="date"
-                    value={formState.initiation_date || ''}
-                    onChange={handleChange}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    name="elevation_date"
-                    label="Data de Elevação"
-                    type="date"
-                    value={formState.elevation_date || ''}
-                    onChange={handleChange}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <TextField
-                    name="exaltation_date"
-                    label="Data de Exaltação"
-                    type="date"
-                    value={formState.exaltation_date || ''}
-                    onChange={handleChange}
-                    fullWidth
-                    InputLabelProps={{ shrink: true }}
-                    variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
               </Grid>
             </Paper>
 
             {/* DADOS PROFISSIONAIS */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
               {renderSectionTitle('Dados Profissionais')}
-              <Grid container spacing={3}>
+              <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                   <TextField
                     name="education_level"
@@ -627,6 +740,9 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -637,6 +753,9 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -647,24 +766,120 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                  />
+                </Grid>
+              </Grid>
+            </Paper>
+
+            {/* DADOS MAÇÔNICOS */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              {renderSectionTitle('Dados Maçônicos')}
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    name="cim"
+                    label="CIM"
+                    value={formState.cim}
+                    onChange={handleChange}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel sx={{ fontSize: '0.9rem' }}>Grau</InputLabel>
+                    <Select
+                      name="degree"
+                      value={formState.degree}
+                      label="Grau"
+                      onChange={handleChange}
+                      sx={{ fontSize: '0.9rem' }}
+                    >
+                      <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
+                      <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
+                      <MenuItem value={DegreeEnum.MASTER}>Mestre</MenuItem>
+                      <MenuItem value={DegreeEnum.INSTALLED_MASTER}>Mestre Instalado</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    label="Cargo Atual"
+                    value={roles.find(r => r.id === roleHistory.find(h => !h.end_date)?.role_id)?.name || 'Nenhum'}
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    InputProps={{ 
+                      readOnly: true,
+                      style: { fontSize: '0.9rem', backgroundColor: 'rgba(255, 255, 255, 0.05)' } 
+                    }}
+                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    name="initiation_date"
+                    label="Data de Iniciação"
+                    type="date"
+                    value={formState.initiation_date || ''}
+                    onChange={handleChange}
+                    fullWidth
+                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    name="elevation_date"
+                    label="Data de Elevação"
+                    type="date"
+                    value={formState.elevation_date || ''}
+                    onChange={handleChange}
+                    fullWidth
+                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={3}>
+                  <TextField
+                    name="exaltation_date"
+                    label="Data de Exaltação"
+                    type="date"
+                    value={formState.exaltation_date || ''}
+                    onChange={handleChange}
+                    fullWidth
+                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    variant="outlined"
+                    size="small"
+                    InputProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
               </Grid>
             </Paper>
 
             {/* ADICIONAR NOVO CARGO (ROLE HISTORY) */}
-            {id && (
-              <Paper sx={{ p: 3, mb: 3 }}>
-                {renderSectionTitle('Adicionar Novo Cargo')}
-                <Box sx={{ p: 2, border: '1px solid #333', borderRadius: 1, mb: 3 }}>
+            <Paper sx={{ p: 2, mb: 2 }}>
+              {renderSectionTitle('Adicionar Novo Cargo')}
+              <Box sx={{ p: 2, border: '1px solid #333', borderRadius: 1, mb: 2 }}>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
                       <FormControl fullWidth size="small">
-                        <InputLabel>Cargo</InputLabel>
+                        <InputLabel sx={{ fontSize: '0.9rem' }}>Cargo</InputLabel>
                         <Select
                           label="Cargo"
                           value={newRole.role_id}
                           onChange={(e) => setNewRole({ ...newRole, role_id: e.target.value })}
+                          sx={{ fontSize: '0.9rem' }}
                         >
                            <MenuItem value="">-- Selecione --</MenuItem>
                            {roles.map((role) => (
@@ -681,10 +896,11 @@ const MemberForm: React.FC = () => {
                         type="date"
                         fullWidth
                         size="small"
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
                         variant="outlined"
                         value={newRole.start_date}
                         onChange={(e) => setNewRole({ ...newRole, start_date: e.target.value })}
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={3}>
@@ -693,21 +909,22 @@ const MemberForm: React.FC = () => {
                         type="date"
                         fullWidth
                         size="small"
-                        InputLabelProps={{ shrink: true }}
+                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
                         variant="outlined"
                         value={newRole.end_date}
                         onChange={(e) => setNewRole({ ...newRole, end_date: e.target.value })}
+                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
-                    <Grid item xs={12} md={2}>
-                      <Button 
-                        variant="contained" 
-                        color="primary" 
-                        fullWidth 
-                        onClick={handleAddRole}
-                      >
-                        Adicionar
-                      </Button>
+                    <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+                      <Tooltip title="Adicionar Cargo">
+                        <IconButton 
+                          onClick={handleAddRole}
+                          color="primary"
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Grid>
                   </Grid>
                 </Box>
@@ -725,9 +942,9 @@ const MemberForm: React.FC = () => {
                       const roleName = roles.find(r => r.id === history.role_id)?.name || 'Cargo Desconhecido';
                       return (
                         <Grid container spacing={2} alignItems="center" key={index} sx={{ py: 1, '&:hover': { bgcolor: 'action.hover' } }}>
-                          <Grid item xs={4}><Typography variant="body2">{roleName}</Typography></Grid>
-                          <Grid item xs={3}><Typography variant="body2">{history.start_date ? new Date(history.start_date).toLocaleDateString('pt-BR') : '-'}</Typography></Grid>
-                          <Grid item xs={3}><Typography variant="body2">{history.end_date ? new Date(history.end_date).toLocaleDateString('pt-BR') : 'Presente'}</Typography></Grid>
+                          <Grid item xs={4}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{roleName}</Typography></Grid>
+                          <Grid item xs={3}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{history.start_date ? new Date(history.start_date).toLocaleDateString('pt-BR') : '-'}</Typography></Grid>
+                          <Grid item xs={3}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{history.end_date ? new Date(history.end_date).toLocaleDateString('pt-BR') : 'Presente'}</Typography></Grid>
                           <Grid item xs={2}>
                              <IconButton size="small" onClick={() => console.log('Edit role', history.id)}>
                                <EditIcon fontSize="small" />
@@ -740,61 +957,23 @@ const MemberForm: React.FC = () => {
                       );
                     })
                   ) : (
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
+                    <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2, fontSize: '0.85rem' }}>
                       Nenhum histórico de cargo encontrado.
                     </Typography>
                   )}
                 </Box>
               </Paper>
-            )}
 
-            {/* INFORMAÇÕES DE ACESSO */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              {renderSectionTitle('Informações de Acesso')}
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth variant="outlined">
-                    <InputLabel>Credencial</InputLabel>
-                    <Select
-                      value="Webmaster" // Placeholder
-                      label="Credencial"
-                      disabled
-                    >
-                      <MenuItem value="Webmaster">Webmaster</MenuItem>
-                      <MenuItem value="Admin">Admin</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                   <FormControl fullWidth variant="outlined">
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      name="registration_status"
-                      value={formState.registration_status}
-                      label="Status"
-                      onChange={handleChange}
-                    >
-                      <MenuItem value={RegistrationStatusEnum.PENDING}>Pendente</MenuItem>
-                      <MenuItem value={RegistrationStatusEnum.APPROVED}>Aprovado</MenuItem>
-                      <MenuItem value={RegistrationStatusEnum.REJECTED}>Rejeitado</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                {!id && (
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      name="password"
-                      label="Senha Inicial"
-                      type="password"
-                      value={formState.password}
-                      onChange={handleChange}
-                      fullWidth
-                      required
-                      variant="outlined"
-                    />
-                  </Grid>
-                )}
-              </Grid>
+            {/* CONDECORAÇÕES */}
+            <Paper sx={{ p: 2, mb: 2 }}>
+              {renderSectionTitle('Condecorações')}
+              <Box sx={{ p: 2, border: '1px dashed grey', borderRadius: 1, textAlign: 'center' }}>
+                <Tooltip title="Adicionar Condecoração">
+                  <IconButton onClick={() => console.log('Add Decoration')} color="primary" size="large">
+                    <AddIcon fontSize="large" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Paper>
 
           </Grid>

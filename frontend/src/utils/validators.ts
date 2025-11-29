@@ -83,3 +83,34 @@ export const validateEmail = (email: string): boolean => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 };
+
+export const validatePhone = (phone: string): boolean => {
+  const cleanPhone = phone.replace(/[^\d]/g, '');
+  // Aceita (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+  return cleanPhone.length === 10 || cleanPhone.length === 11;
+};
+
+export const validateCEP = (cep: string): boolean => {
+  const cleanCEP = cep.replace(/[^\d]/g, '');
+  return cleanCEP.length === 8;
+};
+
+export const validateCIM = (cim: string): boolean => {
+  const cleanCIM = cim.replace(/[^\d]/g, '');
+  // CIM deve ser numérico e ter entre 4 e 20 dígitos
+  return cleanCIM.length >= 4 && cleanCIM.length <= 20;
+};
+
+export const validateCoordinates = (lat: number, lng: number): boolean => {
+  if (lat < -90 || lat > 90) return false;
+  if (lng < -180 || lng > 180) return false;
+  return true;
+};
+
+export const validatePasswordStrength = (password: string): boolean => {
+  // Mínimo 8 caracteres, pelo menos uma letra e um número
+  if (password.length < 8) return false;
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  return hasLetter && hasNumber;
+};

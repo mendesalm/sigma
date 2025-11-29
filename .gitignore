@@ -14,7 +14,7 @@ dist/
 build/
 
 #referências
-_reference/
+
 
 
 # Logs
@@ -30,3 +30,38 @@ _reference/
 Thumbs.db
 
 # Reference folder
+_reference/
+
+# SQL Dumps
+*.sql
+
+# Audit and Temporary Scripts
+audit_*.py
+fix_*.py
+check_*.py
+migrate_*.py
+import_*.py
+read_legacy.py
+simple_check.py
+test_manual.py
+test_parser.py
+test_pydantic2.py
+test_serialization.py
+test_photo_structure.py
+test_schema_validations.py
+
+# Audit Logs and Output
+audit_*.txt
+import_*.txt
+*.log
+*_output.txt
+members_list.txt
+webmaster_check.txt
+ruff_report.txt
+ruff_errors.json
+
+# Storage and Uploads
+backend/storage/
+backend/uploads/
+!backend/storage/.gitkeep
+!backend/uploads/.gitkeep

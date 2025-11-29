@@ -45,6 +45,17 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         "user_type": user_type,
     }
 
+    # Add name to payload for frontend display
+    if user_type == "member":
+        access_token_data["name"] = user.full_name
+        access_token_data["role"] = "Membro" # Default role name
+    elif user_type == "webmaster":
+        access_token_data["name"] = user.username
+        access_token_data["role"] = "Webmaster"
+    elif user_type == "super_admin":
+        access_token_data["name"] = user.username
+        access_token_data["role"] = "Super Admin"
+
     # Adiciona contexto específico com base no tipo de usuário
     if user_type == "webmaster":
         if user.lodge_id:
@@ -103,6 +114,8 @@ def select_association(
         "sub": user.email,
         "user_id": user.id,
         "user_type": user_type,
+        "name": user.full_name,
+        "role": "Membro"
     }
 
     if association_data.association_type == "lodge":

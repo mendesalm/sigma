@@ -4,11 +4,18 @@ load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+import sys
+import os
+
+# Add the current directory (backend) to sys.path to allow imports like 'from routes import ...'
+# when running from the project root (e.g., uvicorn backend.main:app)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from routes import (  # noqa: E402
     attendance_routes,
     auth_routes,
     check_in_routes,
+    dashboard_routes,
     document_routes,
     event_routes,
     financial_routes,
@@ -69,6 +76,10 @@ tags_metadata = [
     {
         "name": "Auth",
         "description": "Autenticação e gestão de tokens JWT. Login para SuperAdmins, Webmasters e Membros.",
+    },
+    {
+        "name": "Dashboard",
+        "description": "Dados agregados para o Dashboard (Estatísticas, Calendário, Avisos).",
     },
     {
         "name": "Super Admins",
@@ -171,6 +182,7 @@ app.add_middleware(
 
 # Include routers (BEFORE mounting static files)
 app.include_router(auth_routes.router)
+app.include_router(dashboard_routes.router)
 app.include_router(obedience_routes.router)
 app.include_router(lodge_routes.router)
 app.include_router(member_routes.router)

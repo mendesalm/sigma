@@ -133,7 +133,7 @@ def sample_super_admin(db_session):
     admin = SuperAdmin(
         username="admin_test",
         email="admin@test.com",
-        hashed_password=password_utils.hash_password("TestPassword123")
+        password_hash=password_utils.hash_password("TestPassword123")
     )
     db_session.add(admin)
     db_session.commit()
@@ -152,11 +152,22 @@ def sample_member(db_session, sample_lodge):
         cim="272875",
         birth_date=date(1990, 1, 1),
         degree="Mestre",
-        hashed_password=password_utils.hash_password("TestPassword123")
+        password_hash=password_utils.hash_password("TestPassword123")
     )
     db_session.add(member)
     db_session.commit()
     db_session.refresh(member)
+
+    # Associar à loja
+    from models.models import MemberLodgeAssociation
+    association = MemberLodgeAssociation(
+        member_id=member.id,
+        lodge_id=sample_lodge.id,
+        start_date=date.today()
+    )
+    db_session.add(association)
+    db_session.commit()
+    
     return member
 
 
@@ -177,7 +188,7 @@ def super_admin_token(client, sample_super_admin):
             )
     """
     response = client.post(
-        "/auth/token",
+        "/auth/login",
         data={
             "username": "admin@test.com",
             "password": "TestPassword123"
@@ -188,20 +199,64 @@ def super_admin_token(client, sample_super_admin):
 
 
 @pytest.fixture
-def webmaster_token(client, sample_lodge):
+def sample_permission(db_session):
+    """Cria uma permissão de teste."""
+    from models.models import Permission
+    permission = Permission(
+        action="test:action",
+        description="Permissão de teste",
+        min_credential=10
+    )
+    db_session.add(permission)
+    db_session.commit()
+    db_session.refresh(permission)
+    return permission
+
+
+@pytest.fixture
+def sample_role(db_session):
+    """Cria um cargo de teste."""
+    from models.models import Role, RoleTypeEnum
+    role = Role(
+        name="Venerável Mestre de Teste",
+        role_type=RoleTypeEnum.LODGE,
+        level=1,
+        base_credential=100
+    )
+    db_session.add(role)
+    db_session.commit()
+    db_session.refresh(role)
+    return role
+
+
+@pytest.fixture
+def sample_webmaster(db_session, sample_lodge):
+    """Cria um webmaster de teste."""
+    from models.models import Webmaster
+    webmaster = Webmaster(
+        username="webmaster_test",
+        email="webmaster@teste.com",
+        password_hash=password_utils.hash_password("WebmasterPassword123"),
+        lodge_id=sample_lodge.id
+    )
+    db_session.add(webmaster)
+    db_session.commit()
+    db_session.refresh(webmaster)
+    return webmaster
+
+
+@pytest.fixture
+def webmaster_token(client, sample_webmaster):
     """Gera token de autenticação para webmaster."""
-    # Assumindo que o webmaster é criado automaticamente com a loja
-    # Ajustar conforme sua implementação
     response = client.post(
-        "/auth/token",
+        "/auth/login",
         data={
             "username": "webmaster@teste.com",
-            "password": "defaultpassword123"  # Ajustar conforme seu sistema
+            "password": "WebmasterPassword123"
         }
     )
-    if response.status_code == 200:
-        return response.json()["access_token"]
-    return None
+    assert response.status_code == 200
+    return response.json()["access_token"]
 
 
 # ============================================================================

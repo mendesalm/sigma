@@ -192,7 +192,7 @@ class Role(BaseModel):
     applicable_rites = Column(String(255), nullable=True)
     obediences = relationship("Obedience", secondary=obediences_roles_association, back_populates="roles")
     permissions = relationship("Permission", secondary=roles_permissions, back_populates="roles")
-    webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="webmasters")
+    webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="roles")
 
     __table_args__ = (
         CheckConstraint("level >= 1 AND level <= 9", name="chk_role_level"),
@@ -275,7 +275,7 @@ class Member(BaseModel):
     regularization_date = Column(Date, nullable=True)
     philosophical_degree = Column(String(100), nullable=True)
     registration_status = Column(
-        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum"), nullable=False, default="Pending"
+        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum"), nullable=False, default=RegistrationStatusEnum.PENDING
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
     
@@ -527,3 +527,46 @@ class Visit(BaseModel):
     session = relationship("MasonicSession", backref="visits")
 
     __table_args__ = (UniqueConstraint("member_id", "session_id", name="_member_session_visit_uc"),)
+
+
+class Notice(BaseModel):
+    __tablename__ = "notices"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    expiration_date = Column(Date, nullable=True)
+    is_active = Column(Boolean, default=True)
+    
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    lodge = relationship("Lodge", backref="notices")
+
+
+class Classified(BaseModel):
+    __tablename__ = "classifieds"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    price = Column(Float, nullable=True)
+    contact_info = Column(String(255), nullable=True)
+    image_path = Column(String(512), nullable=True)
+    status = Column(String(50), default="Ativo")  # Ativo, Vendido, Pausado
+    
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    
+    lodge = relationship("Lodge", backref="classifieds")
+    member = relationship("Member", backref="classifieds")
+
+
+class DiningScale(BaseModel):
+    __tablename__ = "dining_scales"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, nullable=False)
+    position = Column(String(50), nullable=False)  # e.g., "3º", "4º"
+    
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    
+    lodge = relationship("Lodge", backref="dining_scales")
+    member = relationship("Member", backref="dining_scales")
+

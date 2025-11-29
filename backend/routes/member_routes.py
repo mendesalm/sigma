@@ -36,13 +36,14 @@ def create_member(
     try:
         return member_service.create_member_for_lodge(db=db, member_data=member)
     except IntegrityError as e:
-        if "ix_members_email" in str(e.orig):
+        error_msg = str(e.orig)
+        if "ix_members_email" in error_msg or "UNIQUE constraint failed: members.email" in error_msg:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered.")
-        if "ix_members_cpf" in str(e.orig):
+        if "ix_members_cpf" in error_msg or "UNIQUE constraint failed: members.cpf" in error_msg:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CPF already registered.")
-        if "ix_members_cim" in str(e.orig):
+        if "ix_members_cim" in error_msg or "UNIQUE constraint failed: members.cim" in error_msg:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CIM already registered.")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e.orig))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
 
 @router.get("/", response_model=list[member_schema.MemberResponse])

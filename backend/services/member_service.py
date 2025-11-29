@@ -12,6 +12,7 @@ def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int =
         db.query(models.Member)
         .join(models.MemberLodgeAssociation)
         .filter(models.MemberLodgeAssociation.lodge_id == lodge_id)
+        .order_by(models.Member.full_name)
         .offset(skip)
         .limit(limit)
         .all()
