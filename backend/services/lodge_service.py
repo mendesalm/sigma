@@ -50,6 +50,10 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
         )
         storage_path = os.path.join("storage", "lodges", f"loja_{safe_lodge_number}")
         os.makedirs(storage_path, exist_ok=True)
+        
+        # Create subdirectories for logo and profile pictures
+        os.makedirs(os.path.join(storage_path, "logo"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "profile_pictures"), exist_ok=True)
 
         db.commit()
         db.refresh(db_lodge)
