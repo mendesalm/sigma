@@ -13,8 +13,7 @@ def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int =
         .join(models.MemberLodgeAssociation)
         .filter(models.MemberLodgeAssociation.lodge_id == lodge_id)
         .options(
-            joinedload(models.Member.role_history).joinedload(models.RoleHistory.role),
-            joinedload(models.Member.family_members)
+            joinedload(models.Member.role_history).joinedload(models.RoleHistory.role)
         )
         .order_by(models.Member.full_name)
         .offset(skip)

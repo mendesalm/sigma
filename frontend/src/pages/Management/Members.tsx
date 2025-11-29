@@ -59,11 +59,6 @@ const Members = () => {
     fetchMembers();
   }, []);
 
-  const getActiveRole = (member: MemberResponse) => {
-    const activeRole = member.role_history?.find(r => !r.end_date);
-    return activeRole?.role?.name || 'Membro';
-  };
-
   const filteredMembers = members.filter(member => 
     member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -86,7 +81,7 @@ const Members = () => {
       headers.join(','),
       ...filteredMembers.map(member => {
         return keys.map(key => {
-          if (key === 'role') return `"${getActiveRole(member)}"`;
+          if (key === 'role') return `"${member.active_role || 'Membro'}"`;
           if (key === 'birth_date') return member.birth_date ? new Date(member.birth_date).toLocaleDateString('pt-BR') : '';
           return `"${member[key as keyof MemberResponse] || ''}"`;
         }).join(',');
@@ -260,7 +255,7 @@ const Members = () => {
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', fontWeight: 500, color: 'text.primary' }}>{member.full_name}</TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>{member.degree || '-'}</TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
-                  {getActiveRole(member)}
+                  {member.active_role || 'Membro'}
                 </TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1 }}>
                   <Chip 

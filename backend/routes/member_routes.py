@@ -46,7 +46,7 @@ def create_member(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
 
-@router.get("/", response_model=list[member_schema.MemberResponse])
+@router.get("/", response_model=list[member_schema.MemberListResponse])
 def read_members(
     skip: int = 0,
     limit: int = 100,
@@ -60,22 +60,46 @@ def read_members(
         members = (
             db.query(Member)
             .options(
-                joinedload(Member.role_history).joinedload(RoleHistory.role),
-                joinedload(Member.family_members)
+                joinedload(Member.role_history).joinedload(RoleHistory.role)
             )
             .offset(skip)
             .limit(limit)
             .all()
         )
-        return members
     elif user_type == "webmaster":
         lodge_id = current_user.get("lodge_id")
         if not lodge_id:
              raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
         members = member_service.get_members_by_lodge(db, lodge_id=lodge_id, skip=skip, limit=limit)
-        return members
     else:
         raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Convert to list response with computed active_role
+    result = []
+    for member in members:
+        member_dict = {
+            "id": member.id,
+            "full_name": member.full_name,
+            "email": member.email,
+            "cim": member.cim,
+            "degree": member.degree,
+            "status": member.status,
+            "registration_status": member.registration_status,
+            "profile_picture_path": member.profile_picture_path,
+            "phone": member.phone,
+            "birth_date": member.birth_date,
+            "active_role": None
+        }
+        
+        # Find active role (where end_date is None)
+        if member.role_history:
+            active_role_entry = next((rh for rh in member.role_history if rh.end_date is None), None)
+            if active_role_entry and active_role_entry.role:
+                member_dict["active_role"] = active_role_entry.role.name
+        
+        result.append(member_dict)
+    
+    return result
 
 
 @router.get("/{member_id}", response_model=member_schema.MemberResponse)

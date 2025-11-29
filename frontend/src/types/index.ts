@@ -100,10 +100,15 @@ export interface MemberResponse {
   created_at: string;
   updated_at?: string;
   last_login?: string;
-  family_members: FamilyMemberResponse[];
-  decorations: DecorationResponse[];
-  role_history: RoleHistoryResponse[];
-  lodge_associations: MemberLodgeAssociationResponse[];
+  
+  // Lightweight list response fields
+  active_role?: string;
+  
+  // Full response relationships (optional for list view)
+  family_members?: FamilyMemberResponse[];
+  decorations?: DecorationResponse[];
+  role_history?: RoleHistoryResponse[];
+  lodge_associations?: MemberLodgeAssociationResponse[];
 }
 
 export interface SuperAdminResponse {

@@ -281,6 +281,28 @@ class MemberUpdate(BaseModel):
     password: str | None = Field(None, min_length=8)
 
 
+
+
+class MemberListResponse(BaseModel):
+    """Lightweight response for member list/table view - only essential fields"""
+    id: int
+    full_name: str
+    email: str
+    cim: str | None = None
+    degree: DegreeEnum | None = None
+    status: str | None = None
+    registration_status: RegistrationStatusEnum
+    profile_picture_path: str | None = None
+    phone: str | None = None
+    birth_date: date | None = None
+    
+    # Single active role (computed field, not a relationship)
+    active_role: str | None = None
+    
+    class Config:
+        from_attributes = True
+
+
 class MemberResponse(MemberBase):
     id: int
     created_at: datetime
