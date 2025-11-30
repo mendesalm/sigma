@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Button, 
   Container, 
@@ -32,6 +32,7 @@ import { MemberResponse } from '../../types';
 
 const Members = () => {
   const theme = useTheme();
+  const location = useLocation();
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [openExportDialog, setOpenExportDialog] = useState(false);
@@ -45,6 +46,20 @@ const Members = () => {
     phone: false,
     birth_date: false
   });
+
+  // Determine base path for links based on current location
+  const getBasePath = () => {
+    const path = location.pathname;
+    if (path.includes('secretario/cadastro')) {
+      return '/dashboard/lodge-dashboard/secretario/cadastro';
+    } else if (path.includes('chanceler/cadastro')) {
+      return '/dashboard/lodge-dashboard/chanceler/cadastro';
+    } else {
+      return '/dashboard/management/members';
+    }
+  };
+
+  const basePath = getBasePath();
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -133,7 +148,7 @@ const Members = () => {
           </Button>
           <Button 
             component={Link} 
-            to="/dashboard/management/members/new" 
+            to={`${basePath}/new`} 
             variant="contained" 
             color="primary"
             startIcon={<Add />}
@@ -153,13 +168,13 @@ const Members = () => {
       </Box>
 
       <Paper 
-        elevation={0} 
+        elevation={3} 
         sx={{ 
           p: 3, 
           mb: 4, 
           borderRadius: '16px', 
-          backgroundColor: alpha(theme.palette.background.paper, 0.6),
-          backdropFilter: 'blur(20px)',
+          backgroundColor: theme.palette.background.paper, // Fundo sólido
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))', // Leve brilho
           border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
         }}
       >
@@ -173,7 +188,7 @@ const Members = () => {
             mb: 0,
             '& .MuiOutlinedInput-root': {
               borderRadius: '12px',
-              backgroundColor: alpha(theme.palette.background.default, 0.5),
+              backgroundColor: 'transparent', // Transparente para usar o fundo do Paper
               '& fieldset': {
                 borderColor: alpha(theme.palette.divider, 0.2),
               },
@@ -192,23 +207,34 @@ const Members = () => {
         />
       </Paper>
 
-      <TableContainer 
-        component={Box} // Changed from Paper to Box to remove default white background/shadow
+      {/* Container com fundo mais claro para a tabela */}
+      <Paper 
+        elevation={3}
         sx={{ 
-          backgroundColor: 'transparent',
-          overflowX: 'auto'
+          backgroundColor: theme.palette.background.paper, // Fundo sólido (mais claro que o fundo da página)
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))', // Leve brilho adicional
+          borderRadius: '16px',
+          p: 3,
+          mt: 3
         }}
       >
-        <Table 
+        <TableContainer 
+          component={Box}
           sx={{ 
-            borderCollapse: 'separate', 
-            borderSpacing: '0 8px', // Creates space between rows
-            minWidth: 650
+            backgroundColor: 'transparent',
+            overflowX: 'auto'
           }}
         >
-          <TableHead>
+          <Table 
+            sx={{ 
+              borderCollapse: 'separate', 
+              borderSpacing: '0 8px',
+              minWidth: 650
+            }}
+          >
+            <TableHead>
             <TableRow>
-              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1, pl: 3 }}>FOTO (THUMBNAIL)</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1, pl: 3 }}>FOTO</TableCell>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>CIM</TableCell>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>NOME</TableCell>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>GRAU</TableCell>
@@ -222,9 +248,9 @@ const Members = () => {
               <TableRow 
                 key={member.id} 
                 sx={{ 
-                  backgroundColor: alpha(theme.palette.background.paper, 0.4), // Darker row background
+                  backgroundColor: alpha(theme.palette.background.paper, 0.7), // Mais contraste - menos transparente
                   '&:hover': { 
-                    backgroundColor: alpha(theme.palette.background.paper, 0.6),
+                    backgroundColor: alpha(theme.palette.background.paper, 0.85), // Hover mais visível
                     transform: 'translateY(-1px)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                   },
@@ -284,7 +310,7 @@ const Members = () => {
                 >
                   <Button 
                     component={Link} 
-                    to={`/dashboard/management/members/edit/${member.id}`} 
+                    to={`${basePath}/edit/${member.id}`} 
                     variant="text" 
                     size="small"
                     sx={{ 
@@ -307,6 +333,7 @@ const Members = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      </Paper>
 
       <Dialog 
         open={openExportDialog} 

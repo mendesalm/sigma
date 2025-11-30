@@ -23,6 +23,18 @@ import { AuthContext } from '../../context/AuthContext';
 
 // Import Sigma Logo
 import SigmaLogo from '../../assets/images/SigmaLogo.png';
+import MasonicHomeIcon from '../../components/icons/MasonicHomeIcon';
+import {
+  SquareCompassIcon,
+  AttendanceBookIcon,
+  VisitationIcon,
+  ScrollIcon,
+  BellIcon,
+  BooksIcon,
+  QuillBookIcon,
+  ChecklistIcon,
+  TempleColumnsIcon
+} from '../../components/icons/MasonicMenuIcons';
 
 const MAIN_SIDEBAR_WIDTH = 120;
 const SECONDARY_SIDEBAR_WIDTH = 250;
@@ -30,88 +42,51 @@ const HEADER_HEIGHT = 70; // Slightly taller for better logo fit
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// ... MENU_CONFIG remains the same ...
-// Define menu structure
+// Define menu structure - Nova estrutura hierárquica
 const MENU_CONFIG = [
   {
-    id: 'perfil',
-    label: 'Perfil',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Macom-D.png`} alt="Perfil" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/member-dashboard', 
+    id: 'home',
+    label: 'Home',
+    icon: <MasonicHomeIcon sx={{ fontSize: 60 }} />,
+    path: '/dashboard/lodge-dashboard',
+    subItems: [] // HOME não possui menu secundário
+  },
+  {
+    id: 'obreiro',
+    label: 'Obreiro',
+    icon: <img src={`${API_URL}/storage/assets/images/icons/Macom-D.png`} alt="Obreiro" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/obreiro',
     subItems: [
-      { text: 'Meus Dados', path: '/dashboard/member-dashboard' },
-      { text: 'Alterar Senha', path: '/dashboard/change-password' },
+      { text: 'Meu Cadastro', path: '/dashboard/lodge-dashboard/obreiro/meu-cadastro', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Minhas Presenças', path: '/dashboard/lodge-dashboard/obreiro/minhas-presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Minhas Visitações', path: '/dashboard/lodge-dashboard/obreiro/minhas-visitacoes', icon: <VisitationIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Minhas Publicações', path: '/dashboard/lodge-dashboard/obreiro/minhas-publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Meus Anúncios', path: '/dashboard/lodge-dashboard/obreiro/meus-anuncios', icon: <BellIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Meus Empréstimos', path: '/dashboard/lodge-dashboard/obreiro/meus-emprestimos', icon: <BooksIcon sx={{ fontSize: 20 }} /> },
     ]
   },
   {
-    id: 'secretaria',
-    label: 'Secretaria',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Secretario-D.png`} alt="Secretaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/lodge-dashboard/management',
+    id: 'secretario',
+    label: 'Secretário',
+    icon: <img src={`${API_URL}/storage/assets/images/icons/Secretario-D.png`} alt="Secretário" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/secretario',
     subItems: [
-      { text: 'Gestão de Membros', path: '/dashboard/lodge-dashboard/management/members' },
-      { text: 'Gestão de Sessões', path: '/dashboard/lodge-dashboard/sessions' },
-      { text: 'Histórico de Sessões', path: '/dashboard/sessions/history' },
-      { text: 'Gestão de Publicações', path: '/dashboard/publications' },
-      { text: 'Documentos', path: '/dashboard/documents' },
-      { text: 'Arquivos Diversos', path: '/dashboard/files' },
+      { text: 'Cadastro', path: '/dashboard/lodge-dashboard/secretario/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Presenças', path: '/dashboard/lodge-dashboard/secretario/presencas', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Publicações', path: '/dashboard/lodge-dashboard/secretario/publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Sessões', path: '/dashboard/lodge-dashboard/secretario/sessoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
     ]
   },
   {
-    id: 'chancelaria',
-    label: 'Chancelaria',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Chanceler-D.png`} alt="Chancelaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/chancelaria',
+    id: 'chanceler',
+    label: 'Chanceler',
+    icon: <img src={`${API_URL}/storage/assets/images/icons/Chanceler-D.png`} alt="Chanceler" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/chanceler',
     subItems: [
-      { text: 'Livro de Presenças', path: '/dashboard/chancelaria/attendance' },
-      { text: 'Visitantes', path: '/dashboard/chancelaria/visitors' },
-    ]
-  },
-  {
-    id: 'tesouraria',
-    label: 'Tesouraria',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Tesoureiro-D.png`} alt="Tesouraria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/financial',
-    subItems: [
-      { text: 'Mensalidades', path: '/dashboard/financial/fees' },
-      { text: 'Fluxo de Caixa', path: '/dashboard/financial/cashflow' },
-    ]
-  },
-  {
-    id: 'oratoria',
-    label: 'Oratória',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Orador-D.png`} alt="Oratória" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/oratory',
-    subItems: [
-      { text: 'Peças de Arquitetura', path: '/dashboard/oratory/pieces' },
-    ]
-  },
-  {
-    id: 'arquiteto',
-    label: 'Arquiteto',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Arquiteto-D.png`} alt="Arquiteto" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/architect',
-    subItems: [
-      { text: 'Patrimônio', path: '/dashboard/architect/assets' },
-    ]
-  },
-  {
-    id: 'biblioteca',
-    label: 'Biblioteca',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Biblioteca-D.png`} alt="Biblioteca" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/library',
-    subItems: [
-      { text: 'Acervo', path: '/dashboard/library/books' },
-      { text: 'Empréstimos', path: '/dashboard/library/loans' },
-    ]
-  },
-  {
-    id: 'harmonia',
-    label: 'Harmonia',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Harmonia-D.png`} alt="Harmonia" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/harmony',
-    subItems: [
-      { text: 'Playlists', path: '/dashboard/harmony/playlists' },
+      { text: 'Cadastro', path: '/dashboard/lodge-dashboard/chanceler/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Presenças', path: '/dashboard/lodge-dashboard/chanceler/presencas', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Visitações', path: '/dashboard/lodge-dashboard/chanceler/visitacoes', icon: <VisitationIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Visitantes', path: '/dashboard/lodge-dashboard/chanceler/visitantes', icon: <PersonIcon sx={{ fontSize: 20 }} /> },
     ]
   },
 ];
@@ -133,15 +108,17 @@ const LodgeDashboardLayout: React.FC = () => {
       return;
     }
 
-    // Find category that matches the start of the path
+    // Find category that matches the current path
     let found = false;
     for (const category of MENU_CONFIG) {
-      if (category.subItems.some(item => currentPath.startsWith(item.path))) {
-        setActiveCategory(category.id);
-        found = true;
-        break;
-      }
-      if (currentPath.startsWith(category.path)) {
+      // Skip HOME menu (no subitems)
+      if (category.subItems.length === 0) continue;
+      
+      // Check if we're in any of the category's sub-routes
+      // Example: /dashboard/lodge-dashboard/obreiro/meu-cadastro should match 'obreiro'
+      const categoryBasePath = category.path;
+      
+      if (currentPath.startsWith(categoryBasePath)) {
         setActiveCategory(category.id);
         found = true;
         break;
@@ -154,15 +131,21 @@ const LodgeDashboardLayout: React.FC = () => {
   }, [location.pathname]);
 
   const handleMainIconClick = (category: typeof MENU_CONFIG[0]) => {
+    // Se o menu não tem subitens (como HOME), navega diretamente e remove menu secundário
+    if (category.subItems.length === 0) {
+      setActiveCategory(null);
+      navigate(category.path);
+      return;
+    }
+
+    // Para menus com subitens
     if (activeCategory === category.id) {
-      if (category.subItems.length > 0) {
-        navigate(category.subItems[0].path);
-      }
+      // Se já está ativo, navega para o primeiro subitem
+      navigate(category.subItems[0].path);
     } else {
+      // Ativa a categoria e navega para o primeiro subitem
       setActiveCategory(category.id);
-      if (category.subItems.length > 0) {
-        navigate(category.subItems[0].path);
-      }
+      navigate(category.subItems[0].path);
     }
   };
 
@@ -335,7 +318,7 @@ const LodgeDashboardLayout: React.FC = () => {
             </Box>
             
             <List sx={{ p: 1 }}>
-              {activeMenu.subItems.map((subItem) => (
+              {activeMenu.subItems.map((subItem: any) => (
                 <ListItemButton
                   key={subItem.path}
                   component={RouterLink}
@@ -351,6 +334,11 @@ const LodgeDashboardLayout: React.FC = () => {
                     }
                   }}
                 >
+                  {subItem.icon && (
+                    <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+                      {subItem.icon}
+                    </ListItemIcon>
+                  )}
                   <ListItemText 
                     primary={subItem.text} 
                     primaryTypographyProps={{ 
