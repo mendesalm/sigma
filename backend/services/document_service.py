@@ -20,6 +20,7 @@ async def create_document(
     file_content_bytes: bytes | None = None,  # Conteúdo do arquivo em bytes, se gerado internamente
     filename: str | None = None,  # Nome do arquivo para conteúdo em bytes
     content_type: str | None = None,  # Tipo de conteúdo para bytes
+    session_id: int | None = None,  # ID da sessão associada, se houver
 ) -> models.Document:
     """
     Salva um arquivo no diretório do tenant e cria um registro no banco de dados.
@@ -82,6 +83,7 @@ async def create_document(
         file_name=file_to_save_name,
         file_type=file_to_save_type,
         uploaded_by_member_id=user_id,  # user_id do payload é o member_id do Uploader
+        session_id=session_id,
     )
 
     db_document = models.Document(**db_document_data.model_dump(), lodge_id=lodge_id)

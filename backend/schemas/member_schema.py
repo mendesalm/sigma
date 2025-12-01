@@ -23,6 +23,19 @@ class RegistrationStatusEnum(str, enum.Enum):
     REJECTED = "Rejeitado"
 
 
+class MemberStatusEnum(str, enum.Enum):
+    ACTIVE = "Ativo"
+    INACTIVE = "Inativo"
+    DISABLED = "Desativado"
+
+class MemberClassEnum(str, enum.Enum):
+    REGULAR = "Regular"
+    IRREGULAR = "Irregular"
+    EMERITUS = "Emérito"
+    REMITTED = "Remido"
+    HONORARY = "Honorário"
+
+
 # --- Schemas ---
 
 
@@ -31,6 +44,8 @@ class MemberLodgeAssociationResponse(BaseModel):
 
     start_date: date | None
     end_date: date | None
+    status: MemberStatusEnum
+    member_class: MemberClassEnum
 
     class Config:
         from_attributes = True
@@ -244,6 +259,8 @@ class MemberCreate(MemberBase):
 class MemberCreateWithAssociation(MemberCreate):
     lodge_id: int = Field(..., description="ID da Loja à qual o membro será associado")
     role_id: int | None = Field(None, description="ID do Cargo que o membro ocupará na loja (opcional)")
+    status: MemberStatusEnum = Field(MemberStatusEnum.ACTIVE, description="Status do membro na loja")
+    member_class: MemberClassEnum = Field(MemberClassEnum.REGULAR, description="Classe do membro na loja")
     family_members: list[FamilyMemberCreate] = []
 
 
@@ -281,6 +298,12 @@ class MemberUpdate(BaseModel):
     password: str | None = Field(None, min_length=8)
 
 
+class MemberAssociateLodge(BaseModel):
+    lodge_id: int
+    role_id: int | None = None
+    status: MemberStatusEnum = MemberStatusEnum.ACTIVE
+    member_class: MemberClassEnum = MemberClassEnum.REGULAR
+    member_update: MemberUpdate | None = None
 
 
 class MemberListResponse(BaseModel):

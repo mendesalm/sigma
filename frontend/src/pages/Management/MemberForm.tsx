@@ -4,11 +4,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
   InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert, 
-  Avatar, Stack, Checkbox, FormControlLabel, Tooltip, IconButton
+  Avatar, Stack, Checkbox, FormControlLabel, Tooltip, IconButton, CircularProgress
 } from '@mui/material';
-import { PhotoCamera, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Save as SaveIcon } from '@mui/icons-material';
+import { PhotoCamera, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon } from '@mui/icons-material';
 import api from '../../services/api';
-import { MemberResponse, DegreeEnum, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse } from '../../types';
+import { MemberResponse, DegreeEnum, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum } from '../../types';
 import { formatCPF, formatPhone, formatCEP } from '../../utils/formatters';
 import { validateCPF, validateEmail } from '../../utils/validators';
 import RoleAssignmentDialog from '../../components/RoleAssignmentDialog';
@@ -55,7 +55,8 @@ const MemberForm: React.FC = () => {
     workplace: '',
     profile_picture_path: '',
     cim: '',
-    status: 'Active',
+    status: MemberStatusEnum.ACTIVE,
+    member_class: MemberClassEnum.REGULAR,
     degree: DegreeEnum.APPRENTICE,
     initiation_date: '',
     elevation_date: '',
@@ -79,9 +80,14 @@ const MemberForm: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [openRoleDialog, setOpenRoleDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+
+  // New State for CIM Flow
+  const [isCimVerified, setIsCimVerified] = useState(false);
+  const [cimCheckLoading, setCimCheckLoading] = useState(false);
+  const [existingMemberId, setExistingMemberId] = useState<number | null>(null);
 
   const handleCepBlur = async () => {
     if (formState.zip_code) {
@@ -117,19 +123,28 @@ const MemberForm: React.FC = () => {
     fetchRoles();
 
     if (id) {
+      // If editing, skip CIM check
+      setIsCimVerified(true);
       const fetchMember = async () => {
         try {
           const response = await api.get<MemberResponse>(`/members/${id}`);
           const memberData = response.data;
           
-          // Find active role for the primary lodge (assuming first association for now)
-          const lodgeId = memberData.lodge_associations?.[0]?.lodge_id;
-          const activeRole = memberData.role_history?.find(h => !h.end_date && h.lodge_id === lodgeId);
+          // Determine target lodge ID (Webmaster's lodge or first association)
+          let targetLodgeId = memberData.lodge_associations?.[0]?.lodge_id;
+          if (user?.user_type === 'webmaster' && user?.lodge_id) {
+             targetLodgeId = user.lodge_id;
+          }
+
+          const association = memberData.lodge_associations?.find(a => a.lodge_id === targetLodgeId);
+          const activeRole = memberData.role_history?.find(h => !h.end_date && h.lodge_id === targetLodgeId);
           
           setFormState({
             ...memberData,
-            lodge_id: lodgeId || '',
-            role_id: activeRole?.role_id || ''
+            lodge_id: targetLodgeId || '',
+            role_id: activeRole?.role_id || '',
+            status: association?.status || MemberStatusEnum.ACTIVE,
+            member_class: association?.member_class || MemberClassEnum.REGULAR
           });
 
           // Populate family members
@@ -156,7 +171,7 @@ const MemberForm: React.FC = () => {
       };
       fetchMember();
     }
-  }, [id]);
+  }, [id, user]);
 
   const validateField = (name: string, value: string) => {
     let error = '';
@@ -187,6 +202,62 @@ const MemberForm: React.FC = () => {
       ...prevState,
       [name as string]: formattedValue,
     }));
+  };
+
+  const handleCheckCim = async () => {
+    if (!formState.cim) {
+      setSnackbar({ open: true, message: 'Por favor, informe o CIM.', severity: 'warning' });
+      return;
+    }
+
+    setCimCheckLoading(true);
+    try {
+      const response = await api.get<MemberResponse>(`/members/check-cim/${formState.cim}`);
+      const memberData = response.data;
+      
+      // Member found! Import data
+      setExistingMemberId(memberData.id);
+      setFormState((prev: any) => ({
+        ...prev,
+        ...memberData,
+        // Keep lodge_id from current context, DO NOT overwrite with member's other lodge
+        lodge_id: prev.lodge_id, 
+        // Reset role_id because role is per-lodge
+        role_id: '',
+        // Reset status/class to defaults for new association
+        status: MemberStatusEnum.ACTIVE,
+        member_class: MemberClassEnum.REGULAR,
+        password: '' // Don't need password for existing member
+      }));
+
+      if (memberData.family_members) {
+        setFamilyMembers(memberData.family_members.map(fm => ({
+          id: fm.id,
+          full_name: fm.full_name,
+          relationship_type: fm.relationship_type,
+          birth_date: fm.birth_date || '',
+          phone: fm.phone || '',
+          email: fm.email || '',
+          is_deceased: fm.is_deceased
+        })));
+     }
+
+      setSnackbar({ open: true, message: 'Membro encontrado! Dados importados.', severity: 'success' });
+      setIsCimVerified(true);
+
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Member not found, proceed to registration
+        setSnackbar({ open: true, message: 'CIM não encontrado. Iniciando novo cadastro.', severity: 'info' });
+        setIsCimVerified(true);
+        setExistingMemberId(null);
+      } else {
+        console.error('Error checking CIM', error);
+        setSnackbar({ open: true, message: 'Erro ao verificar CIM.', severity: 'error' });
+      }
+    } finally {
+      setCimCheckLoading(false);
+    }
   };
 
   const handleFamilyMemberChange = (index: number, field: keyof FamilyMemberLocal, value: any) => {
@@ -295,12 +366,24 @@ const MemberForm: React.FC = () => {
     };
 
     try {
-      let targetId = id;
+      let targetId = id || existingMemberId;
 
-      if (id) {
+      if (existingMemberId && !id) {
+        // Case: Associating existing member found via CIM
+        await api.post(`/members/${existingMemberId}/associate`, {
+          lodge_id: Number(sanitizedFormState.lodge_id),
+          role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
+          status: sanitizedFormState.status,
+          member_class: sanitizedFormState.member_class,
+          member_update: memberData // Pass updated data to update the member record
+        });
+        setSnackbar({ open: true, message: 'Membro associado com sucesso!', severity: 'success' });
+      } else if (id) {
+        // Case: Updating existing member (Edit Mode)
         await api.put(`/members/${id}`, memberData);
         setSnackbar({ open: true, message: 'Membro atualizado com sucesso!', severity: 'success' });
       } else {
+        // Case: Creating new member
         const response = await api.post('/members', memberData);
         targetId = response.data.id;
 
@@ -347,11 +430,44 @@ const MemberForm: React.FC = () => {
     </Typography>
   );
 
+  // --- RENDER CIM CHECK STEP ---
+  if (!isCimVerified && !id) {
+    return (
+      <Container maxWidth="sm">
+        <Paper sx={{ p: 4, mt: 8, textAlign: 'center' }}>
+          <Typography variant="h5" gutterBottom color="primary">
+            Cadastro de Membro
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            Informe o CIM para iniciar o cadastro. O sistema verificará se o membro já existe.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <TextField
+              label="CIM"
+              value={formState.cim}
+              onChange={(e) => setFormState({ ...formState, cim: e.target.value })}
+              fullWidth
+              variant="outlined"
+            />
+            <Button 
+              variant="contained" 
+              onClick={handleCheckCim}
+              disabled={cimCheckLoading}
+              startIcon={cimCheckLoading ? <CircularProgress size={20} /> : <SearchIcon />}
+            >
+              Verificar
+            </Button>
+          </Box>
+        </Paper>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="xl">
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" gutterBottom color="primary">
-          {id ? 'Editar Membro' : 'Novo Membro'}
+          {id ? 'Editar Membro' : (existingMemberId ? 'Associar Membro Existente' : 'Novo Membro')}
         </Typography>
       </Box>
 
@@ -505,7 +621,7 @@ const MemberForm: React.FC = () => {
             <Paper sx={{ p: 2, mb: 2 }}>
               {renderSectionTitle('Informações de Acesso')}
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <FormControl fullWidth variant="outlined" size="small">
                     <InputLabel sx={{ fontSize: '0.9rem' }}>Credencial</InputLabel>
                     <Select
@@ -519,23 +635,41 @@ const MemberForm: React.FC = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                    <FormControl fullWidth variant="outlined" size="small">
-                    <InputLabel sx={{ fontSize: '0.9rem' }}>Status</InputLabel>
+                    <InputLabel sx={{ fontSize: '0.9rem' }}>Status na Loja</InputLabel>
                     <Select
-                      name="registration_status"
-                      value={formState.registration_status}
-                      label="Status"
+                      name="status"
+                      value={formState.status}
+                      label="Status na Loja"
                       onChange={handleChange}
                       sx={{ fontSize: '0.9rem' }}
                     >
-                      <MenuItem value={RegistrationStatusEnum.PENDING}>Pendente</MenuItem>
-                      <MenuItem value={RegistrationStatusEnum.APPROVED}>Aprovado</MenuItem>
-                      <MenuItem value={RegistrationStatusEnum.REJECTED}>Rejeitado</MenuItem>
+                      <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
+                      <MenuItem value={MemberStatusEnum.INACTIVE}>Inativo</MenuItem>
+                      <MenuItem value={MemberStatusEnum.DISABLED}>Desativado (Falecido)</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
-                {!id && (
+                <Grid item xs={12} md={4}>
+                   <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel sx={{ fontSize: '0.9rem' }}>Classe</InputLabel>
+                    <Select
+                      name="member_class"
+                      value={formState.member_class}
+                      label="Classe"
+                      onChange={handleChange}
+                      sx={{ fontSize: '0.9rem' }}
+                    >
+                      <MenuItem value={MemberClassEnum.REGULAR}>Regular</MenuItem>
+                      <MenuItem value={MemberClassEnum.IRREGULAR}>Irregular</MenuItem>
+                      <MenuItem value={MemberClassEnum.EMERITUS}>Emérito</MenuItem>
+                      <MenuItem value={MemberClassEnum.REMITTED}>Remido</MenuItem>
+                      <MenuItem value={MemberClassEnum.HONORARY}>Honorário</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                {!id && !existingMemberId && (
                   <Grid item xs={12}>
                     <TextField
                       name="password"
@@ -789,6 +923,7 @@ const MemberForm: React.FC = () => {
                     size="small"
                     InputProps={{ style: { fontSize: '0.9rem' } }}
                     InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                    disabled={!!existingMemberId} // Disable CIM editing if imported
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>

@@ -75,6 +75,20 @@ class ExceptionTypeEnum(str, enum.Enum):
     REVOKE = "Revogada"
 
 
+class MemberStatusEnum(str, enum.Enum):
+    ACTIVE = "Ativo"
+    INACTIVE = "Inativo"
+    DISABLED = "Desativado"  # Falecido
+
+
+class MemberClassEnum(str, enum.Enum):
+    REGULAR = "Regular"
+    IRREGULAR = "Irregular"
+    EMERITUS = "Emérito"
+    REMITTED = "Remido"
+    HONORARY = "Honorário"
+
+
 # --- ASSOCIATION TABLES ---
 roles_permissions = Table(
     "roles_permissions",
@@ -297,6 +311,8 @@ class MemberLodgeAssociation(BaseModel):
 
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
+    status = Column(SQLAlchemyEnum(MemberStatusEnum), nullable=False, default=MemberStatusEnum.ACTIVE)
+    member_class = Column(SQLAlchemyEnum(MemberClassEnum), nullable=False, default=MemberClassEnum.REGULAR)
     member = relationship("Member", back_populates="lodge_associations")
     lodge = relationship("Lodge", back_populates="associations")
     
@@ -399,6 +415,94 @@ class RoleHistory(BaseModel):
     )
 
 
+
+class SessionTypeEnum(str, enum.Enum):
+    ORDINARY = "Ordinária"
+    MAGNA = "Magna"
+    EXTRAORDINARY = "Extraordinária"
+
+
+class SessionSubtypeEnum(str, enum.Enum):
+    # Ordinárias
+    REGULAR = "Regular"
+    ADMINISTRATIVE = "Administrativa"
+    FINANCE = "Finanças"
+    AFFILIATION_REGULARIZATION = "Filiação e Regularização"
+    ELECTORAL = "Eleitoral"
+    RITUALISTIC_BANQUET = "Banquete Ritualístico"
+    
+    # Magnas
+    INITIATION = "Iniciação"
+    ELEVATION = "Elevação"
+    EXALTATION = "Exaltação"
+    INSTALLATION = "Posse"
+    INSTALLATION_WORSHIPFUL = "Instalação"
+    STANDARD_CONSECRATION = "Sagração de Estandarte"
+    LODGE_REGULARIZATION = "Regularização de Loja"
+    TEMPLE_CONSECRATION = "Sagração de Templo"
+    LOWTON_ADOPTION = "Adoção de Lowtons"
+    MATRIMONIAL_CONSECRATION = "Consagração e Exaltação matrimonial"
+    FUNERAL_POMPS = "Pompas Fúnebres"
+    CONFERENCE = "Conferência"
+    LECTURE = "Palestra"
+    FESTIVE = "Festiva"
+    CIVIC_CULTURAL = "Cívico-cultural"
+    
+    # Extraordinárias
+    GENERAL_GM_ELECTION = "Eleições de Grão-Mestre Geral e Adjuntos"
+    STATE_GM_ELECTION = "Eleição de Grão-Mestre Estadual e Adjuntos"
+    DF_GM_ELECTION = "Eleição de Grão Mestre do Distrito Federal e Adjuntos"
+    FAMILY_COUNCIL = "Conselho de Família"
+    EX_OFFICIO_PLACET = "Concessão de placet ex-officio"
+    STATUTE_CHANGE = "Alteração de Estatuto"
+    RITE_CHANGE = "Mudança de Rito"
+    ORIENT_CHANGE = "Mudança de Oriente"
+    DISTINCTIVE_TITLE_CHANGE = "Mudança de Título Distintivo"
+    LODGE_MERGER = "Fusão ou Incorporação de Lojas"
+
+
+# Mapeamento de validação de hierarquia
+VALID_SESSION_SUBTYPES = {
+    SessionTypeEnum.ORDINARY: {
+        SessionSubtypeEnum.REGULAR,
+        SessionSubtypeEnum.ADMINISTRATIVE,
+        SessionSubtypeEnum.FINANCE,
+        SessionSubtypeEnum.AFFILIATION_REGULARIZATION,
+        SessionSubtypeEnum.ELECTORAL,
+        SessionSubtypeEnum.RITUALISTIC_BANQUET,
+    },
+    SessionTypeEnum.MAGNA: {
+        SessionSubtypeEnum.INITIATION,
+        SessionSubtypeEnum.ELEVATION,
+        SessionSubtypeEnum.EXALTATION,
+        SessionSubtypeEnum.INSTALLATION,
+        SessionSubtypeEnum.INSTALLATION_WORSHIPFUL,
+        SessionSubtypeEnum.STANDARD_CONSECRATION,
+        SessionSubtypeEnum.LODGE_REGULARIZATION,
+        SessionSubtypeEnum.TEMPLE_CONSECRATION,
+        SessionSubtypeEnum.LOWTON_ADOPTION,
+        SessionSubtypeEnum.MATRIMONIAL_CONSECRATION,
+        SessionSubtypeEnum.FUNERAL_POMPS,
+        SessionSubtypeEnum.CONFERENCE,
+        SessionSubtypeEnum.LECTURE,
+        SessionSubtypeEnum.FESTIVE,
+        SessionSubtypeEnum.CIVIC_CULTURAL,
+    },
+    SessionTypeEnum.EXTRAORDINARY: {
+        SessionSubtypeEnum.GENERAL_GM_ELECTION,
+        SessionSubtypeEnum.STATE_GM_ELECTION,
+        SessionSubtypeEnum.DF_GM_ELECTION,
+        SessionSubtypeEnum.FAMILY_COUNCIL,
+        SessionSubtypeEnum.EX_OFFICIO_PLACET,
+        SessionSubtypeEnum.STATUTE_CHANGE,
+        SessionSubtypeEnum.RITE_CHANGE,
+        SessionSubtypeEnum.ORIENT_CHANGE,
+        SessionSubtypeEnum.DISTINCTIVE_TITLE_CHANGE,
+        SessionSubtypeEnum.LODGE_MERGER,
+    },
+}
+
+
 class MasonicSession(BaseModel):
     __tablename__ = "masonic_sessions"
     id = Column(Integer, primary_key=True, index=True)
@@ -406,6 +510,10 @@ class MasonicSession(BaseModel):
     session_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
+    
+    type = Column(SQLAlchemyEnum(SessionTypeEnum, name="session_type_enum"), nullable=True)
+    subtype = Column(SQLAlchemyEnum(SessionSubtypeEnum, name="session_subtype_enum"), nullable=True)
+    
     status = Column(
         SQLAlchemyEnum("AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA","CANCELADA", name="session_status_enum"),
         nullable=False,

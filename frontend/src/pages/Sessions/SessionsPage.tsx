@@ -8,6 +8,8 @@ interface Session {
   title: string;
   session_date: string;
   status: string;
+  type?: string;
+  subtype?: string;
 }
 
 const SessionsPage: React.FC = () => {
@@ -60,6 +62,8 @@ const SessionsPage: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Título</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Subtipo</TableCell>
               <TableCell>Data</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Ações</TableCell>
@@ -74,6 +78,8 @@ const SessionsPage: React.FC = () => {
                 <TableCell component="th" scope="row">
                   {session.title}
                 </TableCell>
+                <TableCell>{session.type || '-'}</TableCell>
+                <TableCell>{session.subtype || '-'}</TableCell>
                 <TableCell>{new Date(session.session_date).toLocaleDateString()}</TableCell>
                 <TableCell>{session.status}</TableCell>
                 <TableCell>

@@ -37,6 +37,24 @@ import SessionForm from './pages/Sessions/SessionForm';
 import LodgeSelectionPage from './pages/LodgeSelectionPage';
 import DashboardHome from './pages/Dashboard/DashboardHome';
 
+// Obreiro Pages
+import MeuCadastro from './pages/Obreiro/MeuCadastro';
+import MinhasPresencas from './pages/Obreiro/MinhasPresencas';
+import MinhasVisitacoes from './pages/Obreiro/MinhasVisitacoes';
+import MinhasPublicacoes from './pages/Obreiro/MinhasPublicacoes';
+import MeusAnuncios from './pages/Obreiro/MeusAnuncios';
+import MeusEmprestimos from './pages/Obreiro/MeusEmprestimos';
+
+// Secretário Pages
+import SecretarioPresencas from './pages/Secretario/Presencas';
+import SecretarioPublicacoes from './pages/Secretario/Publicacoes';
+import SecretarioSessoes from './pages/Secretario/Sessoes';
+
+// Chanceler Pages
+import ChancelerPresencas from './pages/Chanceler/Presencas';
+import ChancelerVisitacoes from './pages/Chanceler/Visitacoes';
+import ChancelerVisitantes from './pages/Chanceler/Visitantes';
+
 import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
 
 const router = createBrowserRouter([
@@ -71,6 +89,74 @@ const router = createBrowserRouter([
                 index: true,
                 element: <LodgeDashboard />,
               },
+              // Obreiro Routes
+              {
+                path: 'obreiro/meu-cadastro',
+                element: <MeuCadastro />,
+              },
+              {
+                path: 'obreiro/minhas-presencas',
+                element: <MinhasPresencas />,
+              },
+              {
+                path: 'obreiro/minhas-visitacoes',
+                element: <MinhasVisitacoes />,
+              },
+              {
+                path: 'obreiro/minhas-publicacoes',
+                element: <MinhasPublicacoes />,
+              },
+              {
+                path: 'obreiro/meus-anuncios',
+                element: <MeusAnuncios />,
+              },
+              {
+                path: 'obreiro/meus-emprestimos',
+                element: <MeusEmprestimos />,
+              },
+              // Secretário Routes
+              {
+                path: 'secretario/cadastro',
+                children: [
+                  { index: true, element: <Members /> },
+                  { path: 'new', element: <MemberForm /> },
+                  { path: 'edit/:id', element: <MemberForm /> },
+                ]
+              },
+              {
+                path: 'secretario/presencas',
+                element: <SecretarioPresencas />,
+              },
+              {
+                path: 'secretario/publicacoes',
+                element: <SecretarioPublicacoes />,
+              },
+              {
+                path: 'secretario/sessoes',
+                element: <SecretarioSessoes />,
+              },
+              // Chanceler Routes
+              {
+                path: 'chanceler/cadastro',
+                children: [
+                  { index: true, element: <Members /> },
+                  { path: 'new', element: <MemberForm /> },
+                  { path: 'edit/:id', element: <MemberForm /> },
+                ]
+              },
+              {
+                path: 'chanceler/presencas',
+                element: <ChancelerPresencas />,
+              },
+              {
+                path: 'chanceler/visitacoes',
+                element: <ChancelerVisitacoes />,
+              },
+              {
+                path: 'chanceler/visitantes',
+                element: <ChancelerVisitantes />,
+              },
+              // Legacy routes for compatibility
               {
                 path: 'management',
                 children: [

@@ -8,11 +8,17 @@ from schemas.document_schema import DocumentInDB
 from schemas.session_attendance_schema import SessionAttendanceResponse
 
 
+from models.models import SessionTypeEnum, SessionSubtypeEnum
+
 class MasonicSessionBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=255, description="Título da sessão")
     session_date: date = Field(..., description="Data da sessão")
     start_time: time | None = Field(None, description="Horário de início")
     end_time: time | None = Field(None, description="Horário de término")
+    
+    type: SessionTypeEnum | None = Field(None, description="Tipo da sessão (Ordinária, Magna, Extraordinária)")
+    subtype: SessionSubtypeEnum | None = Field(None, description="Subtipo da sessão")
+    
     status: str = Field(
         "AGENDADA",
         description="Status da sessão: AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA"
@@ -99,6 +105,18 @@ class MasonicSessionBase(BaseModel):
         
         return self
 
+    @model_validator(mode='after')
+    def validate_type_subtype_consistency(self):
+        """Valida se o subtipo pertence ao tipo selecionado."""
+        from models.models import VALID_SESSION_SUBTYPES
+        
+        if self.type and self.subtype:
+            valid_subtypes = VALID_SESSION_SUBTYPES.get(self.type)
+            if valid_subtypes and self.subtype not in valid_subtypes:
+                raise ValueError(f"O subtipo '{self.subtype.value}' não é válido para o tipo de sessão '{self.type.value}'.")
+        
+        return self
+
 
 class MasonicSessionCreate(MasonicSessionBase):
     """Schema para criação de sessão."""
@@ -134,6 +152,8 @@ class MasonicSessionUpdate(BaseModel):
     start_time: time | None = None
     end_time: time | None = None
     status: str | None = None
+    type: SessionTypeEnum | None = None
+    subtype: SessionSubtypeEnum | None = None
 
     @field_validator('title', mode='after', check_fields=False)
     @classmethod

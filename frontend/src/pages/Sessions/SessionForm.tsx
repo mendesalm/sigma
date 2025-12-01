@@ -10,9 +10,15 @@ import {
   Box,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent
 } from '@mui/material';
 import api from '../../services/api';
+import { SessionTypeEnum, SessionSubtypeEnum } from '../../types';
 
 const SessionForm = () => {
   const [formData, setFormData] = useState({
@@ -20,11 +26,54 @@ const SessionForm = () => {
     session_date: '',
     start_time: '',
     end_time: '',
+    type: '',
+    subtype: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams();
+
+  // Mapping of Types to Subtypes
+  const subtypesByType: Record<string, string[]> = {
+    [SessionTypeEnum.ORDINARY]: [
+      SessionSubtypeEnum.REGULAR,
+      SessionSubtypeEnum.ADMINISTRATIVE,
+      SessionSubtypeEnum.FINANCE,
+      SessionSubtypeEnum.AFFILIATION_REGULARIZATION,
+      SessionSubtypeEnum.ELECTORAL,
+      SessionSubtypeEnum.RITUALISTIC_BANQUET,
+    ],
+    [SessionTypeEnum.MAGNA]: [
+      SessionSubtypeEnum.INITIATION,
+      SessionSubtypeEnum.ELEVATION,
+      SessionSubtypeEnum.EXALTATION,
+      SessionSubtypeEnum.INSTALLATION,
+      SessionSubtypeEnum.INSTALLATION_WORSHIPFUL,
+      SessionSubtypeEnum.STANDARD_CONSECRATION,
+      SessionSubtypeEnum.LODGE_REGULARIZATION,
+      SessionSubtypeEnum.TEMPLE_CONSECRATION,
+      SessionSubtypeEnum.LOWTON_ADOPTION,
+      SessionSubtypeEnum.MATRIMONIAL_CONSECRATION,
+      SessionSubtypeEnum.FUNERAL_POMPS,
+      SessionSubtypeEnum.CONFERENCE,
+      SessionSubtypeEnum.LECTURE,
+      SessionSubtypeEnum.FESTIVE,
+      SessionSubtypeEnum.CIVIC_CULTURAL,
+    ],
+    [SessionTypeEnum.EXTRAORDINARY]: [
+      SessionSubtypeEnum.GENERAL_GM_ELECTION,
+      SessionSubtypeEnum.STATE_GM_ELECTION,
+      SessionSubtypeEnum.DF_GM_ELECTION,
+      SessionSubtypeEnum.FAMILY_COUNCIL,
+      SessionSubtypeEnum.EX_OFFICIO_PLACET,
+      SessionSubtypeEnum.STATUTE_CHANGE,
+      SessionSubtypeEnum.RITE_CHANGE,
+      SessionSubtypeEnum.ORIENT_CHANGE,
+      SessionSubtypeEnum.DISTINCTIVE_TITLE_CHANGE,
+      SessionSubtypeEnum.LODGE_MERGER,
+    ],
+  };
 
   useEffect(() => {
     if (id) {
@@ -37,6 +86,8 @@ const SessionForm = () => {
             session_date: session.session_date,
             start_time: session.start_time || '',
             end_time: session.end_time || '',
+            type: session.type || '',
+            subtype: session.subtype || '',
           });
         } catch (error) {
           console.error('Failed to fetch session', error);
@@ -53,6 +104,18 @@ const SessionForm = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    const { name, value } = event.target;
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      // Reset subtype if type changes
+      if (name === 'type') {
+        newData.subtype = '';
+      }
+      return newData;
+    });
   };
 
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
@@ -118,6 +181,43 @@ const SessionForm = () => {
                 placeholder="Ex: Sessão Magna de Iniciação"
               />
             </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Tipo de Sessão</InputLabel>
+                <Select
+                  name="type"
+                  value={formData.type}
+                  label="Tipo de Sessão"
+                  onChange={handleSelectChange}
+                >
+                  {Object.values(SessionTypeEnum).map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required disabled={!formData.type}>
+                <InputLabel>Subtipo</InputLabel>
+                <Select
+                  name="subtype"
+                  value={formData.subtype}
+                  label="Subtipo"
+                  onChange={handleSelectChange}
+                >
+                  {formData.type && subtypesByType[formData.type]?.map((subtype) => (
+                    <MenuItem key={subtype} value={subtype}>
+                      {subtype}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
             <Grid item xs={12} md={4}>
               <TextField
                 name="session_date"

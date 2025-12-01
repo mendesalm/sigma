@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar } from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from './components/AttendanceTab';
-import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital } from '../../services/api';
-import { PlayArrow, Stop, Cancel, Description } from '@mui/icons-material';
+import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument } from '../../services/api';
+import { PlayArrow, Stop, Cancel, Description, Add } from '@mui/icons-material';
 
 interface Session {
   id: number;
   title: string;
   session_date: string;
+  start_time?: string;
+  end_time?: string;
   status: string;
+  type?: string;
+  subtype?: string;
   lodge: {
     id: number;
     lodge_name: string;
@@ -54,6 +58,11 @@ const SessionDetailsPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
+  // Upload State
+  const [openUploadDialog, setOpenUploadDialog] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+
   const fetchSessionDetails = async () => {
     try {
       setLoading(true);
@@ -87,6 +96,30 @@ const SessionDetailsPage: React.FC = () => {
     } catch (err) {
       console.error(err);
       setSnackbar({ open: true, message: 'Falha ao realizar ação.', severity: 'error' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUploadDocument = async () => {
+    if (!uploadFile || !uploadTitle) return;
+
+    try {
+      setActionLoading(true);
+      const formData = new FormData();
+      formData.append('title', uploadTitle);
+      formData.append('file', uploadFile);
+      formData.append('session_id', sessionId.toString());
+
+      await uploadDocument(formData);
+      setSnackbar({ open: true, message: 'Documento enviado com sucesso!', severity: 'success' });
+      setOpenUploadDialog(false);
+      setUploadTitle('');
+      setUploadFile(null);
+      fetchSessionDetails(); // Refresh list
+    } catch (err) {
+      console.error(err);
+      setSnackbar({ open: true, message: 'Falha ao enviar documento.', severity: 'error' });
     } finally {
       setActionLoading(false);
     }
@@ -192,12 +225,48 @@ const SessionDetailsPage: React.FC = () => {
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <Typography>Informações detalhadas sobre a sessão serão exibidas aqui.</Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">Tipo de Sessão</Typography>
+              <Typography variant="body1">{session.type || 'Não definido'}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">Subtipo</Typography>
+              <Typography variant="body1">{session.subtype || 'Não definido'}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">Data</Typography>
+              <Typography variant="body1">{new Date(session.session_date).toLocaleDateString()}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">Horário de Início</Typography>
+              <Typography variant="body1">{session.start_time || '-'}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="subtitle2" color="text.secondary">Horário de Término</Typography>
+              <Typography variant="body1">{session.end_time || '-'}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
         <AttendanceTab sessionId={sessionId} />
       </TabPanel>
       <TabPanel value={tabValue} index={2}>
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button variant="contained" startIcon={<Add />} onClick={() => setOpenUploadDialog(true)}>
+            Upload de Documento
+          </Button>
+        </Box>
         {session.documents && session.documents.length > 0 ? (
           <Stack spacing={2}>
             {session.documents.map((doc: any) => (
@@ -205,7 +274,7 @@ const SessionDetailsPage: React.FC = () => {
                 <Box>
                   <Typography variant="subtitle1">{doc.title}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Tipo: {doc.document_type} | Data: {new Date(doc.upload_date).toLocaleDateString()}
+                    Tipo: {doc.document_type || 'Geral'} | Data: {new Date(doc.upload_date).toLocaleDateString()}
                   </Typography>
                 </Box>
                 <Button 
@@ -236,6 +305,48 @@ const SessionDetailsPage: React.FC = () => {
           <Typography color="text.secondary">Nenhum documento gerado para esta sessão.</Typography>
         )}
       </TabPanel>
+
+      {/* Upload Dialog */}
+      <Dialog open={openUploadDialog} onClose={() => setOpenUploadDialog(false)}>
+        <DialogTitle>Upload de Documento</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                label="Título do Documento"
+                fullWidth
+                value={uploadTitle}
+                onChange={(e) => setUploadTitle(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+              >
+                Selecionar Arquivo
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                />
+              </Button>
+              {uploadFile && <Typography variant="caption" display="block" sx={{ mt: 1 }}>Arquivo: {uploadFile.name}</Typography>}
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenUploadDialog(false)}>Cancelar</Button>
+          <Button 
+            onClick={handleUploadDocument} 
+            variant="contained" 
+            disabled={!uploadFile || !uploadTitle || actionLoading}
+          >
+            {actionLoading ? <CircularProgress size={24} /> : 'Enviar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

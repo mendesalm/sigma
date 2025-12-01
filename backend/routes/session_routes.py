@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 # Importações do projeto
 from database import get_db
 from dependencies import get_current_user_payload
-from schemas import masonic_session_schema
+from schemas import masonic_session_schema, session_attendance_schema
 from services import session_service
 
 router = APIRouter(
@@ -179,3 +179,58 @@ def delete_masonic_session(
 ):
     session_service.delete_session(db=db, session_id=session_id, current_user_payload=current_user_payload)
     return {"message": "Sessão excluída com sucesso."}
+
+
+# --- Rotas de Presença ---
+
+@router.get(
+    "/{session_id}/attendance",
+    response_model=list[session_attendance_schema.SessionAttendanceWithMemberResponse],
+    summary="Listar Presença da Sessão",
+    description="Retorna a lista de presença de uma sessão específica.",
+)
+def get_session_attendance_list(
+    session_id: int, db: Session = Depends(get_db), current_user_payload: dict = Depends(get_current_user_payload)
+):
+    return session_service.get_session_attendance(db=db, session_id=session_id, current_user_payload=current_user_payload)
+
+
+@router.post(
+    "/{session_id}/attendance/manual",
+    response_model=session_attendance_schema.SessionAttendanceResponse,
+    summary="Atualizar Presença Manualmente",
+    description="Atualiza o status de presença de um membro manualmente.",
+)
+def update_manual_attendance_status(
+    session_id: int,
+    attendance_data: dict, # Expects member_id and attendance_status
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload)
+):
+    return session_service.update_manual_attendance(
+        db=db,
+        session_id=session_id,
+        member_id=attendance_data["member_id"],
+        status=attendance_data["attendance_status"],
+        current_user_payload=current_user_payload
+    )
+
+
+@router.post(
+    "/{session_id}/attendance/visitor",
+    response_model=session_attendance_schema.SessionAttendanceResponse,
+    summary="Registrar Presença de Visitante",
+    description="Registra a presença de um visitante na sessão.",
+)
+def register_visitor_attendance_record(
+    session_id: int,
+    visitor_data: dict,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload)
+):
+    return session_service.register_visitor_attendance(
+        db=db,
+        session_id=session_id,
+        visitor_data=visitor_data,
+        current_user_payload=current_user_payload
+    )

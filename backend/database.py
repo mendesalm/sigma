@@ -9,6 +9,9 @@ dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    # Fallback for testing or if .env is missing
+    DATABASE_URL = "sqlite:///./sigma.db"
 
 # Escape the URL for configparser if needed, though not directly used by SQLAlchemy here
 if DATABASE_URL and "%" in DATABASE_URL:

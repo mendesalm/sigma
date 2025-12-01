@@ -18,6 +18,7 @@ router = APIRouter(prefix="/documents", tags=["Documentos"], responses={404: {"d
 )
 async def upload_document(
     title: str = Form(..., description="Título do documento."),
+    session_id: int | None = Form(None, description="ID da sessão associada (opcional)."),
     file: UploadFile = File(..., description="Arquivo a ser enviado."),
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
@@ -27,7 +28,7 @@ async def upload_document(
     específico do tenant (loja) e os metadados são salvos no banco de dados.
     """
     return await document_service.create_document(
-        db=db, file=file, title=title, current_user_payload=current_user_payload
+        db=db, file=file, title=title, session_id=session_id, current_user_payload=current_user_payload
     )
 
 

@@ -27,6 +27,65 @@ export enum RiteEnum {
   RER = "Rito Escocês Retificado",
 }
 
+export enum MemberStatusEnum {
+  ACTIVE = "Ativo",
+  INACTIVE = "Inativo",
+  DISABLED = "Desativado",
+}
+
+export enum MemberClassEnum {
+  REGULAR = "Regular",
+  IRREGULAR = "Irregular",
+  EMERITUS = "Emérito",
+  REMITTED = "Remido",
+  HONORARY = "Honorário",
+}
+
+export enum SessionTypeEnum {
+  ORDINARY = "Ordinária",
+  MAGNA = "Magna",
+  EXTRAORDINARY = "Extraordinária",
+}
+
+export enum SessionSubtypeEnum {
+  // Ordinárias
+  REGULAR = "Regular",
+  ADMINISTRATIVE = "Administrativa",
+  FINANCE = "Finanças",
+  AFFILIATION_REGULARIZATION = "Filiação e Regularização",
+  ELECTORAL = "Eleitoral",
+  RITUALISTIC_BANQUET = "Banquete Ritualístico",
+  
+  // Magnas
+  INITIATION = "Iniciação",
+  ELEVATION = "Elevação",
+  EXALTATION = "Exaltação",
+  INSTALLATION = "Posse",
+  INSTALLATION_WORSHIPFUL = "Instalação",
+  STANDARD_CONSECRATION = "Sagração de Estandarte",
+  LODGE_REGULARIZATION = "Regularização de Loja",
+  TEMPLE_CONSECRATION = "Sagração de Templo",
+  LOWTON_ADOPTION = "Adoção de Lowtons",
+  MATRIMONIAL_CONSECRATION = "Consagração e Exaltação matrimonial",
+  FUNERAL_POMPS = "Pompas Fúnebres",
+  CONFERENCE = "Conferência",
+  LECTURE = "Palestra",
+  FESTIVE = "Festiva",
+  CIVIC_CULTURAL = "Cívico-cultural",
+  
+  // Extraordinárias
+  GENERAL_GM_ELECTION = "Eleições de Grão-Mestre Geral e Adjuntos",
+  STATE_GM_ELECTION = "Eleição de Grão-Mestre Estadual e Adjuntos",
+  DF_GM_ELECTION = "Eleição de Grão Mestre do Distrito Federal e Adjuntos",
+  FAMILY_COUNCIL = "Conselho de Família",
+  EX_OFFICIO_PLACET = "Concessão de placet ex-officio",
+  STATUTE_CHANGE = "Alteração de Estatuto",
+  RITE_CHANGE = "Mudança de Rito",
+  ORIENT_CHANGE = "Mudança de Oriente",
+  DISTINCTIVE_TITLE_CHANGE = "Mudança de Título Distintivo",
+  LODGE_MERGER = "Fusão ou Incorporação de Lojas",
+}
+
 export interface FamilyMemberResponse {
   id: number;
   full_name: string;
@@ -63,6 +122,8 @@ export interface MemberLodgeAssociationResponse {
   lodge_id: number;
   start_date?: string;
   end_date?: string;
+  status?: MemberStatusEnum;
+  member_class?: MemberClassEnum;
 }
 
 export interface MemberResponse {

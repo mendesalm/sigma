@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, joinedload
 
 from config import settings
 from models import models
@@ -291,3 +291,99 @@ async def generate_session_document(
         return {"message": "Geração do Edital iniciada em background."}
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido.")
+
+
+def get_session_attendance(
+    db: Session, session_id: int, current_user_payload: dict
+) -> list[models.SessionAttendance]:
+    """
+    Retorna a lista de presença de uma sessão.
+    """
+    db_session = get_session_by_id(db, session_id, current_user_payload)
+    
+    return db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id == session_id
+    ).options(
+        joinedload(models.SessionAttendance.member),
+        joinedload(models.SessionAttendance.visitor)
+    ).all()
+
+
+def update_manual_attendance(
+    db: Session, session_id: int, member_id: int, status: str, current_user_payload: dict
+) -> models.SessionAttendance:
+    """
+    Atualiza manualmente o status de presença de um membro.
+    """
+    # Valida acesso à sessão
+    get_session_by_id(db, session_id, current_user_payload)
+    
+    attendance = db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id == session_id,
+        models.SessionAttendance.member_id == member_id
+    ).first()
+    
+    if not attendance:
+        # Se não existir registro (ex: membro adicionado depois), cria um
+        attendance = models.SessionAttendance(
+            session_id=session_id,
+            member_id=member_id,
+            attendance_status=status,
+            check_in_method="MANUAL"
+        )
+        db.add(attendance)
+    else:
+        attendance.attendance_status = status
+        attendance.check_in_method = "MANUAL"
+        
+    db.commit()
+    db.refresh(attendance)
+    return attendance
+
+
+def register_visitor_attendance(
+    db: Session, session_id: int, visitor_data: dict, current_user_payload: dict
+) -> models.SessionAttendance:
+    """
+    Registra a presença de um visitante. Cria o visitante se não existir.
+    """
+    # Valida acesso à sessão
+    get_session_by_id(db, session_id, current_user_payload)
+    
+    # Procura visitante existente por CPF ou Email (se fornecidos)
+    visitor = None
+    if visitor_data.get("cpf"):
+        visitor = db.query(models.Visitor).filter(models.Visitor.cpf == visitor_data["cpf"]).first()
+    
+    if not visitor and visitor_data.get("email"):
+        visitor = db.query(models.Visitor).filter(models.Visitor.email == visitor_data["email"]).first()
+        
+    if not visitor:
+        visitor = models.Visitor(
+            full_name=visitor_data["full_name"],
+            email=visitor_data.get("email"),
+            cpf=visitor_data.get("cpf"),
+            origin_lodge=visitor_data.get("origin_lodge")
+        )
+        db.add(visitor)
+        db.commit()
+        db.refresh(visitor)
+        
+    # Verifica se já está na lista
+    attendance = db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id == session_id,
+        models.SessionAttendance.visitor_id == visitor.id
+    ).first()
+    
+    if not attendance:
+        attendance = models.SessionAttendance(
+            session_id=session_id,
+            visitor_id=visitor.id,
+            attendance_status="Presente",
+            check_in_method="MANUAL"
+        )
+        db.add(attendance)
+        db.commit()
+        db.refresh(attendance)
+        
+    return attendance

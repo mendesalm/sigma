@@ -33,15 +33,22 @@ def get_member_in_lodge(db: Session, member_id: int, lodge_id: int) -> models.Me
     )
 
 
+def get_member_by_cim(db: Session, cim: str) -> models.Member | None:
+    """Fetches a member by their CIM."""
+    return db.query(models.Member).filter(models.Member.cim == cim).first()
+
+
 def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreateWithAssociation) -> models.Member:
     """Creates a new member and associates them with a lodge."""
     # Separate password and association data from the main member data
     password = member_data.password
     lodge_id = member_data.lodge_id
     role_id = member_data.role_id
+    status = member_data.status
+    member_class = member_data.member_class
     family_members_data = member_data.family_members
 
-    member_dict = member_data.model_dump(exclude={"password", "lodge_id", "role_id", "family_members"})
+    member_dict = member_data.model_dump(exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class"})
 
     # Create Member instance
     db_member = models.Member(**member_dict, password_hash=hash_password(password))
@@ -49,7 +56,13 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
     db.flush()  # Use flush to get the db_member.id before commit
 
     # Create Association (without role_id)
-    association = models.MemberLodgeAssociation(member_id=db_member.id, lodge_id=lodge_id)
+    association = models.MemberLodgeAssociation(
+        member_id=db_member.id, 
+        lodge_id=lodge_id,
+        status=status,
+        member_class=member_class,
+        start_date=date.today()
+    )
     db.add(association)
 
     # Create Initial Role History (only if role_id is provided)
@@ -68,6 +81,90 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
         for fm_data in family_members_data:
             db_family_member = models.FamilyMember(**fm_data.model_dump(), member_id=db_member.id)
             db.add(db_family_member)
+
+    db.commit()
+    db.refresh(db_member)
+    return db_member
+
+
+def associate_member_to_lodge(
+    db: Session, 
+    member_id: int, 
+    association_data: member_schema.MemberAssociateLodge
+) -> models.Member:
+    """Associates an existing member with a lodge, updating their data if provided."""
+    db_member = db.query(models.Member).filter(models.Member.id == member_id).first()
+    if not db_member:
+        raise ValueError("Member not found")
+
+    # Check if already associated
+    existing_association = (
+        db.query(models.MemberLodgeAssociation)
+        .filter(models.MemberLodgeAssociation.member_id == member_id, models.MemberLodgeAssociation.lodge_id == association_data.lodge_id)
+        .first()
+    )
+
+    if existing_association:
+        # Update existing association
+        existing_association.status = association_data.status
+        existing_association.member_class = association_data.member_class
+    else:
+        # Create new association
+        new_association = models.MemberLodgeAssociation(
+            member_id=member_id,
+            lodge_id=association_data.lodge_id,
+            status=association_data.status,
+            member_class=association_data.member_class,
+            start_date=date.today()
+        )
+        db.add(new_association)
+
+    # Update Member Data if provided
+    if association_data.member_update:
+        update_data = association_data.member_update.model_dump(exclude_unset=True)
+        if "password" in update_data:
+             # Only update password if explicitly provided (and not None/Empty)
+             if update_data["password"]:
+                db_member.password_hash = hash_password(update_data.pop("password"))
+             else:
+                update_data.pop("password")
+
+        for key, value in update_data.items():
+            setattr(db_member, key, value)
+
+    # Add Role History if provided
+    if association_data.role_id:
+        # Check if active role exists for this lodge
+        active_role = (
+            db.query(models.RoleHistory)
+            .filter(
+                models.RoleHistory.member_id == member_id,
+                models.RoleHistory.lodge_id == association_data.lodge_id,
+                models.RoleHistory.end_date.is_(None)
+            )
+            .first()
+        )
+        
+        if active_role:
+            if active_role.role_id != association_data.role_id:
+                # End current role
+                active_role.end_date = date.today()
+                # Create new role
+                new_role = models.RoleHistory(
+                    member_id=member_id,
+                    role_id=association_data.role_id,
+                    lodge_id=association_data.lodge_id,
+                    start_date=date.today()
+                )
+                db.add(new_role)
+        else:
+             new_role = models.RoleHistory(
+                member_id=member_id,
+                role_id=association_data.role_id,
+                lodge_id=association_data.lodge_id,
+                start_date=date.today()
+            )
+             db.add(new_role)
 
     db.commit()
     db.refresh(db_member)

@@ -50,6 +50,14 @@ export const generateEdital = (sessionId: number) => {
 };
 
 // --- Document Management ---
+export const uploadDocument = (formData: FormData) => {
+  return api.post('/documents/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
 export const downloadDocument = (documentId: number) => {
   return api.get(`/documents/${documentId}/download`, {
     responseType: 'blob', // Important for file downloads
