@@ -11,7 +11,7 @@ pydantic-settings # Adicionado para resolver o erro
 # Novas dependências adicionadas
 apscheduler
 geopy
-pyppeteer # Substituindo weasyprint
+playwright # Substituindo pyppeteer
 jinja2
 
 # Ferramentas de Desenvolvimento

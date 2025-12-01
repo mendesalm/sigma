@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert } from '@mui/material';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { getSessions } from '../../services/api';
 
 interface Session {
@@ -16,6 +16,21 @@ const SessionsPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+
+  // Determine base path based on current location
+  const getBasePath = () => {
+    const path = location.pathname;
+    if (path.includes('secretario/sessoes')) {
+      return '/dashboard/lodge-dashboard/secretario/sessoes';
+    } else if (path.includes('lodge-dashboard/sessions')) {
+        return '/dashboard/lodge-dashboard/sessions';
+    } else {
+      return '/dashboard/sessions';
+    }
+  };
+
+  const basePath = getBasePath();
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -52,7 +67,7 @@ const SessionsPage: React.FC = () => {
         <Button
           variant="contained"
           component={Link}
-          to="/dashboard/sessions/new"
+          to={`${basePath}/new`}
         >
           Nova Sessão
         </Button>
@@ -80,14 +95,14 @@ const SessionsPage: React.FC = () => {
                 </TableCell>
                 <TableCell>{session.type || '-'}</TableCell>
                 <TableCell>{session.subtype || '-'}</TableCell>
-                <TableCell>{new Date(session.session_date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</TableCell>
                 <TableCell>{session.status}</TableCell>
                 <TableCell>
                   <Button
                     variant="contained"
                     color="primary"
                     component={Link}
-                    to={`/dashboard/sessions/${session.id}`}
+                    to={`${basePath}/${session.id}`}
                   >
                     Detalhes
                   </Button>

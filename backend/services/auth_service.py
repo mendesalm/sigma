@@ -132,10 +132,16 @@ def calculate_member_credential(member: models.Member, entity_id: int, entity_ty
     """
     role = None
     if entity_type == "lodge":
-        association = next((a for a in member.lodge_associations if a.lodge_id == entity_id), None)
-        if association:
-            role = association.role
+        # Check for active role in RoleHistory for this lodge
+        active_role_history = next(
+            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), 
+            None
+        )
+        if active_role_history:
+            role = active_role_history.role
+            
     elif entity_type == "obedience":
+        # Obedience associations still link directly to a role in the current model
         association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)
         if association:
             role = association.role
@@ -156,3 +162,25 @@ def calculate_member_credential(member: models.Member, entity_id: int, entity_ty
     # Handle Enum or String
     degree_val = member.degree.value if hasattr(member.degree, "value") else member.degree
     return degree_map.get(degree_val, 1)  # Default to 1 (Apprentice)
+
+
+def get_active_role_name(member: models.Member, entity_id: int, entity_type: str) -> str | None:
+    """
+    Retrieves the name of the active role for a member within a specific entity context.
+    """
+    if entity_type == "lodge":
+        # Check for active role in RoleHistory for this lodge
+        active_role_history = next(
+            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), 
+            None
+        )
+        if active_role_history:
+            return active_role_history.role.name
+            
+    elif entity_type == "obedience":
+        # Obedience associations still link directly to a role in the current model
+        association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)
+        if association:
+            return association.role.name
+
+    return None

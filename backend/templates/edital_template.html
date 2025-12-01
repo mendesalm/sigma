@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edital de Convocação</title>
+    <style>
+      @page {
+        margin: 2cm;
+      }
+      body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        text-align: justify;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header img {
+        width: 80px;
+        height: auto;
+      }
+      .title {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 14pt;
+        margin-top: 10px;
+      }
+      .subtitle {
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+      .content {
+        margin-bottom: 40px;
+        text-indent: 1.5cm;
+      }
+      .agenda {
+        margin: 20px 0;
+        padding-left: 1.5cm;
+      }
+      .signatures {
+        margin-top: 60px;
+        width: 100%;
+        text-align: center;
+      }
+      .signature-line {
+        border-top: 1px solid #000;
+        width: 60%;
+        margin: 0 auto;
+        padding-top: 5px;
+      }
+      .footer {
+        text-align: center;
+        font-size: 10pt;
+        margin-top: 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">A.R.L.S. {{ lodge_name }} N° {{ lodge_number }}</div>
+      <div class="subtitle">{{ obedience_name }}</div>
+      <h2 style="margin-top: 30px;">EDITAL DE CONVOCAÇÃO</h2>
+    </div>
+
+    <div class="content">
+      <p>
+        O Venerável Mestre da Augusta e Respeitável Loja Simbólica <strong>{{ lodge_name }}</strong>, 
+        nº {{ lodge_number }}, jurisdicionada à {{ obedience_name }}, no uso de suas atribuições legais, 
+        vem, por meio deste, CONVOCAR todos os Obreiros do Quadro para a <strong>Sessão {{ session_title }}</strong>, 
+        a realizar-se no dia <strong>{{ session_date_formatted }}</strong>, às <strong>{{ session_start_time_formatted }}</strong>, 
+        em seu Templo situado no Oriente de {{ lodge_city }}.
+      </p>
+
+      {% if agenda %}
+      <div class="agenda">
+        <p><strong>ORDEM DO DIA:</strong></p>
+        <p>{{ agenda|replace('\n', '<br>')|safe }}</p>
+      </div>
+      {% endif %}
+
+      <p>
+        Contamos com a presença e pontualidade de todos para o brilhantismo dos nossos trabalhos.
+      </p>
+    </div>
+
+    <div class="signatures">
+      <p>Dado e traçado no Oriente de {{ lodge_city }}, aos {{ current_date_day }} dias do mês de {{ current_date_month }} de {{ current_date_year }}.</p>
+      
+      {% if veneravel_mestre_name %}
+      <div style="margin-top: 50px;">
+        <div class="signature-line"></div>
+        <p><strong>{{ veneravel_mestre_name }}</strong><br />Venerável Mestre</p>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

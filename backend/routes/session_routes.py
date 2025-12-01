@@ -23,10 +23,16 @@ router = APIRouter(
 )
 def create_new_masonic_session(
     session_data: masonic_session_schema.MasonicSessionCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
-    return session_service.create_session(db=db, session_data=session_data, current_user_payload=current_user_payload)
+    return session_service.create_session(
+        db=db, 
+        session_data=session_data, 
+        current_user_payload=current_user_payload, 
+        background_tasks=background_tasks
+    )
 
 
 @router.get(

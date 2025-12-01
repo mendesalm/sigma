@@ -521,6 +521,14 @@ class MasonicSession(BaseModel):
     )
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="masonic_sessions")
+    
+    # Novos campos
+    agenda = Column(Text, nullable=True)
+    sent_expedients = Column(Text, nullable=True)
+    received_expedients = Column(Text, nullable=True)
+    study_director_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+    study_director = relationship("Member", foreign_keys=[study_director_id])
+
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="session")  # Relacionamento com Documentos
 
@@ -677,4 +685,12 @@ class DiningScale(BaseModel):
     
     lodge = relationship("Lodge", backref="dining_scales")
     member = relationship("Member", backref="dining_scales")
+
+
+class DocumentTemplate(BaseModel):
+    __tablename__ = "document_templates"
+    id = Column(Integer, primary_key=True, index=True)
+    type = Column(String(50), unique=True, nullable=False)  # 'BALAUSTRE', 'EDITAL'
+    content = Column(Text, nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 

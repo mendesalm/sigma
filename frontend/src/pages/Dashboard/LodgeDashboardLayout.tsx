@@ -95,8 +95,38 @@ const LodgeDashboardLayout: React.FC = () => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext) || {};
+  const { user, logout } = useContext(AuthContext) || {};
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    if (logout) {
+      logout();
+      navigate('/login');
+    }
+  };
+
+  // Filter menu based on user role
+  const filteredMenu = React.useMemo(() => {
+    if (!user) return [];
+    
+    return MENU_CONFIG.filter(item => {
+      // Always show Home and Obreiro
+      if (item.id === 'home' || item.id === 'obreiro') return true;
+      
+      // Webmasters and SuperAdmins see everything
+      if (user.user_type === 'webmaster' || user.user_type === 'super_admin') return true;
+      
+      // Check specific roles for members
+      if (item.id === 'secretario') {
+        return user.active_role_name === 'Secretário';
+      }
+      if (item.id === 'chanceler') {
+        return user.active_role_name === 'Chanceler';
+      }
+      
+      return false;
+    });
+  }, [user]);
 
   // Determine active category based on current path
   useEffect(() => {
@@ -110,7 +140,7 @@ const LodgeDashboardLayout: React.FC = () => {
 
     // Find category that matches the current path
     let found = false;
-    for (const category of MENU_CONFIG) {
+    for (const category of filteredMenu) {
       // Skip HOME menu (no subitems)
       if (category.subItems.length === 0) continue;
       
@@ -128,7 +158,7 @@ const LodgeDashboardLayout: React.FC = () => {
     if (!found) {
       setActiveCategory(null);
     }
-  }, [location.pathname]);
+  }, [location.pathname, filteredMenu]);
 
   const handleMainIconClick = (category: typeof MENU_CONFIG[0]) => {
     // Se o menu não tem subitens (como HOME), navega diretamente e remove menu secundário
@@ -149,7 +179,7 @@ const LodgeDashboardLayout: React.FC = () => {
     }
   };
 
-  const activeMenu = MENU_CONFIG.find(c => c.id === activeCategory);
+  const activeMenu = filteredMenu.find(c => c.id === activeCategory);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0f172a' }}>
@@ -188,11 +218,11 @@ const LodgeDashboardLayout: React.FC = () => {
                     {user.name || user.sub || 'Usuário'}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
-                    {user.role || (user.user_type === 'webmaster' ? 'Webmaster' : 'Membro')}
+                    {user.active_role_name || (user.user_type === 'member' ? 'Obreiro' : user.role)}
                   </Typography>
                 </Box>
                 <Avatar 
-                  src={user.profile_picture ? `${API_URL}${user.profile_picture}` : undefined}
+                  src={user.profile_picture_path ? `${API_URL}${user.profile_picture_path}` : undefined}
                   alt={user.name}
                   sx={{ width: 40, height: 40, bgcolor: theme.palette.primary.main }}
                 >
@@ -231,7 +261,7 @@ const LodgeDashboardLayout: React.FC = () => {
         >
           {/* Main Icons */}
           <List sx={{ width: '100%', flexGrow: 1, pt: 0 }}>
-            {MENU_CONFIG.map((item) => (
+            {filteredMenu.map((item) => (
               <ListItemButton
                 key={item.id}
                 onClick={() => handleMainIconClick(item)}
@@ -281,14 +311,13 @@ const LodgeDashboardLayout: React.FC = () => {
           {/* Bottom Actions */}
           <Box sx={{ mt: 'auto', width: '100%' }}>
             <ListItemButton
-               component={RouterLink}
-               to="/logout" // Or handle logout
+               onClick={handleLogout}
                sx={{
                   flexDirection: 'column',
                   alignItems: 'center',
                   py: 1.5,
                   color: 'rgba(255,255,255,0.5)',
-                  '&:hover': { color: theme.palette.error.main }
+                  '&:hover': { color: theme.palette.error.main, cursor: 'pointer' }
                }}
             >
                <Logout />

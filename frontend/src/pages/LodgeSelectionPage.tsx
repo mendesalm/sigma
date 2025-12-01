@@ -10,7 +10,13 @@ const LodgeSelectionPage: React.FC = () => {
   const handleSelectAssociation = async (association: any) => {
     try {
       await selectAssociation(association);
-      navigate('/dashboard');
+      if (association.type === 'lodge') {
+        navigate('/dashboard/lodge-dashboard');
+      } else if (association.type === 'obedience') {
+        navigate('/dashboard/obedience-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Falha ao selecionar associação', error);
     }

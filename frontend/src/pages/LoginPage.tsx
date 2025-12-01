@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
           navigate('/dashboard/lodge-dashboard');
         }
       } else if (user.user_type === 'member') {
-        navigate('/dashboard/member-dashboard');
+        navigate('/dashboard/lodge-dashboard');
       } else {
         navigate('/dashboard');
       }
@@ -128,7 +128,7 @@ const LoginPage: React.FC = () => {
               required
               fullWidth
               id="email"
-              label="Email"
+              label="CIM ou E-mail"
               name="email"
               autoComplete="email"
               autoFocus

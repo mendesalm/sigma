@@ -1,7 +1,7 @@
 import os
 from datetime import date
 
-import pyppeteer  # pip install pyppeteer
+from playwright.async_api import async_playwright  # pip install playwright
 from fastapi import Depends, HTTPException, status
 from jinja2 import Environment, FileSystemLoader  # pip install Jinja2
 from sqlalchemy.orm import Session
@@ -25,6 +25,8 @@ def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date) ->
         "Orador": None,
         "Secretário": None,
         "Tesoureiro": None,
+        "Chanceler": None,
+        "Hospitaleiro": None,
     }
 
     for role_name in officer_roles.keys():
@@ -87,148 +89,38 @@ def get_attendees_for_session(db: Session, session_id: int) -> list[str]:
 
 # --- HTML Templates (Provisório - idealmente carregados de arquivos .html) ---
 
-BALAUSTRE_TEMPLATE_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Balaústre de Sessão</title>
-    <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; margin: 2cm; }
-        .header, .footer { text-align: center; margin-bottom: 1cm; }
-        .content { text-align: justify; text-indent: 1.5cm; }
-        .signatures { margin-top: 2cm; text-align: center; }
-        .signature-line { display: block; margin-top: 1cm; }
-        .officer-name { font-weight: bold; }
-        .officer-role { font-style: italic; }
-        .session-info { text-align: center; margin-bottom: 1cm; }
-        h1 { text-align: center; font-size: 16pt; margin-bottom: 1cm; }
-        ul { list-style-type: none; padding-left: 0; }
-        li { margin-bottom: 0.2em; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Balaústre de Sessão Maçônica</h1>
-        <p>A.R.L.S. {{ lodge_name }} N° {{ lodge_number }}</p>
-        <p>{{ obedience_name }}</p>
-    </div>
-
-    <div class="session-info">
-        <p><strong>Sessão {{ session_title }}</strong></p>
-        <p>Realizada em {{ session_date_formatted }} às {{ session_start_time_formatted }}h</p>
-        <p>Status: {{ session_status }}</p>
-    </div>
-
-    <div class="content">
-        <p>Aos {{ session_date_day }} dias do mês de {{ session_date_month }} do ano de {{ session_date_year }} da E.V.,
-        e da V.L. de {{ session_year_vl }},
-        reuniram-se em Templo os Obreiros da A.R.L.S. {{ lodge_name }},
-        seguindo os ritos e praxes da Ordem.</p>
-        
-        <p>Presentes:</p>
-        <ul>
-            {% for member in attendees %}
-            <li>{{ member }}</li>
-            {% endfor %}
-        </ul>
-        
-        <p>Abertos os trabalhos no respectivo Grau e Ordem, foram tratados os seguintes assuntos: {{ session_title }}.
-        Após os debates e deliberações, os trabalhos foram encerrados no {{ session_end_time_formatted }}.</p>
-    </div>
-
-    <div class="signatures">
-        {% if veneravel_mestre_name %}
-        <div class="signature-line">
-            <span class="officer-name">{{ veneravel_mestre_name }}</span><br>
-            <span class="officer-role">Venerável Mestre</span>
-        </div>
-        {% endif %}
-        {% if secretario_name %}
-        <div class="signature-line">
-            <span class="officer-name">{{ secretario_name }}</span><br>
-            <span class="officer-role">Secretário</span>
-        </div>
-        {% endif %}
-        {% if orador_name %}
-        <div class="signature-line">
-            <span class="officer-name">{{ orador_name }}</span><br>
-            <span class="officer-role">Orador</span>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="footer">
-        <p>Oriente de {{ lodge_city }}, {{ session_date_formatted }}.</p>
-    </div>
-</body>
-</html>
-"""
-
-EDITAL_TEMPLATE_HTML = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Edital de Convocação</title>
-    <style>
-        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; margin: 2cm; }
-        .header { text-align: center; margin-bottom: 1cm; }
-        .content { text-align: justify; text-indent: 1.5cm; }
-        .footer { text-align: center; margin-top: 1cm; }
-        h1 { text-align: center; font-size: 16pt; margin-bottom: 1cm; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>EDITAL DE CONVOCAÇÃO</h1>
-        <p>A.R.L.S. {{ lodge_name }} N° {{ lodge_number }}</p>
-        <p>{{ obedience_name }}</p>
-    </div>
-
-    <div class="content">
-        <p>O Venerável Mestre da A.R.L.S. {{ lodge_name }}, N° {{ lodge_number }},
-        Oriente de {{ lodge_city }}, vem, por este, convocar a todos os Obreiros do Quadro
-        para a Sessão {{ session_title }}, que se realizará no dia
-        <strong>{{ session_date_formatted }}</strong>, às <strong>{{ session_start_time_formatted }}</strong>,
-        em nosso Templo.</p>
-        
-        <p>A presença de todos é de suma importância para a regularidade e o brilho de nossos trabalhos.</p>
-    </div>
-
-    <div class="footer">
-        <p>Dado e passado em Templo, aos {{ current_date_day }} dias do mês de {{ current_date_month }} do ano de {{ current_date_year }} da E.V.</p>
-        <p>Fraternalmente,</p>
-        {% if veneravel_mestre_name %}
-        <p><strong>{{ veneravel_mestre_name }}</strong><br>Venerável Mestre</p>
-        {% endif %}
-    </div>
-</body>
-</html>
-"""
-
+from services import template_service
 
 class DocumentGenerationService:
     def __init__(self, db_session: Session | None = None):
         self.db = db_session
-        self.env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
-        self.env.from_string(BALAUSTRE_TEMPLATE_HTML, "balaustre_template.html")
-        self.env.from_string(EDITAL_TEMPLATE_HTML, "edital_template.html")
-        self.env.get_template("balaustre_template.html")
-        self.env.get_template("edital_template.html")
+        # Carrega templates da pasta 'templates' (fallback)
+        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
+        self.env = Environment(loader=FileSystemLoader(template_dir))
 
     def _render_template(self, template_name: str, data: dict) -> str:
+        # Tenta carregar do banco de dados primeiro
+        template_type = "BALAUSTRE" if "balaustre" in template_name else "EDITAL"
+        
+        if self.db:
+            db_template = template_service.get_template_by_type(self.db, template_type)
+            if db_template:
+                # Cria um template a partir da string do banco
+                return self.env.from_string(db_template.content).render(data)
+        
+        # Fallback para o arquivo
         template = self.env.get_template(template_name)
         return template.render(data)
 
     async def _generate_pdf_from_html(self, html_content: str) -> bytes:
-        """Converte conteúdo HTML em PDF usando pyppeteer (headless Chrome)."""
-        browser = await pyppeteer.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
-        page = await browser.newPage()
-        await page.setContent(html_content, {"waitUntil": "networkidle0"})
-        pdf_bytes = await page.pdf({"format": "A4", "printBackground": True})
-        await browser.close()
-        return pdf_bytes
+        """Converte conteúdo HTML em PDF usando Playwright."""
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            await page.set_content(html_content)
+            pdf_bytes = await page.pdf(format="A4", print_background=True)
+            await browser.close()
+            return pdf_bytes
 
     async def _collect_session_data(self, db: Session, session_id: int) -> dict:
         """Coleta todos os dados necessários para Balaustre/Edital de uma sessão."""
@@ -249,6 +141,12 @@ class DocumentGenerationService:
         session_date_formatted = session.session_date.strftime("%d de %B de %Y")
         session_start_time_formatted = session.start_time.strftime("%Hh%Mmin") if session.start_time else "N/D"
         session_end_time_formatted = session.end_time.strftime("%Hh%Mmin") if session.end_time else "N/D"
+        
+        study_director_name = None
+        if session.study_director_id:
+             study_director = db.query(models.Member).filter(models.Member.id == session.study_director_id).first()
+             if study_director:
+                 study_director_name = study_director.full_name
 
         return {
             "session_id": session.id,
@@ -272,10 +170,25 @@ class DocumentGenerationService:
             "orador_name": officers.get("Orador"),
             "secretario_name": officers.get("Secretário"),
             "tesoureiro_name": officers.get("Tesoureiro"),
+            "chanceler_name": officers.get("Chanceler"),
+            "hospitaleiro_name": officers.get("Hospitaleiro"),
             "attendees": attendees,
             "current_date_day": date.today().day,
             "current_date_month": date.today().strftime("%B"),
             "current_date_year": date.today().year,
+            # Novos campos
+            "agenda": session.agenda,
+            "sent_expedients": session.sent_expedients,
+            "received_expedients": session.received_expedients,
+            "study_director_name": study_director_name,
+            # Placeholder images for now - TODO: Implement real logo storage/retrieval
+            "header_image": "https://via.placeholder.com/150",
+            "footer_image": "https://via.placeholder.com/150",
+            # New fields for the updated template
+            "lodge_tittle": "Augusta e Respeitável Loja Simbólica", # Placeholder as we don't have this field yet
+            "suboobedience_name": obedience_name, # Assuming subobedience is the same for now, or we need logic to find parent
+            "lodge_address": f"{lodge.street_address or ''}, {lodge.street_number or ''}, {lodge.neighborhood or ''}",
+            "lodge_state": lodge.state,
         }
 
     async def generate_balaustre_pdf_task(self, session_id: int, current_user_payload: dict):

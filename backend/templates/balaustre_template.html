@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balaústre</title>
+    <style>
+      @page {
+        margin: 2cm;
+      }
+      body {
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12pt;
+        line-height: 1.5;
+        text-align: justify;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        font-weight: bold;
+      }
+      .header p {
+        margin: 5px 0;
+      }
+      .content {
+        margin-bottom: 30px;
+      }
+      .signatures {
+        margin-top: 50px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .signatures td {
+        width: 33%;
+        text-align: center;
+        vertical-align: top;
+        padding: 0 10px;
+      }
+      .signature-line {
+        border-top: 1px solid #000;
+        margin-top: 40px;
+        padding-top: 5px;
+        width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .footer {
+        text-align: right;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <p>{{ lodge_name | upper }} N° {{ lodge_number }}</p>
+      <p>ATA DA {{ session_id }}ª SESSÃO {{ session_title | upper }}</p>
+      <p>À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</p>
+    </div>
+
+    <div class="content">
+      <p>
+        Precisamente às {{ session_start_time_formatted }} do dia {{ session_date_day }} de {{ session_date_month }} de {{ session_date_year }} da E∴ V∴, 
+        a {{ lodge_tittle }} {{ lodge_name }} n° {{ lodge_number }}, federada ao {{ obedience_name }}
+        jurisdicionada ao {{ suboobedience_name }}, reuniu-se em seu Templo, sito à {{ lodge_address }}, no oriente de {{ lodge_city }}, estado de {{ lodge_state }}
+        em Sessão {{ session_title }}, ficando a Loja assim constituída: 
+        V∴ Mestre {{ veneravel_mestre_name }}; 
+        1° Vig∴ {{ primeiro_vigilante_name }}; 
+        2° Vig∴ {{ segundo_vigilante_name }}; 
+        Orad∴ {{ orador_name }}; 
+        Secr∴ {{ secretario_name }}; 
+        Tes∴ {{ tesoureiro_name }} e 
+        Chanc∴ {{ chanceler_name if chanceler_name else "________________" }}, 
+        sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.
+        <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão anterior.
+        <strong>EXPEDIENTE:</strong> <strong>RECEBIDO:</strong> {{ received_expedients if received_expedients else "nada constou." }}
+        <strong>EXPEDIDO:</strong> {{ sent_expedients if sent_expedients else "nada constou." }}
+        <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> foi aberto pelo V∴ Mestre e nada recolheu.
+        <strong>ORDEM DO DIA:</strong> {{ agenda if agenda else "Não houve matéria para a Ordem do Dia." }}
+        <strong>TEMPO DE INSTRUÇÃO:</strong> {{ "preenchido pelo Ir∴ " + study_director_name if study_director_name else "suprimido." }}
+        <strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Irmão Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno.
+        <strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> 
+        na Coluna do Sul, o Ir∴ Chanc∴ anunciou os aniversariantes da semana. 
+        Na Coluna do Norte, o Ir∴ Tes∴ anunciou o Tronco de Beneficência que rendeu a medalha cunhada de R$ 0,00. 
+        No Oriente, o Ven∴ Mestre fez suas considerações finais.
+        Não havendo mais quem desejasse fazer uso da palavra, o Ven∴ Mestre a transferiu para o Irmão Orador para as conclusões finais e saudação aos IIr∴ visitantes. 
+        O Ir∴ Or∴ agradeceu a presença dos IIr∴ visitantes, considerou que a Sessão transcorreu em conformidade com as Leis e Regulamentos da Ordem e devolveu a palavra ao Ven∴ Mestre para o encerramento da Sessão.
+        <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {{ session_end_time_formatted }}, tendo eu, {{ secretario_name }}, Secretário, lavrado o presente balaústre, abaixo assinado após lido, e considerado conforme.
+      </p>
+
+      <div class="footer">
+        Oriente de {{ lodge_city }}, {{ current_date_day }} de {{ current_date_month }} de {{ current_date_year }} – E∴ V∴
+      </div>
+    </div>
+
+    <table class="signatures">
+      <tr>
+        <td>
+          <div class="signature-line"></div>
+          <strong>SECRETÁRIO</strong>
+        </td>
+        <td>
+          <div class="signature-line"></div>
+          <strong>ORADOR</strong>
+        </td>
+        <td>
+          <div class="signature-line"></div>
+          <strong>VENERÁVEL MESTRE</strong>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

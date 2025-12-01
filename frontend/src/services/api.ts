@@ -41,6 +41,10 @@ export const cancelSession = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/cancel`);
 };
 
+export const deleteSession = (sessionId: number) => {
+  return api.delete(`/masonic-sessions/${sessionId}`);
+};
+
 export const generateBalaustre = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/generate-balaustre`);
 };

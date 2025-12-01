@@ -45,6 +45,30 @@ interface FamilyMemberLocal {
   is_deceased: boolean;
 }
 
+const textFieldStyle = {
+  '& .MuiInputLabel-root': {
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: 'primary.main',
+  },
+  '& .MuiInputBase-input': {
+    color: '#fff',
+  },
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.23)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'primary.main',
+    },
+  },
+  mb: 2 // Add some bottom margin for spacing
+};
+
 const MeuCadastro: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -97,15 +121,15 @@ const MeuCadastro: React.FC = () => {
         console.log('User context:', user);
         
         // Get my member ID from user context
-        if (!user || !user.id) {
+        if (!user || !user.user_id) {
           setSnackbar({ open: true, message: 'Usuário não identificado.', severity: 'error' });
           setLoading(false);
           return;
         }
 
         // Try to fetch member data
-        console.log('Fetching member data for ID:', user.id);
-        const response = await api.get<MemberResponse>(`/members/${user.id}`);
+        console.log('Fetching member data for ID:', user.user_id);
+        const response = await api.get<MemberResponse>(`/members/${user.user_id}`);
         const memberData = response.data;
         
         console.log('Member data received:', memberData);
@@ -241,13 +265,13 @@ const MeuCadastro: React.FC = () => {
     };
 
     try {
-      await api.put(`/members/${user?.id}`, memberData);
+      await api.put(`/members/${user?.user_id}`, memberData);
 
       // Upload profile picture if selected
-      if (selectedFile && user?.id) {
+      if (selectedFile && user?.user_id) {
         const formData = new FormData();
         formData.append('file', selectedFile);
-        await api.post(`/members/${user.id}/photo`, formData, {
+        await api.post(`/members/${user.user_id}/photo`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -274,7 +298,7 @@ const MeuCadastro: React.FC = () => {
     }
 
     try {
-      await api.post(`/members/${user?.id}/change-password`, {
+      await api.post(`/members/${user?.user_id}/change-password`, {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password
       });
@@ -328,8 +352,15 @@ const MeuCadastro: React.FC = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Avatar
-                    sx={{ width: 120, height: 120, mb: 2 }}
-                    src={formState.profile_picture_path}
+                    variant="rounded"
+                    sx={{ width: 120, height: 160, mb: 2, borderRadius: 2 }}
+                    src={
+                      formState.profile_picture_path
+                        ? formState.profile_picture_path.startsWith('blob:')
+                          ? formState.profile_picture_path
+                          : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${formState.profile_picture_path}`
+                        : undefined
+                    }
                     alt={formState.full_name}
                   />
                   <Button
@@ -364,6 +395,8 @@ const MeuCadastro: React.FC = () => {
                         name="full_name"
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -376,6 +409,8 @@ const MeuCadastro: React.FC = () => {
                         size="small"
                         error={!!errors.cpf}
                         helperText={errors.cpf}
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -388,6 +423,8 @@ const MeuCadastro: React.FC = () => {
                         size="small"
                         error={!!errors.email}
                         helperText={errors.email}
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -398,6 +435,8 @@ const MeuCadastro: React.FC = () => {
                         name="identity_document"
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -410,6 +449,7 @@ const MeuCadastro: React.FC = () => {
                         fullWidth
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        sx={textFieldStyle}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -422,6 +462,7 @@ const MeuCadastro: React.FC = () => {
                         fullWidth
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        sx={textFieldStyle}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -432,6 +473,8 @@ const MeuCadastro: React.FC = () => {
                         name="phone"
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                   </Grid>
@@ -458,15 +501,18 @@ const MeuCadastro: React.FC = () => {
                         onChange={(e) => handleFamilyMemberChange(index, 'full_name', e.target.value)}
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Parentesco</InputLabel>
+                      <FormControl fullWidth size="small" sx={textFieldStyle}>
+                        <InputLabel shrink>Parentesco</InputLabel>
                         <Select
                           value={member.relationship_type}
                           label="Parentesco"
                           onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)}
+                          notched
                         >
                           <MenuItem value={RelationshipTypeEnum.SPOUSE}>Esposa</MenuItem>
                           <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
@@ -483,6 +529,7 @@ const MeuCadastro: React.FC = () => {
                         fullWidth
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        sx={textFieldStyle}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
@@ -492,6 +539,8 @@ const MeuCadastro: React.FC = () => {
                         onChange={(e) => handleFamilyMemberChange(index, 'phone', e.target.value)}
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={2}>
@@ -501,6 +550,8 @@ const MeuCadastro: React.FC = () => {
                         onChange={(e) => handleFamilyMemberChange(index, 'email', e.target.value)}
                         fullWidth
                         size="small"
+                        sx={textFieldStyle}
+                        InputLabelProps={{ shrink: true }}
                       />
                     </Grid>
                     <Grid item xs={12} md={1} sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -544,6 +595,8 @@ const MeuCadastro: React.FC = () => {
                     name="zip_code"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -554,6 +607,8 @@ const MeuCadastro: React.FC = () => {
                     name="street_address"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -564,6 +619,8 @@ const MeuCadastro: React.FC = () => {
                     name="street_number"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -574,6 +631,8 @@ const MeuCadastro: React.FC = () => {
                     name="neighborhood"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -584,6 +643,8 @@ const MeuCadastro: React.FC = () => {
                     name="city"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
               </Grid>
@@ -609,6 +670,8 @@ const MeuCadastro: React.FC = () => {
                     fullWidth
                     size="small"
                     disabled
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -618,6 +681,8 @@ const MeuCadastro: React.FC = () => {
                     fullWidth
                     size="small"
                     disabled
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -629,6 +694,7 @@ const MeuCadastro: React.FC = () => {
                     size="small"
                     disabled
                     InputLabelProps={{ shrink: true }}
+                    sx={textFieldStyle}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -640,6 +706,7 @@ const MeuCadastro: React.FC = () => {
                     size="small"
                     disabled
                     InputLabelProps={{ shrink: true }}
+                    sx={textFieldStyle}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -651,6 +718,7 @@ const MeuCadastro: React.FC = () => {
                     size="small"
                     disabled
                     InputLabelProps={{ shrink: true }}
+                    sx={textFieldStyle}
                   />
                 </Grid>
               </Grid>
@@ -674,6 +742,8 @@ const MeuCadastro: React.FC = () => {
                     name="education_level"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -684,6 +754,8 @@ const MeuCadastro: React.FC = () => {
                     name="occupation"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -694,6 +766,8 @@ const MeuCadastro: React.FC = () => {
                     name="workplace"
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
               </Grid>
@@ -717,6 +791,8 @@ const MeuCadastro: React.FC = () => {
                     onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -727,6 +803,8 @@ const MeuCadastro: React.FC = () => {
                     onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -737,6 +815,8 @@ const MeuCadastro: React.FC = () => {
                     onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
                     fullWidth
                     size="small"
+                    sx={textFieldStyle}
+                    InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
                 <Grid item xs={12}>

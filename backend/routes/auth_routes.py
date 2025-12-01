@@ -49,6 +49,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if user_type == "member":
         access_token_data["name"] = user.full_name
         access_token_data["role"] = "Membro" # Default role name
+        access_token_data["profile_picture_path"] = user.profile_picture_path
     elif user_type == "webmaster":
         access_token_data["name"] = user.username
         access_token_data["role"] = "Webmaster"
@@ -80,9 +81,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
                 access_token_data["credential"] = auth_service.calculate_member_credential(
                     user, association["id"], "lodge"
                 )
+                access_token_data["active_role_name"] = auth_service.get_active_role_name(
+                    user, association["id"], "lodge"
+                )
             else:
                 access_token_data["obedience_id"] = association["id"]
                 access_token_data["credential"] = auth_service.calculate_member_credential(
+                    user, association["id"], "obedience"
+                )
+                access_token_data["active_role_name"] = auth_service.get_active_role_name(
                     user, association["id"], "obedience"
                 )
 
@@ -115,7 +122,8 @@ def select_association(
         "user_id": user.id,
         "user_type": user_type,
         "name": user.full_name,
-        "role": "Membro"
+        "role": "Membro",
+        "profile_picture_path": user.profile_picture_path
     }
 
     if association_data.association_type == "lodge":
@@ -123,9 +131,15 @@ def select_association(
         access_token_data["credential"] = auth_service.calculate_member_credential(
             user, association_data.association_id, "lodge"
         )
+        access_token_data["active_role_name"] = auth_service.get_active_role_name(
+            user, association_data.association_id, "lodge"
+        )
     elif association_data.association_type == "obedience":
         access_token_data["obedience_id"] = association_data.association_id
         access_token_data["credential"] = auth_service.calculate_member_credential(
+            user, association_data.association_id, "obedience"
+        )
+        access_token_data["active_role_name"] = auth_service.get_active_role_name(
             user, association_data.association_id, "obedience"
         )
     else:

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   Button,
   Container,
@@ -18,7 +18,7 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import api from '../../services/api';
-import { SessionTypeEnum, SessionSubtypeEnum } from '../../types';
+import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types';
 
 const SessionForm = () => {
   const [formData, setFormData] = useState({
@@ -28,11 +28,31 @@ const SessionForm = () => {
     end_time: '',
     type: '',
     subtype: '',
+    agenda: '',
+    sent_expedients: '',
+    received_expedients: '',
+    study_director_id: '',
   });
+  const [members, setMembers] = useState<MemberResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
+
+  // Determine base path based on current location
+  const getBasePath = () => {
+    const path = location.pathname;
+    if (path.includes('secretario/sessoes')) {
+      return '/dashboard/lodge-dashboard/secretario/sessoes';
+    } else if (path.includes('lodge-dashboard/sessions')) {
+        return '/dashboard/lodge-dashboard/sessions';
+    } else {
+      return '/dashboard/sessions';
+    }
+  };
+
+  const basePath = getBasePath();
 
   // Mapping of Types to Subtypes
   const subtypesByType: Record<string, string[]> = {
@@ -76,9 +96,13 @@ const SessionForm = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      const fetchSession = async () => {
-        try {
+    const fetchInitialData = async () => {
+      try {
+        // Fetch members for the dropdown
+        const membersResponse = await api.get('/members/');
+        setMembers(membersResponse.data);
+
+        if (id) {
           const response = await api.get(`/masonic-sessions/${id}`);
           const session = response.data;
           setFormData({
@@ -88,17 +112,42 @@ const SessionForm = () => {
             end_time: session.end_time || '',
             type: session.type || '',
             subtype: session.subtype || '',
+            agenda: session.agenda || '',
+            sent_expedients: session.sent_expedients || '',
+            received_expedients: session.received_expedients || '',
+            study_director_id: session.study_director_id || '',
           });
-        } catch (error) {
-          console.error('Failed to fetch session', error);
-          setError('Falha ao carregar dados da sessão.');
+        } else {
+          // New session: fetch lodge details for default time
+          const token = localStorage.getItem('token');
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              const lodgeId = payload.lodge_id;
+              if (lodgeId) {
+                const lodgeResponse = await api.get(`/lodges/${lodgeId}`);
+                const lodge = lodgeResponse.data;
+                if (lodge.session_time) {
+                   setFormData(prev => ({
+                     ...prev,
+                     start_time: lodge.session_time
+                   }));
+                }
+              }
+            } catch (e) {
+              console.error("Error decoding token or fetching lodge details", e);
+            }
+          }
         }
-      };
-      fetchSession();
-    }
+      } catch (error) {
+        console.error('Failed to fetch data', error);
+        setError('Falha ao carregar dados.');
+      }
+    };
+    fetchInitialData();
   }, [id]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
       ...prev,
@@ -131,6 +180,7 @@ const SessionForm = () => {
       ...formData,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
+      study_director_id: formData.study_director_id ? parseInt(formData.study_director_id) : null,
     };
 
     try {
@@ -141,7 +191,7 @@ const SessionForm = () => {
         await api.post('/masonic-sessions/', payload);
         setSnackbar({ open: true, message: 'Sessão agendada com sucesso!', severity: 'success' });
       }
-      setTimeout(() => navigate('/dashboard/sessions'), 1500);
+      setTimeout(() => navigate(basePath), 1500);
     } catch (err: any) {
       console.error('Failed to save session', err);
       if (err.response?.status === 409) {
@@ -252,10 +302,69 @@ const SessionForm = () => {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                name="agenda"
+                label="Pauta(s) para Ordem do Dia"
+                value={formData.agenda}
+                onChange={handleChange}
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Descreva os assuntos a serem tratados..."
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                name="sent_expedients"
+                label="Expediente(s) Expedido(s)"
+                value={formData.sent_expedients}
+                onChange={handleChange}
+                fullWidth
+                multiline
+                rows={3}
+              />
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <TextField
+                name="received_expedients"
+                label="Expediente(s) Recebido(s)"
+                value={formData.received_expedients}
+                onChange={handleChange}
+                fullWidth
+                multiline
+                rows={3}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Responsável pelo Tempo de Estudos</InputLabel>
+                <Select
+                  name="study_director_id"
+                  value={formData.study_director_id}
+                  label="Responsável pelo Tempo de Estudos"
+                  onChange={handleSelectChange}
+                >
+                  <MenuItem value="">
+                    <em>Nenhum</em>
+                  </MenuItem>
+                  {members.map((member) => (
+                    <MenuItem key={member.id} value={member.id}>
+                      {member.full_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
           </Grid>
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" onClick={() => navigate('/dashboard/sessions')}>
+            <Button variant="outlined" onClick={() => navigate(basePath)}>
               Cancelar
             </Button>
             <Button type="submit" variant="contained" color="primary" size="large" disabled={loading}>

@@ -36,6 +36,7 @@ import SessionDetailsPage from './pages/Sessions/SessionDetailsPage';
 import SessionForm from './pages/Sessions/SessionForm';
 import LodgeSelectionPage from './pages/LodgeSelectionPage';
 import DashboardHome from './pages/Dashboard/DashboardHome';
+import DocumentTemplates from './pages/Management/DocumentTemplates';
 
 // Obreiro Pages
 import MeuCadastro from './pages/Obreiro/MeuCadastro';
@@ -48,7 +49,7 @@ import MeusEmprestimos from './pages/Obreiro/MeusEmprestimos';
 // Secretário Pages
 import SecretarioPresencas from './pages/Secretario/Presencas';
 import SecretarioPublicacoes from './pages/Secretario/Publicacoes';
-import SecretarioSessoes from './pages/Secretario/Sessoes';
+
 
 // Chanceler Pages
 import ChancelerPresencas from './pages/Chanceler/Presencas';
@@ -133,7 +134,12 @@ const router = createBrowserRouter([
               },
               {
                 path: 'secretario/sessoes',
-                element: <SecretarioSessoes />,
+                children: [
+                  { index: true, element: <SessionsPage /> },
+                  { path: 'new', element: <SessionForm /> },
+                  { path: 'edit/:id', element: <SessionForm /> },
+                  { path: ':id', element: <SessionDetailsPage /> },
+                ]
               },
               // Chanceler Routes
               {
@@ -218,7 +224,9 @@ const router = createBrowserRouter([
                   { path: 'family-members/new', element: <FamilyMemberForm /> },
                   { path: 'family-members/edit/:id', element: <FamilyMemberForm /> },
                   { path: 'role-history/new', element: <RoleHistoryForm /> },
+                  { path: 'role-history/new', element: <RoleHistoryForm /> },
                   { path: 'role-history/edit/:id', element: <RoleHistoryForm /> },
+                  { path: 'templates', element: <DocumentTemplates /> },
                 ],
               },
               {

@@ -6,6 +6,7 @@ from pydantic_settings import SettingsConfigDict
 
 from schemas.document_schema import DocumentInDB
 from schemas.session_attendance_schema import SessionAttendanceResponse
+from schemas.lodge_schema import LodgeResponse
 
 
 from models.models import SessionTypeEnum, SessionSubtypeEnum
@@ -23,6 +24,11 @@ class MasonicSessionBase(BaseModel):
         "AGENDADA",
         description="Status da sessão: AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA"
     )
+    
+    agenda: str | None = Field(None, description="Pauta(s) para Ordem do Dia")
+    sent_expedients: str | None = Field(None, description="Expediente(s) Expedido(s)")
+    received_expedients: str | None = Field(None, description="Expediente(s) Recebido(s)")
+    study_director_id: int | None = Field(None, description="ID do Responsável pelo Tempo de Estudos")
 
     @field_validator('title', mode='after', check_fields=False)
     @classmethod
@@ -154,6 +160,10 @@ class MasonicSessionUpdate(BaseModel):
     status: str | None = None
     type: SessionTypeEnum | None = None
     subtype: SessionSubtypeEnum | None = None
+    agenda: str | None = None
+    sent_expedients: str | None = None
+    received_expedients: str | None = None
+    study_director_id: int | None = None
 
     @field_validator('title', mode='after', check_fields=False)
     @classmethod
@@ -216,6 +226,7 @@ class MasonicSessionUpdate(BaseModel):
 class MasonicSessionResponse(MasonicSessionBase):
     id: int
     lodge_id: int
+    lodge: "LodgeResponse"
     attendances: list[SessionAttendanceResponse] = []
     documents: list[DocumentInDB] = []
 

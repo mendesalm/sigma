@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from './components/AttendanceTab';
 import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument } from '../../services/api';
@@ -14,12 +14,23 @@ interface Session {
   status: string;
   type?: string;
   subtype?: string;
+  agenda?: string;
+  sent_expedients?: string;
+  received_expedients?: string;
+  study_director_id?: number;
+  study_director?: {
+    id: number;
+    full_name: string;
+  };
   lodge: {
     id: number;
     lodge_name: string;
   };
   documents: any[];
 }
+
+
+
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -147,9 +158,9 @@ const SessionDetailsPage: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" gutterBottom>{session.title}</Typography>
-            <Typography variant="h6" color="text.secondary" gutterBottom>Loja: {session.lodge.lodge_name}</Typography>
+            <Typography variant="h6" color="text.secondary" gutterBottom>Loja: {session.lodge?.lodge_name || 'Loja não identificada'}</Typography>
             <Stack direction="row" spacing={2} alignItems="center">
-              <Typography variant="body1">Data: {new Date(session.session_date).toLocaleDateString()}</Typography>
+              <Typography variant="body1">Data: {new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</Typography>
               <Chip 
                 label={session.status} 
                 color={session.status === 'EM_ANDAMENTO' ? 'success' : session.status === 'REALIZADA' ? 'primary' : 'default'} 
@@ -201,15 +212,49 @@ const SessionDetailsPage: React.FC = () => {
                 </Button>
               )}
               {session.status !== 'CANCELADA' && session.status !== 'REALIZADA' && (
-                <Button 
-                  variant="outlined" 
-                  color="error" 
-                  startIcon={<Cancel />}
-                  onClick={() => handleAction(() => cancelSession(sessionId), 'Sessão cancelada!')}
-                  disabled={actionLoading}
-                >
-                  Cancelar
-                </Button>
+                <>
+                  <Button 
+                    variant="outlined" 
+                    color="primary" 
+                    component={Link}
+                    to={`edit`}
+                    disabled={actionLoading}
+                  >
+                    Editar
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    color="error" 
+                    startIcon={<Cancel />}
+                    onClick={() => handleAction(() => cancelSession(sessionId), 'Sessão cancelada!')}
+                    disabled={actionLoading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="error" 
+                    startIcon={<Cancel />}
+                    onClick={async () => {
+                      if (window.confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) {
+                        try {
+                          setActionLoading(true);
+                          await import('../../services/api').then(m => m.deleteSession(sessionId));
+                          setSnackbar({ open: true, message: 'Sessão excluída com sucesso!', severity: 'success' });
+                          setTimeout(() => window.history.back(), 1500);
+                        } catch (err) {
+                          console.error(err);
+                          setSnackbar({ open: true, message: 'Falha ao excluir sessão.', severity: 'error' });
+                        } finally {
+                          setActionLoading(false);
+                        }
+                      }
+                    }}
+                    disabled={actionLoading}
+                  >
+                    Excluir
+                  </Button>
+                </>
               )}
             </Stack>
           </Box>
@@ -241,7 +286,7 @@ const SessionDetailsPage: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Data</Typography>
-              <Typography variant="body1">{new Date(session.session_date).toLocaleDateString()}</Typography>
+              <Typography variant="body1">{new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</Typography>
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>

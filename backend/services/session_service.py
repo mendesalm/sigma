@@ -52,11 +52,15 @@ def _create_attendance_records_task(db_url: str, session_id: int, lodge_id: int)
 
 
 def create_session(
-    db: Session, session_data: masonic_session_schema.MasonicSessionCreate, current_user_payload: dict
+    db: Session, 
+    session_data: masonic_session_schema.MasonicSessionCreate, 
+    current_user_payload: dict,
+    background_tasks: BackgroundTasks
 ) -> models.MasonicSession:
     """
     Cria uma nova sessão maçônica associada à loja do usuário.
     Verifica se já existe uma sessão agendada para a mesma data na mesma loja.
+    Gera automaticamente uma minuta do Balaústre.
     """
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
@@ -64,11 +68,13 @@ def create_session(
             status_code=status.HTTP_403_FORBIDDEN, detail="Operação não permitida: Usuário não associado a uma loja."
         )
 
-    # Verifica se já existe uma sessão para a mesma data na mesma loja
+    # Verifica se já existe uma sessão para a mesma data na mesma loja (ignorando canceladas)
     existing_session = (
         db.query(models.MasonicSession)
         .filter(
-            models.MasonicSession.lodge_id == lodge_id, models.MasonicSession.session_date == session_data.session_date
+            models.MasonicSession.lodge_id == lodge_id, 
+            models.MasonicSession.session_date == session_data.session_date,
+            models.MasonicSession.status != "CANCELADA"
         )
         .first()
     )
@@ -83,6 +89,10 @@ def create_session(
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
+
+    # Dispara a geração da minuta do Balaústre em background
+    doc_gen_service = DocumentGenerationService()
+    background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, db_session.id, current_user_payload)
 
     return db_session
 
@@ -153,6 +163,7 @@ def update_session(
                 models.MasonicSession.lodge_id == db_session.lodge_id,
                 models.MasonicSession.session_date == session_update.session_date,
                 models.MasonicSession.id != session_id,  # Exclui a própria sessão
+                models.MasonicSession.status != "CANCELADA" # Ignora sessões canceladas
             )
             .first()
         )

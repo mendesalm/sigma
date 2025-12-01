@@ -66,6 +66,7 @@ const MemberForm: React.FC = () => {
     philosophical_degree: '',
     registration_status: RegistrationStatusEnum.PENDING,
     password: '',
+    confirmPassword: '',
     lodge_id: '',
     role_id: '',
   });
@@ -341,6 +342,9 @@ const MemberForm: React.FC = () => {
     const newErrors: { [key: string]: string } = {};
     if (formState.cpf && !validateCPF(formState.cpf)) newErrors.cpf = 'CPF inválido';
     if (formState.email && !validateEmail(formState.email)) newErrors.email = 'Email inválido';
+    if (formState.password && formState.password !== formState.confirmPassword) {
+      newErrors.password = 'As senhas não conferem';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -350,6 +354,7 @@ const MemberForm: React.FC = () => {
 
     // Sanitize form data
     const sanitizedFormState = Object.entries(formState).reduce((acc, [key, value]) => {
+      if (key === 'confirmPassword') return acc; // Exclude confirmPassword
       if (value === '' || value === null) {
         acc[key] = undefined;
       } else {
@@ -669,7 +674,7 @@ const MemberForm: React.FC = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                {!id && !existingMemberId && (
+                {!id && !existingMemberId ? (
                   <Grid item xs={12}>
                     <TextField
                       name="password"
@@ -684,6 +689,45 @@ const MemberForm: React.FC = () => {
                       InputProps={{ style: { fontSize: '0.9rem' } }}
                       InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                     />
+                  </Grid>
+                ) : (
+                   <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="textSecondary" sx={{ mt: 1, mb: 1 }}>
+                      Alterar Senha (Opcional)
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          name="password"
+                          label="Nova Senha"
+                          type="password"
+                          value={formState.password || ''}
+                          onChange={handleChange}
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          helperText="Deixe em branco para manter a atual"
+                          InputProps={{ style: { fontSize: '0.9rem' } }}
+                          InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          name="confirmPassword"
+                          label="Confirmar Nova Senha"
+                          type="password"
+                          value={formState.confirmPassword || ''}
+                          onChange={handleChange}
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          error={formState.password && formState.password !== formState.confirmPassword}
+                          helperText={formState.password && formState.password !== formState.confirmPassword ? "As senhas não conferem" : ""}
+                          InputProps={{ style: { fontSize: '0.9rem' } }}
+                          InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                        />
+                      </Grid>
+                    </Grid>
                   </Grid>
                 )}
               </Grid>

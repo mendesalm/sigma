@@ -1,10 +1,15 @@
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from dotenv import load_dotenv
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-import sys
 import os
 
 # Add the current directory (backend) to sys.path to allow imports like 'from routes import ...'
@@ -28,6 +33,7 @@ from routes import (  # noqa: E402
     session_routes,
     super_admin_routes,
     webmaster_routes,
+    template_routes,
 )
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 
@@ -197,6 +203,7 @@ app.include_router(webmaster_routes.router)
 app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
+app.include_router(template_routes.router) # Included template_routes
 
 # Mount static files AFTER routers
 from fastapi.staticfiles import StaticFiles
