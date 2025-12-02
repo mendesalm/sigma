@@ -1,7 +1,7 @@
 import os
 from datetime import date
 
-from playwright.async_api import async_playwright  # pip install playwright
+
 from fastapi import Depends, HTTPException, status
 from jinja2 import Environment, FileSystemLoader  # pip install Jinja2
 from sqlalchemy.orm import Session
@@ -112,15 +112,10 @@ class DocumentGenerationService:
         template = self.env.get_template(template_name)
         return template.render(data)
 
-    async def _generate_pdf_from_html(self, html_content: str) -> bytes:
-        """Converte conteúdo HTML em PDF usando Playwright."""
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            page = await browser.new_page()
-            await page.set_content(html_content)
-            pdf_bytes = await page.pdf(format="A4", print_background=True)
-            await browser.close()
-            return pdf_bytes
+    def _generate_pdf_from_html(self, html_content: str) -> bytes:
+        """Converte conteúdo HTML em PDF usando WeasyPrint."""
+        from weasyprint import HTML
+        return HTML(string=html_content).write_pdf()
 
     async def _collect_session_data(self, db: Session, session_id: int) -> dict:
         """Coleta todos os dados necessários para Balaustre/Edital de uma sessão."""

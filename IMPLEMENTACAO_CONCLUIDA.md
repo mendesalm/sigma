@@ -23,6 +23,12 @@
    - Preview da foto antes de salvar
    - Upload automático após salvar o membro
    - Exibição da foto no formulário e na tabela
+   
+4. **Módulo de Classificados (Global)**
+   - **Backend**: Models, Schemas, Services, Routes, Scheduler
+   - **Frontend**: Páginas `Classificados` e `MeusAnuncios`
+   - **Features**: Upload múltiplo, reativação, ciclo de vida automático
+   - **UI**: Glassmorphism Premium
 
 ---
 

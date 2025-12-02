@@ -85,4 +85,29 @@ export const registerVisitorAttendance = (sessionId: number, visitorData: any) =
 };
 
 
+// --- Classifieds ---
+export const getClassifieds = () => {
+  return api.get('/classifieds/');
+};
+
+export const getMyClassifieds = () => {
+  return api.get('/classifieds/my');
+};
+
+export const createClassified = (formData: FormData) => {
+  return api.post('/classifieds/', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+export const deleteClassified = (id: number) => {
+  return api.delete(`/classifieds/${id}`);
+};
+
+export const reactivateClassified = (id: number) => {
+  return api.post(`/classifieds/${id}/reactivate`);
+};
+
 export default api;

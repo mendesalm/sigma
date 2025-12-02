@@ -89,14 +89,24 @@ async def preview_template(
             "study_director_name": "José Estudos",
             "current_date_day": "01",
             "current_date_month": "Janeiro",
-            "current_date_year": "2024"
+            "current_date_year": "2024",
+            # New mock fields
+            "lodge_tittle": "Augusta e Respeitável Loja Simbólica",
+            "suboobedience_name": "Grande Oriente Estadual",
+            "lodge_address": "Rua da Fraternidade, 33, Centro",
+            "lodge_state": "GO",
+            "chanceler_name": "Mário Chanceler",
+            "hospitaleiro_name": "Lucas Hospitaleiro",
+            "primeiro_vigilante_name": "José 1º Vig",
+            "segundo_vigilante_name": "Pedro 2º Vig",
+            "tesoureiro_name": "Antônio Tesoureiro",
         }
         
         # Renderiza o HTML com os dados fictícios
         html_content = service.env.from_string(template_data.content).render(mock_data)
         
-        # Gera o PDF
-        pdf_bytes = await service._generate_pdf_from_html(html_content)
+        # Gera o PDF (agora síncrono com WeasyPrint)
+        pdf_bytes = service._generate_pdf_from_html(html_content)
         
         return Response(content=pdf_bytes, media_type="application/pdf")
     except Exception as e:

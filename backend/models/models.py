@@ -664,14 +664,33 @@ class Classified(BaseModel):
     description = Column(Text, nullable=False)
     price = Column(Float, nullable=True)
     contact_info = Column(String(255), nullable=True)
-    image_path = Column(String(512), nullable=True)
-    status = Column(String(50), default="Ativo")  # Ativo, Vendido, Pausado
+    contact_email = Column(String(255), nullable=True)
+    
+    # Endereço
+    street = Column(String(255), nullable=True)
+    number = Column(String(50), nullable=True)
+    neighborhood = Column(String(100), nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(2), nullable=True)
+    zip_code = Column(String(9), nullable=True)
+    
+    status = Column(String(50), default="ACTIVE")  # ACTIVE, EXPIRED
+    expires_at = Column(DateTime(timezone=True), nullable=False)
     
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     
     lodge = relationship("Lodge", backref="classifieds")
     member = relationship("Member", backref="classifieds")
+    photos = relationship("ClassifiedPhoto", back_populates="classified", cascade="all, delete-orphan")
+
+
+class ClassifiedPhoto(BaseModel):
+    __tablename__ = "classified_photos"
+    id = Column(Integer, primary_key=True, index=True)
+    classified_id = Column(Integer, ForeignKey("classifieds.id"), nullable=False)
+    image_path = Column(String(512), nullable=False)
+    classified = relationship("Classified", back_populates="photos")
 
 
 class DiningScale(BaseModel):

@@ -75,10 +75,21 @@ Esta documentação define a nova estrutura hierárquica de navegação do Dashb
 - **Rota**: `/dashboard/obreiro/meus-anuncios`
 - **Ícone**: *Ainda sem ícone*
 - **Funcionalidades**:
-  - Cadastro de novos anúncios no módulo de classificados
+  - Cadastro de novos anúncios no módulo de classificados (Global)
+  - Upload de múltiplas fotos (Carrossel)
   - Leitura de anúncios próprios
   - Edição de anúncios próprios
-  - Gerenciamento de status (ativo, vendido, pausado)
+  - Reativação de anúncios expirados (Período de graça de 14 dias)
+  - Gerenciamento de status (ativo, expirado)
+
+#### 6. CLASSIFICADOS (Novo)
+- **Rota**: `/dashboard/obreiro/classificados`
+- **Ícone**: *Ainda sem ícone*
+- **Funcionalidades**:
+  - Visualização de anúncios de todos os membros de todas as lojas
+  - Interface Premium Glassmorphism
+  - Detalhes com galeria de fotos
+  - Busca e filtros
 
 #### 6. MEUS EMPRÉSTIMOS
 - **Rota**: `/dashboard/obreiro/meus-emprestimos`

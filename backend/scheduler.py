@@ -5,7 +5,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # Importações do projeto
 from database import SessionLocal
 from models import models
-from services import session_service
+from services import session_service, classified_service
 
 # Cria uma instância do agendador que rodará com asyncio
 scheduler = AsyncIOScheduler()
@@ -55,10 +55,25 @@ def check_and_start_sessions_job():
         db.close()
 
 
+def check_classifieds_lifecycle_job():
+    """
+    Tarefa agendada para gerenciar o ciclo de vida dos classificados.
+    """
+    print(f"[{datetime.now()}] Executando tarefa agendada: Limpeza de classificados...")
+    db = SessionLocal()
+    try:
+        classified_service.cleanup_classifieds(db)
+    except Exception as e:
+        print(f"Erro ao executar a tarefa de classificados: {e}")
+    finally:
+        db.close()
+
+
 def initialize_scheduler():
     """Inicializa o agendador e adiciona a tarefa."""
     # Adiciona a tarefa para ser executada a cada 5 minutos
     scheduler.add_job(check_and_start_sessions_job, "interval", minutes=5, id="check_sessions_job")
+    scheduler.add_job(check_classifieds_lifecycle_job, "interval", hours=1, id="check_classifieds_job")
     if not scheduler.running:
         scheduler.start()
         print("Agendador de tarefas iniciado. A verificação de sessões será executada a cada 5 minutos.")
