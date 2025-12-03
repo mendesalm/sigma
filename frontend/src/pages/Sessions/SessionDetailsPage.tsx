@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from './components/AttendanceTab';
 import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument } from '../../services/api';
-import { PlayArrow, Stop, Cancel, Description, Add } from '@mui/icons-material';
+import { PlayArrow, Stop, Cancel, Description, Add, QrCodeScanner } from '@mui/icons-material';
+import SessionCheckIn from '../../components/SessionCheckIn';
 
 interface Session {
   id: number;
@@ -73,6 +74,7 @@ const SessionDetailsPage: React.FC = () => {
   const [openUploadDialog, setOpenUploadDialog] = useState(false);
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [openCheckInDialog, setOpenCheckInDialog] = useState(false);
 
   const fetchSessionDetails = async () => {
     try {
@@ -191,15 +193,26 @@ const SessionDetailsPage: React.FC = () => {
                 </>
               )}
               {session.status === 'EM_ANDAMENTO' && (
-                <Button 
-                  variant="contained" 
-                  color="warning" 
-                  startIcon={<Stop />}
-                  onClick={() => handleAction(() => endSession(sessionId), 'Sessão finalizada!')}
-                  disabled={actionLoading}
-                >
-                  Finalizar
-                </Button>
+                <>
+                  <Button 
+                    variant="contained" 
+                    color="secondary" 
+                    startIcon={<QrCodeScanner />}
+                    onClick={() => setOpenCheckInDialog(true)}
+                    sx={{ mr: 1 }}
+                  >
+                    Check-in
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="warning" 
+                    startIcon={<Stop />}
+                    onClick={() => handleAction(() => endSession(sessionId), 'Sessão finalizada!')}
+                    disabled={actionLoading}
+                  >
+                    Finalizar
+                  </Button>
+                </>
               )}
               {session.status === 'REALIZADA' && (
                 <Button 
@@ -390,6 +403,24 @@ const SessionDetailsPage: React.FC = () => {
           >
             {actionLoading ? <CircularProgress size={24} /> : 'Enviar'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Check-in Dialog */}
+      <Dialog open={openCheckInDialog} onClose={() => setOpenCheckInDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Check-in de Presença</DialogTitle>
+        <DialogContent>
+          <SessionCheckIn 
+            sessionId={sessionId} 
+            onSuccess={() => {
+              setOpenCheckInDialog(false);
+              // Refresh attendance if needed, or just close
+              // fetchSessionDetails(); 
+            }} 
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCheckInDialog(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
 

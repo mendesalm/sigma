@@ -15,39 +15,53 @@ def check_and_start_sessions_job():
     """
     Esta é a tarefa que o agendador executará.
     Ela verifica por sessões que deveriam iniciar e as inicia.
+    Também verifica sessões que devem ser encerradas.
     """
-    print(f"[{datetime.now()}] Executando tarefa agendada: Verificando sessões para iniciar...")
+    print(f"[{datetime.now()}] Executando tarefa agendada: Verificando sessões...")
     db = SessionLocal()
     try:
         now = datetime.now()
 
-        # Busca por sessões agendadas para hoje ou ontem (para pegar casos de madrugada)
+        # 1. Iniciar Sessões
         relevant_dates = [date.today(), date.today() - timedelta(days=1)]
-
-        sessions_to_check = (
+        sessions_to_start = (
             db.query(models.MasonicSession)
             .filter(models.MasonicSession.status == "AGENDADA", models.MasonicSession.session_date.in_(relevant_dates))
             .all()
         )
 
-        if not sessions_to_check:
-            print("Nenhuma sessão candidata para iniciar no momento.")
-            return
-
-        for session in sessions_to_check:
+        for session in sessions_to_start:
             if not session.start_time:
                 continue
-
-            # Combina a data da sessão com a hora de início para ter um datetime completo
             session_start_datetime = datetime.combine(session.session_date, session.start_time)
-
-            # Define o limite de 2 horas antes para iniciar
             two_hours_before_start = session_start_datetime - timedelta(hours=2)
 
-            # Verifica se a hora atual está dentro da janela de "auto-start"
             if two_hours_before_start <= now:
                 print(f"Iniciando sessão agendada ID: {session.id} - {session.title}")
                 session_service.start_scheduled_session(db, session.id)
+
+        # 2. Encerrar Sessões
+        sessions_to_close = (
+            db.query(models.MasonicSession)
+            .filter(models.MasonicSession.status == "EM_ANDAMENTO")
+            .all()
+        )
+
+        for session in sessions_to_close:
+             # Determine reference end time
+             if session.end_time:
+                 session_end_datetime = datetime.combine(session.session_date, session.end_time)
+             elif session.start_time:
+                 # Fallback: assume 2h duration if no end time set
+                 session_end_datetime = datetime.combine(session.session_date, session.start_time) + timedelta(hours=2)
+             else:
+                 continue
+            
+             two_hours_after_end = session_end_datetime + timedelta(hours=2)
+             
+             if now >= two_hours_after_end:
+                 print(f"Encerrando sessão ID: {session.id} - {session.title}")
+                 session_service.close_scheduled_session(db, session.id)
 
     except Exception as e:
         print(f"Erro ao executar a tarefa agendada de sessões: {e}")

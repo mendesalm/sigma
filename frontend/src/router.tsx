@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import VisitorRegistrationPage from './pages/VisitorRegistrationPage';
 
 import Obediences from './pages/Management/Obediences';
 import ObedienceForm from './pages/Management/ObedienceForm';
@@ -76,6 +77,10 @@ const router = createBrowserRouter([
           {
             path: '/select-lodge',
             element: <LodgeSelectionPage />,
+          },
+          {
+            path: '/visitante/cadastro',
+            element: <VisitorRegistrationPage />,
           },
         ]
       },

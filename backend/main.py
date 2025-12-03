@@ -35,6 +35,8 @@ from routes import (  # noqa: E402
     webmaster_routes,
     template_routes,
     classified_routes,
+    external_lodge_routes,
+    visitor_routes,
 )
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 
@@ -205,7 +207,14 @@ app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
 app.include_router(template_routes.router) # Included template_routes
+
+
+
+
 app.include_router(classified_routes.router)
+app.include_router(external_lodge_routes.router)
+app.include_router(visitor_routes.router)
+
 
 # Mount static files AFTER routers
 from fastapi.staticfiles import StaticFiles

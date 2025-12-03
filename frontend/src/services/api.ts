@@ -110,4 +110,8 @@ export const reactivateClassified = (id: number) => {
   return api.post(`/classifieds/${id}/reactivate`);
 };
 
+export const updateClassified = (id: number, data: any) => {
+  return api.put(`/classifieds/${id}`, data);
+};
+
 export default api;

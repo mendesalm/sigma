@@ -1,20 +1,27 @@
 from pydantic import BaseModel
-from pydantic_settings import SettingsConfigDict
+from typing import Optional
+from datetime import datetime
 
-
-class VisitorBase(BaseModel):
+class VisitorCreate(BaseModel):
     full_name: str
-    email: str | None = None
-    phone: str | None = None
-    cim: str | None = None
-    external_lodge_id: int | None = None
+    cim: str
+    degree: str
+    origin_lodge_id: Optional[int] = None
+    manual_lodge_name: Optional[str] = None
+    manual_lodge_number: Optional[str] = None
+    manual_lodge_obedience: Optional[str] = None
 
+class VisitorResponse(BaseModel):
+    id: str
+    full_name: str
+    cim: str
+    degree: str
+    origin_lodge_id: Optional[int] = None
+    manual_lodge_name: Optional[str] = None
+    manual_lodge_number: Optional[str] = None
+    manual_lodge_obedience: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
-class VisitorCreate(VisitorBase):
-    pass
-
-
-class VisitorResponse(VisitorBase):
-    id: int
-
-    model_config = SettingsConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True

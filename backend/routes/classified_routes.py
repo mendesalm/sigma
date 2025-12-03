@@ -61,8 +61,16 @@ def reactivate_classified(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload)
 ):
-    member_id = current_user_payload.get("sub")
-    return classified_service.reactivate_classified(db, classified_id, member_id)
+    return classified_service.reactivate_classified(db, classified_id, current_user_payload)
+
+@router.put("/{classified_id}", response_model=classified_schema.ClassifiedOut)
+def update_classified(
+    classified_id: int,
+    classified_update: classified_schema.ClassifiedUpdate,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload)
+):
+    return classified_service.update_classified(db, classified_id, classified_update, current_user_payload)
 
 @router.delete("/{classified_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_classified(
@@ -70,6 +78,5 @@ def delete_classified(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload)
 ):
-    member_id = current_user_payload.get("sub")
-    classified_service.delete_classified(db, classified_id, member_id)
+    classified_service.delete_classified(db, classified_id, current_user_payload)
     return None

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from fastapi import BackgroundTasks, HTTPException, status
 from sqlalchemy import create_engine
@@ -8,6 +8,7 @@ from config import settings
 from models import models
 from schemas import masonic_session_schema
 from .document_generation_service import DocumentGenerationService
+from . import geo_service
 
 
 def _create_attendance_records_task(db_url: str, session_id: int, lodge_id: int):
@@ -398,3 +399,99 @@ def register_visitor_attendance(
         db.refresh(attendance)
         
     return attendance
+
+
+def perform_check_in(
+    db: Session, 
+    session_id: int, 
+    member_id: int, 
+    qr_code_token: str, 
+    latitude: float, 
+    longitude: float,
+    current_user_payload: dict
+) -> models.SessionAttendance:
+    """
+    Realiza o check-in de um membro na sessão usando validação de QR Code e Geolocalização.
+    """
+    # 1. Busca a sessão e a loja
+    db_session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+    if not db_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
+    
+    lodge = db_session.lodge
+    
+    # 2. Valida Status da Sessão
+    if db_session.status != "EM_ANDAMENTO":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Check-in não permitido. A sessão não está em andamento (Status: {db_session.status})."
+        )
+        
+    # 3. Valida QR Code da Loja
+    if lodge.qr_code_id != qr_code_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="QR Code inválido para esta Loja."
+        )
+        
+    # 4. Valida Geolocalização
+    # Default radius 200m if not set (though we plan to add it to DB, for now hardcode or use attribute if exists)
+    radius = getattr(lodge, "geofence_radius", 200) 
+    if not geo_service.is_within_radius(latitude, longitude, lodge.latitude, lodge.longitude, radius):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Você está fora do raio permitido para check-in nesta Loja."
+        )
+
+    # 5. Busca ou Cria Registro de Presença
+    attendance = db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id == session_id,
+        models.SessionAttendance.member_id == member_id
+    ).first()
+    
+    now = datetime.now()
+    
+    if attendance:
+        attendance.attendance_status = "Presente"
+        attendance.check_in_method = "QR_CODE" # Mapear para APP_QR_GEO se/quando atualizar o Enum
+        attendance.check_in_datetime = now
+        attendance.check_in_latitude = latitude
+        attendance.check_in_longitude = longitude
+    else:
+        # Membro não estava na lista (ex: visitante de mesma obediência ou membro recém cadastrado)
+        attendance = models.SessionAttendance(
+            session_id=session_id,
+            member_id=member_id,
+            attendance_status="Presente",
+            check_in_method="QR_CODE",
+            check_in_datetime=now,
+            check_in_latitude=latitude,
+            check_in_longitude=longitude
+        )
+        db.add(attendance)
+        
+    db.commit()
+    db.refresh(attendance)
+    return attendance
+
+
+def close_scheduled_session(db: Session, session_id: int) -> models.MasonicSession | None:
+    """
+    Encerra automaticamente uma sessão (chamado pelo agendador).
+    Muda status para ENCERRADA.
+    """
+    db_session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+    if not db_session:
+        print(f"Agendador: Sessão {session_id} não encontrada para encerrar.")
+        return None
+
+    if db_session.status != "EM_ANDAMENTO":
+        # Se já foi realizada ou cancelada, não faz nada
+        return db_session
+
+    db_session.status = "ENCERRADA"
+    db.commit()
+    db.refresh(db_session)
+    print(f"Agendador: Sessão {session_id} encerrada automaticamente.")
+    
+    return db_session

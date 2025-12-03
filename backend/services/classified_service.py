@@ -105,12 +105,16 @@ def get_classified_by_id(db: Session, classified_id: int):
         classified.lodge_name = classified.lodge.lodge_name
     return classified
 
-def delete_classified(db: Session, classified_id: int, member_id: int):
+def delete_classified(db: Session, classified_id: int, current_user_payload: dict):
+    member_id = current_user_payload.get("sub")
+    user_type = current_user_payload.get("user_type")
+    
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
         
-    if classified.member_id != member_id:
+    # Allow if user is the owner OR is a super_admin
+    if classified.member_id != member_id and user_type != "super_admin":
          raise HTTPException(status_code=403, detail="Not authorized to delete this classified")
          
     classified_dir = os.path.join(UPLOAD_DIR, str(classified.id))
@@ -120,18 +124,16 @@ def delete_classified(db: Session, classified_id: int, member_id: int):
     db.delete(classified)
     db.commit()
 
-def reactivate_classified(db: Session, classified_id: int, member_id: int):
+def reactivate_classified(db: Session, classified_id: int, current_user_payload: dict):
+    member_id = current_user_payload.get("sub")
+    user_type = current_user_payload.get("user_type")
+    
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
         
-    if classified.member_id != member_id:
+    if classified.member_id != member_id and user_type != "super_admin":
          raise HTTPException(status_code=403, detail="Not authorized to reactivate this classified")
-    
-    # Check if within grace period (14 days after expiration)
-    # If status is EXPIRED, we check the date. If ACTIVE, we just extend? 
-    # Requirement says: "can be reactivated within the grace period of 14 days"
-    # This implies it must be EXPIRED first.
     
     if classified.status != "EXPIRED":
         raise HTTPException(status_code=400, detail="Only expired classifieds can be reactivated")
@@ -144,6 +146,31 @@ def reactivate_classified(db: Session, classified_id: int, member_id: int):
         
     classified.status = "ACTIVE"
     classified.expires_at = now + timedelta(days=21)
+    db.commit()
+    db.refresh(classified)
+    return classified
+
+def update_classified(
+    db: Session, 
+    classified_id: int, 
+    classified_update: classified_schema.ClassifiedUpdate, 
+    current_user_payload: dict
+):
+    member_id = current_user_payload.get("sub")
+    user_type = current_user_payload.get("user_type")
+    
+    classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
+    if not classified:
+        raise HTTPException(status_code=404, detail="Classified not found")
+        
+    if classified.member_id != member_id and user_type != "super_admin":
+         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+         
+    # Update fields
+    update_data = classified_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(classified, key, value)
+        
     db.commit()
     db.refresh(classified)
     return classified

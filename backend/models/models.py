@@ -18,10 +18,8 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship
-
-Base = declarative_base()
+from database import Base
 
 
 class BaseModel(Base):
@@ -164,6 +162,7 @@ class Lodge(BaseModel):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     qr_code_id = Column(String(36), unique=True, nullable=True, default=lambda: str(uuid.uuid4()))
+    geofence_radius = Column(Integer, default=200, nullable=True)
     custom_domain = Column(String(255), unique=True, nullable=True)
     plan = Column(String(255), nullable=True)
     user_limit = Column(Integer, nullable=True)

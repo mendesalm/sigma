@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Alert, Snackbar, Chip } from '@mui/material';
-import { Add, Delete, PhotoCamera, Refresh } from '@mui/icons-material';
-import { getMyClassifieds, createClassified, deleteClassified, reactivateClassified } from '../../services/api';
+import { Add, Delete, PhotoCamera, Refresh, Edit } from '@mui/icons-material';
+import { getMyClassifieds, createClassified, deleteClassified, reactivateClassified, updateClassified } from '../../services/api';
 
 const MeusAnuncios: React.FC = () => {
   const [ads, setAds] = useState<any[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' });
+  const [editingAd, setEditingAd] = useState<any | null>(null);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -36,44 +37,88 @@ const MeusAnuncios: React.FC = () => {
     }
   };
 
+  const handleOpenDialog = (ad?: any) => {
+    if (ad) {
+      setEditingAd(ad);
+      setTitle(ad.title);
+      setDescription(ad.description);
+      setPrice(ad.price || '');
+      setContactInfo(ad.contact_info || '');
+      setContactEmail(ad.contact_email || '');
+      setStreet(ad.street || '');
+      setNumber(ad.number || '');
+      setNeighborhood(ad.neighborhood || '');
+      setCity(ad.city || '');
+      setState(ad.state || '');
+      setZipCode(ad.zip_code || '');
+      setFiles([]); // Files update not supported in edit mode yet for simplicity
+    } else {
+      setEditingAd(null);
+      resetForm();
+    }
+    setOpenDialog(true);
+  };
+
   const handleSubmit = async () => {
     if (!title || !description || !contactInfo || !contactEmail) {
       setSnackbar({ open: true, message: 'Preencha os campos obrigatórios', severity: 'error' });
       return;
     }
 
-    if (files.length > 5) {
-      setSnackbar({ open: true, message: 'Máximo de 5 fotos permitidas', severity: 'error' });
-      return;
-    }
-
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      if (price) formData.append('price', price);
-      formData.append('contact_info', contactInfo);
-      formData.append('contact_email', contactEmail);
-      formData.append('street', street);
-      formData.append('number', number);
-      formData.append('neighborhood', neighborhood);
-      formData.append('city', city);
-      formData.append('state', state);
-      formData.append('zip_code', zipCode);
-      
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
+      if (editingAd) {
+        // Update
+        const updateData = {
+          title,
+          description,
+          price: price ? parseFloat(price) : null,
+          contact_info: contactInfo,
+          contact_email: contactEmail,
+          street,
+          number,
+          neighborhood,
+          city,
+          state,
+          zip_code: zipCode
+        };
+        await updateClassified(editingAd.id, updateData);
+        setSnackbar({ open: true, message: 'Anúncio atualizado com sucesso!', severity: 'success' });
+      } else {
+        // Create
+        if (files.length > 5) {
+            setSnackbar({ open: true, message: 'Máximo de 5 fotos permitidas', severity: 'error' });
+            setLoading(false);
+            return;
+        }
 
-      await createClassified(formData);
-      setSnackbar({ open: true, message: 'Anúncio criado com sucesso!', severity: 'success' });
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
+        if (price) formData.append('price', price);
+        formData.append('contact_info', contactInfo);
+        formData.append('contact_email', contactEmail);
+        formData.append('street', street);
+        formData.append('number', number);
+        formData.append('neighborhood', neighborhood);
+        formData.append('city', city);
+        formData.append('state', state);
+        formData.append('zip_code', zipCode);
+        
+        files.forEach((file) => {
+          formData.append('files', file);
+        });
+
+        await createClassified(formData);
+        setSnackbar({ open: true, message: 'Anúncio criado com sucesso!', severity: 'success' });
+      }
+      
       setOpenDialog(false);
       resetForm();
       loadMyAds();
     } catch (error) {
-      console.error("Error creating classified", error);
-      setSnackbar({ open: true, message: 'Erro ao criar anúncio', severity: 'error' });
+      console.error("Error saving classified", error);
+      setSnackbar({ open: true, message: 'Erro ao salvar anúncio', severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -139,7 +184,7 @@ const MeusAnuncios: React.FC = () => {
         <Button 
           variant="contained" 
           startIcon={<Add />} 
-          onClick={() => setOpenDialog(true)}
+          onClick={() => handleOpenDialog()}
         >
           Novo Anúncio
         </Button>
@@ -166,6 +211,9 @@ const MeusAnuncios: React.FC = () => {
                 </Typography>
               </CardContent>
               <CardActions>
+                <Button size="small" color="primary" startIcon={<Edit />} onClick={() => handleOpenDialog(ad)}>
+                  Editar
+                </Button>
                 <Button size="small" color="error" startIcon={<Delete />} onClick={() => handleDelete(ad.id)}>
                   Excluir
                 </Button>
@@ -181,7 +229,7 @@ const MeusAnuncios: React.FC = () => {
       </Grid>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Novo Anúncio</DialogTitle>
+        <DialogTitle>{editingAd ? 'Editar Anúncio' : 'Novo Anúncio'}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={2}>
@@ -289,34 +337,43 @@ const MeusAnuncios: React.FC = () => {
               </Grid>
             </Grid>
             
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<PhotoCamera />}
-              sx={{ mt: 2 }}
-            >
-              Upload Fotos (Máx 5)
-              <input
-                type="file"
-                hidden
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-              />
-            </Button>
-            {files.length > 0 && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="caption" display="block">
-                  {files.length} arquivos selecionados:
+            {!editingAd && (
+              <>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<PhotoCamera />}
+                  sx={{ mt: 2 }}
+                >
+                  Upload Fotos (Máx 5)
+                  <input
+                    type="file"
+                    hidden
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                  />
+                </Button>
+                {files.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" display="block">
+                      {files.length} arquivos selecionados:
+                    </Typography>
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      {files.map((f, index) => (
+                        <li key={index}>
+                          <Typography variant="caption">{f.name} ({(f.size / 1024 / 1024).toFixed(2)} MB)</Typography>
+                        </li>
+                      ))}
+                    </ul>
+                  </Box>
+                )}
+              </>
+            )}
+            {editingAd && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    * Edição de fotos não disponível nesta versão. Para alterar fotos, exclua e crie um novo anúncio.
                 </Typography>
-                <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {files.map((f, index) => (
-                    <li key={index}>
-                      <Typography variant="caption">{f.name} ({(f.size / 1024 / 1024).toFixed(2)} MB)</Typography>
-                    </li>
-                  ))}
-                </ul>
-              </Box>
             )}
           </Box>
         </DialogContent>

@@ -240,3 +240,27 @@ def register_visitor_attendance_record(
         visitor_data=visitor_data,
         current_user_payload=current_user_payload
     )
+
+
+@router.post(
+    "/{session_id}/check-in",
+    response_model=session_attendance_schema.SessionAttendanceResponse,
+    summary="Realizar Check-in (App)",
+    description="Realiza o check-in do membro na sessão validando QR Code da Loja e Geolocalização.",
+)
+def perform_check_in_app(
+    session_id: int,
+    check_in_data: session_attendance_schema.CheckInRequest,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return session_service.perform_check_in(
+        db=db,
+        session_id=session_id,
+        member_id=current_user_payload.get("user_id"),
+        qr_code_token=check_in_data.qr_code_token,
+        latitude=check_in_data.latitude,
+        longitude=check_in_data.longitude,
+        current_user_payload=current_user_payload
+    )
+

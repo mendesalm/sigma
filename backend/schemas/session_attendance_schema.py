@@ -45,3 +45,10 @@ class SessionAttendanceResponse(SessionAttendanceBase):
 class SessionAttendanceWithMemberResponse(SessionAttendanceResponse):
     member: MemberInfo | None = None
     visitor: VisitorInfo | None = None
+
+
+class CheckInRequest(BaseModel):
+    qr_code_token: str
+    latitude: float
+    longitude: float
+
