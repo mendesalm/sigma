@@ -43,7 +43,15 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
         print(f"Found webmaster: {webmaster.username}")
         password_verified = password_utils.verify_password(password, webmaster.password_hash)
         print(f"Password verified: {password_verified}")
+        
         if password_verified:
+            # Check if associated lodge is active
+            if webmaster.lodge_id:
+                lodge = db.query(models.Lodge).filter(models.Lodge.id == webmaster.lodge_id).first()
+                if lodge and not lodge.is_active:
+                    print(f"Login denied: Lodge {lodge.name} is inactive.")
+                    return None # Or raise specific exception if architecture allows
+            
             return webmaster, "webmaster"
 
     # 3. Check for Member (by email or CIM)
@@ -55,6 +63,9 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
         password_verified = password_utils.verify_password(password, member.password_hash)
         print(f"Password verified: {password_verified}")
         if password_verified:
+            # Note: Member login is global. Specific lodge access is checked at the application level (e.g. select_lodge)
+            # However, if member belongs ONLY to inactive lodges, they might be effectively blocked depending on business rule.
+            # For now, we allow login but they won't see the inactive lodge in the dashboard.
             return member, "member"
 
     # 4. If no user is found or password does not match
