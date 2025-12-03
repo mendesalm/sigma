@@ -1,12 +1,12 @@
 from datetime import date
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, HTTPException
 from sqlalchemy.orm import Session
 
 # Importações do projeto
 from database import get_db
 from dependencies import get_current_user_payload
-from schemas import masonic_session_schema, session_attendance_schema
+from schemas import masonic_session_schema, session_attendance_schema, visitor_checkin_schema
 from services import session_service
 
 router = APIRouter(
@@ -262,5 +262,42 @@ def perform_check_in_app(
         latitude=check_in_data.latitude,
         longitude=check_in_data.longitude,
         current_user_payload=current_user_payload
+    )
+
+
+@router.get(
+    "/nearest-active",
+    response_model=masonic_session_schema.MasonicSessionResponse,
+    summary="Buscar Sessão Ativa Próxima",
+    description="Busca a sessão ativa mais próxima baseada na geolocalização (sem autenticação).",
+)
+def find_nearest_active_session_endpoint(
+    latitude: float,
+    longitude: float,
+    db: Session = Depends(get_db)
+):
+    session = session_service.find_nearest_active_session(db, latitude, longitude)
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma sessão ativa encontrada nas proximidades.")
+    return session
+
+
+@router.post(
+    "/{session_id}/visitor-check-in",
+    response_model=session_attendance_schema.SessionAttendanceResponse,
+    summary="Check-in de Visitante Global",
+    description="Realiza o check-in de um visitante global na sessão (sem autenticação de usuário).",
+)
+def perform_visitor_check_in_endpoint(
+    session_id: int,
+    check_in_data: visitor_checkin_schema.VisitorCheckInRequest,
+    db: Session = Depends(get_db)
+):
+    return session_service.perform_visitor_check_in(
+        db=db,
+        session_id=session_id,
+        visitor_id=check_in_data.visitor_id,
+        latitude=check_in_data.latitude,
+        longitude=check_in_data.longitude
     )
 

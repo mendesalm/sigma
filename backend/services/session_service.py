@@ -495,3 +495,140 @@ def close_scheduled_session(db: Session, session_id: int) -> models.MasonicSessi
     print(f"Agendador: Sessão {session_id} encerrada automaticamente.")
     
     return db_session
+
+
+def find_nearest_active_session(
+    db: Session, latitude: float, longitude: float
+) -> models.MasonicSession | None:
+    """
+    Encontra a sessão ativa (EM_ANDAMENTO) mais próxima das coordenadas fornecidas.
+    Considera o raio de geofence da loja.
+    """
+    active_sessions = db.query(models.MasonicSession).filter(
+        models.MasonicSession.status == "EM_ANDAMENTO"
+    ).options(joinedload(models.MasonicSession.lodge)).all()
+    
+    nearest_session = None
+    min_distance = float('inf')
+    
+    for session in active_sessions:
+        lodge = session.lodge
+        if not lodge.latitude or not lodge.longitude:
+            continue
+            
+        radius = getattr(lodge, "geofence_radius", 200)
+        distance = geo_service.calculate_distance(latitude, longitude, lodge.latitude, lodge.longitude)
+        
+        if distance <= radius and distance < min_distance:
+            min_distance = distance
+            nearest_session = session
+            
+    return nearest_session
+
+
+def perform_visitor_check_in(
+    db: Session,
+    session_id: int,
+    visitor_id: str, # ID Global (UUID)
+    latitude: float,
+    longitude: float
+) -> models.SessionAttendance:
+    """
+    Realiza o check-in de um VISITANTE GLOBAL na sessão.
+    Não requer autenticação de usuário, mas valida geolocalização.
+    """
+    # 1. Busca a sessão e a loja
+    db_session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+    if not db_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
+    
+    lodge = db_session.lodge
+    
+    # 2. Valida Status da Sessão
+    if db_session.status != "EM_ANDAMENTO":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Check-in não permitido. A sessão não está em andamento."
+        )
+        
+    # 3. Valida Geolocalização
+    radius = getattr(lodge, "geofence_radius", 200) 
+    if not geo_service.is_within_radius(latitude, longitude, lodge.latitude, lodge.longitude, radius):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Você está fora do raio permitido para check-in nesta Loja."
+        )
+
+    # 4. Busca ou Cria Registro de Presença
+    # Nota: SessionAttendance precisa de um campo para armazenar o ID do visitante global
+    # Como o modelo atual tem 'visitor_id' (FK para tabela local Visitor), precisamos adaptar.
+    # Opção A: Criar um registro na tabela local 'visitors' espelhando o global.
+    # Opção B: Adicionar campo 'global_visitor_id' em SessionAttendance.
+    # Vamos usar a Opção A para manter integridade referencial local por enquanto.
+    
+    # Busca dados do visitante global para criar o local
+    # Precisamos de uma conexão com o banco global aqui? 
+    # Idealmente sim, mas para simplificar e evitar dependência circular, 
+    # vamos assumir que o frontend passou os dados ou confiar no ID.
+    # Mas espere, se não validarmos o ID, qualquer um pode injetar.
+    # O correto é buscar no banco global.
+    
+    from database import get_oriente_db
+    from models.global_models import GlobalVisitor
+    
+    # Hack para pegar sessão do banco global sem injeção de dependência direta aqui
+    # (Em prod, refatorar para receber a session global como argumento)
+    oriente_db_gen = get_oriente_db()
+    oriente_db = next(oriente_db_gen)
+    
+    try:
+        global_visitor = oriente_db.query(GlobalVisitor).filter(GlobalVisitor.id == visitor_id).first()
+        if not global_visitor:
+            raise HTTPException(status_code=404, detail="Visitante global não encontrado.")
+            
+        # Sincroniza/Cria visitante local
+        local_visitor = db.query(models.Visitor).filter(models.Visitor.cpf == global_visitor.cim).first() # Usando CIM no campo CPF ou criar campo CIM
+        
+        if not local_visitor:
+             # Tenta achar por nome se CIM falhar (ou cria novo)
+             # Melhor criar um campo 'global_id' na tabela local Visitor para linkar
+             local_visitor = models.Visitor(
+                 full_name=global_visitor.full_name,
+                 cpf=global_visitor.cim, # Adaptando CIM para CPF por enquanto
+                 origin_lodge=f"Global ID: {global_visitor.origin_lodge_id or 'Manual'}"
+             )
+             db.add(local_visitor)
+             db.commit()
+             db.refresh(local_visitor)
+             
+        # Registra presença
+        attendance = db.query(models.SessionAttendance).filter(
+            models.SessionAttendance.session_id == session_id,
+            models.SessionAttendance.visitor_id == local_visitor.id
+        ).first()
+        
+        now = datetime.now()
+        
+        if attendance:
+            attendance.attendance_status = "Presente"
+            attendance.check_in_method = "APP_VISITOR"
+            attendance.check_in_datetime = now
+        else:
+            attendance = models.SessionAttendance(
+                session_id=session_id,
+                visitor_id=local_visitor.id,
+                attendance_status="Presente",
+                check_in_method="APP_VISITOR",
+                check_in_datetime=now,
+                check_in_latitude=latitude,
+                check_in_longitude=longitude
+            )
+            db.add(attendance)
+            
+        db.commit()
+        db.refresh(attendance)
+        return attendance
+        
+    finally:
+        oriente_db.close()
+

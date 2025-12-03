@@ -50,6 +50,13 @@ const VisitorRegistrationPage: React.FC = () => {
 
     // Result
     const [visitorToken, setVisitorToken] = useState<string | null>(null);
+    const [visitorId, setVisitorId] = useState<string | null>(null);
+    
+    // Check-in State
+    const [locating, setLocating] = useState(false);
+    const [nearestSession, setNearestSession] = useState<any>(null);
+    const [checkInSuccess, setCheckInSuccess] = useState(false);
+    const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
 
     const degreeOptions = ['APRENDIZ', 'COMPANHEIRO', 'MESTRE', 'MESTRE_INSTALADO'];
 
@@ -112,12 +119,13 @@ const VisitorRegistrationPage: React.FC = () => {
 
             const response = await api.post('/visitors/register', payload);
 
-            const visitorId = response.data.id;
+            const vId = response.data.id;
+            setVisitorId(vId);
             
             // O Token agora contém o ID do visitante global
             const tokenData = {
                 type: 'VISITOR_CHECKIN',
-                id: visitorId,
+                id: vId,
                 full_name: fullName, 
                 degree: degree,
                 lodge_name: manualLodge ? `${manualLodgeName} ${manualLodgeNumber}` : selectedLodge?.name
@@ -125,9 +133,61 @@ const VisitorRegistrationPage: React.FC = () => {
 
             setVisitorToken(JSON.stringify(tokenData));
             setActiveStep(1);
+            
+            // Inicia busca por sessão próxima
+            findNearestSession();
+            
         } catch (err: any) {
             console.error(err);
             setError(err.response?.data?.detail || "Erro ao registrar visitante. Tente novamente.");
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const findNearestSession = () => {
+        setLocating(true);
+        if (!navigator.geolocation) {
+            setError("Geolocalização não suportada pelo navegador.");
+            setLocating(false);
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                setUserLocation({ lat: latitude, lon: longitude });
+                
+                try {
+                    const response = await api.get(`/masonic-sessions/nearest-active?latitude=${latitude}&longitude=${longitude}`);
+                    setNearestSession(response.data);
+                } catch (err) {
+                    console.log("Nenhuma sessão próxima encontrada.");
+                } finally {
+                    setLocating(false);
+                }
+            },
+            (err) => {
+                console.error(err);
+                setError("Erro ao obter localização. Verifique as permissões.");
+                setLocating(false);
+            }
+        );
+    };
+    
+    const handleConfirmPresence = async () => {
+        if (!nearestSession || !visitorId || !userLocation) return;
+        
+        setLoading(true);
+        try {
+            await api.post(`/masonic-sessions/${nearestSession.id}/visitor-check-in`, {
+                visitor_id: visitorId,
+                latitude: userLocation.lat,
+                longitude: userLocation.lon
+            });
+            setCheckInSuccess(true);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Erro ao confirmar presença.");
         } finally {
             setLoading(false);
         }
@@ -145,14 +205,14 @@ const VisitorRegistrationPage: React.FC = () => {
                         <StepLabel>Seus Dados</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Seu Passe</StepLabel>
+                        <StepLabel>Confirmação</StepLabel>
                     </Step>
                 </Stepper>
 
                 {activeStep === 0 && (
                     <Stack spacing={3}>
                         <Typography variant="body1" color="text.secondary">
-                            Bem-vindo, Irmão! Preencha seus dados para gerar seu passe de entrada.
+                            Bem-vindo, Irmão! Preencha seus dados para registrar sua presença.
                         </Typography>
 
                         <TextField
@@ -180,7 +240,7 @@ const VisitorRegistrationPage: React.FC = () => {
                         />
 
                         <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>
-                            <Typography variant="subtitle1" gutterBottom>Sua Loja</Typography>
+                            <Typography variant="subtitle1" gutterBottom>Sua Loja de Origem</Typography>
                             
                             <Box sx={{ mb: 2 }}>
                                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
@@ -263,37 +323,86 @@ const VisitorRegistrationPage: React.FC = () => {
                             onClick={handleGenerateToken}
                             disabled={loading}
                         >
-                            {loading ? <CircularProgress size={24} /> : 'Gerar Passe de Acesso'}
+                            {loading ? <CircularProgress size={24} /> : 'Continuar'}
                         </Button>
                     </Stack>
                 )}
 
-                {activeStep === 1 && visitorToken && (
+                {activeStep === 1 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                        <Typography variant="h6" align="center">
-                            Apresente este QR Code ao Chanceler
-                        </Typography>
                         
-                        <Box sx={{ p: 2, border: '2px solid #eee', borderRadius: 2 }}>
-                            <QRCodeSVG value={visitorToken} size={250} />
-                        </Box>
+                        {checkInSuccess ? (
+                            <Alert severity="success" sx={{ width: '100%' }}>
+                                <Typography variant="h6">Presença Confirmada!</Typography>
+                                <Typography variant="body2">
+                                    Seu registro foi realizado com sucesso na sessão da Loja {nearestSession?.lodge?.name}.
+                                    Bom trabalho, Irmão!
+                                </Typography>
+                            </Alert>
+                        ) : (
+                            <>
+                                <Typography variant="h6" align="center">
+                                    Confirmar Presença
+                                </Typography>
+                                
+                                {locating ? (
+                                    <Box sx={{ textAlign: 'center' }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>Localizando sessão próxima...</Typography>
+                                    </Box>
+                                ) : nearestSession ? (
+                                    <Box sx={{ p: 3, border: '1px solid #ddd', borderRadius: 2, width: '100%', textAlign: 'center', bgcolor: '#f5f5f5' }}>
+                                        <Typography variant="subtitle1" color="primary" fontWeight="bold">
+                                            Sessão Encontrada
+                                        </Typography>
+                                        <Typography variant="h5" sx={{ my: 1 }}>
+                                            {nearestSession.lodge?.name} N. {nearestSession.lodge?.number}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Data: {new Date(nearestSession.session_date).toLocaleDateString()}
+                                        </Typography>
+                                        
+                                        <Button 
+                                            variant="contained" 
+                                            color="success" 
+                                            size="large" 
+                                            sx={{ mt: 3 }}
+                                            onClick={handleConfirmPresence}
+                                            disabled={loading}
+                                        >
+                                            {loading ? <CircularProgress size={24} color="inherit" /> : 'CONFIRMAR PRESENÇA AQUI'}
+                                        </Button>
+                                    </Box>
+                                ) : (
+                                    <Alert severity="warning">
+                                        Nenhuma sessão ativa encontrada nas proximidades. 
+                                        Certifique-se de estar na Loja e que a sessão já foi iniciada.
+                                        <Button onClick={findNearestSession} sx={{ mt: 1, display: 'block' }}>Tentar Novamente</Button>
+                                    </Alert>
+                                )}
 
-                        <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="subtitle1" fontWeight="bold">{fullName}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {degree}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {manualLodge ? `${manualLodgeName} N. ${manualLodgeNumber}` : `${selectedLodge?.name} N. ${selectedLodge?.number}`}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {manualLodge ? manualLodgeObedience : selectedLodge?.obedience}
-                            </Typography>
-                        </Box>
+                                <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid #eee', width: '100%', textAlign: 'center' }}>
+                                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                                        Caso não consiga confirmar automaticamente, apresente este código ao Chanceler:
+                                    </Typography>
+                                    <Box sx={{ p: 2, display: 'inline-block', border: '1px solid #eee', borderRadius: 2 }}>
+                                        <QRCodeSVG value={visitorToken || ''} size={150} />
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
 
-                        <Button variant="outlined" onClick={() => setActiveStep(0)}>
-                            Voltar / Novo Cadastro
-                        </Button>
+                        {!checkInSuccess && (
+                            <Button variant="outlined" onClick={() => setActiveStep(0)}>
+                                Voltar / Corrigir Dados
+                            </Button>
+                        )}
+                        
+                        {checkInSuccess && (
+                             <Button variant="outlined" onClick={() => window.location.reload()}>
+                                Novo Registro
+                            </Button>
+                        )}
                     </Box>
                 )}
             </Paper>
