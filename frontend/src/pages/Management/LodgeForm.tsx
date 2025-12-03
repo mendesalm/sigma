@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Container, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent } from '@mui/material';
+import { Button, Container, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent, Autocomplete } from '@mui/material';
 import api from '../../services/api';
 import axios from 'axios';
 import { formatCNPJ, formatPhone, formatCEP, formatState } from '../../utils/formatters';
@@ -39,6 +39,7 @@ const LodgeForm = () => {
     plan: '',
     user_limit: '',
     status: '',
+    external_id: null as number | null, // Novo campo
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [obediences, setObediences] = useState([]);
@@ -46,6 +47,12 @@ const LodgeForm = () => {
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
   const { id } = useParams();
+
+  // Estados para busca de loja global
+  const [externalLodges, setExternalLodges] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [selectedExternalLodge, setSelectedExternalLodge] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchObediences = async () => {
@@ -72,6 +79,48 @@ const LodgeForm = () => {
       fetchLodge();
     }
   }, [id]);
+
+  // Efeito para busca de lojas globais
+  useEffect(() => {
+    if (id) return; // Não busca se estiver editando
+
+    const searchLodges = async () => {
+      if (searchQuery.length < 2) {
+        setExternalLodges([]);
+        return;
+      }
+
+      setSearching(true);
+      try {
+        const response = await api.get(`/external-lodges/search?query=${searchQuery}`);
+        setExternalLodges(response.data);
+      } catch (err) {
+        console.error("Failed to search lodges", err);
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    const timeoutId = setTimeout(searchLodges, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, id]);
+
+  const handleExternalLodgeSelect = (event: any, newValue: any) => {
+    setSelectedExternalLodge(newValue);
+    if (newValue) {
+      // Preenche o formulário com dados da loja externa
+      setFormData(prev => ({
+        ...prev,
+        lodge_name: newValue.name,
+        lodge_number: newValue.number.toString(),
+        city: newValue.city,
+        state: newValue.state,
+        external_id: newValue.id,
+        // Tenta mapear obediência se possível (lógica simples por string match poderia ser adicionada aqui)
+      }));
+      setSnackbar({ open: true, message: 'Dados da loja importados! Complete o cadastro.', severity: 'success' });
+    }
+  };
 
   const validateField = (name: string, value: string) => {
     let error = '';
@@ -153,7 +202,7 @@ const LodgeForm = () => {
     const { obedience_id, foundation_date, session_time, email, ...rest } = formData;
     
     // Helper to convert empty strings to null and trim strings
-    const sanitize = (value: string) => {
+    const sanitize = (value: string | number | null) => {
       if (typeof value === 'string') {
         const trimmed = value.trim();
         return trimmed === '' ? null : trimmed;
@@ -185,8 +234,9 @@ const LodgeForm = () => {
       longitude: sanitize(formData.longitude),
       custom_domain: sanitize(formData.custom_domain),
       plan: sanitize(formData.plan),
-      user_limit: formData.user_limit ? parseInt(formData.user_limit) : null,
+      user_limit: formData.user_limit ? parseInt(formData.user_limit as string) : null,
       status: sanitize(formData.status),
+      external_id: formData.external_id, // Envia o ID externo
     };
 
 
@@ -196,7 +246,7 @@ const LodgeForm = () => {
         setSnackbar({ open: true, message: 'Loja atualizada com sucesso!', severity: 'success' });
       } else {
         await api.post('/lodges', lodgeData);
-        setSnackbar({ open: true, message: 'Loja criada com sucesso!', severity: 'success' });
+        setSnackbar({ open: true, message: 'Loja criada com sucesso! Membros importados.', severity: 'success' });
       }
       setTimeout(() => navigate('/dashboard/management/lodges'), 1500);
     } catch (error) {
@@ -219,6 +269,50 @@ const LodgeForm = () => {
       </Box>
 
       <Paper sx={{ p: 4 }}>
+        {!id && (
+            <Box sx={{ mb: 4, p: 2, bgcolor: '#f8f9fa', borderRadius: 1, border: '1px dashed #ccc' }}>
+                <Typography variant="subtitle1" gutterBottom color="primary">
+                    Importar do Cadastro Global (Opcional)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                    Busque sua loja no cadastro global para preencher os dados automaticamente e importar membros.
+                </Typography>
+                <Autocomplete
+                    options={externalLodges}
+                    getOptionLabel={(option) => `${option.name} N. ${option.number} (${option.obedience})`}
+                    loading={searching}
+                    onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+                    onChange={handleExternalLodgeSelect}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label="Buscar Loja Global (Nome ou Número)"
+                            fullWidth
+                            InputProps={{
+                                ...params.InputProps,
+                                endAdornment: (
+                                    <>
+                                        {searching ? <CircularProgress color="inherit" size={20} /> : null}
+                                        {params.InputProps.endAdornment}
+                                    </>
+                                ),
+                            }}
+                        />
+                    )}
+                    renderOption={(props, option) => (
+                        <li {...props}>
+                            <Box>
+                                <Typography variant="body1">{option.name} N. {option.number}</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {option.obedience} - {option.city}/{option.state}
+                                </Typography>
+                            </Box>
+                        </li>
+                    )}
+                />
+            </Box>
+        )}
+
         <form onSubmit={handleSubmit}>
           <Typography variant="h6" gutterBottom sx={{ mb: 2, color: 'primary.main' }}>
             Dados Gerais

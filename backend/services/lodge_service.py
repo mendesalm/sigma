@@ -66,17 +66,29 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
             oriente_db = next(oriente_db_gen)
             
             # Critérios de busca:
-            # 1. Pelo ID externo se fornecido (assumindo que LodgeCreate tenha esse campo futuramente, por enquanto não tem)
+            # 1. Pelo ID externo se fornecido
             # 2. Pelo Nome e Número da Loja (Manual Entry)
             
-            # Normalização para busca
-            target_name = lodge.name.strip()
-            target_number = str(lodge.lodge_number).strip()
+            potential_members = []
             
-            potential_members = oriente_db.query(GlobalVisitor).filter(
-                GlobalVisitor.manual_lodge_name.ilike(f"%{target_name}%"),
-                GlobalVisitor.manual_lodge_number == target_number
-            ).all()
+            if hasattr(lodge, 'external_id') and lodge.external_id:
+                # Busca por ID externo (origin_lodge_id)
+                potential_members = oriente_db.query(GlobalVisitor).filter(
+                    GlobalVisitor.origin_lodge_id == lodge.external_id
+                ).all()
+                print(f"Buscando membros globais pelo ID externo {lodge.external_id}: {len(potential_members)} encontrados.")
+            
+            # Se não achou ou não tem ID, tenta por nome/número
+            if not potential_members:
+                # Normalização para busca
+                target_name = lodge.lodge_name.strip() # Usando lodge_name do schema
+                target_number = str(lodge.lodge_number).strip()
+                
+                potential_members = oriente_db.query(GlobalVisitor).filter(
+                    GlobalVisitor.manual_lodge_name.ilike(f"%{target_name}%"),
+                    GlobalVisitor.manual_lodge_number == target_number
+                ).all()
+                print(f"Buscando membros globais por Nome/Número: {len(potential_members)} encontrados.")
             
             imported_count = 0
             for visitor in potential_members:

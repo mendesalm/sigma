@@ -179,6 +179,7 @@ class LodgeBase(BaseModel):
 
 class LodgeCreate(LodgeBase):
     # O lodge_code é gerado automaticamente no serviço
+    external_id: int | None = Field(None, description="ID da loja no banco global (oriente_data)")
     pass
 
 
