@@ -52,7 +52,7 @@ const LodgeForm = () => {
   const [externalLodges, setExternalLodges] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [selectedExternalLodge, setSelectedExternalLodge] = useState<any | null>(null);
+
 
   useEffect(() => {
     const fetchObediences = async () => {
@@ -105,8 +105,7 @@ const LodgeForm = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, id]);
 
-  const handleExternalLodgeSelect = (event: any, newValue: any) => {
-    setSelectedExternalLodge(newValue);
+  const handleExternalLodgeSelect = (_: any, newValue: any) => {
     if (newValue) {
       // Preenche o formulário com dados da loja externa
       setFormData(prev => ({
