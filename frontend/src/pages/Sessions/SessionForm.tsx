@@ -22,12 +22,12 @@ import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types
 
 const SessionForm = () => {
   const [formData, setFormData] = useState({
-    title: '',
+    title: 'Sessão Ordinária no Grau de Aprendiz',
     session_date: '',
     start_time: '',
-    end_time: '',
-    type: '',
-    subtype: '',
+    end_time: '21:30',
+    type: 'Ordinária',
+    subtype: 'Regular',
     agenda: '',
     sent_expedients: '',
     received_expedients: '',

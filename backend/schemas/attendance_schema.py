@@ -8,9 +8,16 @@ class ManualAttendanceUpdate(BaseModel):
 
 class VisitorCreate(BaseModel):
     full_name: str
-    email: EmailStr | None = None
-    origin_lodge: str | None = None
-    cpf: str | None = None
+    cim: str
+    degree: str
+    
+    # Loja de Origem
+    origin_lodge_id: int | None = None
+    manual_lodge_name: str | None = None
+    manual_lodge_number: str | None = None
+    manual_lodge_obedience: str | None = None
+    
+    remarks: str | None = None
 
 
 class QrCheckInRequest(BaseModel):

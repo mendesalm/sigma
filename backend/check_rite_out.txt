@@ -1,0 +1,6 @@
+Found 1 lodges with rite set.
+Lodge: João Pedro Junqueira - Rite (DB Value): 'RiteEnum.BRAZILIAN'
+  -> Matches RiteEnum.BRAZILIAN object
+
+--- Raw DB Values ---
+Lodge: João Pedro Junqueira, Rite: BRAZILIAN

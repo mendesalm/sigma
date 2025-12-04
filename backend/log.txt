@@ -1,0 +1,4 @@
+Migrating lodges to Obedience: Grande Loja Maçônica do Estado de Goiás (ID: 14)
+Querying GlobalVisitor for GLEG lodges...
+Error: (pymysql.err.ProgrammingError) (1146, "Table 'oriente_data.global_visitors' doesn't exist")
+[SQL: SELECT global_visitors.id AS global_visitors_id, global_visitors.cim AS global_visitors_cim, global_visitors.full_name AS global_visitors_full_name, global_visitors.degree AS global_visitors_degree, global_visitors.origin_lodge_id AS global_visitors_origin_lodge_id, global_visitors.manual_lodge_name AS global_visitors_manual_lodge_name, global_visitors.manual_lodge_number AS global_visitors_manual_l

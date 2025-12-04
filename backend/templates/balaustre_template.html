@@ -5,108 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Balaústre</title>
     <style>
-      @page {
-        margin: 2cm;
+      :root {
+        --header-text-color: #380404;
+        --page-bg-color: white;
+        --border-width: 1px;
+        --border-style: solid;
+        --border-color: black;
+        --header-bg-color: transparent;
       }
+
       body {
         font-family: "Times New Roman", Times, serif;
-        font-size: 12pt;
+        font-size: 12pt; /* Increased font size */
+        margin: 0;
+        padding: 0;
         line-height: 1.5;
-        text-align: justify;
+        color: #000;
       }
-      .header {
-        text-align: center;
-        margin-bottom: 20px;
-        font-weight: bold;
+
+      @page {
+        margin: 1cm;
+        size: A4;
       }
-      .header p {
-        margin: 5px 0;
+
+      .page-border {
+        background-color: var(--page-bg-color);
+        border-width: var(--border-width);
+        border-style: var(--border-style);
+        border-color: var(--border-color);
+        padding: 0.5cm;
+        min-height: calc(297mm - 2cm);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
       }
-      .content {
-        margin-bottom: 30px;
+
+      .document-content {
+        margin: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
       }
-      .signatures {
-        margin-top: 50px;
+
+      /* Tabela para substituir Grid/Flexbox */
+      .header-table {
         width: 100%;
+        border-bottom: 2px solid #380404;
+        margin-bottom: 0.5cm;
+        background-color: var(--header-bg-color);
+        border-bottom-color: var(--header-text-color);
+      }
+      
+      .header-logo-cell {
+        width: 20%; /* Increased width for logo cell */
+        text-align: center;
+        vertical-align: middle;
+        padding: 5px;
+      }
+
+      .header-text-cell {
+        width: 80%;
+        text-align: center;
+        vertical-align: middle;
+        padding: 5px;
+      }
+
+      .header-logo img {
+        width: 2.5cm; /* Fixed width for logo */
+        height: auto;
+      }
+
+      .header-text {
+        color: var(--header-text-color);
+      }
+
+      .lodge-name {
+        margin: 0;
+        font-size: 16pt; /* Increased font size */
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+
+      .affiliation {
+        margin: 0;
+        font-size: 11pt; /* Increased font size */
+      }
+      
+      .officers-table {
+        width: 100%;
+        margin-top: 2cm;
         border-collapse: collapse;
       }
-      .signatures td {
+
+      .officers-table td {
         width: 33%;
         text-align: center;
         vertical-align: top;
         padding: 0 10px;
+        font-size: 11pt; /* Increased font size */
       }
+
       .signature-line {
-        border-top: 1px solid #000;
-        margin-top: 40px;
-        padding-top: 5px;
+        border-top: 1px solid black;
+        margin-bottom: 5px;
         width: 90%;
         margin-left: auto;
         margin-right: auto;
       }
-      .footer {
-        text-align: right;
-        margin-top: 30px;
+
+      .signature-role {
+        font-weight: bold;
+        font-size: 11pt;
       }
+
+      /* Quill Editor Support */
+      .ql-align-center { text-align: center; }
+      .ql-align-right { text-align: right; }
+      .ql-align-justify { text-align: justify; }
+      
+      .ql-indent-1 { margin-left: 2em; }
+      .ql-indent-2 { margin-left: 4em; }
+      .ql-indent-3 { margin-left: 6em; }
+      .ql-indent-4 { margin-left: 8em; }
+      .ql-indent-5 { margin-left: 10em; }
+      
+      strong { font-weight: bold; }
+      em { font-style: italic; }
+      u { text-decoration: underline; }
+      
+      /* Para Ata em parágrafo único/contínuo */
+      .balaustre-body {
+        text-align: justify;
+        line-height: 1.5;
+      }
+
+      .balaustre-body p { 
+        margin-bottom: 0; 
+        text-align: justify; /* Reforça para garantir */
+        display: inline; /* Tenta forçar o comportamento de linha contínua */
+      }
+      
+      .balaustre-body div {
+        text-align: justify;
+        line-height: 1.5;
+      }
+      
+      ul, ol { margin-bottom: 10px; margin-left: 20px; }
+      li { margin-bottom: 5px; }
+      
     </style>
   </head>
-  <body>
-    <div class="header">
-      <p>{{ lodge_name | upper }} N° {{ lodge_number }}</p>
-      <p>ATA DA {{ session_id }}ª SESSÃO {{ session_title | upper }}</p>
-      <p>À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</p>
-    </div>
+  <body style="
+    --header-text-color: {{ styles.header_text_color if styles and styles.header_text_color else '#380404' }};
+    --page-bg-color: {{ styles.page_bg_color if styles and styles.page_bg_color else 'white' }};
+    --border-width: {{ styles.border_width if styles and styles.border_width else '1px' }};
+    --border-style: {{ styles.border_style if styles and styles.border_style else 'solid' }};
+    --border-color: {{ styles.border_color if styles and styles.border_color else 'black' }};
+    --header-bg-color: {{ styles.header_bg_color if styles and styles.header_bg_color else 'transparent' }};
+  ">
+    <div class="page-border">
+      <div class="document-content">
+        
+        <!-- Cabeçalho -->
+        <!-- Cabeçalho -->
+        <!-- Cabeçalho (Centralizado conforme nova imagem) -->
+        <div style="text-align: center; margin-bottom: 1cm; line-height: 1.2;">
+            <div class="header-logo" style="margin-bottom: 15px;">
+                {% if header_image %}
+                <img src="{{header_image}}" alt="Logo" style="width: 2.5cm; height: auto;" />
+                {% endif %}
+            </div>
+            
+            <p style="margin: 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
+                À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
+            </p>
+            <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
+                A∴R∴B∴L∴S {{ lodge_name }} Nº {{ lodge_number }}
+            </p>
+            <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
+                BALAÚSTRE DA _______ª SESSÃO DO EXERCÍCIO MAÇÔNICO
+            </p>
+            <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
+                SESSÃO {{ ClasseSessao }} NO GRAU DE {{ GrauSessao }}
+            </p>
+        </div>
 
-    <div class="content">
-      <p>
-        Precisamente às {{ session_start_time_formatted }} do dia {{ session_date_day }} de {{ session_date_month }} de {{ session_date_year }} da E∴ V∴, 
-        a {{ lodge_tittle }} {{ lodge_name }} n° {{ lodge_number }}, federada ao {{ obedience_name }}
-        jurisdicionada ao {{ suboobedience_name }}, reuniu-se em seu Templo, sito à {{ lodge_address }}, no oriente de {{ lodge_city }}, estado de {{ lodge_state }}
-        em Sessão {{ session_title }}, ficando a Loja assim constituída: 
-        V∴ Mestre {{ veneravel_mestre_name }}; 
-        1° Vig∴ {{ primeiro_vigilante_name }}; 
-        2° Vig∴ {{ segundo_vigilante_name }}; 
-        Orad∴ {{ orador_name }}; 
-        Secr∴ {{ secretario_name }}; 
-        Tes∴ {{ tesoureiro_name }} e 
-        Chanc∴ {{ chanceler_name if chanceler_name else "________________" }}, 
-        sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.
-        <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão anterior.
-        <strong>EXPEDIENTE:</strong> <strong>RECEBIDO:</strong> {{ received_expedients if received_expedients else "nada constou." }}
-        <strong>EXPEDIDO:</strong> {{ sent_expedients if sent_expedients else "nada constou." }}
-        <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> foi aberto pelo V∴ Mestre e nada recolheu.
-        <strong>ORDEM DO DIA:</strong> {{ agenda if agenda else "Não houve matéria para a Ordem do Dia." }}
-        <strong>TEMPO DE INSTRUÇÃO:</strong> {{ "preenchido pelo Ir∴ " + study_director_name if study_director_name else "suprimido." }}
-        <strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Irmão Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno.
-        <strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> 
-        na Coluna do Sul, o Ir∴ Chanc∴ anunciou os aniversariantes da semana. 
-        Na Coluna do Norte, o Ir∴ Tes∴ anunciou o Tronco de Beneficência que rendeu a medalha cunhada de R$ 0,00. 
-        No Oriente, o Ven∴ Mestre fez suas considerações finais.
-        Não havendo mais quem desejasse fazer uso da palavra, o Ven∴ Mestre a transferiu para o Irmão Orador para as conclusões finais e saudação aos IIr∴ visitantes. 
-        O Ir∴ Or∴ agradeceu a presença dos IIr∴ visitantes, considerou que a Sessão transcorreu em conformidade com as Leis e Regulamentos da Ordem e devolveu a palavra ao Ven∴ Mestre para o encerramento da Sessão.
-        <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {{ session_end_time_formatted }}, tendo eu, {{ secretario_name }}, Secretário, lavrado o presente balaústre, abaixo assinado após lido, e considerado conforme.
-      </p>
+        <!-- Conteúdo do Balaústre -->
+        <div class="balaustre-body">
+            {% if custom_content and custom_content.text %}
+                {{ custom_content.text | safe }}
+            {% else %}
+                <p>
+                    Precisamente às {{ HoraInicioSessao }} do dia {{ DiaSessao }} da E∴ V∴, a Augusta, Respeitável e Benfeitora Loja Simbólica {{ lodge_name }} n° {{ lodge_number }}, {{ affiliation_text_2 }}, {{ affiliation_text_1 }}, reuniu-se em seu Templo, sito à {{ lodge_address }}, em Sessão {{ ClasseSessao }}, ficando a Loja assim constituída: 
+                    <strong>V∴ Mestre</strong> {{ Veneravel }}; 
+                    <strong>1° Vig∴</strong> {{ PrimeiroVigilante }}; 
+                    <strong>2° Vig∴</strong> {{ SegundoVigilante }}; 
+                    <strong>Orad∴</strong> {{ Orador }}; 
+                    <strong>Secr∴</strong> {{ Secretario }}; 
+                    <strong>Tes∴</strong> {{ Tesoureiro }} e 
+                    <strong>Chanc∴</strong> {{ Chanceler }}, sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro. 
+                    <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {{ SessaoAnterior }}. 
+                    <strong>EXPEDIENTE RECEBIDO</strong> {{ ExpedienteRecebido }} 
+                    <strong>EXPEDIENTE EXPEDIDO:</strong> {{ ExpedienteExpedido }} 
+                    <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {{ SacoProposta }} 
+                    <strong>ORDEM DO DIA:</strong> {{ OrdemDia }} 
+                    <strong>TEMPO DE INSTRUÇÃO:</strong> {{ TempoInstrucao }} 
+                    <strong>TRONCO DE BENEFICÊNCIA:</strong> {{ Tronco }} 
+                    <strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {{ Palavra }} 
+                    <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {{ Encerramento }}, tendo eu, Secretário, lavrado o presente balaústre, abaixo assinado após lido, e considerado conforme.
+                </p>
+            {% endif %}
+        </div>
 
-      <div class="footer">
-        Oriente de {{ lodge_city }}, {{ current_date_day }} de {{ current_date_month }} de {{ current_date_year }} – E∴ V∴
+        <p align="right" style="margin-top: 2cm;">
+          Oriente de {{ lodge_city }}, {{ DataAssinatura }} – E∴ V∴
+        </p>
+
+        <!-- Assinaturas (Opcional, mas mantido para consistência) -->
+        <table class="officers-table" style="margin-top: 2cm;">
+          <tr>
+            <td>
+              <div class="signature-line"></div>
+              <span class="signature-role">Secretário</span>
+            </td>
+            <td>
+              <div class="signature-line"></div>
+              <span class="signature-role">Orador</span>
+            </td>
+            <td>
+              <div class="signature-line"></div>
+              <span class="signature-role">Venerável Mestre</span>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
-
-    <table class="signatures">
-      <tr>
-        <td>
-          <div class="signature-line"></div>
-          <strong>SECRETÁRIO</strong>
-        </td>
-        <td>
-          <div class="signature-line"></div>
-          <strong>ORADOR</strong>
-        </td>
-        <td>
-          <div class="signature-line"></div>
-          <strong>VENERÁVEL MESTRE</strong>
-        </td>
-      </tr>
-    </table>
   </body>
 </html>

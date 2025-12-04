@@ -1,6 +1,7 @@
 from datetime import date
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, HTTPException, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 # Importações do projeto
@@ -12,6 +13,44 @@ from services import session_service
 router = APIRouter(
     prefix="/masonic-sessions", tags=["Sessões Maçônicas"], responses={404: {"description": "Não encontrado"}}
 )
+
+
+
+@router.get(
+    "/nearest-active",
+    response_model=masonic_session_schema.MasonicSessionResponse,
+    summary="Buscar Sessão Ativa Próxima",
+    description="Busca a sessão ativa mais próxima baseada na geolocalização (sem autenticação).",
+)
+def find_nearest_active_session_endpoint(
+    latitude: float,
+    longitude: float,
+    db: Session = Depends(get_db)
+):
+    session = session_service.find_nearest_active_session(db, latitude, longitude)
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma sessão ativa encontrada nas proximidades.")
+    return session
+
+
+@router.post(
+    "/{session_id}/visitor-check-in",
+    response_model=session_attendance_schema.SessionAttendanceResponse,
+    summary="Check-in de Visitante Global",
+    description="Realiza o check-in de um visitante global na sessão (sem autenticação de usuário).",
+)
+def perform_visitor_check_in_endpoint(
+    session_id: int,
+    check_in_data: visitor_checkin_schema.VisitorCheckInRequest,
+    db: Session = Depends(get_db)
+):
+    return session_service.perform_visitor_check_in(
+        db=db,
+        session_id=session_id,
+        visitor_id=check_in_data.visitor_id,
+        latitude=check_in_data.latitude,
+        longitude=check_in_data.longitude
+    )
 
 
 @router.post(
@@ -174,17 +213,138 @@ async def generate_edital_for_session(
     )
 
 
+@router.get(
+    "/{session_id}/balaustre-draft",
+    summary="Obter Rascunho do Balaústre",
+    description="Retorna o texto pré-formatado do balaústre para edição.",
+)
+async def get_balaustre_draft(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.get_balaustre_draft(db=db, session_id=session_id, current_user_payload=current_user_payload)
+
+
+@router.post(
+    "/{session_id}/generate-balaustre-custom",
+    summary="Gerar Balaústre Personalizado",
+    description="Gera o PDF do balaústre usando o conteúdo de texto fornecido pelo usuário.",
+)
+async def generate_custom_balaustre(
+    session_id: int,
+    content: dict, # Espera {"text": "..."}
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.generate_custom_session_document(
+        db=db,
+        session_id=session_id,
+        document_type="BALAUSTRE",
+        custom_content=content,
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks,
+    )
+
+
+@router.post(
+    "/{session_id}/preview-balaustre",
+    summary="Pré-visualizar Balaústre",
+    description="Gera e retorna o PDF do balaústre para visualização/download.",
+)
+async def preview_balaustre(
+    session_id: int,
+    content: dict,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    try:
+        print(f"DEBUG: preview_balaustre received content: {content}")
+        pdf_bytes = await session_service.preview_balaustre(
+            db=db,
+            session_id=session_id,
+            custom_content=content,
+            current_user_payload=current_user_payload
+        )
+        return Response(
+            content=pdf_bytes, 
+            media_type="application/pdf",
+            headers={"Access-Control-Allow-Origin": "*"}
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Erro interno ao gerar PDF: {str(e)}"},
+            headers={"Access-Control-Allow-Origin": "*"}
+        )
+
+
+@router.post(
+    "/{session_id}/regenerate-balaustre-text",
+    summary="Regenerar Texto do Balaústre",
+    description="Regenera o HTML do balaústre com base nos dados variáveis fornecidos.",
+)
+async def regenerate_balaustre_text_endpoint(
+    session_id: int,
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    html_content = await session_service.regenerate_balaustre_text(
+        db=db,
+        session_id=session_id,
+        custom_data=data,
+        current_user_payload=current_user_payload
+    )
+    return {"text": html_content}
+
+
 @router.delete(
     "/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Excluir Sessão Maçônica",
-    description="Exclui uma sessão maçônica existente, garantindo que pertença à loja do usuário.",
+    summary="Excluir Sessão Maçônica Cancelada",
+    description="Exclui permanentemente uma sessão maçônica que tenha sido previamente cancelada. Apenas sessões com status 'CANCELADA' podem ser excluídas.",
 )
 def delete_masonic_session(
     session_id: int, db: Session = Depends(get_db), current_user_payload: dict = Depends(get_current_user_payload)
 ):
     session_service.delete_session(db=db, session_id=session_id, current_user_payload=current_user_payload)
     return {"message": "Sessão excluída com sucesso."}
+
+
+@router.post(
+    "/{session_id}/approve-minutes",
+    response_model=masonic_session_schema.MasonicSessionResponse,
+    summary="Aprovar Ata da Sessão",
+    description="Aprova manualmente a ata da sessão, mudando o status para 'ENCERRADA'.",
+)
+def approve_session_minutes_endpoint(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return session_service.approve_session_minutes(
+        db=db, session_id=session_id, current_user_payload=current_user_payload
+    )
+
+
+@router.post(
+    "/{session_id}/reopen",
+    response_model=masonic_session_schema.MasonicSessionResponse,
+    summary="Reabrir Sessão Encerrada",
+    description="Reabre uma sessão encerrada, voltando o status para 'REALIZADA'. (Requer privilégios elevados)",
+)
+def reopen_session_endpoint(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return session_service.reopen_session(
+        db=db, session_id=session_id, current_user_payload=current_user_payload
+    )
 
 
 # --- Rotas de Presença ---
@@ -262,42 +422,5 @@ def perform_check_in_app(
         latitude=check_in_data.latitude,
         longitude=check_in_data.longitude,
         current_user_payload=current_user_payload
-    )
-
-
-@router.get(
-    "/nearest-active",
-    response_model=masonic_session_schema.MasonicSessionResponse,
-    summary="Buscar Sessão Ativa Próxima",
-    description="Busca a sessão ativa mais próxima baseada na geolocalização (sem autenticação).",
-)
-def find_nearest_active_session_endpoint(
-    latitude: float,
-    longitude: float,
-    db: Session = Depends(get_db)
-):
-    session = session_service.find_nearest_active_session(db, latitude, longitude)
-    if not session:
-        raise HTTPException(status_code=404, detail="Nenhuma sessão ativa encontrada nas proximidades.")
-    return session
-
-
-@router.post(
-    "/{session_id}/visitor-check-in",
-    response_model=session_attendance_schema.SessionAttendanceResponse,
-    summary="Check-in de Visitante Global",
-    description="Realiza o check-in de um visitante global na sessão (sem autenticação de usuário).",
-)
-def perform_visitor_check_in_endpoint(
-    session_id: int,
-    check_in_data: visitor_checkin_schema.VisitorCheckInRequest,
-    db: Session = Depends(get_db)
-):
-    return session_service.perform_visitor_check_in(
-        db=db,
-        session_id=session_id,
-        visitor_id=check_in_data.visitor_id,
-        latitude=check_in_data.latitude,
-        longitude=check_in_data.longitude
     )
 

@@ -1,18 +1,29 @@
 fastapi
-uvicorn[standard]
+uvicorn
 sqlalchemy
-alembic
-pymysql
-passlib[bcrypt]
+pydantic
+pydantic-settings
+python-dotenv
 python-jose[cryptography]
+passlib[bcrypt]
 python-multipart
-pydantic-settings # Adicionado para resolver o erro
-
-# Novas dependências adicionadas
-apscheduler
-geopy
-weasyprint # Substituindo playwright
+alembic
+mysql-connector-python
+reportlab
+xhtml2pdf
+weasyprint
 jinja2
-
-# Ferramentas de Desenvolvimento
-ruff
+requests
+pytz
+qrcode
+pillow
+apscheduler
+pytest
+pytest-asyncio
+httpx
+playwright
+email-validator
+bcrypt
+greenlet
+faker
+coverage

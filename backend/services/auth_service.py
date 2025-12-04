@@ -49,7 +49,7 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
             if webmaster.lodge_id:
                 lodge = db.query(models.Lodge).filter(models.Lodge.id == webmaster.lodge_id).first()
                 if lodge and not lodge.is_active:
-                    print(f"Login denied: Lodge {lodge.name} is inactive.")
+                    print(f"Login denied: Lodge {lodge.lodge_name} is inactive.")
                     return None # Or raise specific exception if architecture allows
             
             return webmaster, "webmaster"

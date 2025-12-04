@@ -117,7 +117,7 @@ class Obedience(BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, nullable=False)
     acronym = Column(String(50), unique=True, nullable=True)
-    type = Column(SQLAlchemyEnum(ObedienceTypeEnum), nullable=False)
+    type = Column(SQLAlchemyEnum(ObedienceTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
     parent_obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
     cnpj = Column(String(18), unique=True, nullable=True)
     email = Column(String(255), nullable=True)
@@ -146,7 +146,7 @@ class Lodge(BaseModel):
     lodge_code = Column(String(36), unique=True, index=True, nullable=False)
     lodge_number = Column(String(255))
     foundation_date = Column(Date, nullable=True)
-    rite = Column(SQLAlchemyEnum(RiteEnum), nullable=True)
+    rite = Column(SQLAlchemyEnum(RiteEnum, values_callable=lambda x: [e.value for e in x]), nullable=True, default=RiteEnum.REAA)
     obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=False)
     cnpj = Column(String(18), unique=True, nullable=True)
     email = Column(String(255), nullable=True)
@@ -280,7 +280,7 @@ class Member(BaseModel):
     profile_picture_path = Column(String(255), nullable=True)
     cim = Column(String(50), unique=True, nullable=True, index=True)
     status = Column(String(50), nullable=True, default="Active")
-    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum"), nullable=True)
+    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=True)
     initiation_date = Column(Date, nullable=True)
     elevation_date = Column(Date, nullable=True)
     exaltation_date = Column(Date, nullable=True)
@@ -288,7 +288,7 @@ class Member(BaseModel):
     regularization_date = Column(Date, nullable=True)
     philosophical_degree = Column(String(100), nullable=True)
     registration_status = Column(
-        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum"), nullable=False, default=RegistrationStatusEnum.PENDING
+        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=RegistrationStatusEnum.PENDING
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
     
@@ -310,8 +310,8 @@ class MemberLodgeAssociation(BaseModel):
 
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
-    status = Column(SQLAlchemyEnum(MemberStatusEnum), nullable=False, default=MemberStatusEnum.ACTIVE)
-    member_class = Column(SQLAlchemyEnum(MemberClassEnum), nullable=False, default=MemberClassEnum.REGULAR)
+    status = Column(SQLAlchemyEnum(MemberStatusEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MemberStatusEnum.ACTIVE)
+    member_class = Column(SQLAlchemyEnum(MemberClassEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MemberClassEnum.REGULAR)
     member = relationship("Member", back_populates="lodge_associations")
     lodge = relationship("Lodge", back_populates="associations")
     
@@ -346,7 +346,7 @@ class MemberPermissionException(BaseModel):
     permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
     obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
-    exception_type = Column(SQLAlchemyEnum(ExceptionTypeEnum), nullable=False)
+    exception_type = Column(SQLAlchemyEnum(ExceptionTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
 
     member = relationship("Member", backref="permission_exceptions")
     permission = relationship("Permission")
@@ -388,7 +388,7 @@ class FamilyMember(BaseModel):
     __tablename__ = "family_members"
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String(255), nullable=False)
-    relationship_type = Column(SQLAlchemyEnum(RelationshipTypeEnum, name="relationship_type_enum"), nullable=False)
+    relationship_type = Column(SQLAlchemyEnum(RelationshipTypeEnum, name="relationship_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
     birth_date = Column(Date, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -532,6 +532,13 @@ class MasonicSession(BaseModel):
     documents = relationship("Document", back_populates="session")  # Relacionamento com Documentos
 
 
+
+class CheckInMethodEnum(str, enum.Enum):
+    MANUAL = "MANUAL"
+    QR_CODE = "QR_CODE"
+    APP_VISITOR = "APP_VISITOR"
+
+
 class SessionAttendance(BaseModel):
     __tablename__ = "session_attendances"
     id = Column(Integer, primary_key=True, index=True)
@@ -540,7 +547,7 @@ class SessionAttendance(BaseModel):
     visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
     attendance_status = Column(String(50), nullable=False)
     check_in_datetime = Column(DateTime(timezone=True), nullable=True)
-    check_in_method = Column(SQLAlchemyEnum("MANUAL", "QR_CODE", name="check_in_method_enum"), nullable=True)
+    check_in_method = Column(SQLAlchemyEnum(CheckInMethodEnum, name="check_in_method_enum", values_callable=lambda x: [e.value for e in x]), nullable=True)
     check_in_latitude = Column(Float, nullable=True)
     check_in_longitude = Column(Float, nullable=True)
     session = relationship("MasonicSession", back_populates="attendances")
@@ -551,11 +558,26 @@ class SessionAttendance(BaseModel):
 class Visitor(BaseModel):
     __tablename__ = "visitors"
     id = Column(Integer, primary_key=True, index=True)
+    
+    # Dados pessoais
     full_name = Column(String(255), nullable=False)
+    cim = Column(String(50), unique=True, nullable=False, index=True)  # CIM é obrigatório
+    degree = Column(SQLAlchemyEnum(DegreeEnum, name="visitor_degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
+    
+    # Contato
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
-    cpf = Column(String(14), unique=True, nullable=True)
-    origin_lodge = Column(String(255), nullable=True)
+    cpf = Column(String(14), unique=True, nullable=True)  # CPF é opcional
+    
+    # Loja de Origem (estruturada ou manual)
+    origin_lodge_id = Column(Integer, nullable=True)  # ID da loja se for do Sigma
+    manual_lodge_name = Column(String(255), nullable=True)  # Nome manual se não for do Sigma
+    manual_lodge_number = Column(String(50), nullable=True)
+    manual_lodge_obedience = Column(String(100), nullable=True)
+    
+    # ID global para sincronização (se vier do banco global)
+    global_visitor_id = Column(String(36), nullable=True, index=True)
+    
     remarks = Column(Text, nullable=True)
 
 

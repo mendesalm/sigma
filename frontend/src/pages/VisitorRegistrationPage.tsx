@@ -58,7 +58,7 @@ const VisitorRegistrationPage: React.FC = () => {
     const [checkInSuccess, setCheckInSuccess] = useState(false);
     const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
 
-    const degreeOptions = ['APRENDIZ', 'COMPANHEIRO', 'MESTRE', 'MESTRE_INSTALADO'];
+    const degreeOptions = ['Aprendiz', 'Companheiro', 'Mestre', 'Mestre Instalado'];
 
     useEffect(() => {
         if (manualLodge) return; // Don't search if manual mode is on

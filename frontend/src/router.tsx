@@ -38,6 +38,7 @@ import SessionForm from './pages/Sessions/SessionForm';
 import LodgeSelectionPage from './pages/LodgeSelectionPage';
 import DashboardHome from './pages/Dashboard/DashboardHome';
 import DocumentTemplates from './pages/Management/DocumentTemplates';
+import BalaustreEditor from './pages/Documents/BalaustreEditor';
 
 // Obreiro Pages
 import MeuCadastro from './pages/Obreiro/MeuCadastro';
@@ -144,6 +145,7 @@ const router = createBrowserRouter([
                   { path: 'new', element: <SessionForm /> },
                   { path: 'edit/:id', element: <SessionForm /> },
                   { path: ':id', element: <SessionDetailsPage /> },
+                  { path: ':sessionId/balaustre', element: <BalaustreEditor /> },
                 ]
               },
               // Chanceler Routes

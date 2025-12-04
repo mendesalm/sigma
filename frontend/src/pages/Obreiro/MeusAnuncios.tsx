@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Alert, Snackbar, Chip } from '@mui/material';
 import { Add, Delete, PhotoCamera, Refresh, Edit } from '@mui/icons-material';
 import { getMyClassifieds, createClassified, deleteClassified, reactivateClassified, updateClassified } from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 
 const MeusAnuncios: React.FC = () => {
+  const { user } = useAuth();
   const [ads, setAds] = useState<any[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +57,33 @@ const MeusAnuncios: React.FC = () => {
     } else {
       setEditingAd(null);
       resetForm();
+      // Preencher automaticamente com dados do usuário logado ao criar novo anúncio
+      if (user?.email) {
+        setContactEmail(user.email);
+      }
+      // Telefone
+      if ((user as any)?.phone) {
+        setContactInfo((user as any).phone);
+      }
+      // Endereço (se disponível no perfil)
+      if ((user as any)?.street_address) {
+        setStreet((user as any).street_address);
+      }
+      if ((user as any)?.street_number) {
+        setNumber((user as any).street_number);
+      }
+      if ((user as any)?.neighborhood) {
+        setNeighborhood((user as any).neighborhood);
+      }
+      if ((user as any)?.city) {
+        setCity((user as any).city);
+      }
+      if ((user as any)?.state) {
+        setState((user as any).state);
+      }
+      if ((user as any)?.zip_code) {
+        setZipCode((user as any).zip_code);
+      }
     }
     setOpenDialog(true);
   };
@@ -232,6 +261,11 @@ const MeusAnuncios: React.FC = () => {
         <DialogTitle>{editingAd ? 'Editar Anúncio' : 'Novo Anúncio'}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {!editingAd && (
+              <Alert severity="info" sx={{ mb: 1 }}>
+                Seus dados de contato e endereço foram preenchidos automaticamente do seu perfil. Você pode editá-los se necessário.
+              </Alert>
+            )}
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
@@ -270,6 +304,7 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setContactInfo(e.target.value)}
                   required
                   placeholder="(XX) XXXXX-XXXX"
+                  helperText={!editingAd && contactInfo ? "Preenchido do seu perfil. Pode editar se necessário." : ""}
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -280,6 +315,7 @@ const MeusAnuncios: React.FC = () => {
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   required
+                  helperText={!editingAd && contactEmail ? "Preenchido do seu perfil. Pode editar se necessário." : ""}
                 />
               </Grid>
               

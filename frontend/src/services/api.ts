@@ -21,8 +21,8 @@ api.interceptors.request.use(
 );
 
 // --- Session Management ---
-export const getSessions = () => {
-  return api.get('/masonic-sessions/');
+export const getSessions = (params?: { start_date?: string; end_date?: string; session_status?: string }) => {
+  return api.get('/masonic-sessions/', { params });
 };
 
 export const getSessionDetails = (sessionId: number) => {
@@ -51,6 +51,14 @@ export const generateBalaustre = (sessionId: number) => {
 
 export const generateEdital = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/generate-edital`);
+};
+
+export const approveSessionMinutes = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/approve-minutes`);
+};
+
+export const reopenSession = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/reopen`);
 };
 
 // --- Document Management ---
@@ -112,6 +120,14 @@ export const reactivateClassified = (id: number) => {
 
 export const updateClassified = (id: number, data: any) => {
   return api.put(`/classifieds/${id}`, data);
+};
+
+export const uploadLodgeLogo = (lodgeId: number, formData: FormData) => {
+  return api.post(`/lodges/${lodgeId}/logo`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 export default api;

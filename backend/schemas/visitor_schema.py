@@ -12,7 +12,7 @@ class VisitorCreate(BaseModel):
     manual_lodge_obedience: Optional[str] = None
 
 class VisitorResponse(BaseModel):
-    id: str
+    id: int
     full_name: str
     cim: str
     degree: str

@@ -131,9 +131,9 @@ def record_visitor_attendance(
 
     # Cria ou encontra o visitante
     visitor = None
-    if visitor_data.cpf:
-        visitor = db.query(models.Visitor).filter(models.Visitor.cpf == visitor_data.cpf).first()
-
+    # Verifica primeiro pelo CIM (identificador principal)
+    visitor = db.query(models.Visitor).filter(models.Visitor.cim == visitor_data.cim).first()
+    
     if not visitor:
         visitor = models.Visitor(**visitor_data.model_dump())
         db.add(visitor)
@@ -236,13 +236,20 @@ def record_qr_code_attendance(
         if not user_as_member:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado no sistema.")
 
-        visitor = db.query(models.Visitor).filter(models.Visitor.cpf == user_as_member.cpf).first()
+        # Busca visitante pelo CIM (agora obrigatório e único)
+        # Busca visitante pelo CIM (agora obrigatório e único)
+        visitor = db.query(models.Visitor).filter(models.Visitor.cim == user_as_member.cim).first()
+        
         if not visitor:
+            # Cria novo registro de visitante local baseado no membro do Sigma
             visitor = models.Visitor(
                 full_name=user_as_member.full_name,
+                cim=user_as_member.cim,
+                degree=user_as_member.degree,
                 email=user_as_member.email,
-                cpf=user_as_member.cpf,
-                origin_lodge="Membro de outra loja",  # Informação pode ser melhorada
+                # cpf=user_as_member.cpf, # CPF removido do fluxo de visitante
+                manual_lodge_name="Membro Sigma de outra loja", # Identificador genérico
+                remarks=f"Membro Sigma ID: {user_as_member.id}"
             )
             db.add(visitor)
             db.flush()

@@ -16,7 +16,10 @@ class MemberInfo(BaseModel):
 class VisitorInfo(BaseModel):
     id: int
     full_name: str
-    origin_lodge: str | None = None
+    manual_lodge_name: str | None = None
+    manual_lodge_number: str | None = None
+    manual_lodge_obedience: str | None = None
+    origin_lodge_id: int | None = None
 
     model_config = SettingsConfigDict(from_attributes=True)
 

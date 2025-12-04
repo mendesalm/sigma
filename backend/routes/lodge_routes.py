@@ -66,3 +66,33 @@ def delete_lodge(
     if db_lodge is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lodge not found")
     return db_lodge
+
+
+import os
+import shutil
+from fastapi import UploadFile, File
+from dependencies import get_current_user_payload
+
+@router.post("/{lodge_id}/logo", summary="Upload do Logo da Loja")
+async def upload_lodge_logo(
+    lodge_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    # Verifica permissões (apenas admin ou webmaster da loja)
+    # TODO: Implementar verificação de permissão mais robusta
+    
+    # Define o caminho de armazenamento
+    storage_dir = os.path.join("storage", "lodges", str(lodge_id))
+    os.makedirs(storage_dir, exist_ok=True)
+    
+    file_path = os.path.join(storage_dir, "logo.png")
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar logo: {str(e)}")
+        
+    return {"message": "Logo atualizado com sucesso", "path": file_path}

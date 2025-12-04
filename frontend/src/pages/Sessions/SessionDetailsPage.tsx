@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from './components/AttendanceTab';
-import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument } from '../../services/api';
-import { PlayArrow, Stop, Cancel, Description, Add, QrCodeScanner } from '@mui/icons-material';
+import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument, approveSessionMinutes, reopenSession } from '../../services/api';
+import { PlayArrow, Stop, Cancel, Description, Add, QrCodeScanner, CheckCircle, LockOpen } from '@mui/icons-material';
 import SessionCheckIn from '../../components/SessionCheckIn';
 
 interface Session {
@@ -165,7 +165,8 @@ const SessionDetailsPage: React.FC = () => {
               <Typography variant="body1">Data: {new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</Typography>
               <Chip 
                 label={session.status} 
-                color={session.status === 'EM_ANDAMENTO' ? 'success' : session.status === 'REALIZADA' ? 'primary' : 'default'} 
+                color={session.status === 'EM_ANDAMENTO' ? 'success' : session.status === 'REALIZADA' ? 'primary' : session.status === 'ENCERRADA' ? 'default' : 'default'} 
+                sx={session.status === 'ENCERRADA' ? { bgcolor: 'text.secondary', color: 'white' } : {}}
               />
             </Stack>
           </Box>
@@ -190,6 +191,16 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Gerar Edital
                   </Button>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<Description />}
+                    component={Link}
+                    to={`balaustre`}
+                    disabled={actionLoading}
+                  >
+                    Prévia Balaústre
+                  </Button>
                 </>
               )}
               {session.status === 'EM_ANDAMENTO' && (
@@ -212,16 +223,86 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Finalizar
                   </Button>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<Description />}
+                    component={Link}
+                    to={`balaustre`}
+                    disabled={actionLoading}
+                  >
+                    Prévia Balaústre
+                  </Button>
                 </>
               )}
               {session.status === 'REALIZADA' && (
+                <>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<Description />}
+                    onClick={() => handleAction(() => generateBalaustre(sessionId), 'Geração de Balaústre iniciada!')}
+                    disabled={actionLoading}
+                  >
+                    Gerar Balaústre (PDF Direto)
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<Description />}
+                    component={Link}
+                    to={`balaustre`}
+                    disabled={actionLoading}
+                  >
+                    Editar Balaústre
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="success"
+                    startIcon={<CheckCircle />}
+                    onClick={() => handleAction(() => approveSessionMinutes(sessionId), 'Ata aprovada e sessão encerrada!')}
+                    disabled={actionLoading}
+                  >
+                    Aprovar Ata
+                  </Button>
+                </>
+              )}
+              {session.status === 'ENCERRADA' && (
+                <>
+                  <Chip label="Sessão Encerrada" color="default" variant="outlined" />
+                  <Button 
+                    variant="outlined" 
+                    color="warning"
+                    startIcon={<LockOpen />}
+                    onClick={() => handleAction(() => reopenSession(sessionId), 'Sessão reaberta!')}
+                    disabled={actionLoading}
+                  >
+                    Reabrir Sessão
+                  </Button>
+                </>
+              )}
+              {session.status === 'CANCELADA' && (
                 <Button 
-                  variant="outlined" 
-                  startIcon={<Description />}
-                  onClick={() => handleAction(() => generateBalaustre(sessionId), 'Geração de Balaústre iniciada!')}
+                  variant="contained" 
+                  color="error" 
+                  startIcon={<Cancel />}
+                  onClick={async () => {
+                    if (window.confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) {
+                      try {
+                        setActionLoading(true);
+                        await import('../../services/api').then(m => m.deleteSession(sessionId));
+                        setSnackbar({ open: true, message: 'Sessão excluída com sucesso!', severity: 'success' });
+                        setTimeout(() => window.history.back(), 1500);
+                      } catch (err) {
+                        console.error(err);
+                        setSnackbar({ open: true, message: 'Falha ao excluir sessão.', severity: 'error' });
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }
+                  }}
                   disabled={actionLoading}
                 >
-                  Gerar Balaústre
+                  Excluir
                 </Button>
               )}
               {session.status !== 'CANCELADA' && session.status !== 'REALIZADA' && (

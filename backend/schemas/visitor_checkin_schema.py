@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
 class VisitorCheckInRequest(BaseModel):
-    visitor_id: str # UUID do GlobalVisitor
+    visitor_id: int # ID do Visitor (Sigma DB)
     latitude: float
     longitude: float

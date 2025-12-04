@@ -76,7 +76,25 @@ O modelo `Document` possui uma chave estrangeira `session_id`, permitindo que m�
 *   **`SessionDetailsPage.tsx`:** Página principal da sessão com abas para Geral, Participantes e Documentos.
 *   **`AttendanceTab.tsx`:** Componente dedicado à gestão da lista de presença.
 
-## 6. Próximos Passos
+## 6. Editor de Balaústre e Geração de Documentos
 
-*   Implementar a geração automática de PDF para o Balaústre com base nos dados da sessão e presença.
+Foi implementado um editor rico para a criação e personalização de Balaústres (Atas), permitindo a edição do texto e a inserção de dados dinâmicos.
+
+### Funcionalidades
+*   **Editor Rich Text (ReactQuill):** Permite a edição livre do texto do balaústre.
+*   **Formulário de Dados Dinâmicos:** Interface que simula o documento físico para preenchimento de variáveis (Data, Horário, Oficiais, Seções da Ata).
+    *   Preenchimento automático de dados da Loja (Nome, Número, Oriente).
+    *   Campos formatados para melhor experiência do usuário.
+*   **Personalização Visual:** Drawer lateral para ajuste de estilos (bordas, cores, logo).
+*   **Geração de PDF:** O backend utiliza `Playwright` para gerar PDFs fiéis ao layout HTML editado.
+
+### Componentes Chave
+*   `BalaustreEditor.tsx`: Página principal do editor.
+*   `BalaustreDocumentForm.tsx`: Formulário visual para input de dados estruturados.
+*   `DocumentGenerationService`: Serviço de backend responsável pela renderização de templates Jinja2 e conversão para PDF.
+
+## 7. Próximos Passos
+
+*   Refinar a geração de PDF para garantir fidelidade total de estilos (fontes, margens).
 *   Criar relatórios estatísticos de frequência dos membros.
+*   Implementar assinatura digital nos documentos gerados.

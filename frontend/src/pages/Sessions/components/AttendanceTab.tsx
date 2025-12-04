@@ -22,7 +22,10 @@ interface AttendanceRecord {
   visitor?: {
     id: number;
     full_name: string;
-    origin_lodge?: string;
+    manual_lodge_name?: string;
+    manual_lodge_number?: string;
+    manual_lodge_obedience?: string;
+    origin_lodge_id?: number;
   };
   attendance_status: string;
 }
@@ -42,7 +45,9 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   const [visitorData, setVisitorData] = useState({
     full_name: '',
     email: '',
-    origin_lodge: '',
+    manual_lodge_name: '',
+    manual_lodge_number: '',
+    manual_lodge_obedience: '',
     cpf: ''
   });
   const [visitorLoading, setVisitorLoading] = useState(false);
@@ -126,7 +131,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
       await registerVisitorAttendance(sessionId, visitorData);
       setSnackbar({ open: true, message: 'Visitante registrado com sucesso!', severity: 'success' });
       setOpenVisitorDialog(false);
-      setVisitorData({ full_name: '', email: '', origin_lodge: '', cpf: '' });
+      setVisitorData({ full_name: '', email: '', manual_lodge_name: '', manual_lodge_number: '', manual_lodge_obedience: '', cpf: '' });
       setErrors({}); // Clear errors
       fetchAttendance(); // Refresh list
     } catch (err) {
@@ -216,7 +221,11 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
             {visitors.map((record) => (
               <TableRow key={record.id}>
                 <TableCell>{record.visitor?.full_name}</TableCell>
-                <TableCell>{record.visitor?.origin_lodge || '-'}</TableCell>
+                <TableCell>
+                  {record.visitor?.manual_lodge_name 
+                    ? `${record.visitor.manual_lodge_name} N. ${record.visitor.manual_lodge_number} (${record.visitor.manual_lodge_obedience})`
+                    : record.visitor?.origin_lodge_id ? 'Loja do Sistema' : '-'}
+                </TableCell>
                 <TableCell>{record.attendance_status}</TableCell>
               </TableRow>
             ))}
@@ -246,10 +255,28 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
             </Grid>
             <Grid item xs={12}>
               <TextField
-                name="origin_lodge"
-                label="Loja de Origem"
+                name="manual_lodge_name"
+                label="Nome da Loja"
                 fullWidth
-                value={visitorData.origin_lodge}
+                value={visitorData.manual_lodge_name}
+                onChange={handleVisitorChange}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                name="manual_lodge_number"
+                label="Número"
+                fullWidth
+                value={visitorData.manual_lodge_number}
+                onChange={handleVisitorChange}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                name="manual_lodge_obedience"
+                label="Potência"
+                fullWidth
+                value={visitorData.manual_lodge_obedience}
                 onChange={handleVisitorChange}
               />
             </Grid>

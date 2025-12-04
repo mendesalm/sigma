@@ -1,0 +1,15 @@
+--- Checking GOB Lodge ---
+Lodge: João Pedro Junqueira (N. 2181)
+  -> Linked Obedience ID: 13
+  -> Obedience Name: Grande Oriente do Brasil - Goiás (GOBGO)
+  -> Obedience Type: ObedienceTypeEnum.STATE
+  -> Parent Obedience ID: 12
+     -> Parent Name: Grande Oriente do Brasil (GOB)
+     -> Parent Type: ObedienceTypeEnum.FEDERAL
+
+--- Checking GLEG Lodge ---
+Lodge: Roosevelt (N. 1)
+  -> Linked Obedience ID: 14
+  -> Obedience Name: Grande Loja Maçônica do Estado de Goiás (GLEG)
+  -> Obedience Type: ObedienceTypeEnum.STATE
+  -> Parent Obedience ID: None

@@ -49,6 +49,97 @@ def _create_attendance_records_task(db_url: str, session_id: int, lodge_id: int)
         db.close()
 
 
+
+def _update_session_status_based_on_rules(db: Session, session: models.MasonicSession):
+    """
+    Atualiza o status da sessão baseado nas regras de negócio de tempo.
+    
+    Regras:
+    1. AGENDADA -> EM_ANDAMENTO: 2 horas antes do início.
+    2. EM_ANDAMENTO -> REALIZADA: 3 horas após o início.
+    3. REALIZADA -> ENCERRADA: 14 dias após a data da sessão (aprovação automática da ata).
+    """
+    if session.status in ["CANCELADA", "ENCERRADA"]:
+        return
+
+    now = datetime.now()
+    
+    # Se não tiver horário definido, assume 20:00 como padrão para cálculos ou ignora transição de tempo curto
+    start_time = session.start_time or datetime.strptime("20:00", "%H:%M").time()
+    
+    session_start_dt = datetime.combine(session.session_date, start_time)
+    
+    # Janelas de tempo
+    start_window = session_start_dt - timedelta(hours=2)
+    end_window = session_start_dt + timedelta(hours=3)
+    auto_close_date = session_start_dt + timedelta(days=14)
+
+    # Transição para EM_ANDAMENTO
+    if session.status == "AGENDADA":
+        if start_window <= now <= end_window:
+            session.status = "EM_ANDAMENTO"
+            db.commit()
+            db.refresh(session)
+        # Se já passou muito do tempo e ainda está agendada (ex: sistema ficou off), move para REALIZADA
+        elif now > end_window:
+             session.status = "REALIZADA"
+             db.commit()
+             db.refresh(session)
+
+    # Transição para REALIZADA
+    if session.status == "EM_ANDAMENTO":
+        if now > end_window:
+            session.status = "REALIZADA"
+            db.commit()
+            db.refresh(session)
+            
+    # Transição para ENCERRADA (Auto-aprovação da ata após 2 semanas)
+    if session.status == "REALIZADA":
+        if now > auto_close_date:
+            session.status = "ENCERRADA"
+            db.commit()
+            db.refresh(session)
+
+
+def approve_session_minutes(db: Session, session_id: int, current_user_payload: dict) -> models.MasonicSession:
+    """
+    Aprova manualmente a ata da sessão, mudando o status para ENCERRADA.
+    """
+    session = get_session_by_id(db, session_id, current_user_payload)
+    
+    if session.status != "REALIZADA":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Apenas sessões 'Realizadas' podem ter a ata aprovada. Status atual: {session.status}"
+        )
+        
+    session.status = "ENCERRADA"
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def reopen_session(db: Session, session_id: int, current_user_payload: dict) -> models.MasonicSession:
+    """
+    Reabre uma sessão encerrada (Apenas Webmaster/Admin), voltando para REALIZADA.
+    """
+    session = get_session_by_id(db, session_id, current_user_payload)
+    
+    # TODO: Validar se é Webmaster ou Admin (assumindo que a rota fará essa validação ou payload tem roles)
+    # Por enquanto, confiamos que a rota protege isso ou adicionamos verificação aqui se necessário.
+    
+    if session.status != "ENCERRADA":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=f"Apenas sessões 'Encerradas' podem ser reabertas. Status atual: {session.status}"
+        )
+        
+    session.status = "REALIZADA"
+    db.commit()
+    db.refresh(session)
+    return session
+
+
 # --- Funções de Serviço para Sessões Maçônicas ---
 
 
@@ -85,6 +176,12 @@ def create_session(
             status_code=status.HTTP_409_CONFLICT, detail="Já existe uma sessão agendada para esta data nesta loja."
         )
 
+    # Regra: Não permitir sessões retroativas
+    if session_data.session_date < date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Não é possível criar uma sessão com data retroativa."
+        )
+
     db_session = models.MasonicSession(**session_data.model_dump(exclude_unset=True), lodge_id=lodge_id)
 
     db.add(db_session)
@@ -111,6 +208,10 @@ def get_session_by_id(db: Session, session_id: int, current_user_payload: dict) 
 
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
+    
+    # Atualiza status baseado no tempo
+    _update_session_status_based_on_rules(db, session)
+    
     return session
 
 
@@ -141,7 +242,13 @@ def get_sessions_by_lodge(
     if status:
         query = query.filter(models.MasonicSession.status == status)
 
-    return query.all()
+    sessions = query.all()
+    
+    # Atualiza status de todas as sessões recuperadas
+    for session in sessions:
+        _update_session_status_based_on_rules(db, session)
+        
+    return sessions
 
 
 def update_session(
@@ -155,6 +262,12 @@ def update_session(
     Verifica conflitos de data se a data da sessão for alterada.
     """
     db_session = get_session_by_id(db, session_id, current_user_payload)  # Valida propriedade
+    
+    if db_session.status == "ENCERRADA":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Sessão encerrada não pode ser editada. Contate o Webmaster."
+        )
 
     # Se a data da sessão for atualizada, verifica por conflitos
     if session_update.session_date and session_update.session_date != db_session.session_date:
@@ -280,6 +393,13 @@ def delete_session(db: Session, session_id: int, current_user_payload: dict) -> 
     Deleta uma sessão maçônica.
     """
     db_session = get_session_by_id(db, session_id, current_user_payload)  # Valida propriedade
+    
+    # Valida que sessões realizadas não podem ser excluídas
+    if db_session.status == "REALIZADA":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Sessões realizadas não podem ser excluídas. Status atual: {db_session.status}."
+        )
     db.delete(db_session)
     db.commit()
     return None
@@ -303,6 +423,75 @@ async def generate_session_document(
         return {"message": "Geração do Edital iniciada em background."}
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido.")
+
+
+async def get_balaustre_draft(
+    db: Session, session_id: int, current_user_payload: dict
+) -> dict:
+    """
+    Retorna o rascunho do balaústre para edição.
+    """
+    get_session_by_id(db, session_id, current_user_payload)  # Valida acesso
+    
+    doc_gen_service = DocumentGenerationService()
+    return await doc_gen_service.get_balaustre_draft_text(session_id)
+
+
+async def generate_custom_session_document(
+    db: Session, 
+    session_id: int, 
+    document_type: str, 
+    custom_content: dict,
+    current_user_payload: dict, 
+    background_tasks: BackgroundTasks
+) -> dict[str, str]:
+    """
+    Dispara a geração de um documento com conteúdo personalizado.
+    """
+    session = get_session_by_id(db, session_id, current_user_payload)
+    doc_gen_service = DocumentGenerationService()
+
+    if document_type.upper() == "BALAUSTRE":
+        # Passa o conteúdo customizado para a task
+        background_tasks.add_task(
+            doc_gen_service.generate_balaustre_pdf_task, 
+            session_id, 
+            current_user_payload,
+            custom_content=custom_content
+        )
+        return {"message": "Geração do Balaústre personalizado iniciada."}
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido para personalização.")
+
+
+async def preview_balaustre(
+    db: Session,
+    session_id: int,
+    custom_content: dict,
+    current_user_payload: dict
+) -> bytes:
+    """
+    Gera o PDF do balaústre e retorna os bytes para preview.
+    """
+    get_session_by_id(db, session_id, current_user_payload) # Valida acesso
+    
+    doc_gen_service = DocumentGenerationService()
+    return await doc_gen_service.generate_balaustre_preview(session_id, custom_content)
+
+
+async def regenerate_balaustre_text(
+    db: Session,
+    session_id: int,
+    custom_data: dict,
+    current_user_payload: dict
+) -> str:
+    """
+    Regenera o texto do balaústre com base nos dados fornecidos.
+    """
+    get_session_by_id(db, session_id, current_user_payload) # Valida acesso
+    
+    doc_gen_service = DocumentGenerationService()
+    return await doc_gen_service.regenerate_balaustre_text(session_id, custom_data)
 
 
 def get_session_attendance(
@@ -375,7 +564,9 @@ def register_visitor_attendance(
             full_name=visitor_data["full_name"],
             email=visitor_data.get("email"),
             cpf=visitor_data.get("cpf"),
-            origin_lodge=visitor_data.get("origin_lodge")
+            manual_lodge_name=visitor_data.get("manual_lodge_name"),
+            manual_lodge_number=visitor_data.get("manual_lodge_number"),
+            manual_lodge_obedience=visitor_data.get("manual_lodge_obedience")
         )
         db.add(visitor)
         db.commit()
@@ -497,6 +688,9 @@ def close_scheduled_session(db: Session, session_id: int) -> models.MasonicSessi
     return db_session
 
 
+
+
+
 def find_nearest_active_session(
     db: Session, latitude: float, longitude: float
 ) -> models.MasonicSession | None:
@@ -529,7 +723,7 @@ def find_nearest_active_session(
 def perform_visitor_check_in(
     db: Session,
     session_id: int,
-    visitor_id: str, # ID Global (UUID)
+    visitor_id: int, # ID Local (Integer)
     latitude: float,
     longitude: float
 ) -> models.SessionAttendance:
@@ -553,82 +747,48 @@ def perform_visitor_check_in(
         
     # 3. Valida Geolocalização
     radius = getattr(lodge, "geofence_radius", 200) 
+    print(f"DEBUG: Lodge Lat: {lodge.latitude}, Lon: {lodge.longitude}, Radius: {radius}")
+    print(f"DEBUG: User Lat: {latitude}, Lon: {longitude}")
+    distance = geo_service.calculate_distance(latitude, longitude, lodge.latitude, lodge.longitude)
+    print(f"DEBUG: Distance: {distance}")
+    
     if not geo_service.is_within_radius(latitude, longitude, lodge.latitude, lodge.longitude, radius):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Você está fora do raio permitido para check-in nesta Loja."
+            detail=f"Você está fora do raio permitido para check-in nesta Loja. Distância: {distance:.2f}m, Raio: {radius}m"
         )
 
     # 4. Busca ou Cria Registro de Presença
-    # Nota: SessionAttendance precisa de um campo para armazenar o ID do visitante global
-    # Como o modelo atual tem 'visitor_id' (FK para tabela local Visitor), precisamos adaptar.
-    # Opção A: Criar um registro na tabela local 'visitors' espelhando o global.
-    # Opção B: Adicionar campo 'global_visitor_id' em SessionAttendance.
-    # Vamos usar a Opção A para manter integridade referencial local por enquanto.
     
-    # Busca dados do visitante global para criar o local
-    # Precisamos de uma conexão com o banco global aqui? 
-    # Idealmente sim, mas para simplificar e evitar dependência circular, 
-    # vamos assumir que o frontend passou os dados ou confiar no ID.
-    # Mas espere, se não validarmos o ID, qualquer um pode injetar.
-    # O correto é buscar no banco global.
-    
-    from database import get_oriente_db
-    from models.global_models import GlobalVisitor
-    
-    # Hack para pegar sessão do banco global sem injeção de dependência direta aqui
-    # (Em prod, refatorar para receber a session global como argumento)
-    oriente_db_gen = get_oriente_db()
-    oriente_db = next(oriente_db_gen)
-    
-    try:
-        global_visitor = oriente_db.query(GlobalVisitor).filter(GlobalVisitor.id == visitor_id).first()
-        if not global_visitor:
-            raise HTTPException(status_code=404, detail="Visitante global não encontrado.")
-            
-        # Sincroniza/Cria visitante local
-        local_visitor = db.query(models.Visitor).filter(models.Visitor.cpf == global_visitor.cim).first() # Usando CIM no campo CPF ou criar campo CIM
-        
-        if not local_visitor:
-             # Tenta achar por nome se CIM falhar (ou cria novo)
-             # Melhor criar um campo 'global_id' na tabela local Visitor para linkar
-             local_visitor = models.Visitor(
-                 full_name=global_visitor.full_name,
-                 cpf=global_visitor.cim, # Adaptando CIM para CPF por enquanto
-                 origin_lodge=f"Global ID: {global_visitor.origin_lodge_id or 'Manual'}"
-             )
-             db.add(local_visitor)
-             db.commit()
-             db.refresh(local_visitor)
+    # Busca visitante diretamente no banco principal
+    visitor = db.query(models.Visitor).filter(models.Visitor.id == visitor_id).first()
+    if not visitor:
+        raise HTTPException(status_code=404, detail="Visitante não encontrado.")
              
-        # Registra presença
-        attendance = db.query(models.SessionAttendance).filter(
-            models.SessionAttendance.session_id == session_id,
-            models.SessionAttendance.visitor_id == local_visitor.id
-        ).first()
+    # Registra presença
+    attendance = db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id == session_id,
+        models.SessionAttendance.visitor_id == visitor.id
+    ).first()
+    
+    now = datetime.now()
+    
+    if attendance:
+        attendance.attendance_status = "Presente"
+        attendance.check_in_method = "APP_VISITOR"
+        attendance.check_in_datetime = now
+    else:
+        attendance = models.SessionAttendance(
+            session_id=session_id,
+            visitor_id=visitor.id,
+            attendance_status="Presente",
+            check_in_method="APP_VISITOR",
+            check_in_datetime=now,
+            check_in_latitude=latitude,
+            check_in_longitude=longitude
+        )
+        db.add(attendance)
         
-        now = datetime.now()
-        
-        if attendance:
-            attendance.attendance_status = "Presente"
-            attendance.check_in_method = "APP_VISITOR"
-            attendance.check_in_datetime = now
-        else:
-            attendance = models.SessionAttendance(
-                session_id=session_id,
-                visitor_id=local_visitor.id,
-                attendance_status="Presente",
-                check_in_method="APP_VISITOR",
-                check_in_datetime=now,
-                check_in_latitude=latitude,
-                check_in_longitude=longitude
-            )
-            db.add(attendance)
-            
-        db.commit()
-        db.refresh(attendance)
-        return attendance
-        
-    finally:
-        oriente_db.close()
-
+    db.commit()
+    db.refresh(attendance)
+    return attendance

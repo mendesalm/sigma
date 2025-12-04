@@ -2,26 +2,26 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from database import get_oriente_db
-from models.global_models import GlobalVisitor
+from database import get_db
+from models.models import Visitor
 from schemas.visitor_schema import VisitorCreate, VisitorResponse
 
 router = APIRouter(
     prefix="/visitors",
-    tags=["Visitantes (Global)"],
+    tags=["Visitantes (Cadastro Único)"],
 )
 
 @router.post("/register", response_model=VisitorResponse, status_code=status.HTTP_201_CREATED)
 def register_visitor(
     visitor_data: VisitorCreate,
-    db: Session = Depends(get_oriente_db)
+    db: Session = Depends(get_db)
 ):
     """
-    Registra ou atualiza um visitante na base global (Oriente Data).
-    Retorna o registro com o ID (token) para geração do QR Code.
+    Registra ou atualiza um visitante na base de dados principal.
+    Retorna o registro com o ID para geração do QR Code.
     """
     # Verifica se já existe pelo CIM
-    existing_visitor = db.query(GlobalVisitor).filter(GlobalVisitor.cim == visitor_data.cim).first()
+    existing_visitor = db.query(Visitor).filter(Visitor.cim == visitor_data.cim).first()
     
     if existing_visitor:
         # Atualiza dados existentes
@@ -31,14 +31,15 @@ def register_visitor(
         existing_visitor.manual_lodge_name = visitor_data.manual_lodge_name
         existing_visitor.manual_lodge_number = visitor_data.manual_lodge_number
         existing_visitor.manual_lodge_obedience = visitor_data.manual_lodge_obedience
-        existing_visitor.updated_at = datetime.now()
         
         db.commit()
         db.refresh(existing_visitor)
+        
+        # Adaptação para resposta (converte ID int para str se necessário pelo schema)
         return existing_visitor
     else:
         # Cria novo visitante
-        new_visitor = GlobalVisitor(
+        new_visitor = Visitor(
             full_name=visitor_data.full_name,
             cim=visitor_data.cim,
             degree=visitor_data.degree,

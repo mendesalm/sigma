@@ -1,295 +1,56 @@
-﻿<!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Balaústre</title>
-    <style>
-      body {
-        font-family: "Poppins", sans-serif; /* Usando Poppins */
-        margin: 0; /* Removendo margens do body */
-        padding: 0; /* Removendo padding do body */
-        line-height: 1.6;
-        color: #333;
-      }
+﻿import React, { useState } from 'react';
+import { useAuth } from '../../../../hooks/useAuth';
+import { setNextBalaustreNumber } from '../../../../services/balaustreService';
+import notifications from '../../../../utils/notifications';
+import './BalaustreSettings.css';
 
-      .document-content {
-        margin: 0; /* Removendo margem para que as margens do PDF sejam as únicas */
-      }
+const BalaustreSettings = () => {
+  const { hasPermission } = useAuth();
+  const [nextNumber, setNextNumber] = useState('');
+  const [loading, setLoading] = useState(false);
 
-      .header-grid {
-        display: grid;
-        grid-template-columns: 1fr 8fr;
-        align-items: center;
-        height: 2cm; /* Altura máxima do cabeçalho (3cm * 0.7 - 1mm) */
-        overflow: hidden; /* Esconder conteúdo que exceda a altura */
-        margin-top: 0.05cm;
-        margin-right: 0.1cm;
-      }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!hasPermission('gerenciarConfiguracoes')) {
+      notifications.error('Você não tem permissão para realizar esta ação.');
+      return;
+    }
 
-      /* Estilo para a coluna do logo esquerdo */
-      .header-logo {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-      }
+    setLoading(true);
+    try {
+      await setNextBalaustreNumber(parseInt(nextNumber, 10));
+      notifications.success('Número do próximo balaústre atualizado com sucesso!');
+      setNextNumber('');
+    } catch (error) {
+      notifications.error('Erro ao atualizar o número do próximo balaústre: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      .header-logo img {
-        max-height: 1.7cm; /* Reduzir altura máxima da imagem */
-        width: auto;
-        border-radius: 50%;
-        background-color: #fff;
-      }
-
-      .header-text {
-        position: relative;
-        background-color: #380404;
-        color: white;
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 10% 100%);
-        text-align: right; /* Alinhar texto à direita */
-        padding: 2px 120px 2px 10px; /* Ajustar padding para dar espaço ao logo */
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        height: 100%; /* Ocupar a altura total do grid */
-      }
-
-      .header-text .affiliation {
-        margin: 0; /* Remover margens */
-        font-family: sans-serif;
-        font-size: 0.5em; /* Reduzir tamanho da fonte */
-        font-weight: 500;
-      }
-
-      .header-text .lodge-name {
-        margin: 0; /* Remover margens */
-        font-family: serif;
-        font-size: 1.2em; /* Reduzir tamanho da fonte */
-        font-weight: bold;
-        line-height: 1.1;
-        text-transform: uppercase;
-      }
-
-      .logo-in-text {
-        position: absolute;
-        right: 5px; /* Ajustar distância da borda direita */
-        top: 50%;
-        transform: translateY(-50%);
-        max-height: 1.7cm; /* Reduzir altura máxima da imagem */
-        width: auto;
-      }
-
-      .section {
-        margin-bottom: 20px;
-      }
-      .section-title {
-        font-weight: bold;
-        margin-bottom: 5px;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 3px;
-      }
-
-      .mso-title {
-        text-align: center;
-        line-height: 1.2;
-      }
-      .mso-normal {
-        text-align: justify;
-        line-height: 1.5;
-        padding: 2mm;
-      }
-
-      .mso-sign {
-        text-align: center;
-      }
-      .mso-sign-li span {
-        font-family: "Open Sans", sans-serif; /* Usando Open Sans para a linha */
-      }
-      .officers-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-      .officers-table td {
-        padding: 5px;
-        border: 1px solid #eee;
-      }
-      .signature {
-        margin-top: 50px;
-        text-align: center;
-      }
-      .signature div {
-        margin-top: 20px;
-        border-top: 1px solid #000;
-        display: inline-block;
-        padding-top: 5px;
-        width: 60%;
-      }
-      /* Specific styles from the Word HTML that might be useful, adapted */
-      .signature-seal {
-        border: 1px solid #e0e0e0;
-        background-color: #f7f7f7;
-        border-radius: 8px;
-        padding: 8px;
-        display: inline-block;
-        text-align: left;
-        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
-      }
-      .seal-content {
-        display: flex;
-        align-items: center;
-      }
-      .seal-logo img {
-        width: 45px;
-        height: 45px;
-        margin-right: 12px;
-      }
-      .seal-text {
-        font-family: "Open Sans", sans-serif;
-        font-size: 9pt;
-        line-height: 1.4;
-      }
-      .signer-name {
-        font-weight: bold;
-        color: #380404;
-        text-transform: uppercase;
-      }
-      .signer-role {
-        font-style: italic;
-        color: #333;
-      }
-      .signer-timestamp {
-        font-size: 8pt;
-        color: #777;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="document-content">
-      <header class="header-grid">
-        <div class="header-logo logo-col-left">
-          <img src="{{header_image}}" alt="Logo Esquerdo" />
+  return (
+    <div className="balaustre-settings-container">
+      <h2>Configurar Número do Próximo Balaústre</h2>
+      <p>Defina o número inicial para o próximo balaústre a ser gerado automaticamente.</p>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="nextNumber">Próximo Número:</label>
+          <input
+            type="number"
+            id="nextNumber"
+            value={nextNumber}
+            onChange={(e) => setNextNumber(e.target.value)}
+            required
+            min="1"
+            disabled={loading}
+          />
         </div>
-
-        <div class="header-text">
-          <img src="{{footer_image}}" alt="Logo Direito" class="logo-in-text" />
-
-          <p class="lodge-name">Loja Maçônica João Pedro Junqueira nº 2181</p>
-          <p class="affiliation">Federada ao Grande Oriente do Brasil</p>
-          <p class="affiliation">
-            Jurisdicionada ao Grande Oriente do Brasil - Goiás
-          </p>
-        </div>
-      </header>
-      <p
-        class="mso-title"
-        align="center"
-        style="text-align: center; line-height: 1.2"
-      >
-        <b
-          ><span style="font-size: 12pt; line-height: 1.2"
-            >BALAÚSTRE Nº{{numero_balaustre}}/EM2025-2026</span
-          ></b
-        >
-      </p>
-
-      <p
-        class="mso-title"
-        align="center"
-        style="text-align: center; line-height: 1.2"
-      >
-        <b
-          ><span style="font-size: 12pt; line-height: 0.7"
-            >SESSÃO {{classe_sessao_titulo}}</span
-          ></b
-        >
-      </p>
-
-      <p
-        class="mso-title"
-        align="center"
-        style="text-align: center; line-height: 0.5; margin-bottom: 10mm"
-      >
-        <b
-          ><span style="font-size: 12pt; line-height: 1"
-            >À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</span
-          ></b
-        >
-      </p>
-
-      <p class="mso-normal" style="text-align: justify; line-height: normal">
-        <span
-          >Precisamente às {{hora_inicio_sessao}} do dia {{dia_sessao}} da E∴
-          V∴, a Augusta, Respeitável e Benfeitora Loja Simbólica João Pedro
-          Junqueira n° 2181, jurisdicionada ao Grande Oriente do Estado de
-          Goiás, federada ao Grande Oriente do Brasil, reuniu-se em seu Templo,
-          sito à Avenida 9 – Área A-2, Conjunto Mirage, Oriente de Anápolis,
-          Goiás, em Sessão {{classe_sessao_corpo}}, com {{numero_irmaos_quadro}}
-          irmãos do quadro e {{numero_visitantes}} irmãos visitantes, ficando a
-          Loja assim constituída:
-        </span>
-        <b><span>V∴ Mestre</span></b
-        ><span> {{veneravel}};</span> <b><span>1° Vig∴</span></b
-        ><span> {{primeiro_vigilante}}; </span> <b><span>2° Vig∴</span></b
-        ><span> {{segundo_vigilante}}; </span> <b><span>Orad∴</span></b
-        ><span> {{orador}}; </span> <b><span>Secr∴</span></b
-        ><span> {{secretario}}; </span> <b><span>Tes∴</span></b
-        ><span> {{tesoureiro}} e </span> <b><span>Chanc∴</span></b
-        ><span>
-          {{chanceler}}, sendo os demais cargos preenchidos pelos seus titulares
-          ou Irmãos do Quadro.
-        </span>
-        <b>Balaústre:</b><span> {{balaustre_anterior}}. </span>
-        <b>Expediente Recebido:</b><span> {{expediente_recebido}}. </span>
-        <b>Expediente Expedido:</b><span> {{expediente_expedido}}. </span>
-        <b>Saco de Propostas e Informação</b>:
-        <span>{{saco_proposta}}. </span>
-        <b>Ordem do Dia</b>: <span>{{ordem_dia}}. </span>
-        <b>Escrutínio Secreto</b>: <span>{{escrutinio}}. </span>
-        <b>Tempo de Instrução:</b>
-        <span>{{tempo_instrucao}}.</span>
-        <b>Tronco de Beneficência:</b
-        ><span>
-          Fez o seu giro habitual pelo ir∴ Hospitaleiro, sendo entregue o seu
-          produto ao ir∴ Tesoureiro para conferência e, no momento oportuno, foi
-          anunciada a medalha cunhada de
-        </span>
-        <span>R$ {{tronco_beneficencia}},00 . </span>
-        <b>Palavra a Bem da Ordem em Geral e do Quadro em Particular</b>:
-        <span>{{palavra}}.&nbsp;</span> <b>Encerramento:</b
-        ><span>
-          o Ven∴ Mestre encerrou a sessão às {{hora_encerramento}}, tendo eu,
-          Secretário, lavrado o presente balaústre, que depois de lido, se
-          achado em tudo conforme, será assinado.
-        </span>
-      </p>
-
-      <p class="mso-normal" style="text-align: justify; line-height: 150%">
-        <span>{{emendas}}</span>
-      </p>
-
-      <p
-        class="mso-normal"
-        align="right"
-        style="margin-top: 0cm; margin-bottom: 36pt; text-align: right"
-      >
-        <span>Oriente de Anápolis, {{data_assinatura}} – E∴ V∴</span>
-      </p>
-
-      <table class="officers-table" style="width: 100%; border: none">
-        <tr>
-          <td style="width: 33%; text-align: center; border: none">
-            {{{secretario_signature_block}}}
-          </td>
-          <td style="width: 33%; text-align: center; border: none">
-            {{{orador_signature_block}}}
-          </td>
-          <td style="width: 33%; text-align: center; border: none">
-            {{{veneravel_mestre_signature_block}}}
-          </td>
-        </tr>
-      </table>
+        <button type="submit" disabled={loading || !hasPermission('gerenciarConfiguracoes')}>
+          {loading ? 'Salvando...' : 'Salvar Configuração'}
+        </button>
+      </form>
     </div>
-  </body>
-</html>
+  );
+};
+
+export default BalaustreSettings;
