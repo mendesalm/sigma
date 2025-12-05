@@ -10,6 +10,13 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
 from models import models
 from services import document_service
+from sqlalchemy import func, cast, Date
+import qrcode
+import io
+import hashlib
+import uuid
+
+# ... (existing imports)
 
 
 # (O código das funções auxiliares e dos templates permanece o mesmo)
@@ -149,6 +156,27 @@ class DocumentGenerationService:
         # Fallback para o logo padrão
         return self._get_base64_asset("images/logoJPJ_.png")
 
+    def _generate_qr_code_base64(self, data: str) -> str:
+        """Gera um QR Code em Base64 a partir de uma string."""
+        import base64
+        
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        
+        return f"data:image/png;base64,{img_str}"
+
     def _render_template(self, template_name: str, data: dict) -> str:
         # Injeta logo dinâmico da loja se disponível
         lodge_id = data.get('lodge_id')
@@ -202,6 +230,48 @@ class DocumentGenerationService:
         """Converte conteúdo HTML em PDF usando Playwright (Sync via Thread)."""
         import asyncio
         return await asyncio.to_thread(self._generate_pdf_sync, html_content)
+
+    def _calculate_tronco_text(self, db: Session, lodge_id: int, session_date: date) -> str:
+        """Calcula o valor total do Tronco para a data da sessão e retorna o texto formatado."""
+        total_tronco = (
+            db.query(func.sum(models.FinancialTransaction.amount))
+            .filter(
+                models.FinancialTransaction.lodge_id == lodge_id,
+                cast(models.FinancialTransaction.transaction_date, Date) == session_date,
+                models.FinancialTransaction.transaction_type == "credit",
+                models.FinancialTransaction.description.ilike("%Tronco%")
+            )
+            .scalar()
+        ) or 0.0
+
+        formatted_value = f"R$ {total_tronco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"Fez o seu giro habitual e rendeu a medalha cunhada de {formatted_value}."
+
+    def _collect_notices_text(self, db: Session, lodge_id: int, start_date: date, end_date: date) -> str:
+        """Busca avisos publicados entre duas datas para compor o expediente."""
+        if not start_date:
+            # Se não houver sessão anterior, busca avisos dos últimos 30 dias
+            from datetime import timedelta
+            start_date = end_date - timedelta(days=30)
+
+        notices = (
+            db.query(models.Notice)
+            .filter(
+                models.Notice.lodge_id == lodge_id,
+                cast(models.Notice.created_at, Date) > start_date,
+                cast(models.Notice.created_at, Date) <= end_date
+            )
+            .all()
+        )
+
+        if not notices:
+            return ""
+
+        text_parts = ["Avisos e Circulares:"]
+        for notice in notices:
+            text_parts.append(f"- {notice.title}")
+        
+        return "\n".join(text_parts)
 
     async def _collect_session_data(self, db: Session, session_id: int) -> dict:
         """Coleta todos os dados necessários para Balaustre/Edital de uma sessão."""
@@ -270,6 +340,16 @@ class DocumentGenerationService:
             affiliation_text_1 = f"Federada ao {obedience_name}"
             affiliation_text_2 = ""
 
+        # Lógica para Expediente Automático
+        auto_expediente = self._collect_notices_text(
+            db, 
+            lodge.id, 
+            previous_session.session_date if previous_session else None, 
+            session.session_date
+        )
+        
+        expediente_recebido = session.received_expedients or auto_expediente or "Nada constou."
+
         # Montagem do dicionário de dados
         return {
             # Campos Básicos
@@ -299,12 +379,12 @@ class DocumentGenerationService:
             "Chanceler": officers.get("Chanceler") or "___________________",
             
             # Conteúdo
-            "ExpedienteRecebido": session.received_expedients or "Nada constou.",
+            "ExpedienteRecebido": expediente_recebido,
             "ExpedienteExpedido": session.sent_expedients or "Nada constou.",
             "SacoProposta": "Foi aberto pelo V∴ Mestre e nada recolheu.", # Placeholder dinâmico futuro
             "OrdemDia": session.agenda or "Não houve matéria para a Ordem do Dia.",
             "TempoInstrucao": f"Preenchido pelo Ir∴ {study_director_name}" if study_director_name else "Suprimido.",
-            "Tronco": "Fez o seu giro habitual e rendeu a medalha cunhada de R$ 0,00.", # Placeholder
+            "Tronco": self._calculate_tronco_text(db, lodge.id, session.session_date),
             "Palavra": "Reinou o silêncio.", # Placeholder
             "Encerramento": session_end_time_formatted,
             "DataAssinatura": session_date_full,
@@ -483,6 +563,89 @@ class DocumentGenerationService:
 
         except Exception as e:
             print(f"Erro ao gerar balaústre: {e}")
+            import traceback
+            traceback.print_exc()
+
+    async def generate_signed_balaustre_task(self, session_id: int, current_user_payload: dict, custom_content: dict = None):
+        try:
+            print(f"Iniciando geração de balaústre ASSINADO para sessão: {session_id}")
+            
+            # 1. Gerar Hash Único
+            unique_str = f"{session_id}-{uuid.uuid4()}-{date.today()}"
+            signature_hash = hashlib.sha256(unique_str.encode()).hexdigest()
+            
+            # 2. Gerar QR Code
+            # TODO: Substituir pelo domínio real da aplicação
+            validation_url = f"http://localhost:5173/validate/{signature_hash}" 
+            qr_code_base64 = self._generate_qr_code_base64(validation_url)
+            
+            # 3. Preparar Dados
+            db = SessionLocal()
+            try:
+                # Save draft if provided (ensure we sign what we see)
+                if custom_content:
+                    self.save_balaustre_draft(session_id, custom_content)
+
+                session_data = await self._collect_session_data(db, session_id)
+                
+                # Apply custom content
+                if custom_content:
+                    if 'text' in custom_content:
+                        session_data['custom_text'] = custom_content['text']
+                    if 'styles' in custom_content:
+                        session_data['styles'] = custom_content['styles']
+                else:
+                    saved_draft = self.load_balaustre_draft(session_id)
+                    if saved_draft:
+                        if 'text' in saved_draft:
+                            session_data['custom_text'] = saved_draft['text']
+                        if 'styles' in saved_draft:
+                            session_data['styles'] = saved_draft['styles']
+
+                # Inject Signature Data
+                session_data['signature_hash'] = signature_hash
+                session_data['qr_code_image'] = qr_code_base64
+                session_data['is_signed'] = True
+                session_data['signed_date'] = date.today().strftime("%d/%m/%Y")
+
+                # Render HTML
+                html_content = self._render_template("balaustre_template.html", session_data)
+                
+                # Generate PDF
+                pdf_bytes = await self._generate_pdf_from_html(html_content)
+                
+                title = f"Balaústre Assinado - Sessão {session_data.get('session_title', '')} - {session_data.get('session_date_formatted', '')}"
+                filename = f"balaustre_assinado_{session_id}_{signature_hash[:8]}.pdf"
+
+                # Save Document
+                new_doc = await document_service.create_document(
+                    db=db,
+                    title=title,
+                    current_user_payload=current_user_payload,
+                    file_content_bytes=pdf_bytes,
+                    filename=filename,
+                    content_type="application/pdf",
+                )
+                new_doc.document_type = "BALAUSTRE_ASSINADO"
+                new_doc.session_id = session_id
+                db.flush() # Get ID
+
+                # Save Signature
+                new_sig = models.DocumentSignature(
+                    document_id=new_doc.id,
+                    signature_hash=signature_hash,
+                    signed_by_id=current_user_payload.get('sub'), # Assuming 'sub' is user ID
+                )
+                db.add(new_sig)
+                
+                db.commit()
+                print(f"Balaústre ASSINADO gerado e salvo com ID: {new_doc.id}, Hash: {signature_hash}")
+
+            finally:
+                db.close()
+
+        except Exception as e:
+            print(f"Erro ao gerar balaústre assinado: {e}")
             import traceback
             traceback.print_exc()
 

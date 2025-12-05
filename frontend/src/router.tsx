@@ -39,6 +39,7 @@ import LodgeSelectionPage from './pages/LodgeSelectionPage';
 import DashboardHome from './pages/Dashboard/DashboardHome';
 import DocumentTemplates from './pages/Management/DocumentTemplates';
 import BalaustreEditor from './pages/Documents/BalaustreEditor';
+import DocumentValidation from './pages/Public/DocumentValidation';
 
 // Obreiro Pages
 import MeuCadastro from './pages/Obreiro/MeuCadastro';
@@ -82,6 +83,10 @@ const router = createBrowserRouter([
           {
             path: '/visitante/cadastro',
             element: <VisitorRegistrationPage />,
+          },
+          {
+            path: '/validate/:hash',
+            element: <DocumentValidation />,
           },
         ]
       },

@@ -734,3 +734,15 @@ class DocumentTemplate(BaseModel):
     content = Column(Text, nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+
+class DocumentSignature(BaseModel):
+    __tablename__ = "document_signatures"
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, unique=True)
+    signature_hash = Column(String(64), unique=True, nullable=False, index=True) # SHA256
+    signed_at = Column(DateTime(timezone=True), server_default=func.now())
+    signed_by_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    
+    document = relationship("Document", backref=backref("signature", uselist=False))
+    signed_by = relationship("Member")
+

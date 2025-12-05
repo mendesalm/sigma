@@ -60,8 +60,28 @@ def check_and_start_sessions_job():
              two_hours_after_end = session_end_datetime + timedelta(hours=2)
              
              if now >= two_hours_after_end:
-                 print(f"Encerrando sessão ID: {session.id} - {session.title}")
+                 print(f"Finalizando sessão ID: {session.id} - {session.title}")
                  session_service.close_scheduled_session(db, session.id)
+
+        # 3. Auto-Encerrar Sessões (14 dias após realizada - Aprovação Tácita)
+        sessions_to_auto_close = (
+            db.query(models.MasonicSession)
+            .filter(models.MasonicSession.status == "REALIZADA")
+            .all()
+        )
+
+        for session in sessions_to_auto_close:
+             # Define data de referência (início da sessão)
+             start_t = session.start_time or datetime.strptime("20:00", "%H:%M").time()
+             session_start_dt = datetime.combine(session.session_date, start_t)
+             
+             auto_close_date = session_start_dt + timedelta(days=14)
+             
+             if now > auto_close_date:
+                 print(f"Auto-encerrando sessão ID: {session.id} (Prazo de 14 dias expirado)")
+                 session.status = "ENCERRADA"
+                 db.add(session)
+                 db.commit()
 
     except Exception as e:
         print(f"Erro ao executar a tarefa agendada de sessões: {e}")

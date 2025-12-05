@@ -238,6 +238,15 @@
             </td>
           </tr>
         </table>
+
+        {% if is_signed %}
+        <div style="margin-top: 1cm; text-align: center; border-top: 1px dashed #ccc; padding-top: 10px; page-break-inside: avoid;">
+            <p style="font-size: 10pt; color: #666; margin: 5px 0;"><strong>Documento Assinado Eletronicamente</strong></p>
+            <img src="{{ qr_code_image }}" alt="QR Code de Validação" style="width: 2.5cm; height: 2.5cm;" />
+            <p style="font-size: 8pt; font-family: monospace; margin: 2px 0;">Hash: {{ signature_hash }}</p>
+            <p style="font-size: 9pt; margin: 2px 0;">Assinado em: {{ signed_date }}</p>
+        </div>
+        {% endif %}
       </div>
     </div>
   </body>

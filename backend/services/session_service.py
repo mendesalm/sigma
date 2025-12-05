@@ -464,6 +464,32 @@ async def generate_custom_session_document(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido para personalização.")
 
 
+async def generate_signed_session_document(
+    db: Session, 
+    session_id: int, 
+    document_type: str, 
+    custom_content: dict,
+    current_user_payload: dict, 
+    background_tasks: BackgroundTasks
+) -> dict[str, str]:
+    """
+    Dispara a geração de um documento assinado digitalmente.
+    """
+    session = get_session_by_id(db, session_id, current_user_payload)
+    doc_gen_service = DocumentGenerationService()
+
+    if document_type.upper() == "BALAUSTRE":
+        background_tasks.add_task(
+            doc_gen_service.generate_signed_balaustre_task, 
+            session_id, 
+            current_user_payload,
+            custom_content=custom_content
+        )
+        return {"message": "Geração do Balaústre Assinado iniciada."}
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido para assinatura.")
+
+
 async def preview_balaustre(
     db: Session,
     session_id: int,
@@ -669,7 +695,7 @@ def perform_check_in(
 def close_scheduled_session(db: Session, session_id: int) -> models.MasonicSession | None:
     """
     Encerra automaticamente uma sessão (chamado pelo agendador).
-    Muda status para ENCERRADA.
+    Muda status para REALIZADA (aguardando aprovação da ata).
     """
     db_session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
     if not db_session:
@@ -680,10 +706,10 @@ def close_scheduled_session(db: Session, session_id: int) -> models.MasonicSessi
         # Se já foi realizada ou cancelada, não faz nada
         return db_session
 
-    db_session.status = "ENCERRADA"
+    db_session.status = "REALIZADA"
     db.commit()
     db.refresh(db_session)
-    print(f"Agendador: Sessão {session_id} encerrada automaticamente.")
+    print(f"Agendador: Sessão {session_id} finalizada automaticamente (Status: REALIZADA).")
     
     return db_session
 

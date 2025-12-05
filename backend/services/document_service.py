@@ -138,3 +138,25 @@ def delete_document(db: Session, document_id: int, current_user_payload: dict) -
     db.commit()
 
     return document_to_delete
+
+
+def validate_signature(db: Session, signature_hash: str) -> dict:
+    """
+    Valida uma assinatura de documento pelo hash.
+    """
+    signature = db.query(models.DocumentSignature).filter(models.DocumentSignature.signature_hash == signature_hash).first()
+    
+    if not signature:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assinatura não encontrada.")
+        
+    document = signature.document
+    signer = signature.signed_by
+    
+    return {
+        "valid": True,
+        "document_title": document.title,
+        "signed_by": signer.full_name,
+        "signed_at": signature.signed_at,
+        "lodge_name": document.lodge.lodge_name,
+        "hash": signature_hash
+    }

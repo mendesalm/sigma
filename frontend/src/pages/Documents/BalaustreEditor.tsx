@@ -24,13 +24,16 @@ import {
   ArrowBack, 
   Save, 
   PictureAsPdf,
-  Edit
+  Edit,
+  VerifiedUser
 } from '@mui/icons-material';
 import api, { uploadLodgeLogo } from '../../services/api';
 import BalaustreDocumentForm from './components/BalaustreDocumentForm';
 // @ts-ignore
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+
+// ... (inside component)
 
 // Estilos para simular folha A4
 const A4_WIDTH = '210mm';
@@ -104,6 +107,25 @@ const BalaustreEditor: React.FC = () => {
     } catch (error) {
       console.error('Erro ao regenerar texto:', error);
       setSnackbar({ open: true, message: 'Erro ao regenerar texto.', severity: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSignAndFinalize = async () => {
+    if (!window.confirm("Atenção: Ao assinar, o documento será finalizado e não poderá mais ser editado. Deseja continuar?")) {
+        return;
+    }
+    setSaving(true);
+    try {
+      await api.post(`/masonic-sessions/${sessionId}/sign-balaustre`, { 
+        text: documentContent.text,
+        styles: styles
+      });
+      setSnackbar({ open: true, message: 'Balaústre assinado e finalizado com sucesso!', severity: 'success' });
+    } catch (error) {
+      console.error('Erro ao assinar documento:', error);
+      setSnackbar({ open: true, message: 'Erro ao assinar balaústre.', severity: 'error' });
     } finally {
       setSaving(false);
     }
@@ -240,6 +262,16 @@ const BalaustreEditor: React.FC = () => {
             sx={{ mr: 2 }}
           >
             Personalizar
+          </Button>
+          <Button 
+            variant="contained" 
+            color="secondary"
+            startIcon={<VerifiedUser />} 
+            onClick={handleSignAndFinalize}
+            disabled={saving}
+            sx={{ mr: 2 }}
+          >
+            Assinar
           </Button>
           <Button 
             variant="contained" 

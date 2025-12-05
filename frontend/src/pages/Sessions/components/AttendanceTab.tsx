@@ -4,7 +4,7 @@ import {
   Select, MenuItem, FormControl, SelectChangeEvent, CircularProgress, Alert, Snackbar, 
   Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, Divider 
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, Refresh } from '@mui/icons-material';
 import { getSessionAttendance, updateManualAttendance, registerVisitorAttendance } from '../../../services/api';
 import { formatCPF } from '../../../utils/formatters';
 import { validateCPF, validateEmail } from '../../../utils/validators';
@@ -52,6 +52,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   });
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [autoRefresh] = useState(true);
 
   const validateField = (name: string, value: string) => {
     let error = '';
@@ -68,13 +69,13 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
 
   const fetchAttendance = async () => {
     try {
-      setLoading(true);
+      // setLoading(true); // Don't show loading spinner on refresh to avoid flickering
       const response = await getSessionAttendance(sessionId);
       setAttendance(response.data);
       setError(null);
     } catch (err) {
-      setError('Falha ao carregar a lista de presença.');
-      console.error(err);
+      console.error('Falha ao atualizar a lista de presença.', err);
+      // Don't set global error to avoid blocking the UI on background refresh failure
     } finally {
       setLoading(false);
     }
@@ -82,9 +83,21 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
 
   useEffect(() => {
     if (sessionId) {
+      setLoading(true); // Initial load only
       fetchAttendance();
     }
   }, [sessionId]);
+
+  // Auto-refresh logic
+  useEffect(() => {
+    let interval: any;
+    if (autoRefresh && sessionId) {
+      interval = setInterval(() => {
+        fetchAttendance();
+      }, 30000); // 30 seconds
+    }
+    return () => clearInterval(interval);
+  }, [autoRefresh, sessionId]);
 
   const handleStatusChange = async (memberId: number, newStatus: string) => {
     try {
@@ -158,6 +171,15 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
         <Typography variant="h6">
           Membros da Loja
         </Typography>
+        <Button 
+            startIcon={<Refresh />} 
+            onClick={fetchAttendance}
+            variant="outlined"
+            size="small"
+            sx={{ ml: 2 }}
+        >
+            Atualizar Lista
+        </Button>
       </Box>
       <TableContainer component={Paper} sx={{ mb: 4 }}>
         <Table>

@@ -83,6 +83,16 @@ def remove_document(
     document_id: int, db: Session = Depends(get_db), current_user_payload: dict = Depends(get_current_user_payload)
 ):
     """
-    Endpoint para excluir um documento do banco de dados e do sistema de arquivos.
-    """
     return document_service.delete_document(db=db, document_id=document_id, current_user_payload=current_user_payload)
+
+
+@router.get(
+    "/validate/{signature_hash}",
+    summary="Validar Assinatura de Documento",
+    description="Verifica a autenticidade de um documento através do hash da assinatura.",
+)
+def validate_document_signature(
+    signature_hash: str,
+    db: Session = Depends(get_db)
+):
+    return document_service.validate_signature(db=db, signature_hash=signature_hash)

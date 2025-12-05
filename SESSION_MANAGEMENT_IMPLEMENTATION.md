@@ -92,9 +92,19 @@ Foi implementado um editor rico para a criação e personalização de Balaústr
 *   `BalaustreEditor.tsx`: Página principal do editor.
 *   `BalaustreDocumentForm.tsx`: Formulário visual para input de dados estruturados.
 *   `DocumentGenerationService`: Serviço de backend responsável pela renderização de templates Jinja2 e conversão para PDF.
+*   **Automação:**
+    *   Cálculo automático do **Tronco de Beneficência** baseado nas transações financeiras da sessão.
+    *   Preenchimento automático do **Expediente** com avisos e circulares publicados no período.
 
-## 7. Próximos Passos
+## 8. Assinatura Digital e Validação
 
-*   Refinar a geração de PDF para garantir fidelidade total de estilos (fontes, margens).
+Implementado sistema de assinatura eletrônica interna para Balaústres.
+*   **Assinatura:** Geração de hash único e QR Code embutido no PDF.
+*   **Validação:** Página pública para verificação de autenticidade via QR Code.
+*   **Detalhes:** Consulte `DIGITAL_SIGNATURES_IMPLEMENTATION.md`.
+
+## 9. Próximos Passos
+
 *   Criar relatórios estatísticos de frequência dos membros.
-*   Implementar assinatura digital nos documentos gerados.
+*   Expandir a geração de documentos para outros tipos (ex: Certificados de Presença).
+*   Implementar envio automático de atas por e-mail.

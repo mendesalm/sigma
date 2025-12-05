@@ -249,6 +249,28 @@ async def generate_custom_balaustre(
 
 
 @router.post(
+    "/{session_id}/sign-balaustre",
+    summary="Assinar e Gerar Balaústre",
+    description="Gera o Balaústre Final, assina digitalmente e salva o PDF com QR Code.",
+)
+async def sign_balaustre_endpoint(
+    session_id: int,
+    content: dict,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.generate_signed_session_document(
+        db=db,
+        session_id=session_id,
+        document_type="BALAUSTRE",
+        custom_content=content,
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks,
+    )
+
+
+@router.post(
     "/{session_id}/preview-balaustre",
     summary="Pré-visualizar Balaústre",
     description="Gera e retorna o PDF do balaústre para visualização/download.",

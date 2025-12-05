@@ -3,10 +3,10 @@
   "styles": {
     "header_bg_color": "transparent",
     "header_text_color": "#380404",
-    "page_bg_color": "white",
-    "logo_height": "100px",
+    "page_bg_color": "#ffffff",
+    "logo_height": "60px",
     "border_color": "#380404",
-    "border_style": "double",
+    "border_style": "solid",
     "border_width": "2px"
   }
 }
