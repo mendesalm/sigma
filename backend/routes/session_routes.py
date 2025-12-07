@@ -446,3 +446,47 @@ def perform_check_in_app(
         current_user_payload=current_user_payload
     )
 
+
+@router.get(
+    "/stats/attendance",
+    response_model=masonic_session_schema.LodgeAttendanceStats,
+    summary="Estatísticas de Presença",
+    description="Retorna estatísticas de presença da loja para um determinado período (padrão: 12 meses).",
+)
+def get_lodge_attendance_stats_endpoint(
+    period_months: int = Query(12, description="Período em meses para análise."),
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    lodge_id = current_user_payload.get("lodge_id")
+    if not lodge_id:
+        raise HTTPException(status_code=403, detail="Usuário não associado a uma loja.")
+        
+    return session_service.get_lodge_attendance_stats(
+        db=db,
+        lodge_id=lodge_id,
+        period_months=period_months
+    )
+
+
+@router.post(
+    "/{session_id}/generate-certificate/{member_id}",
+    summary="Gerar Certificado de Presença",
+    description="Gera um certificado de presença em PDF para um membro específico.",
+)
+async def generate_certificate_for_member(
+    session_id: int,
+    member_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.generate_session_document(
+        db=db,
+        session_id=session_id,
+        document_type="CERTIFICADO",
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks,
+        extra_data={"member_id": member_id}
+    )
+

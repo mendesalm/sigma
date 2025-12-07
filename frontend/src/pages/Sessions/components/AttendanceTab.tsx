@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, 
   Select, MenuItem, FormControl, SelectChangeEvent, CircularProgress, Alert, Snackbar, 
-  Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, Divider 
+  Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, Divider,
+  IconButton, Tooltip
 } from '@mui/material';
-import { Add, Refresh } from '@mui/icons-material';
-import { getSessionAttendance, updateManualAttendance, registerVisitorAttendance } from '../../../services/api';
+import { Add, Refresh, CardMembership } from '@mui/icons-material';
+import { getSessionAttendance, updateManualAttendance, registerVisitorAttendance, generateCertificate } from '../../../services/api';
 import { formatCPF } from '../../../utils/formatters';
 import { validateCPF, validateEmail } from '../../../utils/validators';
-
-// ...
+import { useAuth } from '../../../hooks/useAuth';
 
 interface AttendanceRecord {
   id: number;
@@ -35,6 +35,7 @@ interface AttendanceTabProps {
 }
 
 const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
+  const { user } = useAuth();
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,16 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [autoRefresh] = useState(true);
+
+  // Permission Logic
+  const canEdit = React.useMemo(() => {
+    if (!user) return false;
+    if (user.user_type === 'webmaster' || user.user_type === 'super_admin') return true;
+    // Check for specific roles
+    // Note: active_role_name comes from the token payload
+    const role = user.active_role_name;
+    return role === 'Chanceler';
+  }, [user]);
 
   const validateField = (name: string, value: string) => {
     let error = '';
@@ -100,6 +111,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   }, [autoRefresh, sessionId]);
 
   const handleStatusChange = async (memberId: number, newStatus: string) => {
+    if (!canEdit) return;
     try {
       await updateManualAttendance(sessionId, memberId, newStatus);
       setSnackbar({ open: true, message: 'Presença atualizada com sucesso!', severity: 'success' });
@@ -112,6 +124,24 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
     } catch (err) {
       console.error(err);
       setSnackbar({ open: true, message: 'Falha ao atualizar a presença.', severity: 'error' });
+    }
+  };
+
+  const handleGenerateCertificate = async (memberId: number) => {
+    // Certificate generation might be allowed for Secretary too? 
+    // The prompt says "Secretary read-only" for "participants tab".
+    // Usually Secretary generates documents.
+    // However, strictly following "read-only for Secretary" regarding "adding members/visitors".
+    // Let's assume Secretary can still generate certificates as it's an output, not a modification of the session data itself?
+    // But the prompt says "read-only". I will disable it for consistency with "read-only".
+    if (!canEdit) return; 
+
+    try {
+      await generateCertificate(sessionId, memberId);
+      setSnackbar({ open: true, message: 'Geração de certificado iniciada! Verifique a aba Documentos em breve.', severity: 'success' });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({ open: true, message: 'Erro ao solicitar certificado.', severity: 'error' });
     }
   };
 
@@ -128,6 +158,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   };
 
   const handleRegisterVisitor = async () => {
+    if (!canEdit) return;
     // Validate all fields before submit
     const newErrors: { [key: string]: string } = {};
     if (visitorData.cpf && !validateCPF(visitorData.cpf)) newErrors.cpf = 'CPF inválido';
@@ -187,6 +218,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
             <TableRow>
               <TableCell>Nome do Membro</TableCell>
               <TableCell sx={{ width: '200px' }}>Status da Presença</TableCell>
+              <TableCell align="center" sx={{ width: '100px' }}>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -194,7 +226,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
               <TableRow key={record.id}>
                 <TableCell>{record.member?.full_name}</TableCell>
                 <TableCell>
-                  <FormControl size="small" fullWidth>
+                  <FormControl size="small" fullWidth disabled={!canEdit}>
                     <Select
                       value={record.attendance_status}
                       onChange={(e: SelectChangeEvent) => record.member_id && handleStatusChange(record.member_id, e.target.value)}
@@ -205,11 +237,24 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                     </Select>
                   </FormControl>
                 </TableCell>
+                <TableCell align="center">
+                  <Tooltip title={canEdit ? "Gerar Certificado de Presença" : "Apenas leitura"}>
+                    <span>
+                      <IconButton 
+                        onClick={() => record.member_id && handleGenerateCertificate(record.member_id)}
+                        disabled={!canEdit || record.attendance_status !== 'Presente'}
+                        color="primary"
+                      >
+                        <CardMembership />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </TableCell>
               </TableRow>
             ))}
             {members.length === 0 && (
               <TableRow>
-                <TableCell colSpan={2} align="center">Nenhum membro listado.</TableCell>
+                <TableCell colSpan={3} align="center">Nenhum membro listado.</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -222,13 +267,15 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
         <Typography variant="h6">
           Visitantes
         </Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<Add />} 
-          onClick={() => setOpenVisitorDialog(true)}
-        >
-          Registrar Visitante
-        </Button>
+        {canEdit && (
+          <Button 
+            variant="contained" 
+            startIcon={<Add />} 
+            onClick={() => setOpenVisitorDialog(true)}
+          >
+            Registrar Visitante
+          </Button>
+        )}
       </Box>
       <TableContainer component={Paper}>
         <Table>

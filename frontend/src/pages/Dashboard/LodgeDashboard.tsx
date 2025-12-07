@@ -38,6 +38,7 @@ const EVENT_COLORS: Record<string, string> = {
   sessao: '#0ea5e9',    // Blue
   evento: '#f59e0b',    // Amber
   aniversario_familiar: '#ec4899', // Pink-500
+  casamento: '#d946ef', // Fuchsia
 };
 
 const LodgeDashboard: React.FC = () => {
@@ -47,6 +48,15 @@ const LodgeDashboard: React.FC = () => {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Filters State
+  const [filters, setFilters] = useState({
+    sessao: true,
+    aniversario: true,
+    aniversario_familiar: true,
+    casamento: true,
+    maconico: true, // Covers iniciacao, elevacao, exaltacao
+  });
+
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -98,9 +108,31 @@ const LodgeDashboard: React.FC = () => {
     setModalOpen(false);
     setSelectedDay(null);
   };
+  
+  const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters({
+      ...filters,
+      [event.target.name]: event.target.checked,
+    });
+  };
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  // Filter events based on state
+  const getFilteredEvents = () => {
+    return calendarEvents.filter(event => {
+      if (event.type === 'sessao') return filters.sessao;
+      if (event.type === 'aniversario') return filters.aniversario;
+      if (event.type === 'aniversario_familiar') return filters.aniversario_familiar;
+      if (event.type === 'casamento') return filters.casamento;
+      if (['iniciacao', 'elevacao', 'exaltacao'].includes(event.type)) return filters.maconico;
+      if (event.type === 'evento') return true; // Always show generic events or add a filter if needed
+      return true;
+    });
+  };
+
+  const filteredEvents = getFilteredEvents();
 
   const renderCalendarDays = () => {
     const days = [];
@@ -109,18 +141,22 @@ const LodgeDashboard: React.FC = () => {
       days.push(<Box key={`empty-${i}`} sx={{ height: '100%', border: '1px solid rgba(255,255,255,0.1)' }} />);
     }
     // Days of current month
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() === currentDate.getMonth() && today.getFullYear() === currentDate.getFullYear();
+
     for (let day = 1; day <= daysInMonth; day++) {
-      const events = calendarEvents.filter(e => e.date === day);
+      const isToday = isCurrentMonth && day === today.getDate();
+      const events = filteredEvents.filter(e => e.date === day);
       days.push(
         <Box 
           key={day} 
           onClick={() => handleDayClick(day)}
           sx={{ 
             height: '100%', 
-            border: '1px solid rgba(255,255,255,0.1)', 
+            border: isToday ? `2px solid ${theme.palette.primary.main}` : '1px solid rgba(255,255,255,0.1)', 
             p: 0.5,
             position: 'relative',
-            backgroundColor: 'transparent',
+            backgroundColor: isToday ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent',
             '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)', cursor: 'pointer' },
             display: 'flex',
             flexDirection: 'column',
@@ -179,7 +215,7 @@ const LodgeDashboard: React.FC = () => {
     { title: 'AVISOS', value: stats?.active_notices_count || 0, icon: <Notifications fontSize="large" />, color: '#ef4444' },
   ];
 
-  const selectedEvents = selectedDay ? calendarEvents.filter(e => e.date === selectedDay) : [];
+  const selectedEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
   const selectedDateObj = selectedDay ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay) : null;
 
   return (
@@ -286,11 +322,28 @@ const LodgeDashboard: React.FC = () => {
               {/* Calendar Header */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Mostrar Aniversários:</Typography>
+                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Filtros:</Typography>
                    <FormGroup row>
-                     <FormControlLabel control={<Checkbox defaultChecked size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Ativo</Typography>} />
-                     <FormControlLabel control={<Checkbox defaultChecked size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Regular</Typography>} />
-                     <FormControlLabel control={<Checkbox defaultChecked size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Remido</Typography>} />
+                     <FormControlLabel 
+                       control={<Checkbox checked={filters.sessao} onChange={handleFilterChange} name="sessao" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
+                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Sessões</Typography>} 
+                     />
+                     <FormControlLabel 
+                       control={<Checkbox checked={filters.aniversario} onChange={handleFilterChange} name="aniversario" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
+                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Membros</Typography>} 
+                     />
+                     <FormControlLabel 
+                       control={<Checkbox checked={filters.aniversario_familiar} onChange={handleFilterChange} name="aniversario_familiar" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
+                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Familiares</Typography>} 
+                     />
+                     <FormControlLabel 
+                       control={<Checkbox checked={filters.casamento} onChange={handleFilterChange} name="casamento" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
+                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Casamento</Typography>} 
+                     />
+                     <FormControlLabel 
+                       control={<Checkbox checked={filters.maconico} onChange={handleFilterChange} name="maconico" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
+                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Maçônico</Typography>} 
+                     />
                    </FormGroup>
                 </Box>
               </Box>
@@ -315,7 +368,6 @@ const LodgeDashboard: React.FC = () => {
                     <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'lowercase', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{day}</Typography>
                   </Box>
                 ))}
-                {/* Days */}
                 {renderCalendarDays()}
               </Box>
             </CardContent>

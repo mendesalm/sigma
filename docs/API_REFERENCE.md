@@ -151,6 +151,7 @@ Content-Type: application/json
 
 {
   "lodge_name": "Acácia do Cerrado",
+  "lodge_title": "ARBLS",
   "lodge_number": "2181",
   "foundation_date": "2010-05-15",
   "rite": "Rito Escocês Antigo e Aceito",
@@ -197,6 +198,7 @@ Content-Type: application/json
 
 {
   "title": "Sessão Magna de Iniciação",
+  "session_number": 15,
   "session_date": "2025-11-28",
   "start_time": "20:00:00",
   "lodge_id": 1
@@ -549,4 +551,4 @@ curl -X POST "http://localhost:8000/members" \
 
 ---
 
-**Última atualização**: 28/11/2025
+**Última atualização**: 07/12/2025

@@ -15,7 +15,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Autocomplete
 } from '@mui/material';
 import api from '../../services/api';
 import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types';
@@ -23,6 +24,7 @@ import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types
 const SessionForm = () => {
   const [formData, setFormData] = useState({
     title: 'Sessão Ordinária no Grau de Aprendiz',
+    session_number: '',
     session_date: '',
     start_time: '',
     end_time: '21:30',
@@ -39,6 +41,7 @@ const SessionForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
+
 
   // Determine base path based on current location
   const getBasePath = () => {
@@ -107,6 +110,7 @@ const SessionForm = () => {
           const session = response.data;
           setFormData({
             title: session.title,
+            session_number: session.session_number || '',
             session_date: session.session_date,
             start_time: session.start_time || '',
             end_time: session.end_time || '',
@@ -178,6 +182,7 @@ const SessionForm = () => {
 
     const payload = {
       ...formData,
+      session_number: formData.session_number ? parseInt(formData.session_number) : null,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
       study_director_id: formData.study_director_id ? parseInt(formData.study_director_id) : null,
@@ -220,7 +225,7 @@ const SessionForm = () => {
         
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid item xs={12} md={8}>
               <TextField
                 name="title"
                 label="Título / Grau"
@@ -229,6 +234,18 @@ const SessionForm = () => {
                 fullWidth
                 required
                 placeholder="Ex: Sessão Magna de Iniciação"
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                name="session_number"
+                label="Número da Sessão (Opcional)"
+                type="number"
+                value={formData.session_number}
+                onChange={handleChange}
+                fullWidth
+                placeholder="Auto"
+                helperText="Deixe em branco para numeração automática"
               />
             </Grid>
             
@@ -341,24 +358,26 @@ const SessionForm = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Responsável pelo Tempo de Estudos</InputLabel>
-                <Select
-                  name="study_director_id"
-                  value={formData.study_director_id}
-                  label="Responsável pelo Tempo de Estudos"
-                  onChange={handleSelectChange}
-                >
-                  <MenuItem value="">
-                    <em>Nenhum</em>
-                  </MenuItem>
-                  {members.map((member) => (
-                    <MenuItem key={member.id} value={member.id}>
-                      {member.full_name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                options={members}
+                getOptionLabel={(option) => option.full_name}
+                value={members.find(m => m.id.toString() === formData.study_director_id.toString()) || null}
+                onChange={(_, newValue) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    study_director_id: newValue ? newValue.id.toString() : ''
+                  }));
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Responsável pelo Tempo de Estudos"
+                    placeholder="Digite para buscar..."
+                    fullWidth
+                  />
+                )}
+                noOptionsText="Nenhum membro encontrado"
+              />
             </Grid>
 
           </Grid>

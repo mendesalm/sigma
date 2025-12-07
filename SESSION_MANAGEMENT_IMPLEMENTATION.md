@@ -103,7 +103,25 @@ Implementado sistema de assinatura eletrônica interna para Balaústres.
 *   **Validação:** Página pública para verificação de autenticidade via QR Code.
 *   **Detalhes:** Consulte `DIGITAL_SIGNATURES_IMPLEMENTATION.md`.
 
-## 9. Próximos Passos
+## 9. Controle de Acesso e Permissões
+
+A gestão de presença possui regras estritas de acesso baseadas em cargos:
+*   **Secretário:** Visualização apenas (Read-Only). Não pode alterar status de presença ou registrar visitantes.
+*   **Chanceler:** Permissão total para gerenciar presença e visitantes.
+*   **Webmaster/SuperAdmin:** Permissão total.
+
+## 10. Exercício Maçônico e Numeração
+
+O sistema implementa o conceito de "Exercício Maçônico" (`Administration`) para organizar as sessões por gestão.
+*   **Numeração Sequencial:** As sessões são numeradas sequencialmente dentro de cada exercício (1, 2, 3...).
+*   **Automação:** Ao criar uma sessão, o sistema detecta o exercício atual e sugere o próximo número.
+*   **Override Manual:** É possível definir manualmente o número da sessão para casos de legado ou ajustes.
+
+## 11. Títulos de Loja Dinâmicos
+
+O sistema suporta títulos de loja personalizados (ex: ARLS, ARBLS) que são formatados dinamicamente nos documentos gerados (ex: A∴R∴B∴L∴S∴).
+
+## 12. Próximos Passos
 
 *   Criar relatórios estatísticos de frequência dos membros.
 *   Expandir a geração de documentos para outros tipos (ex: Certificados de Presença).

@@ -26,7 +26,7 @@ def get_dashboard_stats(
     # 1. Total Active Members
     total_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
         models.MemberLodgeAssociation.lodge_id == lodge_id,
-        models.Member.status == "Active"
+        models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE
     ).count()
     
     # 2. Next Events (limit 5)
@@ -40,7 +40,7 @@ def get_dashboard_stats(
     # Python approach for MVP:
     active_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
         models.MemberLodgeAssociation.lodge_id == lodge_id,
-        models.Member.status == "Active"
+        models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE
     ).all()
     
     upcoming_birthdays = []
@@ -48,10 +48,21 @@ def get_dashboard_stats(
     
     for member in active_members:
         if member.birth_date:
-            bday_this_year = member.birth_date.replace(year=today.year)
+            # Create a date object for the birthday in the current year
+            try:
+                bday_this_year = member.birth_date.replace(year=today.year)
+            except ValueError:
+                # Handle leap year (Feb 29)
+                bday_this_year = member.birth_date.replace(year=today.year, day=28)
+
+            # If birthday has passed this year, look at next year
             if bday_this_year < today:
-                bday_this_year = member.birth_date.replace(year=today.year + 1)
+                try:
+                    bday_this_year = member.birth_date.replace(year=today.year + 1)
+                except ValueError:
+                    bday_this_year = member.birth_date.replace(year=today.year + 1, day=28)
             
+            # Check if it falls within the next 30 days
             if today <= bday_this_year <= limit_date:
                 upcoming_birthdays.append({
                     "name": member.full_name,
@@ -136,7 +147,7 @@ def get_calendar_events(
     # 3. Birthdays and Masonic Dates (Initiation, Elevation, Exaltation)
     active_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
         models.MemberLodgeAssociation.lodge_id == lodge_id,
-        models.Member.status == "Active"
+        models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE
     ).options(joinedload(models.Member.family_members)).all()
     
     calendar_events = []
@@ -163,34 +174,66 @@ def get_calendar_events(
     for m in active_members:
         # Birthday
         if m.birth_date and m.birth_date.month == month:
-            calendar_events.append({
-                "date": m.birth_date.day,
-                "title": f"Aniversário ({m.full_name})",
-                "type": "aniversario",
-                "full_date": date(year, month, m.birth_date.day)
-            })
-        # Initiation
+            day = m.birth_date.day
+            try:
+                event_date = date(year, month, day)
+                calendar_events.append({
+                    "date": day,
+                    "title": f"Aniversário ({m.full_name})",
+                    "type": "aniversario",
+                    "full_date": event_date
+                })
+            except ValueError:
+                if month == 2 and day == 29:
+                     calendar_events.append({
+                        "date": 28,
+                        "title": f"Aniversário ({m.full_name})",
+                        "type": "aniversario",
+                        "full_date": date(year, month, 28)
+                    })
+
+        # Wedding Anniversary
+        if m.marriage_date and m.marriage_date.month == month:
+            day = m.marriage_date.day
+            try:
+                event_date = date(year, month, day)
+                calendar_events.append({
+                    "date": day,
+                    "title": f"Casamento ({m.full_name})",
+                    "type": "casamento",
+                    "full_date": event_date
+                })
+            except ValueError:
+                 if month == 2 and day == 29:
+                     calendar_events.append({
+                        "date": 28,
+                        "title": f"Casamento ({m.full_name})",
+                        "type": "casamento",
+                        "full_date": date(year, month, 28)
+                    })
+
+        # Masonic Birthdays (Initiation, Elevation, Exaltation)
         if m.initiation_date and m.initiation_date.month == month:
              calendar_events.append({
                 "date": m.initiation_date.day,
                 "title": f"Iniciação de {m.full_name}",
-                "type": "iniciacao",
+                "type": "iniciacao", # Frontend can group this under 'maconico'
                 "full_date": date(year, month, m.initiation_date.day)
             })
-        # Elevation
+        
         if m.elevation_date and m.elevation_date.month == month:
              calendar_events.append({
                 "date": m.elevation_date.day,
                 "title": f"Elevação de {m.full_name}",
-                "type": "elevacao",
+                "type": "elevacao", # Frontend can group this under 'maconico'
                 "full_date": date(year, month, m.elevation_date.day)
             })
-        # Exaltation
+        
         if m.exaltation_date and m.exaltation_date.month == month:
              calendar_events.append({
                 "date": m.exaltation_date.day,
                 "title": f"Exaltação de {m.full_name}",
-                "type": "exaltacao",
+                "type": "exaltacao", # Frontend can group this under 'maconico'
                 "full_date": date(year, month, m.exaltation_date.day)
             })
         
@@ -200,9 +243,7 @@ def get_calendar_events(
                 continue
                 
             if fm.birth_date and fm.birth_date.month == month:
-                # Translate relationship type if possible, or use raw value
                 rel_type = fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
-                # Format: Fulana, filha do Ir. Cicrano
                 calendar_events.append({
                     "date": fm.birth_date.day,
                     "title": f"Aniversário ({fm.full_name}, {rel_type} do Ir. {m.full_name})",

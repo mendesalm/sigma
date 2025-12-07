@@ -34,7 +34,7 @@ export interface DashboardStats {
 export interface CalendarEvent {
   date: number;
   title: string;
-  type: 'sessao' | 'evento' | 'aniversario' | 'iniciacao' | 'elevacao' | 'exaltacao' | 'aniversario_familiar';
+  type: 'sessao' | 'evento' | 'aniversario' | 'iniciacao' | 'elevacao' | 'exaltacao' | 'aniversario_familiar' | 'casamento';
   full_date: string;
   status?: string;
   situacao?: string;

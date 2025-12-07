@@ -354,7 +354,7 @@ class DocumentGenerationService:
         return {
             # Campos Básicos
             "session_id": session.id,
-            "NumeroAta": session.id, # Usando ID como número da ata provisoriamente
+            "NumeroAta": session.session_number or session.id, # Usa session_number se disponível, senão ID
             "ClasseSessao": f"{session.type.value if session.type else ''} {session.subtype.value if session.subtype else ''}".strip().upper(),
             "HoraInicioSessao": session_start_time_formatted,
             "DiaSessao": session_date_full,
@@ -363,6 +363,7 @@ class DocumentGenerationService:
             # Loja
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
+            "lodge_title_formatted": "∴".join(list(lodge.lodge_title or "ARLS")) + "∴",
             "lodge_address": f"{lodge.street_address or ''}, {lodge.street_number or ''} - {lodge.neighborhood or ''}, Oriente de {lodge.city or ''} - {lodge.state or ''}",
             "lodge_city": lodge.city,
             "affiliation_text_1": affiliation_text_1,
@@ -676,6 +677,103 @@ class DocumentGenerationService:
             print(f"ERRO ao gerar edital para sessão {session_id}: {e}")
         finally:
             db.close()
+
+
+    async def _collect_certificate_data(self, db: Session, session_id: int, member_id: int) -> dict:
+        session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+        member = db.query(models.Member).filter(models.Member.id == member_id).first()
+        
+        if not session or not member:
+            raise ValueError("Sessão ou Membro não encontrados.")
+            
+        lodge = db.query(models.Lodge).filter(models.Lodge.id == session.lodge_id).first()
+        obedience = db.query(models.Obedience).filter(models.Obedience.id == lodge.obedience_id).first()
+        
+        # Formatação de datas
+        months_pt = {
+            1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
+            7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+        }
+        
+        day = session.session_date.day
+        month = months_pt[session.session_date.month]
+        year = session.session_date.year
+        session_date_full = f"{day} de {month} de {year}"
+        
+        return {
+            "lodge_name": lodge.lodge_name,
+            "lodge_logo": self._get_lodge_logo(lodge.id),
+            "obedience_name": obedience.name if obedience else "",
+            "member_name": member.full_name,
+            "session_type": session.type.value if session.type else "Sessão",
+            "session_subtype": session.subtype.value if session.subtype else "",
+            "session_date": session_date_full,
+            "generation_date": date.today().strftime("%d/%m/%Y"),
+            "lodge_id": lodge.id
+        }
+
+    async def generate_certificate_pdf_task(self, session_id: int, member_id: int, current_user_payload: dict):
+        try:
+            print(f"Iniciando geração de certificado para membro {member_id} na sessão {session_id}")
+            
+            # 1. Gerar Hash Único
+            unique_str = f"CERT-{session_id}-{member_id}-{uuid.uuid4()}"
+            signature_hash = hashlib.sha256(unique_str.encode()).hexdigest()
+            
+            # 2. Gerar QR Code
+            # TODO: Substituir pelo domínio real da aplicação
+            validation_url = f"http://localhost:5173/validate/{signature_hash}" 
+            qr_code_base64 = self._generate_qr_code_base64(validation_url)
+            
+            db = SessionLocal()
+            try:
+                # 3. Coletar Dados
+                cert_data = await self._collect_certificate_data(db, session_id, member_id)
+                
+                # Injetar dados de validação
+                cert_data['validation_code'] = signature_hash[:12].upper()
+                cert_data['qr_code_path'] = qr_code_base64
+                
+                # 4. Renderizar HTML
+                html_content = self._render_template("certificate_template.html", cert_data)
+                
+                # 5. Gerar PDF
+                pdf_bytes = await self._generate_pdf_from_html(html_content)
+                
+                title = f"Certificado de Presença - {cert_data['member_name']}"
+                filename = f"certificado_{session_id}_{member_id}_{date.today().strftime('%Y%m%d')}.pdf"
+
+                # 6. Salvar Documento
+                new_doc = await document_service.create_document(
+                    db=db,
+                    title=title,
+                    current_user_payload=current_user_payload,
+                    file_content_bytes=pdf_bytes,
+                    filename=filename,
+                    content_type="application/pdf",
+                )
+                new_doc.document_type = "CERTIFICADO"
+                new_doc.session_id = session_id
+                db.flush()
+
+                # 7. Salvar Assinatura/Validação
+                new_sig = models.DocumentSignature(
+                    document_id=new_doc.id,
+                    signature_hash=signature_hash,
+                    signed_by_id=current_user_payload.get('sub'), # Quem gerou o certificado
+                )
+                db.add(new_sig)
+                
+                db.commit()
+                print(f"Certificado gerado e salvo com ID: {new_doc.id}")
+                
+            finally:
+                db.close()
+
+        except Exception as e:
+            print(f"Erro ao gerar certificado: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 def get_document_generation_service(db: Session = Depends(get_db)):

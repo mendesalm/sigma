@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, model_validato
 
 class LodgeBase(BaseModel):
     lodge_name: str = Field(..., min_length=3, max_length=255, description="Nome da loja")
+    lodge_title: str | None = Field("ARLS", max_length=50, description="Título da loja (ex: ARLS, ARBLS)")
     lodge_number: str | None = Field(None, max_length=255, description="Número da loja")
     foundation_date: date | None = Field(None, description="Data de fundação da loja")
     rite: str | None = Field(None, max_length=50, description="Rito praticado")
@@ -185,6 +186,7 @@ class LodgeCreate(LodgeBase):
 
 class LodgeUpdate(BaseModel):
     lodge_name: str | None = Field(None, max_length=255)
+    lodge_title: str | None = Field(None, max_length=50)
     lodge_number: str | None = Field(None, max_length=255)
     foundation_date: date | None = None
     rite: str | None = Field(None, max_length=50)

@@ -130,4 +130,31 @@ export const uploadLodgeLogo = (lodgeId: number, formData: FormData) => {
   });
 };
 
+export const getLodgeAttendanceStats = (periodMonths: number = 12) => {
+  return api.get('/masonic-sessions/stats/attendance', {
+    params: { period_months: periodMonths }
+  });
+};
+
+export const generateCertificate = (sessionId: number, memberId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/generate-certificate/${memberId}`);
+};
+
+// --- Committees ---
+export const getCommittees = () => {
+  return api.get('/committees/');
+};
+
+export const createCommittee = (data: any) => {
+  return api.post('/committees/', data);
+};
+
+export const updateCommittee = (id: number, data: any) => {
+  return api.put(`/committees/${id}`, data);
+};
+
+export const deleteCommittee = (id: number) => {
+  return api.delete(`/committees/${id}`);
+};
+
 export default api;

@@ -58,6 +58,7 @@ import SecretarioPublicacoes from './pages/Secretario/Publicacoes';
 import ChancelerPresencas from './pages/Chanceler/Presencas';
 import ChancelerVisitacoes from './pages/Chanceler/Visitacoes';
 import ChancelerVisitantes from './pages/Chanceler/Visitantes';
+import CommitteesPage from './pages/Committees/CommitteesPage';
 
 import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
 
@@ -173,6 +174,10 @@ const router = createBrowserRouter([
               {
                 path: 'chanceler/visitantes',
                 element: <ChancelerVisitantes />,
+              },
+              {
+                path: 'chanceler/comissoes',
+                element: <CommitteesPage />,
               },
               // Legacy routes for compatibility
               {

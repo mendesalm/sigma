@@ -143,6 +143,7 @@ class Lodge(BaseModel):
     __tablename__ = "lodges"
     id = Column(Integer, primary_key=True, index=True)
     lodge_name = Column(String(255), nullable=False)
+    lodge_title = Column(String(50), nullable=True, default="ARLS")
     lodge_code = Column(String(36), unique=True, index=True, nullable=False)
     lodge_number = Column(String(255))
     foundation_date = Column(Date, nullable=True)
@@ -502,10 +503,23 @@ VALID_SESSION_SUBTYPES = {
 }
 
 
+class Administration(BaseModel):
+    __tablename__ = "administrations"
+    id = Column(Integer, primary_key=True, index=True)
+    identifier = Column(String(255), nullable=False) # Ex: "Exercício Maçônico 2025-2027"
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    is_current = Column(Boolean, default=True)
+    
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    lodge = relationship("Lodge", backref="administrations")
+
+
 class MasonicSession(BaseModel):
     __tablename__ = "masonic_sessions"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
+    session_number = Column(Integer, nullable=True) # Número sequencial no exercício
     session_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
@@ -520,6 +534,9 @@ class MasonicSession(BaseModel):
     )
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="masonic_sessions")
+    
+    administration_id = Column(Integer, ForeignKey("administrations.id"), nullable=True)
+    administration = relationship("Administration", backref="sessions")
     
     # Novos campos
     agenda = Column(Text, nullable=True)
@@ -745,4 +762,39 @@ class DocumentSignature(BaseModel):
     
     document = relationship("Document", backref=backref("signature", uselist=False))
     signed_by = relationship("Member")
+
+
+class CommitteeTypeEnum(str, enum.Enum):
+    PERMANENT = "Permanente"
+    TEMPORARY = "Temporária"
+
+
+class Committee(BaseModel):
+    __tablename__ = "committees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    committee_type = Column(SQLAlchemyEnum(CommitteeTypeEnum, name="committee_type_enum"), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
+    president_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    
+    # Relationships
+    lodge = relationship("Lodge", backref="committees")
+    president = relationship("Member", foreign_keys=[president_id])
+    members = relationship("CommitteeMember", back_populates="committee", cascade="all, delete-orphan")
+
+
+class CommitteeMember(BaseModel):
+    __tablename__ = "committee_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    committee_id = Column(Integer, ForeignKey("committees.id"), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    role = Column(String(50), default="Membro") # Presidente, Membro
+
+    committee = relationship("Committee", back_populates="members")
+    member = relationship("Member")
 

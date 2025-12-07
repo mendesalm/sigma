@@ -182,7 +182,73 @@ def create_session(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Não é possível criar uma sessão com data retroativa."
         )
 
-    db_session = models.MasonicSession(**session_data.model_dump(exclude_unset=True), lodge_id=lodge_id)
+    # --- Lógica de Exercício Maçônico e Numeração ---
+    
+    # 1. Busca ou cria o Exercício Maçônico (Administration)
+    # Tenta encontrar uma administração que englobe a data da sessão
+    administration = (
+        db.query(models.Administration)
+        .filter(
+            models.Administration.lodge_id == lodge_id,
+            models.Administration.start_date <= session_data.session_date,
+            models.Administration.end_date >= session_data.session_date
+        )
+        .first()
+    )
+    
+    # Se não encontrar, cria uma padrão (ex: anual, começando em Junho ou Janeiro, ou apenas o ano corrente)
+    # Por padrão, vamos assumir um exercício de 2 anos se não existir, ou anual.
+    # O usuário sugeriu "Exercício Maçônico 2025-2027", então vamos tentar inferir ou criar um padrão.
+    # Vamos criar um exercício de 1 ano para simplificar se não existir, começando em Junho (comum na maçonaria) ou Jan.
+    # Melhor: Se não existir, cria um exercício que começa no dia da sessão e vai até 1 ou 2 anos depois, 
+    # ou pede para o usuário criar (mas aqui precisamos automatizar).
+    # Vamos criar um exercício "Ad-hoc" se não existir, cobrindo o ano da sessão.
+    
+    if not administration:
+        # Lógica simplificada: Exercício anual do ano da sessão
+        # Ou melhor: Exercício bienal começando em Junho dos anos ímpares (ex: GOB) ou conforme a loja.
+        # Vamos usar um padrão genérico: Ano da Sessão.
+        start_year = session_data.session_date.year
+        # Se for antes de Junho, pode ser que o exercício começou no ano anterior (se for calendário maçônico de Junho)
+        # Mas para simplificar, vamos criar um exercício anual Jan-Dez se não houver regra.
+        
+        # TODO: Criar configurações de loja para definir início do exercício.
+        
+        admin_start = date(start_year, 1, 1)
+        admin_end = date(start_year, 12, 31)
+        identifier = f"Exercício Maçônico {start_year}"
+        
+        administration = models.Administration(
+            identifier=identifier,
+            start_date=admin_start,
+            end_date=admin_end,
+            lodge_id=lodge_id,
+            is_current=True # Assume que o novo é o corrente se não tinha
+        )
+        db.add(administration)
+        db.commit()
+        db.refresh(administration)
+
+    # 2. Calcula o número da sessão se não fornecido
+    if session_data.session_number is None:
+        last_session = (
+            db.query(models.MasonicSession)
+            .filter(
+                models.MasonicSession.administration_id == administration.id,
+                models.MasonicSession.status != "CANCELADA"
+            )
+            .order_by(models.MasonicSession.session_number.desc())
+            .first()
+        )
+        
+        next_number = (last_session.session_number or 0) + 1
+        session_data.session_number = next_number
+
+    db_session = models.MasonicSession(
+        **session_data.model_dump(exclude_unset=True), 
+        lodge_id=lodge_id,
+        administration_id=administration.id
+    )
 
     db.add(db_session)
     db.commit()
@@ -406,7 +472,7 @@ def delete_session(db: Session, session_id: int, current_user_payload: dict) -> 
 
 
 async def generate_session_document(
-    db: Session, session_id: int, document_type: str, current_user_payload: dict, background_tasks: BackgroundTasks
+    db: Session, session_id: int, document_type: str, current_user_payload: dict, background_tasks: BackgroundTasks, extra_data: dict = None
 ) -> dict[str, str]:
     """
     Dispara a geração de um documento específico para uma sessão em background.
@@ -421,6 +487,11 @@ async def generate_session_document(
     elif document_type.upper() == "EDITAL":
         background_tasks.add_task(doc_gen_service.generate_edital_pdf_task, session_id, current_user_payload)
         return {"message": "Geração do Edital iniciada em background."}
+    elif document_type.upper() == "CERTIFICADO":
+        if not extra_data or "member_id" not in extra_data:
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID do membro é obrigatório para gerar certificado.")
+        background_tasks.add_task(doc_gen_service.generate_certificate_pdf_task, session_id, extra_data["member_id"], current_user_payload)
+        return {"message": "Geração do Certificado iniciada em background."}
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido.")
 
@@ -541,7 +612,18 @@ def update_manual_attendance(
 ) -> models.SessionAttendance:
     """
     Atualiza manualmente o status de presença de um membro.
+    Restrito a Chanceler, Webmaster ou SuperAdmin.
     """
+    # Valida Permissões
+    user_type = current_user_payload.get("user_type")
+    active_role = current_user_payload.get("active_role_name")
+    
+    if user_type == "member" and active_role != "Chanceler":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Chanceler pode atualizar manualmente a presença."
+        )
+
     # Valida acesso à sessão
     get_session_by_id(db, session_id, current_user_payload)
     
@@ -573,7 +655,18 @@ def register_visitor_attendance(
 ) -> models.SessionAttendance:
     """
     Registra a presença de um visitante. Cria o visitante se não existir.
+    Restrito a Chanceler, Webmaster ou SuperAdmin.
     """
+    # Valida Permissões
+    user_type = current_user_payload.get("user_type")
+    active_role = current_user_payload.get("active_role_name")
+    
+    if user_type == "member" and active_role != "Chanceler":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Chanceler pode registrar visitantes."
+        )
+
     # Valida acesso à sessão
     get_session_by_id(db, session_id, current_user_payload)
     
@@ -818,3 +911,74 @@ def perform_visitor_check_in(
     db.commit()
     db.refresh(attendance)
     return attendance
+
+
+def get_lodge_attendance_stats(
+    db: Session, lodge_id: int, period_months: int = 12
+) -> dict:
+    """
+    Calcula estatísticas de presença da loja para os últimos X meses.
+    """
+    # 1. Definir período
+    end_date = date.today()
+    start_date = end_date - timedelta(days=period_months * 30)
+    
+    # 2. Buscar sessões realizadas/encerradas no período
+    sessions = db.query(models.MasonicSession).filter(
+        models.MasonicSession.lodge_id == lodge_id,
+        models.MasonicSession.session_date >= start_date,
+        models.MasonicSession.session_date <= end_date,
+        models.MasonicSession.status.in_(["REALIZADA", "ENCERRADA"])
+    ).all()
+    
+    total_sessions = len(sessions)
+    if total_sessions == 0:
+        return {
+            "total_sessions": 0,
+            "average_attendance": 0.0,
+            "member_stats": []
+        }
+        
+    # 3. Calcular média de presença por sessão
+    total_attendance_count = 0
+    session_ids = [s.id for s in sessions]
+    
+    # Busca todas as presenças dessas sessões
+    all_attendances = db.query(models.SessionAttendance).filter(
+        models.SessionAttendance.session_id.in_(session_ids),
+        models.SessionAttendance.attendance_status == "Presente"
+    ).all()
+    
+    total_attendance_count = len(all_attendances)
+    average_attendance = total_attendance_count / total_sessions if total_sessions > 0 else 0
+    
+    # 4. Calcular estatísticas por membro
+    # Primeiro, buscar membros ativos da loja
+    active_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
+        models.MemberLodgeAssociation.lodge_id == lodge_id,
+        models.MemberLodgeAssociation.status == "Ativo"
+    ).all()
+    
+    member_stats = []
+    for member in active_members:
+        # Contar presenças deste membro nas sessões do período
+        member_presence_count = sum(1 for a in all_attendances if a.member_id == member.id)
+        
+        attendance_rate = (member_presence_count / total_sessions) * 100
+        
+        member_stats.append({
+            "member_id": member.id,
+            "member_name": member.full_name,
+            "total_sessions": total_sessions,
+            "present_sessions": member_presence_count,
+            "attendance_rate": round(attendance_rate, 2)
+        })
+        
+    # Ordenar por taxa de presença (decrescente)
+    member_stats.sort(key=lambda x: x["attendance_rate"], reverse=True)
+    
+    return {
+        "total_sessions": total_sessions,
+        "average_attendance": round(average_attendance, 2),
+        "member_stats": member_stats
+    }

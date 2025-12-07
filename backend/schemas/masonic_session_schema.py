@@ -13,6 +13,7 @@ from models.models import SessionTypeEnum, SessionSubtypeEnum
 
 class MasonicSessionBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=255, description="Título da sessão")
+    session_number: int | None = Field(None, description="Número da sessão no exercício")
     session_date: date = Field(..., description="Data da sessão")
     start_time: time | None = Field(None, description="Horário de início")
     end_time: time | None = Field(None, description="Horário de término")
@@ -154,6 +155,7 @@ class MasonicSessionCreate(MasonicSessionBase):
 class MasonicSessionUpdate(BaseModel):
     """Schema para atualização de sessão."""
     title: str | None = Field(None, min_length=3, max_length=255)
+    session_number: int | None = None
     session_date: date | None = None
     start_time: time | None = None
     end_time: time | None = None
@@ -231,3 +233,16 @@ class MasonicSessionResponse(MasonicSessionBase):
     documents: list[DocumentInDB] = []
 
     model_config = SettingsConfigDict(from_attributes=True)
+
+
+class MemberAttendanceStat(BaseModel):
+    member_id: int
+    member_name: str
+    total_sessions: int
+    present_sessions: int
+    attendance_rate: float
+
+class LodgeAttendanceStats(BaseModel):
+    total_sessions: int
+    average_attendance: float
+    member_stats: list[MemberAttendanceStat]

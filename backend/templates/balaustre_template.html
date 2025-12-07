@@ -180,10 +180,10 @@
                 À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
             </p>
             <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
-                A∴R∴B∴L∴S {{ lodge_name }} Nº {{ lodge_number }}
+                {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
             </p>
             <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
-                BALAÚSTRE DA _______ª SESSÃO DO EXERCÍCIO MAÇÔNICO
+                BALAÚSTRE DA {{ NumeroAta }}ª SESSÃO DO EXERCÍCIO MAÇÔNICO
             </p>
             <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 12pt; text-transform: uppercase;">
                 SESSÃO {{ ClasseSessao }} NO GRAU DE {{ GrauSessao }}
@@ -196,7 +196,7 @@
                 {{ custom_content.text | safe }}
             {% else %}
                 <p>
-                    Precisamente às {{ HoraInicioSessao }} do dia {{ DiaSessao }} da E∴ V∴, a Augusta, Respeitável e Benfeitora Loja Simbólica {{ lodge_name }} n° {{ lodge_number }}, {{ affiliation_text_2 }}, {{ affiliation_text_1 }}, reuniu-se em seu Templo, sito à {{ lodge_address }}, em Sessão {{ ClasseSessao }}, ficando a Loja assim constituída: 
+                    Precisamente às {{ HoraInicioSessao }} do dia {{ DiaSessao }} da E∴ V∴, a {{ lodge_title_formatted }} {{ lodge_name }} n° {{ lodge_number }}, {{ affiliation_text_2 }}, {{ affiliation_text_1 }}, reuniu-se em seu Templo, sito à {{ lodge_address }}, em Sessão {{ ClasseSessao }}, ficando a Loja assim constituída: 
                     <strong>V∴ Mestre</strong> {{ Veneravel }}; 
                     <strong>1° Vig∴</strong> {{ PrimeiroVigilante }}; 
                     <strong>2° Vig∴</strong> {{ SegundoVigilante }}; 

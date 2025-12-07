@@ -83,6 +83,8 @@ def remove_document(
     document_id: int, db: Session = Depends(get_db), current_user_payload: dict = Depends(get_current_user_payload)
 ):
     """
+    Endpoint para excluir um documento.
+    """
     return document_service.delete_document(db=db, document_id=document_id, current_user_payload=current_user_payload)
 
 
