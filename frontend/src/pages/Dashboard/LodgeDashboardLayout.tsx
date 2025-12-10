@@ -23,7 +23,6 @@ import { AuthContext } from '../../context/AuthContext';
 
 // Import Sigma Logo
 import SigmaLogo from '../../assets/images/SigmaLogo.png';
-import MasonicHomeIcon from '../../components/icons/MasonicHomeIcon';
 import {
   SquareCompassIcon,
   AttendanceBookIcon,
@@ -36,6 +35,12 @@ import {
   TempleColumnsIcon
 } from '../../components/icons/MasonicMenuIcons';
 
+// Import Local Icons
+import HomeIcon from '../../assets/icons/Home.png';
+import ObreiroIcon from '../../assets/icons/Obreiro.png';
+import SecretariaIcon from '../../assets/icons/Secretaria.png';
+import ChancelariaIcon from '../../assets/icons/Chancelaria.png';
+
 const MAIN_SIDEBAR_WIDTH = 120;
 const SECONDARY_SIDEBAR_WIDTH = 250;
 const HEADER_HEIGHT = 70; // Slightly taller for better logo fit
@@ -47,14 +52,14 @@ const MENU_CONFIG = [
   {
     id: 'home',
     label: 'Home',
-    icon: <MasonicHomeIcon sx={{ fontSize: 60 }} />,
+    icon: <img src={HomeIcon} alt="Home" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard',
     subItems: [] // HOME não possui menu secundário
   },
   {
     id: 'obreiro',
     label: 'Obreiro',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Macom-D.png`} alt="Obreiro" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    icon: <img src={ObreiroIcon} alt="Obreiro" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/obreiro',
     subItems: [
       { text: 'Meu Cadastro', path: '/dashboard/lodge-dashboard/obreiro/meu-cadastro', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
@@ -68,7 +73,7 @@ const MENU_CONFIG = [
   {
     id: 'secretario',
     label: 'Secretário',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Secretario-D.png`} alt="Secretário" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    icon: <img src={SecretariaIcon} alt="Secretário" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/secretario',
     subItems: [
       { text: 'Cadastro', path: '/dashboard/lodge-dashboard/secretario/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
@@ -80,7 +85,7 @@ const MENU_CONFIG = [
   {
     id: 'chanceler',
     label: 'Chanceler',
-    icon: <img src={`${API_URL}/storage/assets/images/icons/Chanceler-D.png`} alt="Chanceler" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    icon: <img src={ChancelariaIcon} alt="Chanceler" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/chanceler',
     subItems: [
       { text: 'Cadastro', path: '/dashboard/lodge-dashboard/chanceler/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
@@ -297,7 +302,16 @@ const LodgeDashboardLayout: React.FC = () => {
                     minWidth: 'auto', 
                     color: 'inherit',
                     mb: 0.5,
-                    '& svg': { fontSize: 28 }
+                    '& svg': { fontSize: 28 },
+                    '& img': {
+                      transition: 'all 0.3s ease',
+                      filter: activeCategory === item.id 
+                        ? `drop-shadow(0 0 8px ${theme.palette.primary.main})` 
+                        : 'grayscale(100%) opacity(0.7)'
+                    },
+                    '&:hover img': {
+                      filter: `drop-shadow(0 0 5px ${theme.palette.primary.main}) grayscale(0%) opacity(1)`
+                    }
                   }}
                 >
                   {item.icon}
