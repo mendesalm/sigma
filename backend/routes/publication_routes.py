@@ -5,7 +5,7 @@ from datetime import date
 from sqlalchemy import desc
 
 from database import get_db
-from models.models import Member, Rejection, Publication, MemberLodgeAssociation, Webmaster, RoleHistory, PublicationTypeEnum
+from models.models import Member, Publication, MemberLodgeAssociation, Webmaster, RoleHistory, PublicationTypeEnum
 from schemas.publication_schemas import PublicationResponse, PublicationCreate
 from services.publication_service import PublicationService
 from dependencies import get_current_active_user_with_permissions, UserContext
