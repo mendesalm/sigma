@@ -683,6 +683,12 @@ class Visit(BaseModel):
     __table_args__ = (UniqueConstraint("member_id", "session_id", name="_member_session_visit_uc"),)
 
 
+
+class NoticeTypeEnum(str, enum.Enum):
+    AVISO = "Aviso"
+    NOTICIA = "Notícia"
+
+
 class Notice(BaseModel):
     __tablename__ = "notices"
     id = Column(Integer, primary_key=True, index=True)
@@ -691,8 +697,13 @@ class Notice(BaseModel):
     expiration_date = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True)
     
+    type = Column(SQLAlchemyEnum(NoticeTypeEnum, name="notice_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=NoticeTypeEnum.AVISO)
+    
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    publication_id = Column(Integer, ForeignKey("publications.id"), nullable=True)
+    
     lodge = relationship("Lodge", backref="notices")
+    publication = relationship("Publication", backref="linked_notices")
 
 
 class PublicationTypeEnum(str, enum.Enum):
