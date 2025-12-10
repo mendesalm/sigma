@@ -60,7 +60,7 @@ const MENU_CONFIG = [
       { text: 'Meu Cadastro', path: '/dashboard/lodge-dashboard/obreiro/meu-cadastro', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
       { text: 'Minhas Presenças', path: '/dashboard/lodge-dashboard/obreiro/minhas-presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
       { text: 'Minhas Visitações', path: '/dashboard/lodge-dashboard/obreiro/minhas-visitacoes', icon: <VisitationIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Minhas Publicações', path: '/dashboard/lodge-dashboard/obreiro/minhas-publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Publicações', path: '/dashboard/lodge-dashboard/obreiro/minhas-publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
       { text: 'Meus Anúncios', path: '/dashboard/lodge-dashboard/obreiro/meus-anuncios', icon: <BellIcon sx={{ fontSize: 20 }} /> },
       { text: 'Meus Empréstimos', path: '/dashboard/lodge-dashboard/obreiro/meus-emprestimos', icon: <BooksIcon sx={{ fontSize: 20 }} /> },
     ]
