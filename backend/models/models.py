@@ -695,6 +695,43 @@ class Notice(BaseModel):
     lodge = relationship("Lodge", backref="notices")
 
 
+class PublicationTypeEnum(str, enum.Enum):
+    NOTICE = "Aviso"
+    NEWS = "Notícia"
+    ARTICLE = "Artigo"
+    OFFICIAL = "Boletim Oficial"
+
+
+class PublicationStatusEnum(str, enum.Enum):
+    DRAFT = "Rascunho"
+    PENDING = "Pendente"
+    PUBLISHED = "Publicado"
+    REJECTED = "Rejeitado"
+    ARCHIVED = "Arquivado"
+
+
+class Publication(BaseModel):
+    __tablename__ = "publications"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    excerpt = Column(Text, nullable=True)
+    
+    type = Column(SQLAlchemyEnum(PublicationTypeEnum, name="publication_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
+    status = Column(SQLAlchemyEnum(PublicationStatusEnum, name="publication_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=PublicationStatusEnum.PENDING)
+    
+    author_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
+    
+    published_at = Column(DateTime(timezone=True), nullable=True)
+    valid_until = Column(Date, nullable=True)
+    
+    cover_image = Column(String(512), nullable=True)
+    
+    author = relationship("Member", backref="publications")
+    lodge = relationship("Lodge", backref="publications")
+
+
 class Classified(BaseModel):
     __tablename__ = "classifieds"
     id = Column(Integer, primary_key=True, index=True)
