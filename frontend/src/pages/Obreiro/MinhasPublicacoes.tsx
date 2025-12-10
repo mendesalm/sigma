@@ -1,5 +1,19 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Card, CardActionArea, CardContent, Typography, Grid, Chip, CircularProgress, Alert, Container, Divider } from '@mui/material';
+import { 
+    Box, 
+    Card, 
+    CardActionArea, 
+    CardContent, 
+    Typography, 
+    Grid, 
+    Chip, 
+    CircularProgress, 
+    Alert, 
+    Container, 
+    Divider,
+    Tabs,
+    Tab
+} from '@mui/material';
 import { AuthContext } from '../../context/AuthContext';
 import { publicationService, Publication } from '../../services/publicationService';
 import IcTempoEstudos from '../../assets/images/Ic_Tempo_de_Estudos.png';
@@ -7,18 +21,18 @@ import IcTempoEstudos from '../../assets/images/Ic_Tempo_de_Estudos.png';
 // Ensure API URL is available
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+const PUBLICATION_TYPES = ['Todos', 'Aviso', 'Notícia', 'Artigo', 'Boletim Oficial'];
+
 const MinhasPublicacoes: React.FC = () => {
     const { user } = useContext(AuthContext) || {};
     const [publications, setPublications] = useState<Publication[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentTab, setCurrentTab] = useState('Todos');
 
     useEffect(() => {
         const fetchPublications = async () => {
             try {
-                // Determine lodge_id from user context. 
-                // We assume user.lodge_id is present if authenticated in lodge context.
-                // If not, we might need a fallback or check active association.
                 const lodgeId = user?.lodge_id || user?.association_id;
                 
                 if (!lodgeId) {
@@ -43,11 +57,17 @@ const MinhasPublicacoes: React.FC = () => {
     }, [user]);
 
     const handleOpenPdf = (filePath: string) => {
-        // filePath from DB is relative like /storage/...
-        // We prepend API_URL
         const url = `${API_URL}${filePath}`;
         window.open(url, '_blank');
     };
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+        setCurrentTab(newValue);
+    };
+
+    const filteredPublications = currentTab === 'Todos' 
+        ? publications 
+        : publications.filter(pub => pub.type === currentTab);
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -63,7 +83,23 @@ const MinhasPublicacoes: React.FC = () => {
                 </Box>
             </Box>
 
-            <Divider sx={{ mb: 4, borderColor: 'rgba(255,255,255,0.1)' }} />
+            <Tabs 
+                value={currentTab} 
+                onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{ 
+                    mb: 4, 
+                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    '& .MuiTab-root': { color: 'rgba(255,255,255,0.6)', fontWeight: 600 },
+                    '& .Mui-selected': { color: '#38bdf8 !important' },
+                    '& .MuiTabs-indicator': { backgroundColor: '#38bdf8' }
+                }}
+            >
+                {PUBLICATION_TYPES.map((type) => (
+                    <Tab key={type} label={type === 'Boletim Oficial' ? 'Boletins' : (type === 'Todos' ? type : `${type}s`)} value={type} />
+                ))}
+            </Tabs>
 
             {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
@@ -73,14 +109,18 @@ const MinhasPublicacoes: React.FC = () => {
                 </Box>
             ) : (
                 <Grid container spacing={3}>
-                    {publications.length === 0 ? (
+                    {filteredPublications.length === 0 ? (
                         <Grid item xs={12}>
                             <Box sx={{ textAlign: 'center', py: 5, color: 'rgba(255,255,255,0.5)' }}>
-                                <Typography variant="h6">Nenhuma publicação encontrada.</Typography>
+                                <Typography variant="h6">
+                                    {currentTab === 'Todos' 
+                                        ? "Nenhuma publicação encontrada." 
+                                        : `Nenhum ${currentTab.toLowerCase()} encontrado.`}
+                                </Typography>
                             </Box>
                         </Grid>
                     ) : (
-                        publications.map((pub) => (
+                        filteredPublications.map((pub) => (
                             <Grid item xs={12} sm={6} md={4} key={pub.id}>
                                 <Card 
                                     sx={{ 
@@ -125,7 +165,7 @@ const MinhasPublicacoes: React.FC = () => {
                                                 fontWeight: 600, 
                                                 lineHeight: 1.3,
                                                 mb: 1,
-                                                minHeight: '3.9em', // ~3 lines
+                                                minHeight: '3.9em',
                                                 display: '-webkit-box',
                                                 overflow: 'hidden',
                                                 WebkitBoxOrient: 'vertical',
