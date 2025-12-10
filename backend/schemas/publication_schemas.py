@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime, date
 from typing import Optional
 from enum import Enum
-from .models import PublicationTypeEnum, PublicationStatusEnum
+from models.models import PublicationTypeEnum, PublicationStatusEnum
 
 class PublicationBase(BaseModel):
     title: str

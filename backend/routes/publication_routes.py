@@ -4,12 +4,11 @@ from sqlalchemy.orm import Session
 from datetime import date
 from sqlalchemy import desc
 
-from ..database import get_db
-from ..models.models import Member, Publication, Role, MemberLodgeAssociation, Webmaster
-from ..schemas.publication_schemas import PublicationResponse, PublicationCreate
-from ..services.auth_service import get_current_user
-from ..services.publication_service import PublicationService
-from ..models.models import PublicationTypeEnum
+from database import get_db
+from models.models import Member, Publication, Role, MemberLodgeAssociation, Webmaster, RoleHistory, PublicationTypeEnum
+from schemas.publication_schemas import PublicationResponse, PublicationCreate
+from services.auth_service import get_current_user
+from services.publication_service import PublicationService
 
 router = APIRouter(prefix="/publications", tags=["Publications"])
 
@@ -45,7 +44,7 @@ def check_secretary_permissions(user: Member, lodge_id: int, db: Session):
     # This implies Role is tracked via 'RoleHistory' where end_date is None?
     # Let's check RoleHistory for this member + lodge + end_date is None.
     
-    from ..models.models import RoleHistory
+
     current_roles = db.query(RoleHistory).filter(
         RoleHistory.member_id == user.id,
         RoleHistory.lodge_id == lodge_id,

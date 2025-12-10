@@ -7,8 +7,8 @@ from fastapi import UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from ..models.models import Publication, PublicationStatusEnum, Member, RoleTypeEnum, Webmaster
-from ..schemas.publication_schemas import PublicationCreate, PublicationUpdate
+from models.models import Publication, PublicationStatusEnum, Member, RoleTypeEnum, Webmaster
+from schemas.publication_schemas import PublicationCreate, PublicationUpdate
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 STORAGE_ROOT = PROJECT_ROOT / "storage"
@@ -36,7 +36,7 @@ class PublicationService:
         # For strict 5MB check we can read chunk.
         
         # Get Lodge Number for storage path
-        from ..models.models import Lodge
+        from models.models import Lodge
         lodge = db.query(Lodge).filter(Lodge.id == lodge_id).first()
         if not lodge:
             raise HTTPException(status_code=404, detail="Lodge not found.")
