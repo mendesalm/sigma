@@ -714,19 +714,18 @@ class Publication(BaseModel):
     __tablename__ = "publications"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    content = Column(Text, nullable=False)
-    excerpt = Column(Text, nullable=True)
+    content = Column(Text, nullable=True) # Description/Observations
+    file_path = Column(String(512), nullable=False) # Path to PDF file
+    file_size = Column(Integer, nullable=True) # Size in bytes
     
     type = Column(SQLAlchemyEnum(PublicationTypeEnum, name="publication_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
-    status = Column(SQLAlchemyEnum(PublicationStatusEnum, name="publication_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=PublicationStatusEnum.PENDING)
+    status = Column(SQLAlchemyEnum(PublicationStatusEnum, name="publication_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=PublicationStatusEnum.PUBLISHED)
     
     author_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     
-    published_at = Column(DateTime(timezone=True), nullable=True)
+    published_at = Column(DateTime(timezone=True), server_default=func.now())
     valid_until = Column(Date, nullable=True)
-    
-    cover_image = Column(String(512), nullable=True)
     
     author = relationship("Member", backref="publications")
     lodge = relationship("Lodge", backref="publications")
