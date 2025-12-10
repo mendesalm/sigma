@@ -21,7 +21,7 @@ import IcTempoEstudos from '../../assets/images/Ic_Tempo_de_Estudos.png';
 // Ensure API URL is available
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-const PUBLICATION_TYPES = ['Todos', 'Aviso', 'Notícia', 'Artigo', 'Boletim Oficial'];
+const PUBLICATION_TYPES = ['Todos', 'Regulamentos', 'Atos', 'Documentos', 'Boletins', 'Artigos'];
 
 const MinhasPublicacoes: React.FC = () => {
     const { user } = useContext(AuthContext) || {};
@@ -97,7 +97,7 @@ const MinhasPublicacoes: React.FC = () => {
                 }}
             >
                 {PUBLICATION_TYPES.map((type) => (
-                    <Tab key={type} label={type === 'Boletim Oficial' ? 'Boletins' : (type === 'Todos' ? type : `${type}s`)} value={type} />
+                    <Tab key={type} label={type} value={type} />
                 ))}
             </Tabs>
 

@@ -40,7 +40,7 @@ const SecretarioPublicacoes: React.FC = () => {
     
     // Form State
     const [title, setTitle] = useState('');
-    const [type, setType] = useState('Aviso');
+    const [type, setType] = useState('Regulamentos');
     const [content, setContent] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -125,7 +125,7 @@ const SecretarioPublicacoes: React.FC = () => {
 
     const resetForm = () => {
         setTitle('');
-        setType('Aviso');
+        setType('Regulamentos');
         setContent('');
         setFile(null);
         setError(null);
@@ -253,7 +253,7 @@ const SecretarioPublicacoes: React.FC = () => {
                                 '& .MuiSelect-icon': { color: '#fff' }
                             }}
                         >
-                            {['Aviso', 'Notícia', 'Artigo', 'Boletim Oficial'].map((opt) => (
+                            {['Regulamentos', 'Atos', 'Documentos', 'Boletins', 'Artigos'].map((opt) => (
                                 <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                             ))}
                         </TextField>

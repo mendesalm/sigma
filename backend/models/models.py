@@ -696,10 +696,11 @@ class Notice(BaseModel):
 
 
 class PublicationTypeEnum(str, enum.Enum):
-    NOTICE = "Aviso"
-    NEWS = "Notícia"
-    ARTICLE = "Artigo"
-    OFFICIAL = "Boletim Oficial"
+    REGULATIONS = "Regulamentos"
+    ACTS = "Atos"
+    DOCUMENTS = "Documentos"
+    BULLETINS = "Boletins"
+    ARTICLE = "Artigos"
 
 
 class PublicationStatusEnum(str, enum.Enum):
