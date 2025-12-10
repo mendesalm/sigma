@@ -43,6 +43,7 @@ const theme = createTheme({
           backgroundColor: '#0b111b',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: 'none',
+          borderRadius: 0,
         },
       },
     },
@@ -51,6 +52,7 @@ const theme = createTheme({
         paper: {
           backgroundColor: '#0b111b',
           borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 0,
         },
       },
     },

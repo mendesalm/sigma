@@ -12,7 +12,6 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
-  useTheme, // Import useTheme
 } from '@mui/material';
 import logoSigma from "../assets/images/SigmaLogo.png";
 
@@ -25,7 +24,7 @@ const LoginPage: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
-  const theme = useTheme(); // Initialize useTheme
+
 
   const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -57,37 +56,25 @@ const LoginPage: React.FC = () => {
     }
   };
 
+
+
   return (
     <Box
       sx={{
-        color: "text.primary", // Revert to theme's primary text color
-        minHeight: "100vh", // Ensure the entire page takes at least full viewport height
+        color: "text.primary", 
+        minHeight: "100vh", 
         display: "flex",
         flexDirection: "column",
-        backgroundImage: `url('/src/assets/images/bg.jpg')`, // Use Sigma.jpg as background
-        backgroundSize: "cover", // Cover the entire background
-        backgroundPosition: "center", // Center the background image
-        backgroundRepeat: "no-repeat", // Do not repeat the image
-        backgroundAttachment: "fixed", // Keep the background fixed during scroll
-        position: 'relative', // Needed for absolute positioning of the blur box
-        pt: { xs: 7, sm: 8, md: 9 }, // Account for header height
+        backgroundImage: `url('/src/assets/images/bg.jpg')`, 
+        backgroundSize: "cover", 
+        backgroundPosition: "center", 
+        backgroundRepeat: "no-repeat", 
+        backgroundAttachment: "fixed", 
+        position: 'relative', 
+        pt: { xs: 10, md: 12 }, // Adjusted for new header height + spacing
       }}
     >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: theme.mixins.toolbar.minHeight, // Use toolbar height
-          [theme.breakpoints.up('sm')]: {
-            height: (theme.mixins.toolbar[theme.breakpoints.up('sm')] as any)?.minHeight || theme.mixins.toolbar.minHeight,
-          },
-          backdropFilter: 'blur(5px)', // Apply blur effect
-          backgroundColor: 'rgba(0, 0, 0, 0.1)', // Subtle overlay
-          zIndex: theme.zIndex.drawer, // Ensure it's above content but below app bar
-        }}
-      />
+      {/* Blur effect box removed */}
       <Container component="main" maxWidth="xs" sx={{
         margin: 'auto',
         display: 'flex',

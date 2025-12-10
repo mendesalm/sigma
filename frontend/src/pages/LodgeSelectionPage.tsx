@@ -23,7 +23,7 @@ const LodgeSelectionPage: React.FC = () => {
   };
 
   return (
-    <Container>
+    <Container sx={{ mt: { xs: 12, md: 14 } }}>
       <Typography variant="h4" gutterBottom>
         Selecione uma Loja ou Obediência
       </Typography>

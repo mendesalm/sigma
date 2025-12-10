@@ -231,6 +231,36 @@ class DocumentGenerationService:
         import asyncio
         return await asyncio.to_thread(self._generate_pdf_sync, html_content)
 
+    def _format_full_address(self, lodge: models.Lodge) -> str:
+        """Helper para formatar o endereço completo da loja."""
+        parts = []
+        
+        # Rua e Número
+        street = (lodge.street_address or "").strip()
+        number = (lodge.street_number or "").strip()
+        
+        if street:
+            address_part = f"{street}, {number}" if number else street
+            parts.append(address_part)
+        elif number:
+             parts.append(number)
+
+        # Bairro
+        if lodge.neighborhood:
+            parts.append(lodge.neighborhood.strip())
+            
+        # Oriente de Cidade - UF
+        city = (lodge.city or "").strip()
+        state = (lodge.state or "").strip()
+        
+        if city:
+            city_part = f"oriente de {city}"
+            if state:
+                city_part += f" - {state}"
+            parts.append(city_part)
+            
+        return ", ".join(parts)
+
     def _calculate_tronco_text(self, db: Session, lodge_id: int, session_date: date) -> str:
         """Calcula o valor total do Tronco para a data da sessão e retorna o texto formatado."""
         total_tronco = (
@@ -300,14 +330,59 @@ class DocumentGenerationService:
         previous_session_date_formatted = (
             previous_session.session_date.strftime("%d/%m/%Y") if previous_session else "N/D"
         )
+        
+        # Dados da Administração (Exercício Maçônico)
+        # Dados da Administração (Exercício Maçônico)
+        exercicio_maconico = "N/D"
+        if session.administration:
+            identifier = session.administration.identifier
+            # Tenta extrair apenas o período se começar com "Exercício Maçônico "
+            prefix = "Exercício Maçônico "
+            if identifier.startswith(prefix):
+                 raw_period = identifier[len(prefix):]
+                 # Heurística: Se for apenas um ano (ex: "2025"), converte para biênio para display
+                 if len(raw_period.strip()) == 4 and raw_period.strip().isdigit():
+                     start_yr = int(raw_period.strip())
+                     exercicio_maconico = f"{start_yr}-{start_yr+2}"
+                 else:
+                     exercicio_maconico = raw_period
+            else:
+                 exercicio_maconico = identifier
+        else:
+             # Fallback simples baseado no ano -> Agora Biênio Padrão
+             start_yr = session.session_date.year
+             exercicio_maconico = f"{start_yr}-{start_yr+2}"
 
         officers = get_lodge_officers_at_date(db, lodge.id, session.session_date)
-        attendees = get_attendees_for_session(db, session.id)
+        attendees = get_attendees_for_session(db, session.id) or []
+        
+        # Calculate counts (Simplificando: attendees é uma lista de strings "Nome (Role)" ou só nomes)
+        # TODO: Melhorar get_attendees_for_session para retornar objetos estruturados se precisar distinguir melhor
+        # Por enquanto, assumimos que visitantes são explicitamente marcados ou contamos tudo como irmãos se não tiver distinção clara
+        # Mas o ideal é contar via banco na tabela SessionAttendance
+        
+        # Recalculando contagem via DB para precisão
+        attendance_records = db.query(models.SessionAttendance).filter(
+            models.SessionAttendance.session_id == session.id,
+            models.SessionAttendance.attendance_status == 'Presente'
+        ).all()
+        
+        member_count = 0
+        visitor_count = 0
+        for record in attendance_records:
+            if record.member_id:
+                member_count += 1
+            elif record.visitor_id:
+                visitor_count += 1
+        
+        # Se não houver registros (sessão nova), usa 0
+        num_irm_quadro = member_count
+        num_visitantes = visitor_count
 
         # Formatação de datas
         months_pt = {
-            1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
-            7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+            1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril", 5: "maio", 6: "junho",
+            7: "julho", 8: "agosto", 9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
         }
         
         day = session.session_date.day
@@ -329,14 +404,16 @@ class DocumentGenerationService:
         affiliation_text_2 = ""
         ob_name_lower = obedience_name.lower()
         
-        if "grande oriente do brasil" in ob_name_lower:
-            affiliation_text_1 = f"Federada ao {obedience_name}"
-            # TODO: Obter sub-obediência corretamente do banco se disponível
-            affiliation_text_2 = f"Jurisdicionada ao Grande Oriente Estadual" 
+        if obedience and obedience.parent_obedience:
+            # Tem obediência pai (Ex: GOB -> GOB-GO)
+            # Federada ao Pai (Nacional), Jurisdicionada ao Filho (Estadual)
+            affiliation_text_1 = f"Federada ao {obedience.parent_obedience.name}"
+            affiliation_text_2 = f"Jurisdicionada ao {obedience.name}"
         elif "grande loja" in ob_name_lower:
             affiliation_text_1 = f"Confederada à {obedience_name}"
-            affiliation_text_2 = ""
+            affiliation_text_2 = "Jurisdicionada à CMSB" # Suposição comum, mas pode deixar vazio se não souber
         else:
+            # Caso padrão ou sem pai (Ex: GOB Nacional direto ou Potência Independente)
             affiliation_text_1 = f"Federada ao {obedience_name}"
             affiliation_text_2 = ""
 
@@ -347,30 +424,40 @@ class DocumentGenerationService:
             previous_session.session_date if previous_session else None, 
             session.session_date
         )
-        
-        expediente_recebido = session.received_expedients or auto_expediente or "Nada constou."
 
-        # Montagem do dicionário de dados
+        expediente_recebido = session.received_expedients or auto_expediente or "nada constou."
+        
         return {
-            # Campos Básicos
-            "session_id": session.id,
-            "NumeroAta": session.session_number or session.id, # Usa session_number se disponível, senão ID
-            "ClasseSessao": f"{session.type.value if session.type else ''} {session.subtype.value if session.subtype else ''}".strip().upper(),
-            "HoraInicioSessao": session_start_time_formatted,
-            "DiaSessao": session_date_full,
-            "SessaoAnterior": previous_session_date_formatted,
-            
-            # Loja
+            # Meta-dados básicos para uso no template e texto
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
-            "lodge_title_formatted": "∴".join(list(lodge.lodge_title or "ARLS")) + "∴",
-            "lodge_address": f"{lodge.street_address or ''}, {lodge.street_number or ''} - {lodge.neighborhood or ''}, Oriente de {lodge.city or ''} - {lodge.state or ''}",
-            "lodge_city": lodge.city,
+            "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",
+            "lodge_address": self._format_full_address(lodge),
+            "obedience_name": obedience.name if obedience else "",
+            "DiaSessao": session_date_full,
+            "HoraInicioSessao": session_start_time_formatted,
+            "SessaoAnterior": previous_session_date_formatted,
+            
+            # Data Atual (Emissão)
+            "current_date_day": date.today().day,
+            "current_date_month": months_pt[date.today().month],
+            "current_date_year": date.today().year,
+
             "affiliation_text_1": affiliation_text_1,
             "affiliation_text_2": affiliation_text_2,
+            "session_number": session.session_number or "_______",
+            "exercicio_maconico": exercicio_maconico or "_______",
+            # Assuming degree/type logic is part of title or needs to be separate.
+            # Adding helpful fields if needed for the custom header user wants.
+            "session_type": session.type.value.upper() if session.type else "SESSÃO",
+            "full_session_title": session.title.upper(), # Compatibilidade
             
+            # Aliases para facilitar templates
+            "veneravel_mestre_name": officers.get("Venerável Mestre") or "___________________",
+            "secretario_name": officers.get("Secretário") or "___________________",
+
             # Oficiais (Mapeamento para o template novo)
-            "GrauSessao": "APRENDIZ", # Placeholder fixo por enquanto
+            "session_title_formatted": session.title.upper(), # Usa o título real da sessão em caixa alta
             "Veneravel": officers.get("Venerável Mestre") or "___________________",
             "PrimeiroVigilante": officers.get("Primeiro Vigilante") or "___________________",
             "SegundoVigilante": officers.get("Segundo Vigilante") or "___________________",
@@ -378,17 +465,20 @@ class DocumentGenerationService:
             "Secretario": officers.get("Secretário") or "___________________",
             "Tesoureiro": officers.get("Tesoureiro") or "___________________",
             "Chanceler": officers.get("Chanceler") or "___________________",
+            "Hospitaleiro": officers.get("Hospitaleiro") or "___________________",
             
             # Conteúdo
             "ExpedienteRecebido": expediente_recebido,
-            "ExpedienteExpedido": session.sent_expedients or "Nada constou.",
-            "SacoProposta": "Foi aberto pelo V∴ Mestre e nada recolheu.", # Placeholder dinâmico futuro
-            "OrdemDia": session.agenda or "Não houve matéria para a Ordem do Dia.",
-            "TempoInstrucao": f"Preenchido pelo Ir∴ {study_director_name}" if study_director_name else "Suprimido.",
-            "Tronco": self._calculate_tronco_text(db, lodge.id, session.session_date),
-            "Palavra": "Reinou o silêncio.", # Placeholder
+            "ExpedienteExpedido": session.sent_expedients or "nada constou.",
+            "SacoProposta": "foi aberto pelo V∴ Mestre e recolheu [XX] peças que, após decifradas pelo Ven∴ Mestre, trataram se de a) [XX] Certificados de presenças de Irmãos do quadro em sessões de lojas coirmãs; b) Ofício....; c) Prancha....;", # Placeholder dinâmico
+            "OrdemDia": session.agenda or "foram trazidos à discussão os seguintes assuntos: a) Filiação... Regularização... c)Posse....; d) Prévia...; e) Proposta...;",
+            "TempoInstrucao": f"preenchido pelo Ir∴ {study_director_name}, abordou o tema “Tema do Tempo de Instrução”." if study_director_name else "preenchido pelo Irmão [Nome], abordou o tema “[Tema]”.",
+            "Tronco": self._calculate_tronco_text(db, lodge.id, session.session_date), 
+            "Palavra": "na Coluna do Sul, o Ir∴ Chanc∴ anunciou os aniversariantes da semana; informou que o jantar do dia foi oferecido pelo Ir∴ Fulano e pela Cunhada Cicrana e que o próximo jantar seria oferecido pelo Ir∴ Beltrano e pela Cunhada Beltrana; descrição breve das demais manifestações individuais. Na Coluna do Norte, o Ir∴ Tes∴ anunciou o Tronco de Beneficência que rendeu a medalha cunhada de R$ [Valor] ([Valor Extenso]); descrição breve das demais manifestações individuais. No Oriente, descrição breve das eventuais manifestações individuais e das considerações do Ven Mestre. Não havendo mais quem desejasse fazer uso da palavra, o Ven∴ Mestre a transferiu para o Irmão Orador para as conclusões finais e saudação aos IIr∴ visitantes. O Ir∴ Or∴ agradeceu a presença dos IIr.´. visitantes, considerou que a Sessão transcorreu em conformidade com as Leis e Regulamentos da Ordem e devolveu a palavra ao Ven∴ Mestre para o encerramento da Sessão.",
             "Encerramento": session_end_time_formatted,
             "DataAssinatura": session_date_full,
+            "SecretarioNome": officers.get("Secretário") or "___________________",
+            "CidadeLoja": lodge.city,
             
             # Imagens
             "header_image": self._get_lodge_logo(lodge.id),
@@ -437,39 +527,76 @@ class DocumentGenerationService:
 
             # Se não houver rascunho, gera o texto padrão
             officers = {
-                "Venerável Mestre": session_data.get("veneravel_mestre_name"),
-                "1º Vigilante": session_data.get("primeiro_vigilante_name"),
-                "2º Vigilante": session_data.get("segundo_vigilante_name"),
-                "Orador": session_data.get("orador_name"),
-                "Secretário": session_data.get("secretario_name"),
-                "Tesoureiro": session_data.get("tesoureiro_name"),
-                "Chanceler": session_data.get("chanceler_name"),
-                "Hospitaleiro": session_data.get("hospitaleiro_name"),
+                "Venerável Mestre": session_data.get("Veneravel"),
+                "1º Vigilante": session_data.get("PrimeiroVigilante"),
+                "2º Vigilante": session_data.get("SegundoVigilante"),
+                "Orador": session_data.get("Orador"),
+                "Secretário": session_data.get("Secretario"),
+                "Tesoureiro": session_data.get("Tesoureiro"),
+                "Chanceler": session_data.get("Chanceler"),
+                "Hospitaleiro": session_data.get("Hospitaleiro"),
             }
             
-            present_officers = [f"{role}: {name}" for role, name in officers.items() if name]
+            present_officers = [f"{role}: {name}" for role, name in officers.items() if name and "___" not in name]
             officers_text = ", ".join(present_officers)
             
             attendees = session_data.get("attendees", [])
             attendees_text = ", ".join(attendees) if attendees else "Nenhum registro de presença."
             
+            # Match the requested "First Section" text structure
             text = (
-                f"Aos {session_data['session_date_day']} dias do mês de {session_data['session_date_month']} "
-                f"do ano de {session_data['session_date_year']} (E∴V∴), reuniram-se os obreiros da "
-                f"{session_data['lodge_name']} nº {session_data['lodge_number']}, "
-                f"ao Oriente de {session_data['lodge_city']}, sob a presidência do Venerável Mestre "
-                f"{session_data['veneravel_mestre_name'] or '___________________'}.\n\n"
-                f"Oficiais presentes: {officers_text}.\n\n"
-                f"Irmãos e Visitantes presentes: {attendees_text}.\n\n"
-                f"A sessão foi aberta ritualisticamente às {session_data['session_start_time_formatted']} horas.\n\n"
-                f"EXPEDIENTE:\n{session_data.get('agenda') or 'Sem expediente.'}\n\n"
-                f"ORDEM DO DIA:\nDiscussão e votação de assuntos administrativos.\n\n"
-                f"A sessão foi encerrada às {session_data['session_end_time_formatted']} horas, em paz e harmonia."
+                f"<p>"
+                f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
+                f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
+                f"{session_data['affiliation_text_1']}, {session_data['affiliation_text_2']}, "
+                f"reuniu-se em seu Templo, sito à {session_data['lodge_address']}, em {session_data['session_title_formatted']}, "
+                f"ficando a Loja assim constituída: "
+                f"<strong>Venerável Mestre</strong> {session_data['Veneravel']}; "
+                f"<strong>Primeiro Vigilante</strong> {session_data['PrimeiroVigilante']}; "
+                f"<strong>Segundo Vigilante</strong> {session_data['SegundoVigilante']}; "
+                f"<strong>Orador</strong> {session_data['Orador']}; "
+                f"<strong>Secretário</strong> {session_data['Secretario']}; "
+                f"<strong>Tesoureiro</strong> {session_data['Tesoureiro']} e "
+                f"<strong>Chanceler</strong> {session_data['Chanceler']}, "
+                f"sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro. "
+                f"<strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {session_data['SessaoAnterior']}, sem emendas. "
+                f"<strong>EXPEDIENTE RECEBIDO:</strong> {session_data['ExpedienteRecebido']} "
+                f"<strong>EXPEDIENTE EXPEDIDO:</strong> {session_data['ExpedienteExpedido']} "
+                f"<strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {session_data['SacoProposta']} "
+                f"<strong>ORDEM DO DIA:</strong> {session_data['OrdemDia']} "
+                f"<strong>TEMPO DE INSTRUÇÃO:</strong> {session_data['TempoInstrucao']} "
+                f"<strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Ir∴ Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno. "
+                f"<strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {session_data['Palavra']} "
+                f"<strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
+                f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado. "
+                f"</p>"
             )
+            
             
             return {"text": text, "data": session_data}
         finally:
             db.close()
+
+    def _remove_duplicate_date_from_text(self, html_text: str) -> str:
+        """
+        Remove linhas de data duplicadas do custom_text.
+        Remove parágrafos que contenham 'Oriente de' para evitar duplicação
+        com a linha de data do footer do template.
+        """
+        import re
+        
+        # Pattern para encontrar parágrafos completos com "Oriente de"
+        # Captura <p>...</p> ou <div>...</div> que contenha "Oriente de"
+        patterns = [
+            r'<p[^>]*>.*?Oriente\s+de.*?</p>',
+            r'<div[^>]*>.*?Oriente\s+de.*?</div>',
+        ]
+        
+        cleaned_text = html_text
+        for pattern in patterns:
+            cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE | re.DOTALL)
+        
+        return cleaned_text
 
     async def _prepare_balaustre_html(self, session_id: int, custom_content: dict = None) -> tuple[str, dict]:
         db = SessionLocal()
@@ -482,14 +609,18 @@ class DocumentGenerationService:
             
             if custom_content:
                 if 'text' in custom_content:
-                    session_data['custom_text'] = custom_content['text']
+                    # Apply filter to remove duplicate date lines
+                    filtered_text = self._remove_duplicate_date_from_text(custom_content['text'])
+                    session_data['custom_text'] = filtered_text
                 if 'styles' in custom_content:
                     session_data['styles'] = custom_content['styles']
             else:
                 saved_draft = self.load_balaustre_draft(session_id)
                 if saved_draft:
                     if 'text' in saved_draft:
-                        session_data['custom_text'] = saved_draft['text']
+                        # Apply filter to remove duplicate date lines
+                        filtered_text = self._remove_duplicate_date_from_text(saved_draft['text'])
+                        session_data['custom_text'] = filtered_text
                     if 'styles' in saved_draft:
                         session_data['styles'] = saved_draft['styles']
 
@@ -691,8 +822,8 @@ class DocumentGenerationService:
         
         # Formatação de datas
         months_pt = {
-            1: "Janeiro", 2: "Fevereiro", 3: "Março", 4: "Abril", 5: "Maio", 6: "Junho",
-            7: "Julho", 8: "Agosto", 9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro"
+            1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril", 5: "maio", 6: "junho",
+            7: "julho", 8: "agosto", 9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"
         }
         
         day = session.session_date.day

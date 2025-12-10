@@ -100,6 +100,7 @@ const DashboardLayout: React.FC = () => {
           backgroundColor: 'rgba(18, 18, 18, 0.8)',
           backdropFilter: 'blur(10px)',
           borderBottom: `1px solid ${theme.palette.divider}`,
+          borderRadius: 0,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', width: drawerWidth - 24 }}>

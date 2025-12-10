@@ -36,7 +36,7 @@ const DocumentValidation: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
+    <Container maxWidth="sm" sx={{ mt: { xs: 12, md: 14 } }}>
       <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
         {error ? (
           <Box>

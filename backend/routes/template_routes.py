@@ -106,7 +106,7 @@ async def preview_template(
         html_content = service.env.from_string(template_data.content).render(mock_data)
         
         # Gera o PDF (agora síncrono com WeasyPrint)
-        pdf_bytes = service._generate_pdf_from_html(html_content)
+        pdf_bytes = await service._generate_pdf_from_html(html_content)
         
         return Response(content=pdf_bytes, media_type="application/pdf")
     except Exception as e:

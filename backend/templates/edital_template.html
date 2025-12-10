@@ -1,100 +1,143 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Edital de Convocação</title>
-    <style>
-      @page {
-        margin: 2cm;
+
+<head>
+  <meta charset="UTF-8">
+  <title>Edital de Convocação</title>
+  <style>
+    @page {
+      margin: 2cm 2cm 2cm 3cm;
+
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-family: Arial, sans-serif;
+        font-size: 9pt;
       }
-      body {
-        font-family: "Times New Roman", Times, serif;
-        font-size: 12pt;
-        line-height: 1.5;
-        text-align: justify;
-      }
-      .header {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-      .header img {
-        width: 80px;
-        height: auto;
-      }
-      .title {
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 14pt;
-        margin-top: 10px;
-      }
-      .subtitle {
-        font-weight: bold;
-        margin-bottom: 20px;
-      }
-      .content {
-        margin-bottom: 40px;
-        text-indent: 1.5cm;
-      }
-      .agenda {
-        margin: 20px 0;
-        padding-left: 1.5cm;
-      }
-      .signatures {
-        margin-top: 60px;
-        width: 100%;
-        text-align: center;
-      }
-      .signature-line {
-        border-top: 1px solid #000;
-        width: 60%;
-        margin: 0 auto;
-        padding-top: 5px;
-      }
-      .footer {
-        text-align: center;
-        font-size: 10pt;
-        margin-top: 40px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <div class="title">A.R.L.S. {{ lodge_name }} N° {{ lodge_number }}</div>
-      <div class="subtitle">{{ obedience_name }}</div>
-      <h2 style="margin-top: 30px;">EDITAL DE CONVOCAÇÃO</h2>
+    }
+
+    body {
+      font-family: "Arial", sans-serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #000;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header img {
+      width: 80px;
+      height: auto;
+      margin-bottom: 15px;
+    }
+
+    .header-text {
+      line-height: 1.2;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .address-text {
+      line-height: 1.2;
+      font-size: 10pt;
+      font-weight: normal;
+      margin-top: 5px;
+    }
+
+    .title {
+      font-size: 16pt;
+      font-weight: bold;
+      text-align: center;
+      margin: 50px 0;
+      text-decoration: underline;
+      text-transform: uppercase;
+    }
+
+    .content {
+      margin: 0 0.5cm;
+      text-align: justify;
+      line-height: 1.6;
+    }
+
+    .agenda-block {
+      margin: 30px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+    }
+
+    .date-line {
+      margin-top: 80px;
+      text-align: right;
+    }
+
+    .signatures {
+      margin-top: 100px;
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+      page-break-inside: avoid;
+    }
+
+    .signature-block {
+      display: table-cell;
+      text-align: center;
+      vertical-align: top;
+    }
+
+    .signature-line {
+      border-top: 1px solid #000;
+      width: 80%;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <img src="{{ header_image }}" alt="Logo">
+    <div class="header-text">{{ obedience_name }}</div>
+    <div class="header-text">{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
+    <div class="address-text">{{ lodge_address }}</div>
+  </div>
+
+  <div class="title">EDITAL DE CONVOCAÇÃO</div>
+
+  <div class="content">
+    <p>
+      De ordem do Venerável Mestre, Irmão <strong>{{ veneravel_mestre_name }}</strong>, cumpro o dever de CONVOCAR todos
+      os Obreiros do Quadro desta Augusta e Respeitável Loja para a <strong>{{ full_session_title }}</strong>, a
+      realizar-se no dia <strong>{{ DiaSessao }}</strong>, às <strong>{{ HoraInicioSessao }}</strong>, em nosso Templo.
+    </p>
+
+    <div class="agenda-block">
+      <p><strong>ORDEM DO DIA:</strong></p>
+      <p style="white-space: pre-line;">{{ OrdemDia }}</p>
     </div>
 
-    <div class="content">
-      <p>
-        O Venerável Mestre da Augusta e Respeitável Loja Simbólica <strong>{{ lodge_name }}</strong>, 
-        nº {{ lodge_number }}, jurisdicionada à {{ obedience_name }}, no uso de suas atribuições legais, 
-        vem, por meio deste, CONVOCAR todos os Obreiros do Quadro para a <strong>Sessão {{ session_title }}</strong>, 
-        a realizar-se no dia <strong>{{ session_date_formatted }}</strong>, às <strong>{{ session_start_time_formatted }}</strong>, 
-        em seu Templo situado no Oriente de {{ lodge_city }}.
-      </p>
+    <p>
+      Contamos com a presença e a pontualidade de todos os Irmãos para o brilhantismo dos nossos trabalhos.
+    </p>
+  </div>
 
-      {% if agenda %}
-      <div class="agenda">
-        <p><strong>ORDEM DO DIA:</strong></p>
-        <p>{{ agenda|replace('\n', '<br>')|safe }}</p>
-      </div>
-      {% endif %}
+  <div class="date-line">
+    Oriente de {{ CidadeLoja }}, {{ current_date_day }} de {{ current_date_month }} de {{ current_date_year }}.
+  </div>
 
-      <p>
-        Contamos com a presença e pontualidade de todos para o brilhantismo dos nossos trabalhos.
-      </p>
+  <div class="signatures">
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <strong>{{ secretario_name }}</strong><br>
+      Secretário
     </div>
-
-    <div class="signatures">
-      <p>Dado e traçado no Oriente de {{ lodge_city }}, aos {{ current_date_day }} dias do mês de {{ current_date_month }} de {{ current_date_year }}.</p>
-      
-      {% if veneravel_mestre_name %}
-      <div style="margin-top: 50px;">
-        <div class="signature-line"></div>
-        <p><strong>{{ veneravel_mestre_name }}</strong><br />Venerável Mestre</p>
-      </div>
-      {% endif %}
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <strong>{{ veneravel_mestre_name }}</strong><br>
+      Venerável Mestre
     </div>
-  </body>
+  </div>
+</body>
+
 </html>

@@ -16,14 +16,18 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-  Autocomplete
+  Autocomplete,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  FormLabel
 } from '@mui/material';
 import api from '../../services/api';
 import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types';
 
 const SessionForm = () => {
   const [formData, setFormData] = useState({
-    title: 'Sessão Ordinária no Grau de Aprendiz',
+    title: '',
     session_number: '',
     session_date: '',
     start_time: '',
@@ -35,6 +39,11 @@ const SessionForm = () => {
     received_expedients: '',
     study_director_id: '',
   });
+
+  // Novos estados para controle lógico do título
+  const [degree, setDegree] = useState<string>('Aprendiz');
+  const [ingressType, setIngressType] = useState<string[]>([]);
+  
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +51,6 @@ const SessionForm = () => {
   const { id } = useParams();
   const location = useLocation();
 
-
-  // Determine base path based on current location
   const getBasePath = () => {
     const path = location.pathname;
     if (path.includes('secretario/sessoes')) {
@@ -101,7 +108,6 @@ const SessionForm = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch members for the dropdown
         const membersResponse = await api.get('/members/');
         setMembers(membersResponse.data);
 
@@ -121,8 +127,9 @@ const SessionForm = () => {
             received_expedients: session.received_expedients || '',
             study_director_id: session.study_director_id || '',
           });
+          // Tentar inferir grau ou tipo de ingresso pelo título seria complexo e propenso a erro 
+          // sem persistir esses dados, então mantemos os defaults do state ou deixamos o usuário reajustar se necessário
         } else {
-          // New session: fetch lodge details for default time
           const token = localStorage.getItem('token');
           if (token) {
             try {
@@ -151,6 +158,54 @@ const SessionForm = () => {
     fetchInitialData();
   }, [id]);
 
+  // Lógica de Geração Automática de Título
+  useEffect(() => {
+    let newTitle = '';
+    const { type, subtype } = formData;
+
+    if (type === 'Ordinária') {
+      switch (subtype) {
+        case 'Regular':
+          newTitle = `Sessão Ordinária no Grau de ${degree} Maçom`;
+          break;
+        case 'Administrativa':
+          newTitle = 'Sessão Ordinária Administrativa';
+          break;
+        case 'Finanças':
+          newTitle = 'Sessão Ordinária de Finanças';
+          break;
+        case 'Filiação e Regularização':
+          if (ingressType.length === 0) {
+            newTitle = 'Sessão Ordinária de Filiação e Regularização'; // Default ou aguardando seleção
+          } else if (ingressType.includes('Filiação') && ingressType.includes('Regularização')) {
+            newTitle = 'Sessão Ordinária de Filiação e Regularização';
+          } else if (ingressType.includes('Filiação')) {
+            newTitle = 'Sessão Ordinária de Filiação';
+          } else if (ingressType.includes('Regularização')) {
+             newTitle = 'Sessão Ordinária de Regularização';
+          }
+          break;
+        case 'Eleitoral':
+          newTitle = 'Sessão Eleitoral';
+          break;
+        case 'Banquete Ritualístico':
+          newTitle = 'Sessão de Banquete Ritualístico';
+          break;
+        default:
+          newTitle = `Sessão Ordinária - ${subtype}`;
+      }
+    } else if (type === 'Magna') {
+      newTitle = `Sessão Magna de ${subtype}`;
+      // Ajustes finos se necessário para concordância não cobertos genericamente
+    } else if (type === 'Extraordinária') {
+      // Regra: 'Tipo de Sessão' + 'de' + 'Subtipo'
+      newTitle = `Sessão Extraordinária de ${subtype}`;
+    }
+
+    setFormData(prev => ({ ...prev, title: newTitle }));
+  }, [formData.type, formData.subtype, degree, ingressType]);
+
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
@@ -163,11 +218,25 @@ const SessionForm = () => {
     const { name, value } = event.target;
     setFormData((prev) => {
       const newData = { ...prev, [name]: value };
-      // Reset subtype if type changes
       if (name === 'type') {
-        newData.subtype = '';
+        newData.subtype = ''; // Reset subtype when type changes
       }
       return newData;
+    });
+  };
+
+  const handleDegreeChange = (event: SelectChangeEvent) => {
+    setDegree(event.target.value);
+  };
+
+  const handleIngressTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.name;
+    setIngressType(prev => {
+      if (prev.includes(value)) {
+        return prev.filter(item => item !== value);
+      } else {
+        return [...prev, value];
+      }
     });
   };
 
@@ -186,6 +255,7 @@ const SessionForm = () => {
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
       study_director_id: formData.study_director_id ? parseInt(formData.study_director_id) : null,
+      // 'degree' e 'ingressType' não são enviados ao backend, servindo apenas para compor o título
     };
 
     try {
@@ -225,17 +295,22 @@ const SessionForm = () => {
         
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
+            
+            {/* Título - Read Only */}
             <Grid item xs={12} md={8}>
               <TextField
                 name="title"
-                label="Título / Grau"
+                label="Título (Gerado Automaticamente)"
                 value={formData.title}
-                onChange={handleChange}
                 fullWidth
-                required
-                placeholder="Ex: Sessão Magna de Iniciação"
+                disabled
+                variant="filled"
+                InputProps={{
+                  readOnly: true,
+                }}
               />
             </Grid>
+
             <Grid item xs={12} md={4}>
               <TextField
                 name="session_number"
@@ -284,6 +359,46 @@ const SessionForm = () => {
                 </Select>
               </FormControl>
             </Grid>
+
+            {/* Campos Condicionais de Processamento */}
+            {formData.type === 'Ordinária' && formData.subtype === 'Regular' && (
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Grau</InputLabel>
+                  <Select
+                    value={degree}
+                    label="Grau"
+                    onChange={handleDegreeChange}
+                  >
+                    <MenuItem value="Aprendiz">Aprendiz</MenuItem>
+                    <MenuItem value="Companheiro">Companheiro</MenuItem>
+                    <MenuItem value="Mestre">Mestre</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
+
+            {formData.type === 'Ordinária' && formData.subtype === 'Filiação e Regularização' && (
+              <Grid item xs={12} md={6}>
+                <FormControl component="fieldset">
+                  <FormLabel component="legend">Tipo de Ingresso</FormLabel>
+                  <FormGroup row>
+                    <FormControlLabel
+                      control={
+                        <Checkbox checked={ingressType.includes('Filiação')} onChange={handleIngressTypeChange} name="Filiação" />
+                      }
+                      label="Filiação"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox checked={ingressType.includes('Regularização')} onChange={handleIngressTypeChange} name="Regularização" />
+                      }
+                      label="Regularização"
+                    />
+                  </FormGroup>
+                </FormControl>
+              </Grid>
+            )}
 
             <Grid item xs={12} md={4}>
               <TextField

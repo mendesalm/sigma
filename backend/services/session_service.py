@@ -215,8 +215,9 @@ def create_session(
         # TODO: Criar configurações de loja para definir início do exercício.
         
         admin_start = date(start_year, 1, 1)
-        admin_end = date(start_year, 12, 31)
-        identifier = f"Exercício Maçônico {start_year}"
+        end_year = start_year + 2 # Biênio (ex: 2025-2027)
+        admin_end = date(end_year, 12, 31)
+        identifier = f"Exercício Maçônico {start_year}-{end_year}"
         
         administration = models.Administration(
             identifier=identifier,
@@ -241,7 +242,7 @@ def create_session(
             .first()
         )
         
-        next_number = (last_session.session_number or 0) + 1
+        next_number = (last_session.session_number if last_session and last_session.session_number else 0) + 1
         session_data.session_number = next_number
 
     db_session = models.MasonicSession(
@@ -255,7 +256,7 @@ def create_session(
     db.refresh(db_session)
 
     # Dispara a geração da minuta do Balaústre em background
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
     background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, db_session.id, current_user_payload)
 
     return db_session
@@ -431,7 +432,7 @@ def end_session(
     db.refresh(db_session)
 
     # Dispara a geração do Balaústre em background
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
     background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, session_id, current_user_payload)
 
     return db_session
@@ -479,7 +480,7 @@ async def generate_session_document(
     """
     session = get_session_by_id(db, session_id, current_user_payload)  # Garante acesso à sessão
 
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
 
     if document_type.upper() == "BALAUSTRE":
         background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, session_id, current_user_payload)
@@ -504,7 +505,7 @@ async def get_balaustre_draft(
     """
     get_session_by_id(db, session_id, current_user_payload)  # Valida acesso
     
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
     return await doc_gen_service.get_balaustre_draft_text(session_id)
 
 
@@ -520,7 +521,7 @@ async def generate_custom_session_document(
     Dispara a geração de um documento com conteúdo personalizado.
     """
     session = get_session_by_id(db, session_id, current_user_payload)
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
 
     if document_type.upper() == "BALAUSTRE":
         # Passa o conteúdo customizado para a task
@@ -547,7 +548,7 @@ async def generate_signed_session_document(
     Dispara a geração de um documento assinado digitalmente.
     """
     session = get_session_by_id(db, session_id, current_user_payload)
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
 
     if document_type.upper() == "BALAUSTRE":
         background_tasks.add_task(
@@ -572,7 +573,7 @@ async def preview_balaustre(
     """
     get_session_by_id(db, session_id, current_user_payload) # Valida acesso
     
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
     return await doc_gen_service.generate_balaustre_preview(session_id, custom_content)
 
 
@@ -587,7 +588,7 @@ async def regenerate_balaustre_text(
     """
     get_session_by_id(db, session_id, current_user_payload) # Valida acesso
     
-    doc_gen_service = DocumentGenerationService()
+    doc_gen_service = DocumentGenerationService(db_session=db)
     return await doc_gen_service.regenerate_balaustre_text(session_id, custom_data)
 
 

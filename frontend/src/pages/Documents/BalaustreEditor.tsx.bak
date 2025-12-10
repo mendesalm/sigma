@@ -457,9 +457,12 @@ const BalaustreEditor: React.FC = () => {
                 A∴R∴B∴L∴S {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number}
               </Typography>
               
-              
               <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', color: 'inherit', mt: 0.5 }}>
                 BALAÚSTRE DA {sessionData?.NumeroAta || '_______'}ª SESSÃO DO E∴ M∴ {sessionData?.ExercicioMaconico || '_______'}
+              </Typography>
+              
+              <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', color: 'inherit', mt: 0.5 }}>
+                SESSÃO {sessionData?.ClasseSessao || 'ORDINÁRIA'} NO GRAU DE {sessionData?.GrauSessao || 'APRENDIZ'}
               </Typography>
             </Box>
 
@@ -598,6 +601,7 @@ const BalaustreEditor: React.FC = () => {
                 />
             </Box>
 
+            {/* Rodapé / Assinaturas */}
             <Box sx={{ mt: 'auto', pt: 8, display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
               <Box>
                 <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
@@ -606,12 +610,12 @@ const BalaustreEditor: React.FC = () => {
               </Box>
               <Box>
                 <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                  Orador
+                  Venerável Mestre
                 </Typography>
               </Box>
               <Box>
                 <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                  Venerável Mestre
+                  Orador
                 </Typography>
               </Box>
             </Box>

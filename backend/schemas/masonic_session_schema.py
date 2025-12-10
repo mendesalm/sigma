@@ -43,7 +43,7 @@ class MasonicSessionBase(BaseModel):
         if len(v) < 3:
             raise ValueError('Título deve ter pelo menos 3 caracteres')
         
-        return v.title()
+        return v
 
     @field_validator('status', mode='after', check_fields=False)
     @classmethod
@@ -175,7 +175,7 @@ class MasonicSessionUpdate(BaseModel):
             v = ' '.join(v.split())
             if len(v) < 3:
                 raise ValueError('Título deve ter pelo menos 3 caracteres')
-            return v.title()
+            return v
         return v
 
     @field_validator('status', mode='after', check_fields=False)

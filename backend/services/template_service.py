@@ -33,9 +33,29 @@ def get_default_template_content(template_type: str) -> str:
     else:
         return ""
     
-    template_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates', filename)
-    try:
-        with open(template_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        return ""
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    cwd = os.getcwd()
+    
+    paths_to_try = [
+        os.path.join(base_dir, 'templates', filename),
+        os.path.join(cwd, 'templates', filename),
+        os.path.join(cwd, 'backend', 'templates', filename),
+        # Fallback específico para o ambiente do usuário se o path relativo falhar
+        r"c:\Users\engan\OneDrive\Área de Trabalho\sigma\backend\templates" + "\\" + filename
+    ]
+    
+    print(f"DEBUG: Procurando template '{filename}' em: {paths_to_try}")
+
+    for path in paths_to_try:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    print(f"DEBUG: Template encontrado e carregado de: {path}")
+                    return content
+            except Exception as e:
+                print(f"DEBUG: Erro ao ler arquivo em {path}: {e}")
+                continue
+    
+    print("DEBUG: Template não encontrado em nenhum dos caminhos.")
+    return ""

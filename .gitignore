@@ -65,3 +65,9 @@ backend/storage/
 backend/uploads/
 !backend/storage/.gitkeep
 !backend/uploads/.gitkeep
+storage/
+!storage/.gitkeep
+
+# Temporary files
+temp_balaustre*
+test_weasy.pdf

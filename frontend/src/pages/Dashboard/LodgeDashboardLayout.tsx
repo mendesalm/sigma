@@ -187,7 +187,7 @@ const LodgeDashboardLayout: React.FC = () => {
       <CssBaseline />
       
       {/* Custom Header */}
-      <AppBar position="static" sx={{ height: HEADER_HEIGHT, bgcolor: '#1e293b', backgroundImage: 'none', boxShadow: 1, zIndex: 1300 }}>
+      <AppBar position="static" square sx={{ height: HEADER_HEIGHT, bgcolor: '#1e293b', backgroundImage: 'none', boxShadow: 1, zIndex: 1300, borderRadius: 0 }}>
         <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between' }}>
           {/* Left: Lodge Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

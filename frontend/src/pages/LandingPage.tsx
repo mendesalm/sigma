@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Grid, Paper, useTheme } from "@mui/material";
+import { Box, Typography, Grid, Paper } from "@mui/material";
 import { Security, People, Cloud, Speed } from "@mui/icons-material";
 import logoSigma from "../assets/images/SigmaLogo.png";
 
@@ -31,7 +31,7 @@ const features = [
 ];
 
 const LandingPage: React.FC = () => {
-  const theme = useTheme();
+// const theme = useTheme();
   return (
     <Box
       sx={{
@@ -47,22 +47,6 @@ const LandingPage: React.FC = () => {
         position: 'relative', // Needed for absolute positioning of the blur box
       }}
     >
-      {/* Blur effect box */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: theme.mixins.toolbar.minHeight, // Use toolbar height
-          [theme.breakpoints.up('sm')]: {
-            height: (theme.mixins.toolbar[theme.breakpoints.up('sm')] as any)?.minHeight || theme.mixins.toolbar.minHeight,
-          },
-          backdropFilter: 'blur(5px)', // Apply blur effect
-          backgroundColor: 'rgba(0, 0, 0, 0.1)', // Subtle overlay
-          zIndex: theme.zIndex.drawer, // Ensure it's above content but below app bar
-        }}
-      />
       <Box
         sx={{
           textAlign: "center",
@@ -70,14 +54,12 @@ const LandingPage: React.FC = () => {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: "calc(100vh)", // Ensure the content takes at least full viewport height
-          mt: { xs: 7, sm: 8, md: 9 }, // Account for header height
-          px: { xs: 2, md: 0 }, // Re-add horizontal padding
-          scrollSnapAlign: 'start', // Enable scroll snapping to the start
-          scrollSnapStop: 'always', // Always snap to this element
-          scrollPaddingTop: (theme) => `calc(${theme.mixins.toolbar.minHeight}px + 16px)`, // Offset for fixed header + some margin
-          paddingTop: (theme) => `calc(${theme.mixins.toolbar.minHeight}px + 16px)`, // Ensure content starts below header + some margin
-          boxSizing: 'border-box', // Include padding in element's total width and height
+          minHeight: "calc(100vh)", 
+          mt: { xs: 10, md: 12 }, // Adjusted for new header height
+          px: { xs: 2, md: 0 }, 
+          scrollSnapAlign: 'start', 
+          scrollSnapStop: 'always', 
+          boxSizing: 'border-box', 
         }}
       >
         <Box sx={{ maxWidth: "lg", mx: "auto" }}>

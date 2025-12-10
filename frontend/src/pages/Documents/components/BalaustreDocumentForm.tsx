@@ -3,8 +3,6 @@ import {
   Box, 
   Typography, 
   TextField, 
-  Select, 
-  MenuItem, 
   Grid,
   InputAdornment,
   Paper
@@ -16,40 +14,53 @@ interface BalaustreDocumentFormProps {
   readOnly?: boolean;
 }
 
-const InlineInput = ({ width = '100px', readOnly = false, ...props }: any) => (
-  <TextField
-    variant="standard"
-    size="small"
-    disabled={readOnly}
-    InputProps={{
-        disableUnderline: true,
-        style: { 
-            color: '#000', 
-            fontWeight: 'bold', 
-            fontSize: 'inherit',
-            fontFamily: 'inherit'
+const InlineInput = ({ width = '100px', readOnly = false, textAlign = 'center', value, ...props }: any) => {
+  // Calcula largura dinâmica: ~11px por caractere (Times New Roman 12pt) + 24px de padding/margem
+  // Se tiver valor, usa o cálculo. Se não, usa o width original (placeholder).
+  const calculatedWidth = value && String(value).length > 0 
+    ? `${Math.max(String(value).length * 11, 40) + 24}px` 
+    : width;
+
+  return (
+    <TextField
+      variant="standard"
+      size="small"
+      disabled={readOnly}
+      value={value}
+      InputProps={{
+          disableUnderline: true,
+          style: { 
+              color: '#000', 
+              fontWeight: 'bold', 
+              fontSize: 'inherit',
+              fontFamily: 'inherit'
+          }
+      }}
+      sx={{ 
+        width: calculatedWidth,
+        // Removemos minWidth rígido para permitir que encolha ao tamanho do texto
+        minWidth: value ? '40px' : width,
+        maxWidth: '100%',
+        display: 'inline-flex', 
+        mx: 0.5,
+        bgcolor: '#f5f5f5', 
+        borderRadius: 1,
+        borderBottom: '1px solid #999',
+        transition: 'background-color 0.2s, width 0.2s',
+        '&:hover': {
+          bgcolor: '#e0e0e0',
+        },
+        '& .MuiInput-input': { 
+          padding: '2px 8px',
+          textAlign: textAlign,
+          cursor: readOnly ? 'default' : 'text',
+          textOverflow: 'ellipsis'
         }
-    }}
-    sx={{ 
-      width, 
-      display: 'inline-flex', 
-      mx: 0.5,
-      bgcolor: '#f5f5f5', // Light grey for better contrast against white paper
-      borderRadius: 1,
-      borderBottom: '1px solid #999',
-      transition: 'background-color 0.2s',
-      '&:hover': {
-        bgcolor: '#e0e0e0',
-      },
-      '& .MuiInput-input': { 
-        padding: '2px 8px',
-        textAlign: 'center',
-        cursor: readOnly ? 'default' : 'text'
-      }
-    }}
-    {...props}
-  />
-);
+      }}
+      {...props}
+    />
+  );
+};
 
 const BlockInput = ({ readOnly = false, ...props }: any) => (
     <TextField
@@ -111,46 +122,30 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
     }}>
       {/* Header */}
       <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px double #000', pb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', mb: 0.5 }}>
+          À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
+        </Typography>
+
+        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', mb: 0.5 }}>
+          A∴R∴B∴L∴S {formData.lodge_name || '[NOME DA LOJA]'} Nº {formData.lodge_number || '[NUMERO]'}
+        </Typography>
+        
         <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000' }}>
-          BALAÚSTRE Nº 
+          BALAÚSTRE DA 
           <InlineInput 
             value={formData.NumeroAta || ''} 
             onChange={(e: any) => handleChange('NumeroAta', e.target.value)}
             width="80px"
             readOnly={readOnly}
           />
-          / {new Date().getFullYear()}
-        </Typography>
-        
-        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', mt: 1, color: '#000' }}>
-          SESSÃO 
-          <Select
-            variant="standard"
-            value={formData.ClasseSessao || ''}
-            onChange={(e) => handleChange('ClasseSessao', e.target.value)}
-            disabled={readOnly}
-            disableUnderline
-            sx={{ 
-              mx: 1, 
-              minWidth: 150,
-              fontFamily: 'inherit',
-              fontWeight: 'bold',
-              color: '#000',
-              bgcolor: '#f5f5f5',
-              borderRadius: 1,
-              px: 1,
-              borderBottom: '1px solid #999',
-              '& .MuiSelect-select': { py: 0.5 }
-            }}
-          >
-            <MenuItem value="MAGNA">MAGNA</MenuItem>
-            <MenuItem value="ORDINÁRIA">ORDINÁRIA</MenuItem>
-            <MenuItem value="EXTRAORDINÁRIA">EXTRAORDINÁRIA</MenuItem>
-          </Select>
-        </Typography>
-
-        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', mt: 2, color: '#000' }}>
-          À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
+          ª SESSÃO DO E∴ M∴ 
+          <InlineInput 
+            value={formData.ExercicioMaconico || ''} 
+            onChange={(e: any) => handleChange('ExercicioMaconico', e.target.value)}
+            width="120px"
+            placeholder="Ex: 2024-2025"
+            readOnly={readOnly}
+          />
         </Typography>
       </Box>
 
@@ -161,7 +156,7 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
           type="time" 
           value={formData.HoraInicioSessao || ''} 
           onChange={(e: any) => handleChange('HoraInicioSessao', e.target.value)}
-          width="110px"
+          width="100px"
           readOnly={readOnly}
         />
         do dia 
@@ -173,22 +168,21 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
           readOnly={readOnly}
         />
         da E∴ V∴, a Augusta, Respeitável e Benfeitora Loja Simbólica <b>{formData.lodge_name || '[NOME DA LOJA]'} n° {formData.lodge_number || '[NUMERO]'}</b>, 
-        {formData.affiliation_text_1 ? ` ${formData.affiliation_text_1},` : ''}
-        {formData.affiliation_text_2 ? ` ${formData.affiliation_text_2},` : ''}
-        reuniu-se em seu Templo, em Sessão
+        {formData.affiliation_text_1 ? ` ${formData.affiliation_text_1}, ` : ''}
+        {formData.affiliation_text_2 ? ` ${formData.affiliation_text_2}, ` : ''}
+        reuniu-se em seu Templo, sito à
         <InlineInput 
-          value={formData.TipoSessao || ''} 
-          onChange={(e: any) => handleChange('TipoSessao', e.target.value)}
-          placeholder="Tipo (ex: Econômica)"
-          width="160px"
+          value={formData.lodge_address || ''} 
+          onChange={(e: any) => handleChange('lodge_address', e.target.value)}
+          width="350px"
+          textAlign="left"
           readOnly={readOnly}
-        />
+        />, em
         <InlineInput 
-          value={formData.GrauSessao || ''} 
-          onChange={(e: any) => handleChange('GrauSessao', e.target.value)}
-          placeholder="Grau (ex: Aprendiz)"
-          width="160px"
-          readOnly={readOnly}
+            value={formData.session_title_formatted || ''} 
+            onChange={(e: any) => handleChange('session_title_formatted', e.target.value)}
+            width="400px"
+            readOnly={readOnly}
         />
         , com 
         <InlineInput 
@@ -211,47 +205,47 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
 
       {/* Officers Grid */}
       <Box sx={{ mt: 3, mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #ccc' }}>
-        <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6}>
+        <Grid container spacing={1} alignItems="center">
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>V∴ Mestre:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.Veneravel || ''} onChange={(e: any) => handleChange('Veneravel', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Venerável Mestre:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Veneravel || ''} onChange={(e: any) => handleChange('Veneravel', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>1° Vig∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.PrimeiroVigilante || ''} onChange={(e: any) => handleChange('PrimeiroVigilante', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>1° Vigilante:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.PrimeiroVigilante || ''} onChange={(e: any) => handleChange('PrimeiroVigilante', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>2° Vig∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.SegundoVigilante || ''} onChange={(e: any) => handleChange('SegundoVigilante', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>2° Vigilante:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.SegundoVigilante || ''} onChange={(e: any) => handleChange('SegundoVigilante', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>Orad∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.Orador || ''} onChange={(e: any) => handleChange('Orador', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Orador:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Orador || ''} onChange={(e: any) => handleChange('Orador', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>Secr∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.Secretario || ''} onChange={(e: any) => handleChange('Secretario', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Secretário:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Secretario || ''} onChange={(e: any) => handleChange('Secretario', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>Tes∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.Tesoureiro || ''} onChange={(e: any) => handleChange('Tesoureiro', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Chanceler:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Chanceler || ''} onChange={(e: any) => handleChange('Chanceler', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 80, color: '#333' }}>Chanc∴:</Typography>
-                    <InlineInput fullWidth width="100%" value={formData.Chanceler || ''} onChange={(e: any) => handleChange('Chanceler', e.target.value)} readOnly={readOnly} />
+                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Tesoureiro:</Typography>
+                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Tesoureiro || ''} onChange={(e: any) => handleChange('Tesoureiro', e.target.value)} readOnly={readOnly} />
                 </Box>
             </Grid>
         </Grid>
@@ -260,7 +254,7 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
         </Typography>
       </Box>
 
-      <SectionTitle>Balaústre Anterior:</SectionTitle>
+      <SectionTitle>Balaústre:</SectionTitle>
       <BlockInput
         minRows={2}
         value={formData.BalaustreAnterior || ''}

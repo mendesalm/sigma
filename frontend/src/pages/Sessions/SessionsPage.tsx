@@ -194,18 +194,8 @@ const SessionsPage: React.FC = () => {
                   <MenuItem value="CANCELADA">Cancelada</MenuItem>
                 </Select>
               </FormControl>
-              <Button 
-                variant="contained" 
-                onClick={fetchSessions}
-                startIcon={<Search />}
-                sx={{ 
-                    borderRadius: '12px',
-                    textTransform: 'none',
-                    fontWeight: 600
-                }}
-              >
-                Filtrar
-              </Button>
+            </Stack>
+            <Stack direction="row" spacing={2} sx={{ mt: 3, justifyContent: 'flex-end' }}>
               <Button 
                 variant="outlined" 
                 onClick={() => {
@@ -216,10 +206,24 @@ const SessionsPage: React.FC = () => {
                 sx={{ 
                     borderRadius: '12px',
                     textTransform: 'none',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    minWidth: '120px'
                 }}
               >
                 Limpar
+              </Button>
+              <Button 
+                variant="contained" 
+                onClick={fetchSessions}
+                startIcon={<Search />}
+                sx={{ 
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    minWidth: '120px'
+                }}
+              >
+                Filtrar
               </Button>
             </Stack>
           </Paper>

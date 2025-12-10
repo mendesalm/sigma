@@ -503,7 +503,7 @@ VALID_SESSION_SUBTYPES = {
 }
 
 
-class Administration(BaseModel):
+class Administration(Base):
     __tablename__ = "administrations"
     id = Column(Integer, primary_key=True, index=True)
     identifier = Column(String(255), nullable=False) # Ex: "Exercício Maçônico 2025-2027"
