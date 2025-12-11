@@ -99,9 +99,18 @@ from services import template_service
 class DocumentGenerationService:
     def __init__(self, db_session: Session | None = None):
         self.db = db_session
-        # Carrega templates da pasta 'templates' (fallback)
-        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
-        self.env = Environment(loader=FileSystemLoader(template_dir))
+        
+        # Caminhos base
+        backend_dir = os.path.dirname(os.path.dirname(__file__)) # .../sigma/backend
+        project_root = os.path.dirname(backend_dir) # .../sigma
+        
+        # Configura o Loader para buscar em múltiplos locais
+        template_paths = [
+            os.path.join(backend_dir, 'templates'), # Legacy/Fallback
+            os.path.join(project_root, 'storage', 'lodges', 'model', 'templates'), # New Modular Components
+        ]
+        
+        self.env = Environment(loader=FileSystemLoader(template_paths))
 
     def _get_base64_asset(self, asset_path: str) -> str:
         """Lê um arquivo de asset e retorna como string base64."""

@@ -46,9 +46,20 @@ def update_lodge(
     lodge_id: int,
     lodge: lodge_schema.LodgeUpdate,
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(dependencies.get_current_super_admin),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
-    """Update a lodge. Only accessible by super admins."""
+    """Update a lodge. Accessible by super admins or the lodge's webmaster."""
+    # Check permissions
+    user_type = current_user.get("user_type")
+    user_lodge_id = current_user.get("lodge_id")
+
+    if user_type != "super_admin":
+        # If not super admin, must be webmaster of THIS lodge
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Not authorized to update this lodge"
+            )
     db_lodge = lodge_service.update_lodge(db, lodge_id=lodge_id, lodge_update=lodge)
     if db_lodge is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lodge not found")

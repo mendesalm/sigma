@@ -26,6 +26,7 @@ class LodgeBase(BaseModel):
     session_day: str | None = Field(None, description="Dia da semana das sessões")
     periodicity: str | None = Field(None, description="Periodicidade das sessões")
     session_time: time | None = Field(None, description="Horário das sessões")
+    document_settings: dict | None = Field(None, description="Configurações de documentos")
 
     @field_validator('lodge_name', mode='after', check_fields=False)
     @classmethod
@@ -210,6 +211,7 @@ class LodgeUpdate(BaseModel):
     session_day: str | None = None
     periodicity: str | None = None
     session_time: time | None = None
+    document_settings: dict | None = None
 
 
 class LodgeResponse(LodgeBase):

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Container, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent, Autocomplete } from '@mui/material';
 import api from '../../services/api';
@@ -7,10 +7,15 @@ import { formatCNPJ, formatPhone, formatCEP, formatState } from '../../utils/for
 import { validateCNPJ, validateEmail } from '../../utils/validators';
 import { Snackbar, Alert } from '@mui/material';
 import { RiteEnum } from '../../types';
+import { AuthContext } from '../../context/AuthContext';
 
 // ...
 
-const LodgeForm = () => {
+interface LodgeFormProps {
+    idProp?: string;
+}
+
+const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
   const [formData, setFormData] = useState({
     lodge_name: '',
     lodge_number: '',
@@ -39,14 +44,17 @@ const LodgeForm = () => {
     plan: '',
     user_limit: '',
     status: '',
-    external_id: null as number | null, // Novo campo
+    external_id: null as number | null,
+    document_settings: {} as any, // Configurações de documentos
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [obediences, setObediences] = useState([]);
   const [loadingCep, setLoadingCep] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { user } = useContext(AuthContext) || {};
+  const { id: paramId } = useParams();
+  const id = idProp || paramId;
 
   // Estados para busca de loja global
   const [externalLodges, setExternalLodges] = useState<any[]>([]);
@@ -247,7 +255,13 @@ const LodgeForm = () => {
         await api.post('/lodges', lodgeData);
         setSnackbar({ open: true, message: 'Loja criada com sucesso! Membros importados.', severity: 'success' });
       }
-      setTimeout(() => navigate('/dashboard/management/lodges'), 1500);
+      setTimeout(() => {
+        if (user?.user_type === 'webmaster') {
+           navigate('/dashboard/lodge-dashboard/webmaster/minha-loja');
+        } else {
+           navigate('/dashboard/management/lodges');
+        }
+      }, 1500);
     } catch (error) {
       console.error('Falha ao salvar loja', error);
       setSnackbar({ open: true, message: 'Erro ao salvar loja. Verifique os dados.', severity: 'error' });
@@ -531,6 +545,8 @@ const LodgeForm = () => {
               />
             </Grid>
           </Grid>
+
+
 
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button variant="outlined" onClick={() => navigate('/dashboard/management/lodges')}>

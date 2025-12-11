@@ -10,6 +10,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     String,
     Table,
     Text,
@@ -188,6 +189,7 @@ class Lodge(BaseModel):
     technical_contact_name = Column(String(255), nullable=False)
     technical_contact_email = Column(String(255), nullable=False)
     associations = relationship("MemberLodgeAssociation", back_populates="lodge", cascade="all, delete-orphan")
+    document_settings = Column(JSON, nullable=True)
 
     __table_args__ = (
         CheckConstraint("latitude >= -90 AND latitude <= 90", name="chk_lodge_latitude"),

@@ -62,6 +62,8 @@ import ChancelerVisitantes from './pages/Chanceler/Visitantes';
 import CommitteesPage from './pages/Committees/CommitteesPage';
 
 import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
+import MyLodgePage from './pages/Webmaster/MyLodgePage';
+import DocumentConfigPage from './pages/Webmaster/DocumentConfigPage';
 
 const router = createBrowserRouter([
   {
@@ -208,6 +210,15 @@ const router = createBrowserRouter([
               {
                 path: 'sessions/:id',
                 element: <SessionDetailsPage />,
+              },
+              // Webmaster Routes
+              {
+                path: 'webmaster/minha-loja',
+                element: <MyLodgePage />,
+              },
+              {
+                path: 'webmaster/documentos',
+                element: <DocumentConfigPage />,
               },
             ]
           },

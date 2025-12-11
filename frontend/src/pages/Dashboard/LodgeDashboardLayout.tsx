@@ -41,6 +41,7 @@ import HomeIcon from '../../assets/icons/Home.png';
 import ObreiroIcon from '../../assets/icons/Obreiro.png';
 import SecretariaIcon from '../../assets/icons/Secretaria.png';
 import ChancelariaIcon from '../../assets/icons/Chancelaria.png';
+import WebmasterIcon from '../../assets/icons/Webmaster.png';
 
 const MAIN_SIDEBAR_WIDTH = 120;
 const SECONDARY_SIDEBAR_WIDTH = 250;
@@ -114,7 +115,19 @@ const MENU_CONFIG = [
       { text: 'Gestão de Comissões', path: '/dashboard/lodge-dashboard/chanceler/comissoes', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
     ]
   },
+  {
+    id: 'webmaster',
+    label: 'Webmaster',
+    icon: <img src={WebmasterIcon} alt="Webmaster" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/webmaster',
+    subItems: [
+        { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+        { text: 'Documentos', path: '/dashboard/lodge-dashboard/webmaster/documentos', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+    ]
+  },
 ];
+
+import api from '../../services/api';
 
 const LodgeDashboardLayout: React.FC = () => {
   const theme = useTheme();
@@ -122,6 +135,21 @@ const LodgeDashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext) || {};
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [lodgeData, setLodgeData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchLodgeData = async () => {
+        if (user?.lodge_id) {
+            try {
+                const response = await api.get(`/lodges/${user.lodge_id}`);
+                setLodgeData(response.data);
+            } catch (error) {
+                console.error("Failed to fetch lodge data:", error);
+            }
+        }
+    };
+    fetchLodgeData();
+  }, [user]);
 
   const handleLogout = () => {
     if (logout) {
@@ -129,6 +157,19 @@ const LodgeDashboardLayout: React.FC = () => {
       navigate('/login');
     }
   };
+
+  // Helper to generate logo URL
+  const getLogoUrl = () => {
+      if (!lodgeData) return undefined;
+      // Replica a lógica do backend (lodge_service.py) para gerar o nome da pasta
+      const safeNumber = lodgeData.lodge_number
+          ? lodgeData.lodge_number.replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_')
+          : `id_${lodgeData.id}`;
+      
+      return `${API_URL}/storage/lodges/loja_${safeNumber}/assets/images/logo/logo_jpg.png`;
+  };
+
+  const logoUrl = getLogoUrl();
 
   // Filter menu based on user role
   const filteredMenu = React.useMemo(() => {
@@ -138,8 +179,20 @@ const LodgeDashboardLayout: React.FC = () => {
       // Always show Home and Obreiro
       if (item.id === 'home' || item.id === 'obreiro') return true;
       
-      // Webmasters and SuperAdmins see everything
-      if (user.user_type === 'webmaster' || user.user_type === 'super_admin') return true;
+      // Webmaster specific
+      if (item.id === 'webmaster') {
+        return user.user_type === 'webmaster' || user.user_type === 'super_admin';
+      }
+
+      // Webmasters and SuperAdmins see everything else (except webmaster specific which is handled above, but here we can just let them pass if we want, OR explicitly filter)
+      // Actually, let's refine:
+      
+      // If user is super_admin, they see everything
+      if (user.user_type === 'super_admin') return true;
+
+      // If user is webmaster, they see everything EXCEPT maybe purely role-based stuff if they don't have the role? 
+      // Typically Webmasters manage the system, so they see all admin menus.
+      if (user.user_type === 'webmaster') return true;
       
       // Check specific roles for members
       if (item.id === 'secretario') {
@@ -217,19 +270,19 @@ const LodgeDashboardLayout: React.FC = () => {
           {/* Left: Lodge Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar 
-              src={`${API_URL}/storage/lodges/loja_2181/logo/logo_jpg.png`}
+              src={logoUrl}
               sx={{ width: 50, height: 50, bgcolor: 'transparent' }}
-              imgProps={{ style: { objectFit: 'contain' } }}
+              imgProps={{ style: { objectFit: 'contain' }, onError: (e) => (e.currentTarget.style.display = 'none') }}
               variant="square"
             >
               <DashboardIcon />
             </Avatar>
             <Box>
               <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff' }}>
-                Loja João Pedro Junqueira
+                {lodgeData?.lodge_name || 'Carregando...'}
               </Typography>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                Nº 2181
+                {lodgeData?.lodge_number ? `Nº ${lodgeData.lodge_number}` : ''}
               </Typography>
             </Box>
           </Box>
