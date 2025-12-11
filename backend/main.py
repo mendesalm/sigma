@@ -40,7 +40,9 @@ from routes import (  # noqa: E402
     committee_routes,
     publication_routes,
     notice_routes,
+    report_routes,
 )
+
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 
 # Metadata para documentação da API
@@ -220,6 +222,7 @@ app.include_router(visitor_routes.router)
 app.include_router(committee_routes.router)
 app.include_router(publication_routes.router)
 app.include_router(notice_routes.router)
+app.include_router(report_routes.router)
 
 
 # Mount static files AFTER routers
@@ -234,6 +237,8 @@ STORAGE_DIR = PROJECT_ROOT / "storage"
 
 # Create storage directory if it doesn't exist
 STORAGE_DIR.mkdir(exist_ok=True)
+(STORAGE_DIR / "general_assets").mkdir(parents=True, exist_ok=True)
+(STORAGE_DIR / "musics").mkdir(parents=True, exist_ok=True)
 
 # Mount the storage directory
 app.mount("/storage", StaticFiles(directory=str(STORAGE_DIR)), name="storage")

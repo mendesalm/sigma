@@ -52,6 +52,7 @@ import MeusEmprestimos from './pages/Obreiro/MeusEmprestimos';
 // Secretário Pages
 import SecretarioPresencas from './pages/Secretario/Presencas';
 import SecretarioPublicacoes from './pages/Secretario/Publicacoes';
+import QuadroObreiros from './pages/Secretario/Relatorios/QuadroObreiros';
 
 
 // Chanceler Pages
@@ -135,6 +136,10 @@ const router = createBrowserRouter([
                   { path: 'new', element: <MemberForm /> },
                   { path: 'edit/:id', element: <MemberForm /> },
                 ]
+              },
+              {
+                path: 'secretario/relatorios',
+                element: <QuadroObreiros />,
               },
               {
                 path: 'secretario/presencas',

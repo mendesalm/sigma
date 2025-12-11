@@ -711,7 +711,7 @@ class PublicationTypeEnum(str, enum.Enum):
     ACTS = "Atos"
     DOCUMENTS = "Documentos"
     BULLETINS = "Boletins"
-    ARTICLE = "Artigos"
+    ARTICLE = "Artigo"
 
 
 class PublicationStatusEnum(str, enum.Enum):

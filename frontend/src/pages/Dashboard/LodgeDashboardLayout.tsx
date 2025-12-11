@@ -12,7 +12,8 @@ import {
   useTheme,
   alpha,
   AppBar,
-  Toolbar
+  Toolbar,
+  ListSubheader
 } from '@mui/material';
 import { 
   Logout,
@@ -58,8 +59,8 @@ const MENU_CONFIG = [
   },
   {
     id: 'obreiro',
-    label: 'Obreiro',
-    icon: <img src={ObreiroIcon} alt="Obreiro" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    label: 'Obreiros',
+    icon: <img src={ObreiroIcon} alt="Obreiros" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/obreiro',
     subItems: [
       { text: 'Meu Cadastro', path: '/dashboard/lodge-dashboard/obreiro/meu-cadastro', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
@@ -72,20 +73,38 @@ const MENU_CONFIG = [
   },
   {
     id: 'secretario',
-    label: 'Secretário',
-    icon: <img src={SecretariaIcon} alt="Secretário" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    label: 'Secretaria',
+    icon: <img src={SecretariaIcon} alt="Secretaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/secretario',
     subItems: [
-      { text: 'Cadastro', path: '/dashboard/lodge-dashboard/secretario/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Presenças', path: '/dashboard/lodge-dashboard/secretario/presencas', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
+      // 1 - Gestão de Irmãos
+      { type: 'header', text: 'Irmãos' },
+      { text: 'Cadastro de Membros', path: '/dashboard/lodge-dashboard/secretario/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Relatórios do Quadro', path: '/dashboard/lodge-dashboard/secretario/relatorios', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
+
+      // 2 - Gestão de Sessões Maçonicas
+      { type: 'header', text: 'Sessões' },
+      { text: 'Agenda', path: '/dashboard/lodge-dashboard/secretario/sessoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Registro de Presenças', path: '/dashboard/lodge-dashboard/secretario/presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
+
+      // 3 - Gestão de Documentos
+      { type: 'header', text: 'Documentos' },
       { text: 'Publicações', path: '/dashboard/lodge-dashboard/secretario/publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Sessões', path: '/dashboard/lodge-dashboard/secretario/sessoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Pranchas', path: '/dashboard/lodge-dashboard/secretario/pranchas', icon: <ScrollIcon sx={{ fontSize: 20 }} />, disabled: true },
+
+      // 4 - Gestão de Processos
+      { type: 'header', text: 'Processos' },
+      { text: 'Admissão', path: '/dashboard/lodge-dashboard/secretario/processos/admissao', icon: <ChecklistIcon sx={{ fontSize: 20 }} />, disabled: true },
+
+      // 5 - Gestão de Exercícios Maçônicos
+      { type: 'header', text: 'Exercícios Maçônicos' },
+      { text: 'Gestão de Diretoria', path: '/dashboard/lodge-dashboard/secretario/exercicio/diretoria', icon: <SquareCompassIcon sx={{ fontSize: 20 }} />, disabled: true },
     ]
   },
   {
     id: 'chanceler',
-    label: 'Chanceler',
-    icon: <img src={ChancelariaIcon} alt="Chanceler" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    label: 'Chancelaria',
+    icon: <img src={ChancelariaIcon} alt="Chancelaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/chanceler',
     subItems: [
       { text: 'Cadastro', path: '/dashboard/lodge-dashboard/chanceler/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
@@ -174,14 +193,15 @@ const LodgeDashboardLayout: React.FC = () => {
       return;
     }
 
-    // Para menus com subitens
-    if (activeCategory === category.id) {
-      // Se já está ativo, navega para o primeiro subitem
-      navigate(category.subItems[0].path);
-    } else {
-      // Ativa a categoria e navega para o primeiro subitem
+    // Para menus com subitens, encontrar o primeiro item navegável (ignora headers e disabled)
+    const firstNavigableItem = category.subItems.find((item: any) => item.path && !item.disabled && item.type !== 'header');
+
+    if (firstNavigableItem && firstNavigableItem.path) {
       setActiveCategory(category.id);
-      navigate(category.subItems[0].path);
+      navigate(firstNavigableItem.path);
+    } else {
+        // Fallback: apenas ativa a categoria se não houver subitem navegável
+       setActiveCategory(category.id);
     }
   };
 
@@ -362,36 +382,70 @@ const LodgeDashboardLayout: React.FC = () => {
             </Box>
             
             <List sx={{ p: 1 }}>
-              {activeMenu.subItems.map((subItem: any) => (
-                <ListItemButton
-                  key={subItem.path}
-                  component={RouterLink}
-                  to={subItem.path}
-                  sx={{
-                    mb: 0.5,
-                    borderRadius: '8px',
-                    backgroundColor: location.pathname === subItem.path ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                    color: location.pathname === subItem.path ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                      color: '#fff'
-                    }
-                  }}
-                >
-                  {subItem.icon && (
-                    <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
-                      {subItem.icon}
-                    </ListItemIcon>
-                  )}
-                  <ListItemText 
-                    primary={subItem.text} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.85rem', 
-                      fontWeight: location.pathname === subItem.path ? 600 : 400 
-                    }} 
-                  />
-                </ListItemButton>
-              ))}
+              {activeMenu.subItems.map((subItem: any, index: number) => {
+                if (subItem.type === 'header') {
+                  return (
+                    <ListSubheader 
+                      key={index} 
+                      disableSticky
+                      sx={{ 
+                        bgcolor: 'transparent', 
+                        color: 'rgba(255,255,255,0.5)', 
+                        textTransform: 'uppercase', 
+                        fontSize: '0.7rem', 
+                        fontWeight: 700,
+                        lineHeight: '32px',
+                        mt: 2,
+                        mb: 0.5,
+                        pl: 2
+                      }}
+                    >
+                      {subItem.text}
+                    </ListSubheader>
+                  );
+                }
+
+                const isDisabled = subItem.disabled;
+
+                return (
+                  <ListItemButton
+                    key={subItem.path || index}
+                    component={isDisabled ? 'div' : RouterLink}
+                    to={isDisabled ? undefined : subItem.path}
+                    disabled={isDisabled}
+                    sx={{
+                      mb: 0.5,
+                      borderRadius: '8px',
+                      backgroundColor: (!isDisabled && location.pathname === subItem.path) ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                      color: (!isDisabled && location.pathname === subItem.path) ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
+                      opacity: isDisabled ? 0.5 : 1,
+                      cursor: isDisabled ? 'default' : 'pointer',
+                      '&:hover': {
+                        backgroundColor: !isDisabled ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                        color: !isDisabled ? '#fff' : 'inherit'
+                      }
+                    }}
+                  >
+                    {subItem.icon && (
+                      <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
+                        {subItem.icon}
+                      </ListItemIcon>
+                    )}
+                    <ListItemText 
+                      primary={subItem.text} 
+                      primaryTypographyProps={{ 
+                        fontSize: '0.85rem', 
+                        fontWeight: (!isDisabled && location.pathname === subItem.path) ? 600 : 400 
+                      }} 
+                    />
+                    {isDisabled && (
+                       <Typography variant="caption" sx={{ fontSize: '0.6rem', ml: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 1, px: 0.5 }}>
+                         Breve
+                       </Typography>
+                    )}
+                  </ListItemButton>
+                );
+              })}
             </List>
           </Box>
         )}

@@ -132,28 +132,74 @@ class DocumentGenerationService:
 
     def _get_lodge_logo(self, lodge_id: int) -> str:
         """
-        Tenta recuperar o logo da loja. Se não existir, retorna o logo padrão.
-        Convenção: storage/lodges/{lodge_id}/logo.png (ou .jpg)
+        Tenta recuperar o logo da loja. Se não existir, retorna o logo padrão (Model).
+        Nível 1: storage/lodges/{folder}/assets/images/logo.png
+        Nível 2: storage/lodges/model/assets/images/logo.png
+        Nível 3: Default Hardcoded (logoJPJ_.png - legacy fallback)
         """
         import base64
         
-        # Caminho base do storage
-        storage_base = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'storage', 'lodges', str(lodge_id))
+        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'storage', 'lodges')
+        logo_path = None
         
-        # Tenta extensões comuns
-        for ext in ['.png', '.jpg', '.jpeg']:
-            logo_path = os.path.join(storage_base, f'logo{ext}')
-            if os.path.exists(logo_path):
+        # --- Nível 1: Pasta da Loja ---
+        if self.db:
+            lodge = self.db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
+            if lodge:
+                 folder_name = None
+                 if lodge.lodge_number:
+                     safe_number = "".join(c for c in str(lodge.lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+                     folder_name = f"loja_{safe_number}"
+                 else:
+                     folder_name = f"loja_id_{lodge.id}"
+                 
+                 # Check new path
+                 for ext in ['.png', '.jpg', '.jpeg']:
+                     possible_path = os.path.join(base_storage, folder_name, 'assets', 'images', f'logo{ext}')
+                     if os.path.exists(possible_path):
+                         logo_path = possible_path
+                         break
+                 
+                 # Fallback to old path inside the new folder
+                 if not logo_path:
+                     for ext in ['.png', '.jpg', '.jpeg']:
+                         possible_path = os.path.join(base_storage, folder_name, f'logo{ext}')
+                         if os.path.exists(possible_path):
+                             logo_path = possible_path
+                             break
+
+        # Legacy ID folder check
+        if not logo_path:
+             storage_base = os.path.join(base_storage, str(lodge_id))
+             for ext in ['.png', '.jpg', '.jpeg']:
+                path = os.path.join(storage_base, f'logo{ext}')
+                if os.path.exists(path):
+                    logo_path = path
+                    break
+
+        # --- Nível 2: Pasta Model (Padrão) ---
+        if not logo_path:
+            model_path_base = os.path.join(base_storage, 'model', 'assets', 'images', 'logo')
+            for ext in ['.png', '.jpg', '.jpeg']:
+                 possible_path = os.path.join(model_path_base, f'logo{ext}')
+                 if os.path.exists(possible_path):
+                     logo_path = possible_path
+                     break
+
+        # --- Leitura do Arquivo ---
+        if logo_path:
                 try:
                     with open(logo_path, "rb") as image_file:
                         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
                     
-                    mime_type = "image/png" if ext == '.png' else "image/jpeg"
+                    mime_type = "image/png"
+                    if logo_path.endswith('.jpg') or logo_path.endswith('.jpeg'):
+                        mime_type = "image/jpeg"
                     return f"data:{mime_type};base64,{encoded_string}"
                 except Exception as e:
                     print(f"Erro ao ler logo da loja {lodge_id}: {e}")
         
-        # Fallback para o logo padrão
+        # --- Nível 3: Fallback Hardcoded ---
         return self._get_base64_asset("images/logoJPJ_.png")
 
     def _generate_qr_code_base64(self, data: str) -> str:
@@ -178,7 +224,62 @@ class DocumentGenerationService:
         return f"data:image/png;base64,{img_str}"
 
     def _render_template(self, template_name: str, data: dict) -> str:
-        # Injeta logo dinâmico da loja se disponível
+        """
+        Renderiza um template seguindo a estratégia de cascata:
+        1. Pasta da Loja (Personalizado)
+        2. Pasta Model (Padrão do Sistema)
+        3. Arquivos/DB (Legado/Fallback)
+        """
+        lodge_id = data.get('lodge_id')
+        lodge_number = data.get('lodge_number')
+        
+        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'storage', 'lodges')
+        
+        # Mapeamento de Caminhos
+        subpath = None
+        if template_name == "balaustre_template.html":
+            subpath = os.path.join("templates", "balaustre", template_name)
+        elif template_name == "edital_template.html":
+            subpath = os.path.join("templates", "edital", template_name)
+        else:
+            subpath = os.path.join("templates", template_name)
+
+        # --- Nível 1: Busca na Pasta da Loja ---
+        folder_name = None
+        if lodge_number:
+            safe_lodge_number = "".join(c for c in str(lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+            folder_name = f"loja_{safe_lodge_number}"
+        elif lodge_id:
+             folder_name = f"loja_id_{lodge_id}"
+             
+        if folder_name:
+            template_path = os.path.join(base_storage, folder_name, subpath)
+            if os.path.exists(template_path):
+                 try:
+                     with open(template_path, "r", encoding="utf-8") as f:
+                         return self.env.from_string(f.read()).render(data)
+                 except Exception as e:
+                     print(f"Erro ao ler template da loja ({template_path}): {e}")
+
+            # Legacy flat folder check logic (preserved)
+            template_path_flat = os.path.join(base_storage, folder_name, "templates", template_name)
+            if os.path.exists(template_path_flat) and template_path_flat != template_path:
+                 try:
+                     with open(template_path_flat, "r", encoding="utf-8") as f:
+                         return self.env.from_string(f.read()).render(data)
+                 except Exception:
+                     pass
+
+        # --- Nível 2: Busca na Pasta Model ---
+        model_template_path = os.path.join(base_storage, 'model', subpath)
+        if os.path.exists(model_template_path):
+            try:
+                with open(model_template_path, "r", encoding="utf-8") as f:
+                    return self.env.from_string(f.read()).render(data)
+            except Exception as e:
+                print(f"Erro ao ler template model ({model_template_path}): {e}")
+
+        # Injeta logo dinâmico (Assets)
         lodge_id = data.get('lodge_id')
         if lodge_id:
             data['header_image'] = self._get_lodge_logo(lodge_id)
@@ -187,16 +288,15 @@ class DocumentGenerationService:
             
         data['footer_image'] = self._get_base64_asset("images/logoRB_.png")
         
-        # Tenta carregar do banco de dados primeiro
+        # --- Nível 3: Banco de Dados ou Arquivo Global ---
         template_type = "BALAUSTRE" if "balaustre" in template_name else "EDITAL"
         
         if self.db:
             db_template = template_service.get_template_by_type(self.db, template_type)
             if db_template:
-                # Cria um template a partir da string do banco
                 return self.env.from_string(db_template.content).render(data)
         
-        # Fallback para o arquivo
+        # Fallback Final
         template = self.env.get_template(template_name)
         return template.render(data)
 
@@ -429,6 +529,7 @@ class DocumentGenerationService:
         
         return {
             # Meta-dados básicos para uso no template e texto
+            "lodge_id": lodge.id,
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
             "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",

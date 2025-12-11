@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quadro de Obreiros</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+
+            /* Define áreas de margem para numeração de página se necessário, 
+         mas vamos usar footer fixo ou running elements para maior controle */
+            @bottom-center {
+                content: counter(page);
+                font-family: Arial, sans-serif;
+                font-size: 10pt;
+            }
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            background-color: #fff;
+            color: #000;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Borda fixa em todas as páginas */
+        .page-border {
+            position: fixed;
+            top: 0cm;
+            left: 0cm;
+            bottom: 0cm;
+            right: 0cm;
+            border: 3px double black;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Conteudo interno com padding para não encostar na borda */
+        .page-content {
+            padding: 0.5cm;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Cabeçalho Compacto com Logo à Esquerda */
+        .header {
+            position: relative;
+            height: 60px;
+            /* Altura fixa para conter o logo e texto alinhados */
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header img {
+            position: absolute;
+            left: 0;
+            height: 60px;
+            width: auto;
+        }
+
+        .header-text-container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            /* Força empilhamento vertical */
+            justify-content: center;
+        }
+
+        .header-text {
+            display: block;
+            /* Garante comportamento de bloco */
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12pt;
+            margin: 2px 0;
+            width: 100%;
+        }
+
+        .report-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        .report-meta {
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 10pt;
+        }
+
+        /* Tabela Simplificada com Zebra */
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+            margin-top: 10px;
+        }
+
+        .members-table th,
+        .members-table td {
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: middle;
+        }
+
+        .members-table th {
+            background-color: #e0e0e0;
+            /* Cinza um pouco mais escuro para cabeçalho */
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* Zebra Striping */
+        .members-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* Evitar quebra de linha dentro de células importantes */
+        .members-table td {
+            page-break-inside: avoid;
+        }
+
+        .name-cell {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 350px;
+            /* Limite de segurança */
+        }
+
+        .center-text {
+            text-align: center;
+        }
+
+        /* Footer fixo para WeasyPrint / Elementos paginados 
+       OBS: O @page @bottom-center acima já cuida da numeração na maioria dos geradores PDF modernos.
+       Se não funcionar, usamos um div com position fixed bottom.
+    */
+        .footer-info {
+            position: fixed;
+            bottom: 0.2cm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 9pt;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-border"></div>
+
+    <!-- Cabeçalho visível no início do documento (ou repetido se usar thead com table-layout apropriado) -->
+    <div class="page-content">
+
+        <div class="header">
+            {% if header_image %}
+            <img src="{{ header_image }}" alt="Logo">
+            {% endif %}
+            <div class="header-text-container">
+                <div class="header-text">À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</div>
+                <div class="header-text">{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
+            </div>
+        </div>
+
+        <div class="report-title">Quadro de Obreiros</div>
+
+        <div class="report-meta">
+            <strong>Data de Emissão:</strong> {{ generation_date }} &nbsp;|&nbsp;
+            <strong>Total de Membros:</strong> {{ total_members }}
+        </div>
+
+        <table class="members-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">CIM</th>
+                    <th>Nome Completo</th>
+                    <th style="width: 10%;">Situação</th>
+                    <th style="width: 12%;">Grau</th>
+                    <th style="width: 15%;">Cargo</th>
+
+                    {% if show_phone %}
+                    <th style="width: 14%;">Telefone</th>
+                    {% endif %}
+
+                    {% if show_email %}
+                    <th>E-mail</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td class="center-text">{{ member.cim }}</td>
+                    <td class="name-cell">{{ member.full_name }}</td>
+                    <td class="center-text">Ativo</td>
+                    <td class="center-text">{{ member.degree }}</td>
+                    <td class="center-text">{{ member.role }}</td>
+
+                    {% if show_phone %}
+                    <td class="center-text">{{ member.phone }}</td>
+                    {% endif %}
+
+                    {% if show_email %}
+                    <td style="font-size: 9pt;">{{ member.email }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+
+</html>

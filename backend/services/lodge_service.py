@@ -46,15 +46,33 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
 
         # Create storage directory for the lodge
         # Sanitize lodge_number to ensure valid directory name
-        safe_lodge_number = (
-            "".join(c for c in lodge.lodge_number if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
-        )
-        storage_path = os.path.join("storage", "lodges", f"loja_{safe_lodge_number}")
+        if lodge.lodge_number:
+            safe_lodge_number = (
+                "".join(c for c in lodge.lodge_number if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+            )
+            folder_name = f"loja_{safe_lodge_number}"
+        else:
+            folder_name = f"loja_id_{db_lodge.id}"
+
+        storage_path = os.path.join("storage", "lodges", folder_name)
         os.makedirs(storage_path, exist_ok=True)
         
-        # Create subdirectories for logo and profile pictures
-        os.makedirs(os.path.join(storage_path, "logo"), exist_ok=True)
-        os.makedirs(os.path.join(storage_path, "profile_pictures"), exist_ok=True)
+        # Create subdirectories using the checked storage_path
+        # Structure based on existing standard (loja_2181):
+        # assets/images/logo
+        # publications
+        # templates/balaustre (singular), templates/edital, templates/convite, templates/prancha
+        # users/profile_pictures
+        
+        os.makedirs(os.path.join(storage_path, "assets", "images", "logo"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
+        
+        os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "edital"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "convite"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "prancha"), exist_ok=True)
+        
+        os.makedirs(os.path.join(storage_path, "users", "profile_pictures"), exist_ok=True)
 
     except Exception as e:
         db.rollback()

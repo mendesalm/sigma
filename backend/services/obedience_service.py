@@ -51,6 +51,17 @@ def create_obedience(db: Session, obedience: obedience_schema.ObedienceCreate) -
         )
         storage_path = os.path.join("storage", "obediences", safe_folder_name)
         os.makedirs(storage_path, exist_ok=True)
+        
+        # Create subdirectories
+        os.makedirs(os.path.join(storage_path, "assets", "images", "logo"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
+        
+        os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "edital"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "convite"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "prancha"), exist_ok=True)
+        
+        os.makedirs(os.path.join(storage_path, "users", "profile_pictures"), exist_ok=True)
 
         db.commit()
         db.refresh(db_obedience)
