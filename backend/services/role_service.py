@@ -12,8 +12,11 @@ def get_role_by_name(db: Session, name: str) -> models.Role | None:
     return db.query(models.Role).filter(models.Role.name == name).first()
 
 
-def get_roles(db: Session, skip: int = 0, limit: int = 100) -> list[models.Role]:
-    return db.query(models.Role).options(joinedload(models.Role.permissions)).offset(skip).limit(limit).all()
+def get_roles(db: Session, skip: int = 0, limit: int = 100, role_type: str = None) -> list[models.Role]:
+    query = db.query(models.Role).options(joinedload(models.Role.permissions))
+    if role_type:
+        query = query.filter(models.Role.role_type == role_type)
+    return query.offset(skip).limit(limit).all()
 
 
 def create_role(db: Session, role: role_schema.RoleCreate) -> models.Role:

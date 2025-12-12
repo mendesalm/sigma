@@ -8,250 +8,82 @@ import {
   Paper
 } from '@mui/material';
 
+import { Autocomplete } from '@mui/material';
+
+// ... (keep InlineInput and BlockInput as they are)
+
 interface BalaustreDocumentFormProps {
   formData: any;
   onChange: (data: any) => void;
   readOnly?: boolean;
+  members: any[]; // List of available members
 }
 
-const InlineInput = ({ width = '100px', readOnly = false, textAlign = 'center', value, ...props }: any) => {
-  // Calcula largura dinâmica: ~11px por caractere (Times New Roman 12pt) + 24px de padding/margem
-  // Se tiver valor, usa o cálculo. Se não, usa o width original (placeholder).
-  const calculatedWidth = value && String(value).length > 0 
-    ? `${Math.max(String(value).length * 11, 40) + 24}px` 
-    : width;
-
-  return (
-    <TextField
-      variant="standard"
-      size="small"
-      disabled={readOnly}
-      value={value}
-      InputProps={{
-          disableUnderline: true,
-          style: { 
-              color: '#000', 
-              fontWeight: 'bold', 
-              fontSize: 'inherit',
-              fontFamily: 'inherit'
-          }
-      }}
-      sx={{ 
-        width: calculatedWidth,
-        // Removemos minWidth rígido para permitir que encolha ao tamanho do texto
-        minWidth: value ? '40px' : width,
-        maxWidth: '100%',
-        display: 'inline-flex', 
-        mx: 0.5,
-        bgcolor: '#f5f5f5', 
-        borderRadius: 1,
-        borderBottom: '1px solid #999',
-        transition: 'background-color 0.2s, width 0.2s',
-        '&:hover': {
-          bgcolor: '#e0e0e0',
-        },
-        '& .MuiInput-input': { 
-          padding: '2px 8px',
-          textAlign: textAlign,
-          cursor: readOnly ? 'default' : 'text',
-          textOverflow: 'ellipsis'
-        }
-      }}
-      {...props}
-    />
-  );
+const OfficerInput = ({ value, onChange, members, readOnly, placeholder }: any) => {
+    if (readOnly) {
+        return <InlineInput fullWidth width="100%" textAlign="left" value={value} readOnly={true} />;
+    }
+    return (
+        <Autocomplete
+            freeSolo
+            options={members.map((m: any) => m.full_name)}
+            value={value || ''}
+            onChange={(event, newValue) => onChange(newValue)}
+            onInputChange={(event, newInputValue) => onChange(newInputValue)}
+            renderInput={(params) => (
+                <TextField 
+                    {...params} 
+                    variant="standard" 
+                    fullWidth 
+                    placeholder={placeholder || "Nome do Irmão"}
+                    InputProps={{ ...params.InputProps, disableUnderline: true }}
+                    sx={{ bgcolor: '#f5f5f5', px: 1, borderRadius: 1 }}
+                />
+            )}
+        />
+    );
 };
 
-const BlockInput = ({ readOnly = false, ...props }: any) => (
-    <TextField
-        fullWidth
-        multiline
-        variant="outlined"
-        disabled={readOnly}
-        InputProps={{
-            style: { 
-                color: '#000', 
-                fontFamily: 'inherit',
-                fontSize: '11pt',
-                lineHeight: 1.5,
-                backgroundColor: '#f5f5f5'
-            }
-        }}
-        sx={{
-            mt: 1,
-            '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                    borderColor: '#ccc',
-                },
-                '&:hover fieldset': {
-                    borderColor: '#999',
-                },
-                '&.Mui-focused fieldset': {
-                    borderColor: '#1976d2',
-                    borderWidth: '2px'
-                },
-            }
-        }}
-        {...props}
-    />
-);
+// ... (Document component start)
 
-const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <Typography variant="body1" sx={{ fontWeight: 'bold', mt: 3, mb: 0.5, color: '#000', borderBottom: '1px solid #eee', pb: 0.5 }}>
-    {children}
-  </Typography>
-);
-
-const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData, onChange, readOnly = false }) => {
+const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData, onChange, readOnly = false, members = [] }) => {
   
   const handleChange = (field: string, value: any) => {
     onChange({ ...formData, [field]: value });
   };
 
-  return (
-    <Paper elevation={3} sx={{ 
-      fontFamily: '"Times New Roman", Times, serif', 
-      fontSize: '12pt',
-      lineHeight: 1.8,
-      p: 5,
-      bgcolor: '#ffffff',
-      color: '#000000',
-      border: '1px solid #e0e0e0',
-      maxWidth: '210mm',
-      mx: 'auto'
-    }}>
-      {/* Header */}
-      <Box sx={{ textAlign: 'center', mb: 4, borderBottom: '2px double #000', pb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', mb: 0.5 }}>
-          À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
-        </Typography>
-
-        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', mb: 0.5 }}>
-          A∴R∴B∴L∴S {formData.lodge_name || '[NOME DA LOJA]'} Nº {formData.lodge_number || '[NUMERO]'}
-        </Typography>
-        
-        <Typography variant="h6" sx={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000' }}>
-          BALAÚSTRE DA 
-          <InlineInput 
-            value={formData.NumeroAta || ''} 
-            onChange={(e: any) => handleChange('NumeroAta', e.target.value)}
-            width="80px"
-            readOnly={readOnly}
-          />
-          ª SESSÃO DO E∴ M∴ 
-          <InlineInput 
-            value={formData.ExercicioMaconico || ''} 
-            onChange={(e: any) => handleChange('ExercicioMaconico', e.target.value)}
-            width="120px"
-            placeholder="Ex: 2024-2025"
-            readOnly={readOnly}
-          />
-        </Typography>
-      </Box>
-
-      {/* Body Text */}
-      <Box sx={{ textAlign: 'justify' }}>
-        Precisamente às 
-        <InlineInput 
-          type="time" 
-          value={formData.HoraInicioSessao || ''} 
-          onChange={(e: any) => handleChange('HoraInicioSessao', e.target.value)}
-          width="100px"
-          readOnly={readOnly}
-        />
-        do dia 
-        <InlineInput 
-          type="text" 
-          value={formData.DiaSessao || ''} 
-          onChange={(e: any) => handleChange('DiaSessao', e.target.value)}
-          width="200px"
-          readOnly={readOnly}
-        />
-        da E∴ V∴, a Augusta, Respeitável e Benfeitora Loja Simbólica <b>{formData.lodge_name || '[NOME DA LOJA]'} n° {formData.lodge_number || '[NUMERO]'}</b>, 
-        {formData.affiliation_text_1 ? ` ${formData.affiliation_text_1}, ` : ''}
-        {formData.affiliation_text_2 ? ` ${formData.affiliation_text_2}, ` : ''}
-        reuniu-se em seu Templo, sito à
-        <InlineInput 
-          value={formData.lodge_address || ''} 
-          onChange={(e: any) => handleChange('lodge_address', e.target.value)}
-          width="350px"
-          textAlign="left"
-          readOnly={readOnly}
-        />, em
-        <InlineInput 
-            value={formData.session_title_formatted || ''} 
-            onChange={(e: any) => handleChange('session_title_formatted', e.target.value)}
-            width="400px"
-            readOnly={readOnly}
-        />
-        , com 
-        <InlineInput 
-          type="number"
-          value={formData.NumeroIrmaosQuadro || ''} 
-          onChange={(e: any) => handleChange('NumeroIrmaosQuadro', e.target.value)}
-          width="70px"
-          readOnly={readOnly}
-        />
-        irmãos do quadro e 
-        <InlineInput 
-          type="number"
-          value={formData.NumeroVisitantes || ''} 
-          onChange={(e: any) => handleChange('NumeroVisitantes', e.target.value)}
-          width="70px"
-          readOnly={readOnly}
-        />
-        irmãos visitantes, ficando a Loja assim constituída:
-      </Box>
-
+  // ... (Header logic same)
+  
+  // Replace the Officers Grid block with this:
       {/* Officers Grid */}
       <Box sx={{ mt: 3, mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #ccc' }}>
-        <Grid container spacing={1} alignItems="center">
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Venerável Mestre:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Veneravel || ''} onChange={(e: any) => handleChange('Veneravel', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>1° Vigilante:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.PrimeiroVigilante || ''} onChange={(e: any) => handleChange('PrimeiroVigilante', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>2° Vigilante:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.SegundoVigilante || ''} onChange={(e: any) => handleChange('SegundoVigilante', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Orador:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Orador || ''} onChange={(e: any) => handleChange('Orador', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Secretário:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Secretario || ''} onChange={(e: any) => handleChange('Secretario', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Chanceler:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Chanceler || ''} onChange={(e: any) => handleChange('Chanceler', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>Tesoureiro:</Typography>
-                    <InlineInput fullWidth width="100%" textAlign="left" value={formData.Tesoureiro || ''} onChange={(e: any) => handleChange('Tesoureiro', e.target.value)} readOnly={readOnly} />
-                </Box>
-            </Grid>
-        </Grid>
-        <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic', textAlign: 'center', color: '#666' }}>
-            * Demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.
+        <Typography variant="caption" sx={{ display:'block', mb: 1, color: '#666' }}>
+            * Titulares preenchidos automaticamente. Edite para substituir por outro membro nesta sessão.
         </Typography>
+        <Grid container spacing={1} alignItems="center">
+            {[
+                { label: 'Venerável Mestre:', field: 'Veneravel' },
+                { label: '1° Vigilante:', field: 'PrimeiroVigilante' },
+                { label: '2° Vigilante:', field: 'SegundoVigilante' },
+                { label: 'Orador:', field: 'Orador' },
+                { label: 'Secretário:', field: 'Secretario' },
+                { label: 'Chanceler:', field: 'Chanceler' },
+                { label: 'Tesoureiro:', field: 'Tesoureiro' },
+                { label: 'Hospitaleiro:', field: 'Hospitaleiro' }
+            ].map(({ label, field }) => (
+                <Grid item xs={12} key={field}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography sx={{ fontWeight: 'bold', minWidth: 150, whiteSpace: 'nowrap', color: '#333' }}>{label}</Typography>
+                        <OfficerInput 
+                            value={formData[field]} 
+                            onChange={(val: any) => handleChange(field, val)} 
+                            members={members} 
+                            readOnly={readOnly} 
+                        />
+                    </Box>
+                </Grid>
+            ))}
+        </Grid>
       </Box>
 
       <SectionTitle>Balaústre:</SectionTitle>

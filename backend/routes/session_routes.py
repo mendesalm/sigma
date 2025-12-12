@@ -3,8 +3,7 @@ from datetime import date
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, HTTPException, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-
-# Importações do projeto
+from sqlalchemy.orm.attributes import flag_modified
 from database import get_db
 from dependencies import get_current_user_payload
 from schemas import masonic_session_schema, session_attendance_schema, visitor_checkin_schema
@@ -315,6 +314,37 @@ async def regenerate_balaustre_text_endpoint(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
+    # Retrieve the session first to update overrides
+    session = session_service.get_session_by_id(db, session_id, current_user_payload)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Update session data with form input
+    # Process potential officer overrides and save to session.temporary_role_assignments
+    role_fields = [
+        'Veneravel', 'PrimeiroVigilante', 'SegundoVigilante', 
+        'Orador', 'Secretario', 'Chanceler', 'Tesoureiro', 'Hospitaleiro'
+    ]
+    
+    current_overrides = session.temporary_role_assignments or {}
+    # Create a copy to track changes effectively (and handle None case)
+    current_overrides = dict(current_overrides)
+    overrides_updated = False
+    
+    for field in role_fields:
+        if field in data:
+            val = data[field]
+            # Only save if it's different. Note: We treat empty string as a valid override (clearing the role)
+            if val != current_overrides.get(field):
+                current_overrides[field] = val
+                overrides_updated = True
+    
+    if overrides_updated:
+        session.temporary_role_assignments = current_overrides
+        flag_modified(session, "temporary_role_assignments") # Ensure SQLAlchemy tracks JSON change
+        db.add(session)
+        db.commit()
+
     html_content = await session_service.regenerate_balaustre_text(
         db=db,
         session_id=session_id,

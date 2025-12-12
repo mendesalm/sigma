@@ -41,6 +41,7 @@ from routes import (  # noqa: E402
     publication_routes,
     notice_routes,
     report_routes,
+    administration_routes,
 )
 
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
@@ -222,6 +223,7 @@ app.include_router(visitor_routes.router)
 app.include_router(committee_routes.router)
 app.include_router(publication_routes.router)
 app.include_router(notice_routes.router)
+app.include_router(administration_routes.router)
 app.include_router(report_routes.router)
 
 

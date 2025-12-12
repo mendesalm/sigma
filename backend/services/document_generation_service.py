@@ -20,9 +20,11 @@ import uuid
 
 
 # (O código das funções auxiliares e dos templates permanece o mesmo)
-def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date) -> dict[str, str]:
+def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date, administration_id: int | None = None) -> dict[str, str]:
     """
-    Busca os oficiais ativos da Loja em uma dada data.
+    Busca os oficiais ativos da Loja.
+    Se administration_id for fornecido, busca os oficiais vinculados àquela administração específica.
+    Caso contrário, busca baseado na data (target_date).
     Retorna um dicionário com os nomes dos oficiais para os cargos principais.
     """
     # Nomes dos cargos que esperamos encontrar. Estes nomes devem corresponder ao models.Role.name
@@ -38,18 +40,27 @@ def get_lodge_officers_at_date(db: Session, lodge_id: int, target_date: date) ->
     }
 
     for role_name in officer_roles.keys():
-        officer_history = (
+        query = (
             db.query(models.RoleHistory)
             .join(models.Role)
             .filter(
                 models.RoleHistory.member_id.isnot(None),
                 models.Role.name == role_name,
-                models.RoleHistory.start_date <= target_date,
-                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None)),
-                models.RoleHistory.lodge_id == lodge_id,  # Garante que o cargo é desta loja específica
+                models.RoleHistory.lodge_id == lodge_id,
             )
-            .first()
         )
+
+        if administration_id:
+            # Prioridade: Filtrar pela Administração vinculada à sessão
+            query = query.filter(models.RoleHistory.administration_id == administration_id)
+        else:
+            # Fallback: Filtrar por data
+            query = query.filter(
+                models.RoleHistory.start_date <= target_date,
+                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None))
+            )
+
+        officer_history = query.first()
 
         if officer_history and officer_history.member:
             officer_roles[role_name] = officer_history.member.full_name
@@ -462,7 +473,16 @@ class DocumentGenerationService:
              start_yr = session.session_date.year
              exercicio_maconico = f"{start_yr}-{start_yr+2}"
 
-        officers = get_lodge_officers_at_date(db, lodge.id, session.session_date)
+        officers = get_lodge_officers_at_date(db, lodge.id, session.session_date, administration_id=session.administration_id)
+        
+        # Merge temporary overrides if they exist for this specific session
+        if session.temporary_role_assignments:
+            # We assume the JSON keys match the role names (e.g. "Venerável Mestre")
+            # and values are the names of the members filling the role.
+            for role_name, member_name in session.temporary_role_assignments.items():
+                if member_name:
+                    officers[role_name] = member_name
+
         attendees = get_attendees_for_session(db, session.id) or []
         
         # Calculate counts (Simplificando: attendees é uma lista de strings "Nome (Role)" ou só nomes)

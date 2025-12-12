@@ -114,3 +114,55 @@ A seguir, a lista de módulos com endpoints implementados.
 - **Documents (`/documents`):** Gerenciamento de documentos.
 - **Events (`/events`):** Gerenciamento de eventos.
 - **Financials (`/financials`):** Gerenciamento de transações financeiras.
+
+## 5. Funcionalidades por Perfil
+
+O sistema oferece funcionalidades segmentadas por perfil de acesso, refletidas na estrutura de menus do Dashboard.
+
+### 5.1. Obreiros (Membros)
+
+Funcionalidades disponíveis para todos os membros ativos da loja.
+
+- **Meu Cadastro:** Visualização e atualização de dados pessoais, foto de perfil, dados profissionais e contatos.
+- **Minhas Presenças:** Histórico completo de presenças em sessões da loja, com indicadores de frequência.
+- **Minhas Visitações:** Registro e histórico de visitas a outras lojas (inter-lojas).
+- **Publicações:** Acesso a Boletins Oficiais, Atos e Decretos publicados pela loja ou potência.
+- **Meus Anúncios:** Classificados internos para oferta de produtos e serviços entre irmãos.
+- **Meus Empréstimos:** Controle de livros e materiais retirados da biblioteca da loja.
+
+### 5.2. Secretaria
+
+Módulo administrativo para o Irmão Secretário, focado na gestão burocrática e documental.
+
+- **Gestão de Irmãos:**
+    - **Cadastro de Membros:** CRUD completo de obreiros, incluindo dados maçônicos (Graus, CIM) e profanos.
+    - **Relatórios do Quadro:** Listagens exportáveis de membros ativos, inativos e dados estatísticos.
+- **Sessões Maçônicas:**
+    - **Agenda:** Criação e agendamento de sessões com definição de Grau, Ordem do Dia e Horários.
+    - **Registro de Presenças:** Controle manual e validação de presença de obreiros e visitantes.
+- **Documentos:**
+    - **Balaústres (Atas):** Editor rico para redação de atas, com preenchimento automático de cabeçalho, oficiais (com substituição dinâmica) e estatísticas. Geração de PDF e assinatura digital.
+    - **Publicações:** Criação e distruição de editais e boletins.
+- **Processos:**
+    - **Admissão:** Fluxo de workflow para iniciação de novos candidatos (em breve).
+- **Exercícios Maçônicos:**
+    - **Gestão de Diretoria:** Cadastro das administrações (biênios) e nomeação da oficialidade titular.
+
+### 5.3. Chancelaria
+
+Módulo administrativo para o Irmão Chanceler, focado no controle de frequência e hospitalaria.
+
+- **Cadastro:** Visão auxiliar dos dados dos membros para controle de datas comemorativas (aniversários).
+- **Presenças:** Monitoramento da frequência global da loja e alertas de assiduidade.
+- **Visitações:** Gestão de registros de obreiros da loja visitando outros orientes.
+- **Visitantes:** Cadastro de maçons visitantes (de outras lojas) recebidos em sessões, integrado ao Livro de Presenças.
+- **Gestão de Comissões:** Organização de comissões internas e grupos de trabalho.
+
+### 5.4. Webmaster / Administração
+
+Funcionalidades técnicas e de configuração da Loja.
+
+- **Minha Loja:** Configuração dos dados cadastrais da loja, endereço, rito e dias de reunião.
+- **Administrações:** Histórico de venerabilatos e diretorias passadas.
+- **Documentos (Configuração):** Personalização de templates para geração de PDFs (Cabeçalhos, Rodapés, Brasões).
+- **Usuários:** Gestão de acesso e recuperação de senhas para oficiais.

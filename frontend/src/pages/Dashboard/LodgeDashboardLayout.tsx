@@ -13,12 +13,14 @@ import {
   alpha,
   AppBar,
   Toolbar,
-  ListSubheader
+  ListSubheader,
+  Skeleton
 } from '@mui/material';
 import { 
   Logout,
   Dashboard as DashboardIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  BrokenImage as BrokenImageIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -99,7 +101,7 @@ const MENU_CONFIG = [
 
       // 5 - Gestão de Exercícios Maçônicos
       { type: 'header', text: 'Exercícios Maçônicos' },
-      { text: 'Gestão de Diretoria', path: '/dashboard/lodge-dashboard/secretario/exercicio/diretoria', icon: <SquareCompassIcon sx={{ fontSize: 20 }} />, disabled: true },
+      { text: 'Gestão de Diretoria', path: '/dashboard/lodge-dashboard/secretario/exercicio/diretoria', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
     ]
   },
   {
@@ -122,6 +124,7 @@ const MENU_CONFIG = [
     path: '/dashboard/lodge-dashboard/webmaster',
     subItems: [
         { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+        { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
         { text: 'Documentos', path: '/dashboard/lodge-dashboard/webmaster/documentos', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
     ]
   },
@@ -270,19 +273,26 @@ const LodgeDashboardLayout: React.FC = () => {
           {/* Left: Lodge Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar 
+              key={logoUrl} // Force re-render if URL changes
               src={logoUrl}
               sx={{ width: 50, height: 50, bgcolor: 'transparent' }}
-              imgProps={{ style: { objectFit: 'contain' }, onError: (e) => (e.currentTarget.style.display = 'none') }}
+              imgProps={{ 
+                  style: { objectFit: 'contain' }, 
+                  onError: (e) => {
+                      e.currentTarget.style.display = 'none';
+                      // Optionally show fallback icon logic here if needed, but the Avatar children will show
+                  } 
+              }}
               variant="square"
             >
-              <DashboardIcon />
+              {lodgeData ? <DashboardIcon /> : <Skeleton variant="circular" width={40} height={40} />}
             </Avatar>
             <Box>
               <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff' }}>
-                {lodgeData?.lodge_name || 'Carregando...'}
+                {lodgeData?.lodge_name || <Skeleton width={200} />}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                {lodgeData?.lodge_number ? `Nº ${lodgeData.lodge_number}` : ''}
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block' }}>
+                {lodgeData?.lodge_number ? `Nº ${lodgeData.lodge_number}` : (lodgeData ? '' : <Skeleton width={100} />)}
               </Typography>
             </Box>
           </Box>

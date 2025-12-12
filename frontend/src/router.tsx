@@ -64,6 +64,7 @@ import CommitteesPage from './pages/Committees/CommitteesPage';
 import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
 import MyLodgePage from './pages/Webmaster/MyLodgePage';
 import DocumentConfigPage from './pages/Webmaster/DocumentConfigPage';
+import AdministrationPage from './pages/Webmaster/AdministrationPage';
 
 const router = createBrowserRouter([
   {
@@ -211,6 +212,10 @@ const router = createBrowserRouter([
                 path: 'sessions/:id',
                 element: <SessionDetailsPage />,
               },
+              {
+                path: 'secretario/exercicio/diretoria',
+                element: <AdministrationPage />,
+              },
               // Webmaster Routes
               {
                 path: 'webmaster/minha-loja',
@@ -219,6 +224,10 @@ const router = createBrowserRouter([
               {
                 path: 'webmaster/documentos',
                 element: <DocumentConfigPage />,
+              },
+              {
+                path: 'webmaster/administracoes',
+                element: <AdministrationPage />,
               },
             ]
           },

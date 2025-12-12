@@ -36,10 +36,11 @@ def create_role(
 def read_roles(
     skip: int = 0,
     limit: int = 100,
+    type: str = None, # Optional filter
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
-    roles = role_service.get_roles(db, skip=skip, limit=limit)
+    roles = role_service.get_roles(db, skip=skip, limit=limit, role_type=type)
     return roles
 
 

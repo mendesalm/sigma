@@ -69,6 +69,9 @@ const BalaustreEditor: React.FC = () => {
   const [dataDialogOpen, setDataDialogOpen] = useState(false);
   const [formData, setFormData] = useState<any>({});
 
+  // ... inside component ...
+  const [members, setMembers] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchSessionData = async () => {
       try {
@@ -92,8 +95,20 @@ const BalaustreEditor: React.FC = () => {
       }
     };
 
+    const fetchMembers = async () => {
+        try {
+            const response = await api.get('/members?limit=1000');
+             // Handle potentially wrapped response
+             const membersList = Array.isArray(response.data) ? response.data : (response.data.data || []);
+             setMembers(membersList);
+        } catch (error) {
+            console.error('Erro ao buscar membros', error);
+        }
+    };
+
     if (sessionId) {
       fetchSessionData();
+      fetchMembers();
     }
   }, [sessionId]);
 
@@ -758,6 +773,7 @@ const BalaustreEditor: React.FC = () => {
             <BalaustreDocumentForm 
                 formData={formData} 
                 onChange={setFormData} 
+                members={members}
             />
           </Box>
         </DialogContent>

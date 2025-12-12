@@ -408,9 +408,12 @@ class RoleHistory(BaseModel):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
+    administration_id = Column(Integer, ForeignKey("administrations.id"), nullable=True) # Optional link to Administration
+    
     member = relationship("Member", back_populates="role_history")
     role = relationship("Role")
     lodge = relationship("Lodge")
+    administration = relationship("Administration", backref="role_histories")
 
     __table_args__ = (
         CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_role_history_dates"),
@@ -540,7 +543,11 @@ class MasonicSession(BaseModel):
     administration_id = Column(Integer, ForeignKey("administrations.id"), nullable=True)
     administration = relationship("Administration", backref="sessions")
     
+    administration = relationship("Administration", backref="sessions")
+    
     # Novos campos
+    temporary_role_assignments = Column(JSON, nullable=True) # Stores overriding roles for this session { "Venerável Mestre": "Nome do Irmão", ... }
+    
     agenda = Column(Text, nullable=True)
     sent_expedients = Column(Text, nullable=True)
     received_expedients = Column(Text, nullable=True)

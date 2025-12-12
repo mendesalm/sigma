@@ -34,13 +34,8 @@
     /* Container to handle margins relative to the border */
     /* Adjusted padding based on previous successful state + request for wider text */
     .page-content {
-      /* 
-               Top: 2.5cm (Safe distance from top border)
-               Right: 2.0cm (Wider text area requested)
-               Bottom: 3.5cm (Sufficient space for footer/page break)
-               Left: 2.0cm (Wider text area requested) 
-            */
-      padding: .4cm .4cm .4cm .4cm;
+
+      padding: .6cm .4cm .4cm .4cm;
       width: 100%;
       box-sizing: border-box;
     }
@@ -62,6 +57,7 @@
       text-transform: uppercase;
       font-size: 12pt;
       margin: 3px 0;
+      line-height: 1.2;
     }
 
     .session-info {
@@ -150,17 +146,9 @@
       {% if header_image %}
       <img src="{{ header_image }}" alt="Logo">
       {% endif %}
-
       <div class="header-text">À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</div>
       <div class="header-text">{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
-
-      <div class="header-text" style="display: inline-block; padding-bottom: 1px; margin-top: 5px; margin-bottom: 5px;">
-        BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
-      </div>
-
-      <div class="header-text">
-        {{ full_session_title }}
-      </div>
+      <div class="header-text">BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}</div>
     </div>
 
     <div class="content">
@@ -183,18 +171,30 @@
         <strong>Chanceler</strong> {{ Chanceler }},
         sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.
       </p>
-
       <p>
         <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {{ SessaoAnterior }}, sem emendas.
+      </p>
+      <p>
         <strong>EXPEDIENTE RECEBIDO:</strong> {{ ExpedienteRecebido }}
+      </p>
+      <p>
         <strong>EXPEDIENTE EXPEDIDO:</strong> {{ ExpedienteExpedido }}
+      </p>
+      <p>
         <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {{ SacoProposta }}
+      </p>
+      <p>
         <strong>ORDEM DO DIA:</strong> {{ OrdemDia }}
+      </p>
+      <p>
         <strong>TEMPO DE INSTRUÇÃO:</strong> {{ TempoInstrucao }}
+      </p>
+      <p>
         <strong>TRONCO DE BENEFICÊNCIA:</strong> {{ Tronco }}
+      </p>
+      <p>
         <strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {{ Palavra }}
       </p>
-
       <p>
         <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {{ Encerramento }},
         tendo eu, {{ SecretarioNome }}, Secretário, lavrado o presente balaústre,
