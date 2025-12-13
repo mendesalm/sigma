@@ -6,14 +6,67 @@
   <title>Balaústre</title>
   <style>
     @page {
-      size: A4;
-      margin: 1 cm;
+      size: {
+          {
+          styles.page_size
+        }
+      }
+
+        {
+          {
+          styles.orientation
+        }
+      }
+
+      ;
+
+      margin: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+        {
+        % if styles.show_page_numbers %
+      }
+
+      @bottom-center {
+        content: "Página " counter(page);
+        font-size: 10pt;
+
+        font-family: {
+            {
+            styles.font_family
+          }
+        }
+
+        ;
+      }
+
+        {
+        % endif %
+      }
     }
 
     body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: {
+          {
+          styles.font_family
+        }
+      }
+
+      ;
       font-size: 12pt;
-      line-height: 1.5;
+
+      line-height: {
+          {
+          styles.line_height
+        }
+      }
+
+      ;
       color: #000;
       margin: 0;
       padding: 0;
@@ -26,20 +79,48 @@
       left: 0cm;
       bottom: 0cm;
       right: 0cm;
-      border: 3px double black;
+
+        {
+        % if styles.show_border %
+      }
+
+      border: 3px {
+          {
+          styles.border_style
+        }
+      }
+
+        {
+          {
+          styles.primary_color
+        }
+      }
+
+      ;
+
+        {
+        % else %
+      }
+
+      border: none;
+
+        {
+        % endif %
+      }
+
       z-index: 9999;
       pointer-events: none;
     }
 
     /* Container to handle margins relative to the border */
-    /* Adjusted padding based on previous successful state + request for wider text */
     .page-content {
-
+      /* Padding keeps text away from the border */
       padding: .6cm .4cm .4cm .4cm;
       width: 100%;
       box-sizing: border-box;
     }
 
+    /* Header Styles (Default) - Specific headers may override via inline styles */
     .header {
       text-align: center;
       margin-bottom: 10px;
@@ -47,7 +128,6 @@
 
     .header img {
       height: 60px;
-      /* Restored user preference */
       width: auto;
       margin-bottom: 10px;
     }
@@ -58,15 +138,6 @@
       font-size: 12pt;
       margin: 3px 0;
       line-height: 1.2;
-    }
-
-    .session-info {
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 12pt;
-      margin: 10px 0;
-      display: inline-block;
-      /* No border-bottom as requested */
     }
 
     .content {
@@ -115,14 +186,23 @@
       margin-right: auto;
     }
 
+    .signature-name {
+      font-size: 10pt;
+      margin-bottom: 2px;
+    }
+
     .signature-role {
       font-size: 10pt;
       text-transform: uppercase;
     }
 
-    .signature-name {
+    .page-number {
+      position: fixed;
+      bottom: 0.5cm;
+      width: 100%;
+      text-align: center;
       font-size: 10pt;
-      margin-bottom: 2px;
+      color: #333;
     }
 
     .validation-footer {
@@ -142,19 +222,47 @@
 
   <div class="page-content">
 
-    <div class="header">
-      {% if header_image %}
-      <img src="{{ header_image }}" alt="Logo">
-      {% endif %}
-      <div class="header-text">À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴</div>
-      <div class="header-text">{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
-      <div class="header-text">BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}</div>
-    </div>
+    <!-- Modular Header -->
+    {% if header_template %}
+    {% include header_template %}
+    {% endif %}
 
     <div class="content">
       {% if custom_text %}
       {{ custom_text | safe }}
       {% else %}
+
+      {% if styles.content_layout == 'condensed' %}
+      <!-- Layout Condensado (Texto Corrido) -->
+      <p>
+        <strong>ABERTURA:</strong> Precisamente às {{ HoraInicioSessao }} do dia {{ DiaSessao }} da E∴ V∴,
+        a {{ lodge_title_formatted }} {{ lodge_name }} n° {{ lodge_number }},
+        {{ affiliation_text_1 }}, {{ affiliation_text_2 }},
+        reuniu-se em seu Templo, sito à {{ lodge_address }},
+        em {{ session_title_formatted }},
+        ficando a Loja assim constituída:
+        <strong>Venerável Mestre</strong> {{ Veneravel }};
+        <strong>Primeiro Vigilante</strong> {{ PrimeiroVigilante }};
+        <strong>Segundo Vigilante</strong> {{ SegundoVigilante }};
+        <strong>Orador</strong> {{ Orador }};
+        <strong>Secretário</strong> {{ Secretario }};
+        <strong>Tesoureiro</strong> {{ Tesoureiro }} e
+        <strong>Chanceler</strong> {{ Chanceler }}.
+        <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {{ SessaoAnterior }}, sem emendas.
+        <strong>EXPEDIENTE RECEBIDO:</strong> {{ ExpedienteRecebido }}
+        <strong>EXPEDIENTE EXPEDIDO:</strong> {{ ExpedienteExpedido }}
+        <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {{ SacoProposta }}
+        <strong>ORDEM DO DIA:</strong> {{ OrdemDia }}
+        <strong>TEMPO DE INSTRUÇÃO:</strong> {{ TempoInstrucao }}
+        <strong>TRONCO DE BENEFICÊNCIA:</strong> {{ Tronco }}
+        <strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {{ Palavra }}
+        <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {{ Encerramento }},
+        tendo eu, {{ SecretarioNome }}, Secretário, lavrado o presente balaústre,
+        o qual, após lido, se considerado em tudo conforme, será assinado.
+      </p>
+
+      {% else %}
+      <!-- Layout Padrão (Parágrafos) -->
       <p>
         <strong>ABERTURA:</strong> Precisamente às {{ HoraInicioSessao }} do dia {{ DiaSessao }} da E∴ V∴,
         a {{ lodge_title_formatted }} {{ lodge_name }} n° {{ lodge_number }},
@@ -201,6 +309,8 @@
         o qual, após lido, se considerado em tudo conforme, será assinado.
       </p>
       {% endif %}
+
+      {% endif %}
     </div>
 
     <div class="footer">
@@ -239,6 +349,7 @@
     </div>
 
   </div>
+
 </body>
 
 </html>

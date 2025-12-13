@@ -36,6 +36,8 @@ const DocumentTemplates: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [balaustreContent, setBalaustreContent] = useState('');
   const [editalContent, setEditalContent] = useState('');
+  const [invitationContent, setInvitationContent] = useState('');
+  const [congratulationContent, setCongratulationContent] = useState('');
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -45,20 +47,21 @@ const DocumentTemplates: React.FC = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      // Fetch templates individually to avoid one failure blocking the other
-      try {
-        const balaustreRes = await api.get('/templates/BALAUSTRE');
-        setBalaustreContent(balaustreRes.data.content);
-      } catch (e) {
-        console.error("Failed to fetch Balaustre template", e);
-      }
+      const types = [
+          { type: 'BALAUSTRE', setter: setBalaustreContent },
+          { type: 'EDITAL', setter: setEditalContent },
+          { type: 'CONVITE', setter: setInvitationContent },
+          { type: 'CONGRATULACAO', setter: setCongratulationContent }
+      ];
 
-      try {
-        const editalRes = await api.get('/templates/EDITAL');
-        setEditalContent(editalRes.data.content);
-      } catch (e) {
-        console.error("Failed to fetch Edital template", e);
-      }
+      await Promise.allSettled(types.map(async ({ type, setter }) => {
+          try {
+              const res = await api.get(`/templates/${type}`);
+              setter(res.data.content);
+          } catch (e) {
+              console.error(`Failed to fetch ${type} template`, e);
+          }
+      }));
       
       setError(null);
     } catch (err) {
@@ -73,11 +76,20 @@ const DocumentTemplates: React.FC = () => {
     setTabValue(newValue);
   };
 
+  const getTabInfo = () => {
+      switch (tabValue) {
+          case 0: return { type: 'BALAUSTRE', content: balaustreContent };
+          case 1: return { type: 'EDITAL', content: editalContent };
+          case 2: return { type: 'CONVITE', content: invitationContent };
+          case 3: return { type: 'CONGRATULACAO', content: congratulationContent };
+          default: return { type: 'BALAUSTRE', content: balaustreContent };
+      }
+  };
+
   const handlePreview = async () => {
     try {
       setSaving(true);
-      const type = tabValue === 0 ? 'BALAUSTRE' : 'EDITAL';
-      const content = tabValue === 0 ? balaustreContent : editalContent;
+      const { type, content } = getTabInfo();
 
       const response = await api.post('/templates/preview', {
         type,
@@ -86,7 +98,6 @@ const DocumentTemplates: React.FC = () => {
         responseType: 'blob'
       });
 
-      // Create a URL for the blob and open it in a new tab
       const file = new Blob([response.data], { type: 'application/pdf' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
@@ -102,8 +113,7 @@ const DocumentTemplates: React.FC = () => {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const type = tabValue === 0 ? 'BALAUSTRE' : 'EDITAL';
-      const content = tabValue === 0 ? balaustreContent : editalContent;
+      const { type, content } = getTabInfo();
 
       await api.post('/templates/', {
         type,
@@ -141,6 +151,8 @@ const DocumentTemplates: React.FC = () => {
           <Tabs value={tabValue} onChange={handleTabChange} aria-label="document templates tabs">
             <Tab label="Balaústre (Ata)" />
             <Tab label="Edital de Convocação" />
+            <Tab label="Convite" />
+            <Tab label="Cartão de Congratulações" />
           </Tabs>
         </Box>
         
@@ -183,6 +195,34 @@ const DocumentTemplates: React.FC = () => {
             defaultLanguage="html"
             value={editalContent}
             onChange={(value) => setEditalContent(value || '')}
+            theme="vs-dark"
+            options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                wordWrap: 'on'
+            }}
+          />
+        </TabPanel>
+        <TabPanel value={tabValue} index={2}>
+          <Editor
+            height="70vh"
+            defaultLanguage="html"
+            value={invitationContent}
+            onChange={(value) => setInvitationContent(value || '')}
+            theme="vs-dark"
+            options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                wordWrap: 'on'
+            }}
+          />
+        </TabPanel>
+        <TabPanel value={tabValue} index={3}>
+          <Editor
+            height="70vh"
+            defaultLanguage="html"
+            value={congratulationContent}
+            onChange={(value) => setCongratulationContent(value || '')}
             theme="vs-dark"
             options={{
                 minimap: { enabled: false },

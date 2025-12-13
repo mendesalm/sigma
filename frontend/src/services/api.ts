@@ -53,6 +53,14 @@ export const generateEdital = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/generate-edital`);
 };
 
+export const generateInvitation = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/generate-invitation`);
+};
+
+export const generateElectoralBalaustre = (sessionId: number) => {
+  return api.post(`/masonic-sessions/${sessionId}/generate-electoral-balaustre`);
+};
+
 export const approveSessionMinutes = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/approve-minutes`);
 };

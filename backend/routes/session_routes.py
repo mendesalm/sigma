@@ -212,6 +212,46 @@ async def generate_edital_for_session(
     )
 
 
+@router.post(
+    "/{session_id}/generate-invitation",
+    summary="Gerar Convite (PDF)",
+    description="Gera o convite para a sessão.",
+)
+async def generate_invitation_for_session(
+    session_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.generate_session_document(
+        db=db,
+        session_id=session_id,
+        document_type="CONVITE",
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks,
+    )
+
+
+@router.post(
+    "/{session_id}/generate-electoral-balaustre",
+    summary="Gerar Balaústre Eleitoral (PDF)",
+    description="Gera a ata específica para sessão eleitoral.",
+)
+async def generate_electoral_balaustre_for_session(
+    session_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    return await session_service.generate_session_document(
+        db=db,
+        session_id=session_id,
+        document_type="BALAUSTRE_ELEITORAL",
+        current_user_payload=current_user_payload,
+        background_tasks=background_tasks,
+    )
+
+
 @router.get(
     "/{session_id}/balaustre-draft",
     summary="Obter Rascunho do Balaústre",

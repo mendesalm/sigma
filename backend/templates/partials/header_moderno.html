@@ -1,0 +1,12 @@
+<div class="header"
+    style="text-align: left; border-bottom: 2px solid {{ styles.primary_color }}; padding-bottom: 10px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div class="header-text" style="font-size: 1.5em; color: {{ styles.primary_color }}">{{ lodge_name }}</div>
+            <div style="font-size: 0.9em; color: gray;">{{ lodge_title_formatted }} - Nº {{ lodge_number }}</div>
+        </div>
+        {% if header_image %}
+        <img src="{{ header_image }}" alt="Logo" style="height: 50px;">
+        {% endif %}
+    </div>
+</div>

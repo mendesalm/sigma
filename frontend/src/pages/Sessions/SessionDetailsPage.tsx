@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from './components/AttendanceTab';
-import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument, approveSessionMinutes, reopenSession } from '../../services/api';
+import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument, approveSessionMinutes, reopenSession, generateInvitation, generateElectoralBalaustre } from '../../services/api';
 import { PlayArrow, Stop, Cancel, Description, Add, QrCodeScanner, CheckCircle, LockOpen } from '@mui/icons-material';
 import SessionCheckIn from '../../components/SessionCheckIn';
 
@@ -192,6 +192,14 @@ const SessionDetailsPage: React.FC = () => {
                     Gerar Edital
                   </Button>
                   <Button 
+                    variant="outlined" 
+                    startIcon={<Description />}
+                    onClick={() => handleAction(() => generateInvitation(sessionId), 'Geração de Convite iniciada!')}
+                    disabled={actionLoading}
+                  >
+                    Gerar Convite
+                  </Button>
+                  <Button 
                     variant="contained" 
                     color="primary"
                     startIcon={<Description />}
@@ -244,6 +252,15 @@ const SessionDetailsPage: React.FC = () => {
                     disabled={actionLoading}
                   >
                     Gerar Balaústre (PDF Direto)
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    color="secondary"
+                    startIcon={<Description />}
+                    onClick={() => handleAction(() => generateElectoralBalaustre(sessionId), 'Geração de Ata Eleitoral iniciada!')}
+                    disabled={actionLoading}
+                  >
+                    Balaústre Eleitoral
                   </Button>
                   <Button 
                     variant="contained" 

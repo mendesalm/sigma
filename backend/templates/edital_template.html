@@ -6,138 +6,191 @@
   <title>Edital de Convocação</title>
   <style>
     @page {
-      margin: 2cm 2cm 2cm 3cm;
-
-      @bottom-center {
-        content: "Página " counter(page) " de " counter(pages);
-        font-family: Arial, sans-serif;
-        font-size: 9pt;
+      size: {
+          {
+          styles.page_size
+        }
       }
+
+        {
+          {
+          styles.orientation
+        }
+      }
+
+      ;
+
+      margin: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
     }
 
     body {
-      font-family: "Arial", sans-serif;
-      font-size: 12pt;
-      line-height: 1.5;
+      font-family: {
+          {
+          styles.font_family
+        }
+      }
+
+      ;
+      font-size: 14pt;
+
+      /* Pranchas usually have larger font */
+      line-height: {
+          {
+          styles.line_height
+        }
+      }
+
+      ;
       color: #000;
+      margin: 0;
+      padding: 0;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
+    .page-border {
+      position: fixed;
+      top: 0cm;
+      left: 0cm;
+      bottom: 0cm;
+      right: 0cm;
+
+        {
+        % if styles.show_border %
+      }
+
+      border: 3px {
+          {
+          styles.border_style
+        }
+      }
+
+        {
+          {
+          styles.primary_color
+        }
+      }
+
+      ;
+
+        {
+        % else %
+      }
+
+      border: none;
+
+        {
+        % endif %
+      }
+
+      z-index: 9999;
+      pointer-events: none;
     }
 
-    .header img {
-      width: 80px;
-      height: auto;
-      margin-bottom: 15px;
-    }
-
-    .header-text {
-      line-height: 1.2;
-      text-transform: uppercase;
-      font-weight: bold;
-    }
-
-    .address-text {
-      line-height: 1.2;
-      font-size: 10pt;
-      font-weight: normal;
-      margin-top: 5px;
-    }
-
-    .title {
-      font-size: 16pt;
-      font-weight: bold;
-      text-align: center;
-      margin: 50px 0;
-      text-decoration: underline;
-      text-transform: uppercase;
+    .page-content {
+      padding: 1cm;
+      width: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 90vh;
+      /* Ensure full page height distribution */
     }
 
     .content {
-      margin: 0 0.5cm;
+      flex-grow: 1;
+      /* Pushes footer down */
       text-align: justify;
-      line-height: 1.6;
+      padding: 2cm 0;
     }
 
-    .agenda-block {
-      margin: 30px 0;
-      padding: 15px;
-      border: 1px solid #ddd;
-      background-color: #f9f9f9;
-    }
-
-    .date-line {
-      margin-top: 80px;
-      text-align: right;
-    }
-
-    .signatures {
-      margin-top: 100px;
-      display: table;
-      width: 100%;
-      table-layout: fixed;
-      page-break-inside: avoid;
-    }
-
-    .signature-block {
-      display: table-cell;
+    .title-section {
       text-align: center;
-      vertical-align: top;
+      margin-bottom: 2cm;
+      font-weight: bold;
+      font-size: 1.2em;
+      text-transform: uppercase;
+    }
+
+    .footer {
+      margin-top: auto;
+      text-align: center;
+    }
+
+    .footer-date {
+      text-align: right;
+      margin-bottom: 40px;
     }
 
     .signature-line {
-      border-top: 1px solid #000;
-      width: 80%;
-      margin: 10px auto;
+      border-top: 1px solid black;
+      width: 60%;
+      margin: 0 auto 5px auto;
     }
   </style>
 </head>
 
 <body>
-  <div class="header">
-    <img src="{{ header_image }}" alt="Logo">
-    <div class="header-text">{{ obedience_name }}</div>
-    <div class="header-text">{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
-    <div class="address-text">{{ lodge_address }}</div>
-  </div>
 
-  <div class="title">EDITAL DE CONVOCAÇÃO</div>
+  <div class="page-border"></div>
 
-  <div class="content">
-    <p>
-      De ordem do Venerável Mestre, Irmão <strong>{{ veneravel_mestre_name }}</strong>, cumpro o dever de CONVOCAR todos
-      os Obreiros do Quadro desta Augusta e Respeitável Loja para a <strong>{{ full_session_title }}</strong>, a
-      realizar-se no dia <strong>{{ DiaSessao }}</strong>, às <strong>{{ HoraInicioSessao }}</strong>, em nosso Templo.
-    </p>
+  <div class="page-content">
 
-    <div class="agenda-block">
-      <p><strong>ORDEM DO DIA:</strong></p>
-      <p style="white-space: pre-line;">{{ OrdemDia }}</p>
+    <!-- Modular Header -->
+    {% if header_template %}
+    {% include header_template %}
+    {% endif %}
+
+    <div class="content">
+      <div class="title-section">
+        EDITAL DE CONVOCAÇÃO<br>
+        SESSÃO {{ session_type | upper }}
+      </div>
+
+      <p>
+        O Venerável Mestre da <strong>{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</strong>,
+        conforme as disposições legais e regulamentares,
+        <strong>CONVOCA</strong> todos os Obreiros do Quadro e convida os Irmãos Regulares para a Sessão
+        {{ session_type }} a ser realizada no dia <strong>{{ DiaSessao }}</strong> ({{ DataSessaoExtenso }}),
+        com início às <strong>{{ HoraInicioSessao }}</strong>, em seu Templo situado à {{ lodge_address }}.
+      </p>
+
+      <p>
+        <strong>ORDEM DO DIA:</strong><br>
+        {{ OrdemDia }}
+      </p>
+
+      {% if ObrigatoriedadeTraje %}
+      <p>
+        <strong>Traje:</strong> {{ ObrigatoriedadeTraje }}
+      </p>
+      {% endif %}
     </div>
 
-    <p>
-      Contamos com a presença e a pontualidade de todos os Irmãos para o brilhantismo dos nossos trabalhos.
-    </p>
+    <div class="footer">
+      <div class="footer-date">
+        Oriente de {{ CidadeLoja }}, {{ DataAssinatura }} da E∴ V∴
+      </div>
+
+      <div style="margin-top: 2cm;">
+        <div class="signature-line"></div>
+        <div><strong>{{ Veneravel }}</strong></div>
+        <div style="font-size: 0.9em;">Venerável Mestre</div>
+      </div>
+
+      <div style="margin-top: 1cm;">
+        <div class="signature-line"></div>
+        <div><strong>{{ SecretarioNome }}</strong></div>
+        <div style="font-size: 0.9em;">Secretário</div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="date-line">
-    Oriente de {{ CidadeLoja }}, {{ current_date_day }} de {{ current_date_month }} de {{ current_date_year }}.
-  </div>
-
-  <div class="signatures">
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <strong>{{ secretario_name }}</strong><br>
-      Secretário
-    </div>
-    <div class="signature-block">
-      <div class="signature-line"></div>
-      <strong>{{ veneravel_mestre_name }}</strong><br>
-      Venerável Mestre
-    </div>
-  </div>
 </body>
 
 </html>

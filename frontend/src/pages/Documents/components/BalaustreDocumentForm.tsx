@@ -10,7 +10,48 @@ import {
 
 import { Autocomplete } from '@mui/material';
 
-// ... (keep InlineInput and BlockInput as they are)
+const InlineInput = ({ width, textAlign, ...props }: any) => (
+  <input 
+    style={{ 
+      border: 'none', 
+      borderBottom: '1px solid #333', 
+      padding: '0 4px', 
+      outline: 'none',
+      width: width || 'auto',
+      fontWeight: 'bold',
+      backgroundColor: 'transparent',
+      textAlign: textAlign || 'center',
+      fontSize: 'inherit',
+      fontFamily: 'inherit'
+    }} 
+    {...props} 
+  />
+);
+
+const BlockInput = ({ ...props }: any) => (
+  <TextField
+    fullWidth
+    multiline
+    variant="standard"
+    InputProps={{ disableUnderline: true }}
+    sx={{ 
+      bgcolor: '#fff', 
+      p: 1.5, 
+      borderRadius: 1, 
+      border: '1px solid #e0e0e0',
+      mt: 1,
+      mb: 2,
+      '& .MuiInputBase-input': { fontSize: '0.95rem' }
+    }}
+    {...props}
+  />
+);
+
+const SectionTitle = ({ children }: any) => (
+  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 2, mb: 0.5, textTransform: 'uppercase', color: '#444' }}>
+    {children}
+  </Typography>
+);
 
 interface BalaustreDocumentFormProps {
   formData: any;
@@ -52,10 +93,16 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
     onChange({ ...formData, [field]: value });
   };
 
-  // ... (Header logic same)
-  
-  // Replace the Officers Grid block with this:
-      {/* Officers Grid */}
+  return (
+    <Paper elevation={2} sx={{ p: 5, maxWidth: '210mm', mx: 'auto', bgcolor: '#fff', color: '#000' }}>
+      <Box sx={{ textAlign: 'center', mb: 5, borderBottom: '1px solid #eee', pb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 'bold', textTransform: 'uppercase', mb: 1, fontFamily: 'serif' }}>
+            {formData.lodge_name || 'Loja Maçônica'}
+        </Typography>
+        <Typography variant="subtitle1" sx={{ letterSpacing: 2 }}>
+            Nº {formData.lodge_number || '00'}
+        </Typography>
+      </Box>
       <Box sx={{ mt: 3, mb: 3, p: 2, bgcolor: '#f8f9fa', borderRadius: 2, border: '1px dashed #ccc' }}>
         <Typography variant="caption" sx={{ display:'block', mb: 1, color: '#666' }}>
             * Titulares preenchidos automaticamente. Edite para substituir por outro membro nesta sessão.

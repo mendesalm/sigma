@@ -493,6 +493,12 @@ async def generate_session_document(
              raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ID do membro é obrigatório para gerar certificado.")
         background_tasks.add_task(doc_gen_service.generate_certificate_pdf_task, session_id, extra_data["member_id"], current_user_payload)
         return {"message": "Geração do Certificado iniciada em background."}
+    elif document_type.upper() == "CONVITE":
+        background_tasks.add_task(doc_gen_service.generate_invitation_task, session_id, current_user_payload)
+        return {"message": "Geração do Convite iniciada em background."}
+    elif document_type.upper() == "BALAUSTRE_ELEITORAL":
+        background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, session_id, current_user_payload, doc_type_key='balaustre_eleitoral')
+        return {"message": "Geração do Balaústre Eleitoral iniciada em background."}
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tipo de documento inválido.")
 

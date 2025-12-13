@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Certificado de Presença</title>
+    <style>
+        @page {
+            size: {
+                    {
+                    styles.page_size
+                }
+            }
+
+                {
+                    {
+                    styles.orientation
+                }
+            }
+
+            ;
+
+            margin: {
+                    {
+                    styles.page_margin
+                }
+            }
+
+            ;
+        }
+
+        body {
+            font-family: {
+                    {
+                    styles.font_family
+                }
+            }
+
+            ;
+
+            color: {
+                    {
+                    styles.primary_color
+                }
+            }
+
+            ;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        .page-border {
+            position: fixed;
+            top: 0cm;
+            left: 0cm;
+            bottom: 0cm;
+            right: 0cm;
+
+                {
+                % if styles.show_border %
+            }
+
+            border: 5px {
+                    {
+                    styles.border_style
+                }
+            }
+
+                {
+                    {
+                    styles.primary_color
+                }
+            }
+
+            ;
+
+                {
+                % else %
+            }
+
+            border: none;
+
+                {
+                % endif %
+            }
+
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .container {
+            padding: 2cm;
+            height: 80vh;
+            /* Approximate full height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .header-section {
+            margin-bottom: 2cm;
+            width: 100%;
+        }
+
+        .title {
+            font-size: 3em;
+            margin-bottom: 1cm;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .content {
+            font-size: 1.5em;
+            line-height: 1.5;
+            margin-bottom: 2cm;
+            width: 80%;
+        }
+
+        .member-name {
+            font-size: 1.5em;
+            font-weight: bold;
+
+            border-bottom: 1px solid {
+                    {
+                    styles.primary_color
+                }
+            }
+
+            ;
+            display: inline-block;
+            min-width: 300px;
+        }
+
+        .footer {
+            margin-top: auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.8em;
+            font-family: 'Arial', sans-serif;
+            /* QR code info usually readable font */
+        }
+
+        .validation-box {
+            text-align: left;
+        }
+
+        .qr-code {
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-border"></div>
+
+    <div class="container">
+
+        <div class="header-section">
+            {% if header_template %}
+            <!-- Reuse modular header but might look weird in landscape if not adapted -->
+            <!-- Or just use logo + text manually for Certificate flavor -->
+            {% include header_template %}
+            {% else %}
+            <!-- Fallback/Default Certificate Header -->
+            {% if lodge_logo %}
+            <img src="{{ lodge_logo }}" style="height: 100px;">
+            {% endif %}
+            <h2>{{ obedience_name }}</h2>
+            <h1>{{ lodge_name }}</h1>
+            {% endif %}
+        </div>
+
+        <div class="title">Certificado de Presença</div>
+
+        <div class="content">
+            Certificamos que o Irmão<br><br>
+            <span class="member-name">{{ member_name }}</span><br><br>
+            Esteve presente na {{ session_type }} {{ session_subtype }} realizada no dia {{ session_date }}.
+        </div>
+
+        <div class="footer">
+            <div class="validation-box">
+                <img src="data:image/png;base64,{{ qr_code_path }}" class="qr-code"><br>
+                Cod: <strong>{{ validation_code }}</strong><br>
+                Gerado em: {{ generation_date }}
+            </div>
+
+            <div style="text-align: right;">
+                __________________________________<br>
+                Venerável Mestre / Secretário
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

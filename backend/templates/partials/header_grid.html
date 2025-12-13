@@ -1,0 +1,13 @@
+<div class="header"
+    style="display: grid; grid-template-columns: 1fr 4fr; gap: 10px; align-items: center; margin-bottom: 20px;">
+    <div style="text-align: center;">
+        {% if header_image %}
+        <img src="{{ header_image }}" alt="Logo" style="height: 80px;">
+        {% endif %}
+    </div>
+    <div style="background-color: {{ styles.primary_color }}; color: white; padding: 10px; text-align: right;">
+        <div style="font-weight: bold; font-size: 1.2em;">{{ lodge_name }}</div>
+        <div>{{ lodge_title_formatted }} Nº {{ lodge_number }}</div>
+        <div style="font-size: 0.8em; margin-top: 5px;">Sessão Nº {{ session_number }}</div>
+    </div>
+</div>

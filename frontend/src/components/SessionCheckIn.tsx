@@ -87,8 +87,8 @@ const SessionCheckIn: React.FC<SessionCheckInProps> = ({ sessionId, onSuccess })
                     <Box sx={{ height: 300, position: 'relative' }}>
                          <Scanner 
                             onScan={handleScan} 
-                            onError={(error) => console.log(error?.message)}
-                            components={{ audio: false, finder: true }}
+                            onError={(error) => console.log(error)}
+                            components={{ finder: true }}
                             styles={{ container: { height: 300 } }}
                         />
                     </Box>

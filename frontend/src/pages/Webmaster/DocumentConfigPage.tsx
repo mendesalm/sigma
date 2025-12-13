@@ -14,9 +14,11 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  Tabs,
   Tab,
-  Avatar
+  Tabs,
+  Avatar,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -40,7 +42,11 @@ const DEFAULT_SETTINGS = {
         page_margin: '1cm',
         background_color: '#ffffff',
         background_image: 'none',
-        line_height: 1.5
+        line_height: 1.5,
+        page_size: 'A4',
+        orientation: 'portrait',
+        content_layout: 'standard', // 'standard' or 'condensed'
+        show_page_numbers: true
     }
 };
 
@@ -156,6 +162,24 @@ const DocumentConfigPage = () => {
 
     const logoUrl = getLogoUrl();
 
+    // Helper para dimensões do papel no preview
+    const getPaperDimensions = () => {
+        const { page_size, orientation } = currentSettings.styles;
+        // Base dimensions in mm
+        let width = 210;
+        let height = 297;
+
+        if (page_size === 'A5') {
+            width = 148;
+            height = 210;
+        }
+
+        if (orientation === 'landscape') {
+            return { width: `${height}mm`, height: `${width}mm` };
+        }
+        return { width: `${width}mm`, height: `${height}mm` };
+    };
+
     // Renderização do Conteúdo de Preview baseada no tipo
     const renderPreviewContent = () => {
         const styles = currentSettings.styles;
@@ -213,11 +237,13 @@ const DocumentConfigPage = () => {
         }
 
         // Padrão: Balaústre
+        const isCondensed = currentSettings.styles.content_layout === 'condensed';
+
         return (
              <div style={{ 
                  textAlign: 'justify', 
-                 lineHeight: styles.line_height || 1.5,
-                 fontFamily: styles.font_family,
+                 lineHeight: currentSettings.styles.line_height || 1.5,
+                 fontFamily: currentSettings.styles.font_family,
                  color: 'black',
                  padding: '0.6cm 0.4cm 0.4cm 0.4cm', // Padding do .page-content no template
                  boxSizing: 'border-box',
@@ -226,73 +252,92 @@ const DocumentConfigPage = () => {
                  flexDirection: 'column'
              }}>
                 {/* Header (Mimetizando .header) */}
-                <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: '10px' }}>
-                        {/* Tenta usar o logo real, fallback para o ícone */}
-                        <Avatar 
-                            src={logoUrl} 
-                            variant="square" 
-                            sx={{ width: 60, height: 60, bgcolor: 'transparent' }}
-                            imgProps={{ style: { objectFit: 'contain' } }}
-                        >
-                            <DashboardIcon sx={{ fontSize: 60, color: styles.primary_color }} />
-                        </Avatar>
-                    </Box>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
-                        À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
+                {currentSettings.header !== 'no_header' && (
+                    <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: '10px' }}>
+                            {/* Tenta usar o logo real, fallback para o ícone */}
+                            <Avatar 
+                                src={logoUrl} 
+                                variant="square" 
+                                sx={{ width: 60, height: 60, bgcolor: 'transparent' }}
+                                imgProps={{ style: { objectFit: 'contain' } }}
+                            >
+                                <DashboardIcon sx={{ fontSize: 60, color: styles.primary_color }} />
+                            </Avatar>
+                        </Box>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
+                            À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
+                        </div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
+                            {lodgeTitle} {lodgeName} {lodgeNumber}
+                        </div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
+                            BALAÚSTRE DA 15ª SESSÃO DO E∴ M∴ 2025-2027
+                        </div>
                     </div>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
-                        {lodgeTitle} {lodgeName} {lodgeNumber}
-                    </div>
-                    <div style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', margin: '3px 0', lineHeight: 1.2 }}>
-                        BALAÚSTRE DA 15ª SESSÃO DO E∴ M∴ 2025-2027
-                    </div>
-                </div>
+                )}
 
                 {/* Content (Mimetizando .content) */}
                 <div style={{ fontSize: '12pt', textAlign: 'justify', flexGrow: 1 }}>
-                    <p style={{ marginBottom: '8px', textIndent: 0, margin: 0 }}>
-                        <strong>ABERTURA:</strong> Precisamente às 20:00 do dia 11 de dezembro da E∴ V∴, 
-                        a {lodgeTitle} {lodgeName} {lodgeNumber}, reunida em seu Templo, sito à {lodgeData?.street_address || 'Endereço da Loja'}, 
-                        em Sessão Ordinária no Grau de Aprendiz.
-                        Ficando a Loja assim constituída:
-                        <strong>Venerável Mestre</strong> {lodgeData?.technical_contact_name || 'Nome do VM'};
-                        <strong>Primeiro Vigilante</strong> [1º Vig];
-                        <strong>Segundo Vigilante</strong> [2º Vig];
-                        <strong>Orador</strong> [Orador];
-                        <strong>Secretário</strong> [Secretário];
-                        <strong>Tesoureiro</strong> [Tesoureiro] e
-                        <strong>Chanceler</strong> [Chanceler],
-                        sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0, marginTop: '8px' }}>
-                        <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão anterior, sem emendas.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>EXPEDIENTE RECEBIDO:</strong> Sem expediente.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>EXPEDIENTE EXPEDIDO:</strong> Sem expediente.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> Correu livre e nada colheu.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>ORDEM DO DIA:</strong> Discussão e votação de assuntos administrativos.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                         <strong>TEMPO DE INSTRUÇÃO:</strong> Leitura de peça de arquitetura pelo Ir. Orador.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>TRONCO DE BENEFICÊNCIA:</strong> Colheu a quantia de R$ 150,00 a contento.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>PALAVRA A BEM GERAL:</strong> Reinou o silêncio.
-                    </p>
-                    <p style={{ marginBottom: '8px', textIndent: 0 }}>
-                        <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às 22:00,
-                        tendo eu, Secretário, lavrado o presente balaústre.
-                    </p>
+                    {isCondensed ? (
+                        <p style={{ textIndent: 0, margin: 0 }}>
+                            <strong>ABERTURA:</strong> Precisamente às 20:00 do dia 11 de dezembro da E∴ V∴, 
+                            a {lodgeTitle} {lodgeName} {lodgeNumber}, reunida em seu Templo, sito à {lodgeData?.street_address || 'Endereço da Loja'}, 
+                            em Sessão Ordinária no Grau de Aprendiz.
+                            Ficando a Loja assim constituída:
+                            <strong>Venerável Mestre</strong> {lodgeData?.technical_contact_name || 'Nome do VM'};
+                            <strong>Primeiro Vigilante</strong> [1º Vig]; e demais cargos...
+                             <strong> BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão anterior, sem emendas.
+                             <strong> EXPEDIENTE RECEBIDO:</strong> Sem expediente.
+                             <strong> EXPEDIENTE EXPEDIDO:</strong> Sem expediente.
+                             <strong> SACO DE PROPOSTAS E INFORMAÇÕES:</strong> Correu livre e nada colheu.
+                             <strong> ORDEM DO DIA:</strong> Discussão e votação de assuntos administrativos.
+                             <strong> TEMPO DE INSTRUÇÃO:</strong> Leitura de peça de arquitetura pelo Ir. Orador.
+                             <strong> TRONCO DE BENEFICÊNCIA:</strong> Colheu a quantia de R$ 150,00 a contento.
+                             <strong> PALAVRA A BEM GERAL:</strong> Reinou o silêncio.
+                             <strong> ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às 22:00,
+                            tendo eu, Secretário, lavrado o presente balaústre.
+                        </p>
+                    ) : (
+                        <>
+                            <p style={{ marginBottom: '8px', textIndent: 0, margin: 0 }}>
+                                <strong>ABERTURA:</strong> Precisamente às 20:00 do dia 11 de dezembro da E∴ V∴, 
+                                a {lodgeTitle} {lodgeName} {lodgeNumber}, reunida em seu Templo, sito à {lodgeData?.street_address || 'Endereço da Loja'}, 
+                                em Sessão Ordinária no Grau de Aprendiz.
+                                Ficando a Loja assim constituída:
+                                <strong>Venerável Mestre</strong> {lodgeData?.technical_contact_name || 'Nome do VM'};
+                                <strong>Primeiro Vigilante</strong> [1º Vig]; e demais cargos...
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0, marginTop: '8px' }}>
+                                <strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão anterior, sem emendas.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>EXPEDIENTE RECEBIDO:</strong> Sem expediente.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>EXPEDIENTE EXPEDIDO:</strong> Sem expediente.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> Correu livre e nada colheu.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>ORDEM DO DIA:</strong> Discussão e votação de assuntos administrativos.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                 <strong>TEMPO DE INSTRUÇÃO:</strong> Leitura de peça de arquitetura pelo Ir. Orador.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>TRONCO DE BENEFICÊNCIA:</strong> Colheu a quantia de R$ 150,00 a contento.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>PALAVRA A BEM GERAL:</strong> Reinou o silêncio.
+                            </p>
+                            <p style={{ marginBottom: '8px', textIndent: 0 }}>
+                                <strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às 22:00,
+                                tendo eu, Secretário, lavrado o presente balaústre.
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 {/* Footer (Mimetizando .footer) */}
@@ -322,12 +367,20 @@ const DocumentConfigPage = () => {
                             </tr>
                         </tbody>
                     </table>
+                    
+                    {currentSettings.styles.show_page_numbers && (
+                         <Typography variant="caption" sx={{ display: 'block', mt: 2, color: '#000' }}>
+                            Página 1 de 1
+                         </Typography>
+                    )}
                 </div>
             </div>
         );
     };
 
     if (loading) return <Box p={3}><CircularProgress /></Box>;
+
+    const paperDims = getPaperDimensions();
 
     return (
         <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
@@ -348,7 +401,53 @@ const DocumentConfigPage = () => {
                 <Grid item xs={12} md={4} sx={{ height: '100%' }}>
                     <Paper sx={{ p: 3, height: '100%', overflowY: 'auto', bgcolor: 'background.paper' }}>
                         <Typography variant="h6" gutterBottom color="primary">
-                            Configurações: {DOC_TYPES.find(t => t.key === currentType)?.label}
+                            Estrutura da Página
+                        </Typography>
+
+                         <Grid container spacing={2} sx={{ mb: 3 }}>
+                            <Grid item xs={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Tamanho</InputLabel>
+                                    <Select
+                                        value={currentSettings.styles.page_size || 'A4'}
+                                        label="Tamanho"
+                                        onChange={(e) => updateCurrentSetting('page_size', e.target.value, true)}
+                                    >
+                                        <MenuItem value="A4">A4 (210x297mm)</MenuItem>
+                                        <MenuItem value="A5">A5 (148x210mm)</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                             <Grid item xs={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Orientação</InputLabel>
+                                    <Select
+                                        value={currentSettings.styles.orientation || 'portrait'}
+                                        label="Orientação"
+                                        onChange={(e) => updateCurrentSetting('orientation', e.target.value, true)}
+                                    >
+                                        <MenuItem value="portrait">Retrato</MenuItem>
+                                        <MenuItem value="landscape">Paisagem</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+
+                        <FormControlLabel
+                             sx={{ mb: 2 }}
+                             control={
+                                 <Switch
+                                     checked={currentSettings.styles.show_page_numbers !== false}
+                                     onChange={(e) => updateCurrentSetting('show_page_numbers', e.target.checked, true)}
+                                 />
+                             }
+                             label="Exibir Numeração de Página"
+                        />
+
+                        <Divider sx={{ my: 3 }} />
+
+                        <Typography variant="h6" gutterBottom color="primary">
+                            Cabeçalho e Rodapé
                         </Typography>
                         
                         <FormControl fullWidth sx={{ mb: 3 }}>
@@ -361,14 +460,29 @@ const DocumentConfigPage = () => {
                                 <MenuItem value="header_classico.html">Clássico (Brasão Central)</MenuItem>
                                 <MenuItem value="header_moderno.html">Moderno (Minimalista)</MenuItem>
                                 <MenuItem value="header_duplo.html">Duplo (Loja + Obediência)</MenuItem>
-                                <MenuItem value="header_grid.html">Grid (Novo - Prancha)</MenuItem>
+                                <MenuItem value="header_grid.html">Grid (Loja à direita)</MenuItem>
+                                <MenuItem value="no_header">Nenhum (Papel Timbrado)</MenuItem>
                             </Select>
                         </FormControl>
+
+                        {currentType === 'balaustre' && (
+                             <FormControl fullWidth sx={{ mb: 3 }}>
+                                <InputLabel>Layout do Conteúdo</InputLabel>
+                                <Select
+                                    value={currentSettings.styles.content_layout || 'standard'}
+                                    label="Layout do Conteúdo"
+                                    onChange={(e) => updateCurrentSetting('content_layout', e.target.value, true)}
+                                >
+                                    <MenuItem value="standard">Padrão (Sessões em Parágrafos)</MenuItem>
+                                    <MenuItem value="condensed">Condensado (Texto Corrido)</MenuItem>
+                                </Select>
+                            </FormControl>
+                        )}
 
                         <Divider sx={{ my: 3 }} />
                         
                         <Typography variant="h6" gutterBottom color="primary">
-                            Estilos e Tipografia
+                            Aparência e Tipografia
                         </Typography>
 
                          <FormControl fullWidth sx={{ mb: 3 }}>
@@ -378,15 +492,15 @@ const DocumentConfigPage = () => {
                                 label="Fonte do Texto"
                                 onChange={(e) => updateCurrentSetting('font_family', e.target.value, true)}
                             >
-                                <MenuItem value="Arial, sans-serif">Arial (Padrão)</MenuItem>
-                                <MenuItem value="'Times New Roman', serif">Times New Roman (Formal)</MenuItem>
-                                <MenuItem value="'Roboto', sans-serif">Roboto (Moderno)</MenuItem>
-                                <MenuItem value="'Great Vibes', cursive">Manuscrita (Convites)</MenuItem>
+                                <MenuItem value="Arial, sans-serif">Arial</MenuItem>
+                                <MenuItem value="'Times New Roman', serif">Times New Roman</MenuItem>
+                                <MenuItem value="'Roboto', sans-serif">Roboto</MenuItem>
+                                <MenuItem value="'Great Vibes', cursive">Manuscrita</MenuItem>
                             </Select>
                         </FormControl>
 
                         <TextField
-                            label="Cor Primária (Titulos/Bordas)"
+                            label="Cor Principal"
                             type="color"
                             fullWidth
                             value={currentSettings.styles.primary_color}
@@ -395,68 +509,29 @@ const DocumentConfigPage = () => {
                             InputLabelProps={{ shrink: true }}
                         />
 
-                        <TextField
-                            label="Cor de Fundo da Página"
-                            type="color"
-                            fullWidth
-                            value={currentSettings.styles.background_color || '#ffffff'}
-                            onChange={(e) => updateCurrentSetting('background_color', e.target.value, true)}
-                            sx={{ mb: 3 }}
-                            InputLabelProps={{ shrink: true }}
-                        />
-
                          <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Fundo Artístico</InputLabel>
+                            <InputLabel>Borda da Página</InputLabel>
                             <Select
-                                value={currentSettings.styles.background_image || 'none'}
-                                label="Fundo Artístico"
-                                onChange={(e) => updateCurrentSetting('background_image', e.target.value, true)}
+                                value={currentSettings.styles.show_border ? currentSettings.styles.border_style : 'none'}
+                                label="Borda da Página"
+                                onChange={(e) => {
+                                    if (e.target.value === 'none') {
+                                        updateCurrentSetting('show_border', false, true);
+                                    } else {
+                                        updateCurrentSetting('show_border', true, true);
+                                        updateCurrentSetting('border_style', e.target.value, true);
+                                    }
+                                }}
                             >
-                                <MenuItem value="none">Nenhum (Cor Sólida)</MenuItem>
-                                <MenuItem value="url('/assets/bg/pergaminho.jpg')">Pergaminho Antigo</MenuItem>
-                                <MenuItem value="url('/assets/bg/marmore.jpg')">Mármore</MenuItem>
-                                <MenuItem value="radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(200,200,200,0.5) 100%)">Gradiente Radial</MenuItem>
-                                <MenuItem value="repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 10px, #ffffff 10px, #ffffff 20px)">Hachura Suave</MenuItem>
+                                <MenuItem value="none">Sem Borda</MenuItem>
+                                <MenuItem value="solid">Sólida Simples</MenuItem>
+                                <MenuItem value="double">Borda Dupla</MenuItem>
+                                <MenuItem value="groove">Borda em Relevo</MenuItem>
+                                <MenuItem value="dotted">Pontilhada</MenuItem>
                             </Select>
                         </FormControl>
-
-                         <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Exibir Borda</InputLabel>
-                            <Select
-                                value={currentSettings.styles.show_border ? 'yes' : 'no'}
-                                label="Exibir Borda"
-                                onChange={(e) => updateCurrentSetting('show_border', e.target.value === 'yes', true)}
-                            >
-                                <MenuItem value="yes">Sim, exibir borda</MenuItem>
-                                <MenuItem value="no">Não, remover borda</MenuItem>
-                            </Select>
-                        </FormControl>
-
-                        {currentSettings.styles.show_border && (
-                            <FormControl fullWidth sx={{ mb: 3 }}>
-                                <InputLabel>Estilo da Borda</InputLabel>
-                                <Select
-                                    value={currentSettings.styles.border_style || 'solid'}
-                                    label="Estilo da Borda"
-                                    onChange={(e) => updateCurrentSetting('border_style', e.target.value, true)}
-                                >
-                                    <MenuItem value="solid">Sólida Simples</MenuItem>
-                                    <MenuItem value="double">Borda Dupla</MenuItem>
-                                    <MenuItem value="groove">Borda em Relevo</MenuItem>
-                                    <MenuItem value="dotted">Pontilhada</MenuItem>
-                                </Select>
-                            </FormControl>
-                        )}
                         
                          <FormControl fullWidth sx={{ mb: 3 }}>
-                            <InputLabel>Fina (Padding Interno)</InputLabel>
-                             {/* Nota: Padding fixo 0.3cm por enquanto, mas poderia ser slider */}
-                             <Select disabled value="0.3cm" label="Fina (Padding Interno)">
-                                <MenuItem value="0.3cm">Padrão (0.3cm)</MenuItem>
-                             </Select>
-                        </FormControl>
-
-                        <FormControl fullWidth sx={{ mb: 3 }}>
                             <InputLabel>Espaçamento entre Linhas</InputLabel>
                             <Select
                                 value={currentSettings.styles.line_height || 1.5}
@@ -491,13 +566,12 @@ const DocumentConfigPage = () => {
                                 onClick={handleSave}
                                 disabled={saving}
                             >
-                                {saving ? 'Salvando...' : 'Salvar Configurações'}
+                                {saving ? 'Salvando...' : 'Salvar Padrão da Loja'}
                             </Button>
                         </Box>
                     </Paper>
                 </Grid>
 
-                {/* Painel de Preview (Direita) */}
                 <Grid item xs={12} md={8} sx={{ height: '100%' }}>
                      <Paper sx={{ 
                          p: 0, 
@@ -509,147 +583,82 @@ const DocumentConfigPage = () => {
                          overflow: 'hidden',
                          border: '1px solid #444'
                      }}>
-                        <Paper sx={{ 
-                            width: '210mm', 
-                            height: currentType === 'convite' ? '148mm' : '297mm', 
-                            bgcolor: currentSettings.styles.background_color || 'white', 
-                            backgroundImage: currentSettings.styles.background_image !== 'none' ? currentSettings.styles.background_image : undefined,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            transform: currentType === 'convite' ? 'scale(1)' : 'scale(0.85)', 
-                            transformOrigin: 'top center',
-                            mt: 4,
-                            mx: 'auto',
-                            boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-                            position: 'relative',
-                            color: 'black',
-                            fontFamily: currentSettings.styles.font_family.split(',')[0],
-                            p: currentSettings.styles.page_margin, // Padding Restaurado
-                            overflow: 'hidden',
-                            lineHeight: currentSettings.styles.line_height || 1.5
+                        <div style={{
+                             transform: 'scale(0.7)',
+                             transformOrigin: 'center center',
+                             transition: 'all 0.3s ease'
                         }}>
-                             {currentSettings.styles.show_border && (
-                                <div style={{ 
-                                    borderWidth: currentSettings.styles.border_style === 'double' ? '3px' : '2px',
-                                    borderStyle: currentSettings.styles.border_style || 'solid',
-                                    borderColor: currentSettings.styles.primary_color, 
-                                    position: 'absolute', 
-                                    top: '1cm', left: '1cm', right: '1cm', bottom: '1cm',
-                                    pointerEvents: 'none'
-                                }} />
-                            )}
-                            
-                            {/* Conteúdo com Padding Global (Header + Body) */}
-                            <div style={{ height: '100%', boxSizing: 'border-box' }}>
-                                {currentType !== 'balaustre' && (
-                                    currentSettings.header === 'header_grid.html' ? (
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 8fr',
-                                            alignItems: 'center',
-                                            height: '2cm',
-                                            overflow: 'hidden',
-                                            marginTop: '0.05cm',
-                                            marginRight: '0.1cm'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                                                <Avatar 
-                                                    src={logoUrl} 
-                                                    sx={{ width: '1.7cm', height: '1.7cm', bgcolor: 'white' }} 
-                                                    imgProps={{ style: { objectFit: 'contain' } }}
-                                                >
-                                                    <DashboardIcon sx={{ fontSize: 40 }} />
-                                                </Avatar>
-                                            </div>
-                                            <div style={{
-                                                position: 'relative',
-                                                backgroundColor: '#380404',
-                                                color: 'white',
-                                                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 10% 100%)',
-                                                textAlign: 'right',
-                                                padding: '2px 120px 2px 10px',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                justifyContent: 'center',
-                                                height: '100%'
-                                            }}>
-                                                <p style={{ margin: 0, fontFamily: 'sans-serif', fontSize: '9pt', fontWeight: 500 }}>
-                                                    {lodgeData?.obedience?.name || 'POTÊNCIA'}
-                                                </p>
-                                                <p style={{ margin: 0, fontFamily: 'serif', fontSize: '14pt', fontWeight: 'bold', lineHeight: 1.1, textTransform: 'uppercase' }}>
-                                                    {lodgeData?.lodge_title || 'A.R.L.S.'} {lodgeData?.lodge_name || 'Lodge'} Nº {lodgeData?.lodge_number || '0000'}
-                                                </p>
-                                                <img 
-                                                    src={logoUrl || ''} 
-                                                    style={{ 
-                                                        position: 'absolute', 
-                                                        right: '5px', 
-                                                        top: '50%', 
-                                                        transform: 'translateY(-50%)', 
-                                                        maxHeight: '1.7cm', 
-                                                        width: 'auto' 
-                                                    }} 
-                                                    alt="Logo" 
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : currentSettings.header === 'header_duplo.html' ? (
-                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: currentType === 'convite' ? '0.5cm' : '1.5cm', borderBottom: `1px solid ${currentSettings.styles.primary_color}`, paddingBottom: '10px' }}>
-                                        <Box sx={{ width: '60px', textAlign: 'center' }}>
-                                            <DashboardIcon sx={{ fontSize: 50, color: currentSettings.styles.primary_color }} />
-                                            <Typography variant="caption" sx={{ fontSize: '0.6em', display: 'block' }}>LOJA</Typography>
-                                        </Box>
-                                        <div style={{ textAlign: 'center', flex: 1 }}>
-                                            <Typography variant="h6" sx={{ color: currentSettings.styles.primary_color, fontWeight: 'bold', lineHeight: 1.2, textTransform: 'uppercase' }}>
-                                                A.'. R.'. L.'. S.'. EXEMPLO DE LOJA
-                                            </Typography>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                Nº 1.234
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                                                ORIENTE DE SÃO PAULO
-                                            </Typography>
-                                        </div>
-                                        <Box sx={{ width: '60px', textAlign: 'center' }}>
-                                            <ObedienceIcon sx={{ fontSize: 50, color: '#1a237e' }} />
-                                            <Typography variant="caption" sx={{ fontSize: '0.6em', display: 'block' }}>POTÊNCIA</Typography>
-                                        </Box>
-                                     </div>
-                                ) : (
-                                    <div style={{ textAlign: 'center', marginBottom: currentType === 'convite' ? '1cm' : '1.5cm' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                                            <DashboardIcon sx={{ fontSize: 60, color: currentSettings.styles.primary_color }} />
-                                        </Box>
-                                        <Typography variant="h5" sx={{ color: currentSettings.styles.primary_color, fontWeight: 'bold', mb: 0.5, textTransform: 'uppercase' }}>
-                                            CABEÇALHO {currentSettings.header.includes('classico') ? 'CLÁSSICO' : 'MODERNO'}
-                                        </Typography>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                                            ARLS "EXEMPLO DE LOJA" Nº 1.234
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                                            ORIENTE DE SÃO PAULO - RITO ESCOCÊS ANTIGO E ACEITO
-                                        </Typography>
-                                    </div>
-                                )
+                             <Paper sx={{ 
+                                width: paperDims.width, 
+                                height: paperDims.height, 
+                                bgcolor: currentSettings.styles.background_color || 'white', 
+                                backgroundImage: currentSettings.styles.background_image !== 'none' ? currentSettings.styles.background_image : undefined,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                boxShadow: '0 0 50px rgba(0,0,0,0.5)',
+                                position: 'relative',
+                                color: 'black',
+                                fontFamily: currentSettings.styles.font_family.split(',')[0],
+                                p: currentSettings.styles.page_margin,
+                                overflow: 'hidden',
+                                boxSizing: 'border-box',
+                                lineHeight: currentSettings.styles.line_height || 1.5
+                            }}>
+                                {currentSettings.styles.show_border && (
+                                    <div style={{ 
+                                        borderWidth: currentSettings.styles.border_style === 'double' ? '3px' : '2px',
+                                        borderStyle: currentSettings.styles.border_style || 'solid',
+                                        borderColor: currentSettings.styles.primary_color, 
+                                        position: 'absolute', 
+                                        top: '1cm', left: '1cm', right: '1cm', bottom: '1cm',
+                                        pointerEvents: 'none'
+                                    }} />
                                 )}
+                                
+                                {/* Conteúdo Central */}
+                                <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                    
+                                    {/* CABEÇALHO */}
+                                    {currentType !== 'balaustre' && (
+                                        currentSettings.header === 'header_grid.html' ? (
+                                            <div style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '1fr 8fr',
+                                                alignItems: 'center',
+                                                height: '2cm',
+                                                marginBottom: '10px'
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <Avatar src={logoUrl} sx={{ width: 50, height: 50 }} />
+                                                </div>
+                                                <div style={{
+                                                    backgroundColor: '#380404',
+                                                    color: 'white',
+                                                    padding: '5px',
+                                                    textAlign: 'right'
+                                                }}>
+                                                     TITULOS GRID...
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* ... Outros cabeçalhos de exemplo para Prancha/Convite ... */
+                                             <div style={{marginBottom: '20px', textAlign: 'center'}}>
+                                                {/* Logic to show header preview if needed, or leave empty if using renderPreviewContent logic */}
+                                            </div>
+                                        )
+                                    )}
 
-                                {/* Conteúdo Contextual */}
-                                <div style={{ padding: '0.3cm', height: '100%', boxSizing: 'border-box' }}>
-                                     {renderPreviewContent()}
+                                    {/* CORPO DO DOCUMENTO */}
+                                    <div style={{ flexGrow: 1, overflow: 'hidden' }}>
+                                         {renderPreviewContent()}
+                                    </div>
                                 </div>
-                            </div>
-
-                            {/* Footer */}
-                            <div style={{ position: 'absolute', bottom: '1.5cm', left: 0, width: '100%', textAlign: 'center' }}>
-                                    <Divider sx={{ width: '80%', mx: 'auto', mb: 1 }} />
-                                <Typography variant="caption" sx={{ color: '#666' }}>
-                                    Documento gerado eletronicamente pelo Sistema Sigma.
-                                </Typography>
-                            </div>
-                        </Paper>
+                            </Paper>
+                        </div>
                      </Paper>
                 </Grid>
             </Grid>
+
 
             <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                 <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
