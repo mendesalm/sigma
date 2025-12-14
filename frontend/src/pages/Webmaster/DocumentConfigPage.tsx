@@ -86,7 +86,8 @@ const DEFAULT_SETTINGS = {
             line_height: 1.2,
             margin_top: '10px',
             margin_bottom: '20px',
-            show: true
+            show: true,
+            background_color: 'transparent'
         },
         content_config: {
             font_family: null,
@@ -96,7 +97,8 @@ const DEFAULT_SETTINGS = {
             alignment: 'justify',
             color: '#000000',
             background_color: '#ffffff',
-            background_image: ''
+            background_image: '',
+            padding_top: '0px'
         },
         footer_config: {
             font_size: '10pt',
@@ -402,7 +404,8 @@ const DocumentConfigPage = () => {
              fontFamily: styles.font_family,
              lineHeight: contentConfig.line_height || 1.5,
              textAlign: contentConfig.alignment || 'justify',
-             padding: '10px' // Visual padding for background
+             padding: '10px', // Visual padding for background
+             paddingTop: contentConfig.padding_top || '0px'
         } as React.CSSProperties;
 
         if (currentType === 'convite') {
@@ -1045,10 +1048,23 @@ const DocumentConfigPage = () => {
                                             onChange={(e) => updateNestedSetting('titles_config', 'color', e.target.value)}
                                             InputLabelProps={{ shrink: true }}
                                         />
-                                        <FormControlLabel control={
-                                            <Switch size="small" checked={currentSettings.styles.titles_config?.color === 'transparent'} 
-                                            onChange={(e) => updateNestedSetting('titles_config', 'color', e.target.checked ? 'transparent' : '#000000')} />
-                                        } label="Transparente" />
+                                    </Grid>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <TextField label="Cor Fundo" type="color" size="small" fullWidth
+                                                value={currentSettings.styles.titles_config?.background_color === 'transparent' ? '#ffffff' : (currentSettings.styles.titles_config?.background_color || '#ffffff')}
+                                                onChange={(e) => updateNestedSetting('titles_config', 'background_color', e.target.value)}
+                                                InputLabelProps={{ shrink: true }}
+                                            />
+                                            <Button 
+                                                variant="outlined" 
+                                                size="small" 
+                                                onClick={() => updateNestedSetting('titles_config', 'background_color', 'transparent')}
+                                                sx={{ minWidth: '40px', padding: '4px', fontSize: '0.7em', height: '40px', lineHeight: 1 }}
+                                                title="Fundo Transparente"
+                                            >
+                                                Transp.
+                                            </Button>
+                                        </Box>
                                     </Grid>
                                     <Grid item xs={6}>
                                         <FormControlLabel control={
@@ -1061,7 +1077,6 @@ const DocumentConfigPage = () => {
                                             <Switch checked={currentSettings.styles.titles_config?.bold || false} 
                                                 onChange={(e) => updateNestedSetting('titles_config', 'bold', e.target.checked)} />
                                         } label="Negrito" />
-                                    </Grid>
                                     <Grid item xs={12}>
                                         <TextField label="Margem Superior" fullWidth size="small"
                                             value={currentSettings.styles.titles_config?.margin_top || '10px'}
@@ -1136,14 +1151,33 @@ const DocumentConfigPage = () => {
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <TextField label="Img Fundo (URL)" fullWidth size="small"
-                                            value={currentSettings.styles.content_config?.background_image || ''}
-                                            onChange={(e) => updateNestedSetting('content_config', 'background_image', e.target.value)}
-                                        />
-                                        <Button component="label" variant="outlined" size="small" sx={{ mt: 1, width: '100%' }}>
-                                            Upload Imagem
-                                            <input type="file" hidden onChange={(e) => handleFileUpload(e, 'content_config', 'background_image')} />
-                                        </Button>
+                                        <Typography variant="caption" gutterBottom>Imagem de Fundo</Typography>
+                                        {currentSettings.styles.content_config?.background_image ? (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, p: 1, border: '1px dashed #ccc', borderRadius: 1 }}>
+                                                <img 
+                                                    src={currentSettings.styles.content_config.background_image} 
+                                                    alt="Preview" 
+                                                    style={{ maxHeight: '80px', maxWidth: '100%', objectFit: 'contain' }} 
+                                                />
+                                                <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                                                    <Button component="label" variant="outlined" size="small" fullWidth>
+                                                        Trocar
+                                                        <input type="file" hidden onChange={(e) => handleFileUpload(e, 'content_config', 'background_image')} />
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outlined" color="error" size="small" fullWidth
+                                                        onClick={() => updateNestedSetting('content_config', 'background_image', null)}
+                                                    >
+                                                        Remover
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Button component="label" variant="outlined" size="small" fullWidth sx={{ height: '80px', borderStyle: 'dashed', flexDirection: 'column' }}>
+                                                Upload Imagem
+                                                <input type="file" hidden onChange={(e) => handleFileUpload(e, 'content_config', 'background_image')} />
+                                            </Button>
+                                        )}
                                     </Grid>
                                      <Grid item xs={6}>
                                         <FormControl fullWidth size="small">
@@ -1164,6 +1198,13 @@ const DocumentConfigPage = () => {
                                         <TextField label="Esp. Parágrafos" size="small" fullWidth
                                             value={currentSettings.styles.content_config?.spacing || '10px'}
                                             onChange={(e) => updateNestedSetting('content_config', 'spacing', e.target.value)}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <TextField label="Padding Superior" size="small" fullWidth
+                                            value={currentSettings.styles.content_config?.padding_top || '0px'}
+                                            onChange={(e) => updateNestedSetting('content_config', 'padding_top', e.target.value)}
+                                            placeholder="Ex: 50px ou 2cm"
                                         />
                                     </Grid>
                                     <Grid item xs={12}>
@@ -1212,14 +1253,33 @@ const DocumentConfigPage = () => {
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <TextField label="Img Fundo (URL)" fullWidth size="small"
-                                            value={currentSettings.styles.footer_config?.background_image || ''}
-                                            onChange={(e) => updateNestedSetting('footer_config', 'background_image', e.target.value)}
-                                        />
-                                        <Button component="label" variant="outlined" size="small" sx={{ mt: 1, width: '100%' }}>
-                                            Upload Imagem
-                                            <input type="file" hidden onChange={(e) => handleFileUpload(e, 'footer_config', 'background_image')} />
-                                        </Button>
+                                        <Typography variant="caption" gutterBottom>Imagem de Fundo</Typography>
+                                        {currentSettings.styles.footer_config?.background_image ? (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, p: 1, border: '1px dashed #ccc', borderRadius: 1 }}>
+                                                <img 
+                                                    src={currentSettings.styles.footer_config.background_image} 
+                                                    alt="Preview" 
+                                                    style={{ maxHeight: '80px', maxWidth: '100%', objectFit: 'contain' }} 
+                                                />
+                                                <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                                                    <Button component="label" variant="outlined" size="small" fullWidth>
+                                                        Trocar
+                                                        <input type="file" hidden onChange={(e) => handleFileUpload(e, 'footer_config', 'background_image')} />
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outlined" color="error" size="small" fullWidth
+                                                        onClick={() => updateNestedSetting('footer_config', 'background_image', null)}
+                                                    >
+                                                        Remover
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Button component="label" variant="outlined" size="small" fullWidth sx={{ height: '80px', borderStyle: 'dashed', flexDirection: 'column' }}>
+                                                Upload Imagem
+                                                <input type="file" hidden onChange={(e) => handleFileUpload(e, 'footer_config', 'background_image')} />
+                                            </Button>
+                                        )}
                                     </Grid>
                                      <Grid item xs={6}>
                                         <TextField label="Cor Texto" type="color" fullWidth size="small" 
@@ -1307,14 +1367,33 @@ const DocumentConfigPage = () => {
                                         />
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <TextField label="Imagem de Fundo (URL)" fullWidth size="small"
-                                            value={currentSettings.styles.background_image || ''}
-                                            onChange={(e) => updateCurrentSetting('background_image', e.target.value, true)}
-                                        />
-                                        <Button component="label" variant="outlined" size="small" sx={{ mt: 1, width: '100%' }}>
-                                            Upload Imagem de Fundo
-                                            <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'background_image')} />
-                                        </Button>
+                                        <Typography variant="caption" gutterBottom>Imagem de Fundo (Página)</Typography>
+                                        {currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, p: 1, border: '1px dashed #ccc', borderRadius: 1 }}>
+                                                <img 
+                                                    src={currentSettings.styles.background_image} 
+                                                    alt="Preview" 
+                                                    style={{ maxHeight: '80px', maxWidth: '100%', objectFit: 'contain' }} 
+                                                />
+                                                <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                                                    <Button component="label" variant="outlined" size="small" fullWidth>
+                                                        Trocar
+                                                        <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'background_image')} />
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outlined" color="error" size="small" fullWidth
+                                                        onClick={() => updateCurrentSetting('background_image', null, true)}
+                                                    >
+                                                        Remover
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Button component="label" variant="outlined" size="small" fullWidth sx={{ height: '80px', borderStyle: 'dashed', flexDirection: 'column' }}>
+                                                Upload Imagem Fundo
+                                                <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'background_image')} />
+                                            </Button>
+                                        )}
                                     </Grid>
                                     
                                     <Grid item xs={12}><Divider sx={{ my: 1 }}><Typography variant="caption">Bordas</Typography></Divider></Grid>
@@ -1362,14 +1441,33 @@ const DocumentConfigPage = () => {
                                     <Grid item xs={12}><Divider sx={{ my: 1 }}><Typography variant="caption">Marca d'Água</Typography></Divider></Grid>
 
                                     <Grid item xs={12}>
-                                        <TextField label="URL Marca d'Água" fullWidth size="small"
-                                            value={currentSettings.styles.watermark_image || ''}
-                                            onChange={(e) => updateCurrentSetting('watermark_image', e.target.value, true)}
-                                        />
-                                         <Button component="label" variant="outlined" size="small" sx={{ mt: 1, width: '100%' }}>
-                                            Upload Marca d'Água
-                                            <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'watermark_image')} />
-                                        </Button>
+                                        <Typography variant="caption" gutterBottom>Marca d'Água</Typography>
+                                        {currentSettings.styles.watermark_image ? (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, p: 1, border: '1px dashed #ccc', borderRadius: 1 }}>
+                                                <img 
+                                                    src={currentSettings.styles.watermark_image} 
+                                                    alt="Preview" 
+                                                    style={{ maxHeight: '80px', maxWidth: '100%', objectFit: 'contain' }} 
+                                                />
+                                                <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                                                    <Button component="label" variant="outlined" size="small" fullWidth>
+                                                        Trocar
+                                                        <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'watermark_image')} />
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outlined" color="error" size="small" fullWidth
+                                                        onClick={() => updateCurrentSetting('watermark_image', null, true)}
+                                                    >
+                                                        Remover
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Button component="label" variant="outlined" size="small" fullWidth sx={{ height: '80px', borderStyle: 'dashed', flexDirection: 'column' }}>
+                                                Upload Marca d'Água
+                                                <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'watermark_image')} />
+                                            </Button>
+                                        )}
                                     </Grid>
                                     <Grid item xs={12}>
                                         <Typography variant="caption">Opacidade Marca d'Água ({Math.round((currentSettings.styles.watermark_opacity || 0.1) * 100)}%)</Typography>
@@ -1412,16 +1510,18 @@ const DocumentConfigPage = () => {
                             display: 'flex', 
                             justifyContent: 'center', 
                             alignItems: 'flex-start',
-                            padding: '20px'
+                            padding: '20px',
+                            zoom: 0.7 // Scale down the preview for better visibility
                         }}>
                              <Paper elevation={3} sx={{ 
+                                flexShrink: 0,
                                 width: paperDims.width, 
-                                minHeight: paperDims.height, 
+                                height: paperDims.height, 
                                 padding: currentSettings.styles.page_margin || '1cm', 
                                 boxSizing: 'border-box',
                                 backgroundColor: currentSettings.styles.background_color || '#fff',
                                 backgroundImage: currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? `url(${currentSettings.styles.background_image})` : undefined,
-                                backgroundSize: 'cover',
+                                backgroundSize: '100% 100%',
                                 backgroundRepeat: 'no-repeat',
                                 backgroundPosition: 'center',
                                 // Re-enable border visualization
@@ -1503,7 +1603,8 @@ const DocumentConfigPage = () => {
                                             lineHeight: currentSettings.styles.titles_config?.line_height || 1.2,
                                             textTransform: currentSettings.styles.titles_config?.uppercase ? 'uppercase' : 'none',
                                             fontWeight: currentSettings.styles.titles_config?.bold ? 'bold' : 'normal',
-                                            fontSize: currentSettings.styles.titles_config?.font_size || '14pt'
+                                            fontSize: currentSettings.styles.titles_config?.font_size || '14pt',
+                                            backgroundColor: currentSettings.styles.titles_config?.background_color || 'transparent'
                                         }}>
                                             À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br/>
                                             {formatMasonicText(lodgeData?.lodge_title || 'A.R.L.S.')} {lodgeData?.lodge_name || 'NOME DA LOJA'} Nº {lodgeData?.lodge_number || '0000'} <br/>
