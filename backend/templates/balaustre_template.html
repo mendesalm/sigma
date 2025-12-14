@@ -67,24 +67,110 @@
       }
 
       ;
-      color: #000;
+
+      color: {
+          {
+          styles.primary_color
+        }
+      }
+
+      ;
+
+      background-color: {
+          {
+          styles.background_color
+        }
+      }
+
+      ;
+
+        {
+        % if styles.background_image and styles.background_image !='none' %
+      }
+
+      background-image: url('{{ styles.background_image }}');
+      background-size: cover;
+      background-repeat: no-repeat;
+
+        {
+        % endif %
+      }
+
+      /* Margin and padding logic moved to page-content and page-border */
       margin: 0;
       padding: 0;
     }
 
-    /* Fixed border for every page at exact 1cm from edge */
+    /* Watermark Style */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: auto;
+      z-index: -1;
+
+      opacity: {
+          {
+          styles.watermark_opacity
+        }
+      }
+
+      ;
+      background-image: url('{{ styles.watermark_image }}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* Fixed border for every page at dynamic margin from edge */
     .page-border {
       position: fixed;
-      top: 0cm;
-      left: 0cm;
-      bottom: 0cm;
-      right: 0cm;
+
+      top: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      left: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      bottom: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      right: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
 
         {
         % if styles.show_border %
       }
 
-      border: 3px {
+      border: {
+          {
+          styles.border_width
+        }
+      }
+
+        {
           {
           styles.border_style
         }
@@ -92,7 +178,7 @@
 
         {
           {
-          styles.primary_color
+          styles.border_color
         }
       }
 
@@ -108,26 +194,76 @@
         % endif %
       }
 
-      z-index: 9999;
+      z-index: 2147483647;
       pointer-events: none;
     }
 
     /* Container to handle margins relative to the border */
     .page-content {
-      /* Padding keeps text away from the border */
-      padding: .6cm .4cm .4cm .4cm;
-      width: 100%;
+      /* Content position starts after margin */
+      position: absolute;
+
+      top: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      left: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      right: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      bottom: {
+          {
+          styles.page_margin
+        }
+      }
+
+      ;
+
+      /* Internal padding from border to text */
+      padding: {
+          {
+          styles.page_padding
+        }
+      }
+
+      ;
+
+      width: auto;
       box-sizing: border-box;
+      overflow: hidden;
+      /* Prevent spillover */
     }
 
     /* Header Styles (Default) - Specific headers may override via inline styles */
     .header {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
 
     .header img {
-      height: 60px;
+      height: {
+          {
+          styles.header_config.logo_size
+        }
+      }
+
+      ;
       width: auto;
       margin-bottom: 10px;
     }
@@ -135,18 +271,76 @@
     .header-text {
       font-weight: bold;
       text-transform: uppercase;
-      font-size: 12pt;
+
+      font-size: {
+          {
+          styles.header_config.font_size_title
+        }
+      }
+
+      ;
       margin: 3px 0;
       line-height: 1.2;
+
+      color: {
+          {
+          styles.header_config.color or '#000'
+        }
+      }
+
+      ;
     }
 
     .content {
-      text-align: justify;
-      font-size: 12pt;
+      text-align: {
+          {
+          styles.content_config.alignment
+        }
+      }
+
+      ;
+
+      font-size: {
+          {
+          styles.content_config.font_size
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.content_config.font_family or styles.font_family
+        }
+      }
+
+      ;
+
+      line-height: {
+          {
+          styles.content_config.line_height
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.content_config.color or '#000'
+        }
+      }
+
+      ;
     }
 
     p {
-      margin-bottom: 8px;
+      margin-bottom: {
+          {
+          styles.content_config.spacing
+        }
+      }
+
+      ;
       text-indent: 0;
     }
 
@@ -155,9 +349,40 @@
     }
 
     .footer {
-      margin-top: 40px;
+      margin-top: {
+          {
+          styles.footer_config.spacing_top
+        }
+      }
+
+      ;
       text-align: center;
       page-break-inside: avoid;
+
+      font-size: {
+          {
+          styles.footer_config.font_size
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.font_family
+        }
+      }
+
+      ;
+
+      /* Footer usually follows global font or its own if added */
+      color: {
+          {
+          styles.footer_config.color or '#000'
+        }
+      }
+
+      ;
     }
 
     .footer-date {
@@ -179,7 +404,13 @@
     }
 
     .signature-line {
-      border-top: 1px solid black;
+      border-top: 1px solid {
+          {
+          styles.footer_config.color or '#000'
+        }
+      }
+
+      ;
       margin-bottom: 5px;
       width: 90%;
       margin-left: auto;
@@ -187,12 +418,24 @@
     }
 
     .signature-name {
-      font-size: 10pt;
+      font-size: {
+          {
+          styles.footer_config.font_size
+        }
+      }
+
+      ;
       margin-bottom: 2px;
     }
 
     .signature-role {
-      font-size: 10pt;
+      font-size: {
+          {
+          styles.footer_config.font_size
+        }
+      }
+
+      ;
       text-transform: uppercase;
     }
 
@@ -218,6 +461,8 @@
 
 <body>
 
+  <div class="watermark"></div>
+
   <div class="page-border"></div>
 
   <div class="page-content">
@@ -225,6 +470,23 @@
     <!-- Modular Header -->
     {% if header_template %}
     {% include header_template %}
+    {% endif %}
+
+    <!-- BALAÚSTRE Title Section -->
+    {% if styles.titles_config.show | default(true) %}
+    <div class="document-title" style="text-align: {{ styles.titles_config.alignment }};
+                margin-top: {{ styles.titles_config.margin_top }};
+                margin-bottom: {{ styles.titles_config.margin_bottom }};
+                font-family: {{ styles.titles_config.font_family or styles.font_family }};
+                color: {{ styles.titles_config.color or styles.primary_color }};
+                line-height: {{ styles.titles_config.line_height }};
+                {% if styles.titles_config.uppercase %}text-transform: uppercase;{% endif %}
+                {% if styles.titles_config.bold %}font-weight: bold;{% endif %}
+                font-size: {{ styles.titles_config.font_size }};">
+      À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br>
+      {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
+      BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
+    </div>
     {% endif %}
 
     <div class="content">

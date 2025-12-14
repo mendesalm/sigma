@@ -21,12 +21,8 @@ class PranchaStrategy(DocumentStrategy):
         obedience = db.query(models.Obedience).filter(models.Obedience.id == lodge.obedience_id).first()
 
         # Parse Settings
-        from schemas.document_settings_schema import DocumentSettings
-        doc_settings_raw = lodge.document_settings or {}
-        try:
-             validated_settings = DocumentSettings(**doc_settings_raw)
-        except:
-             validated_settings = DocumentSettings()
+        # Parse Settings
+        validated_settings = self._parse_settings(lodge)
              
         context = self._get_common_context(lodge, validated_settings)
         

@@ -1,0 +1,52 @@
+<div class="header-wrapper"
+    style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }};">
+
+    <!-- Background Layer -->
+    <div class="header-bg" style="
+        position: absolute; 
+        top: 0; left: 0; right: 0; bottom: 0; 
+        background-color: {{ styles.header_config.background_color or 'transparent' }};
+        {% if styles.header_config.background_image %}
+        background-image: url('{{ styles.header_config.background_image }}');
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+        opacity: {{ styles.header_config.background_opacity }};
+        z-index: 0;
+    "></div>
+
+    <!-- Content Layer -->
+    <div class="header-content"
+        style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.3cm'}}; box-sizing: border-box; {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+
+            <!-- Left Logo: Obedience (logo2) -->
+            <div style="width: 120px; text-align: left; flex-shrink: 0;">
+                {% if styles.header_config.logo_obedience %}
+                <img src="{{ styles.header_config.logo_obedience }}" alt="Logo Potência"
+                    style="max-height: {{ styles.header_config.logo_size }}; max-width: 100%; height: auto;">
+                {% elif footer_image %}
+                <img src="{{ footer_image }}" alt="Logo Potência"
+                    style="max-height: {{ styles.header_config.logo_size }}; max-width: 100%; height: auto;">
+                {% endif %}
+            </div>
+
+            <!-- Center Text -->
+            <div
+                style="flex-grow: 1; margin: 0 15px; text-align: {{ styles.header_config.alignment_title }}; font-size: {{ styles.header_config.font_size_title }}; color: {{ styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase;">
+                {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
+                <span
+                    style="font-size: {{ styles.header_config.font_size_subtitle }}; display: block; line-height: 1.2; font-weight: normal; margin-top: 5px; text-align: {{ styles.header_config.alignment_subtitle }};">
+                    Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }} <br>
+                    Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
+                </span>
+            </div>
+
+            <!-- Right Logo: Lodge -->
+            <div style="width: 120px; text-align: right; flex-shrink: 0;">
+                <img src="{{ header_image }}" alt="Logo Loja"
+                    style="max-height: {{ styles.header_config.logo_size }}; max-width: 100%; height: auto;">
+            </div>
+        </div>
+    </div>
+</div>

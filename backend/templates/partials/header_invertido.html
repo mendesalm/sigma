@@ -1,0 +1,42 @@
+<div class="header-wrapper"
+    style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }}; text-align: right;">
+
+    <!-- Background Layer -->
+    <div class="header-bg" style="
+        position: absolute; 
+        top: 0; left: 0; right: 0; bottom: 0; 
+        background-color: {{ styles.header_config.background_color or 'transparent' }};
+        {% if styles.header_config.background_image %}
+        background-image: url('{{ styles.header_config.background_image }}');
+        background-size: cover;
+        background-position: center;
+        {% endif %}
+        opacity: {{ styles.header_config.background_opacity }};
+        z-index: 0;
+    "></div>
+
+    <!-- Content Layer -->
+    <div class="header-content"
+        style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.3cm' }}; box-sizing: border-box; {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}">
+
+        <!-- Invertido Layout: Text Left, Logo Right -->
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 20px;">
+            <div
+                style="flex-grow: 1; font-size: {{ styles.header_config.font_size_title }}; color: {{ styles.header_config.color or styles.primary_color }}; font-weight: bold; margin: 5px 0; text-transform: uppercase; text-align: {{ styles.header_config.alignment_title }};">
+                {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
+                <span
+                    style="font-size: {{ styles.header_config.font_size_subtitle }}; display: block; line-height: 1.2; font-weight: normal; margin-top: 5px; text-align: {{ styles.header_config.alignment_subtitle }};">
+                    Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }} <br>
+                    Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
+                </span>
+            </div>
+
+            {% if header_image %}
+            <div style="flex-shrink: 0;">
+                <img src="{{ header_image }}" alt="Logo"
+                    style="max-height: {{ styles.header_config.logo_size }}; width: auto;">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

@@ -21,14 +21,8 @@ class BalaustreStrategy(DocumentStrategy):
         obedience = db.query(models.Obedience).filter(models.Obedience.id == lodge.obedience_id).first()
 
         # Parse Settings
-        doc_settings_raw = lodge.document_settings or {}
-        # We handle validation in the Base or Service invocation, but let's assume valid object passed or parse here
-        # Ideally, we pass the parsed settings object to collect_data or parse it here
-        from schemas.document_settings_schema import DocumentSettings
-        try:
-             validated_settings = DocumentSettings(**doc_settings_raw)
-        except:
-             validated_settings = DocumentSettings()
+        # Using centralized parser in base strategy
+        validated_settings = self._parse_settings(lodge)
              
         context = self._get_common_context(lodge, validated_settings)
 

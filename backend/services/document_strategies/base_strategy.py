@@ -33,6 +33,34 @@ class DocumentStrategy(ABC):
     def get_document_type_key(self) -> str:
         """Returns the key used in DocumentSettings (e.g., 'balaustre', 'prancha')."""
         pass
+    
+    def _parse_settings(self, lodge: models.Lodge) -> DocumentSettings:
+        """
+        Parses document settings with migration logic for legacy flat structures.
+        """
+        doc_settings_raw = lodge.document_settings or {}
+        
+        # MIGRATION LOGIC FOR LEGACY FLAT SETTINGS
+        # If the settings are flat (no 'balaustre' key but has fields usually found in DocumentSettings root in legacy),
+        # we wrap or duplicate them for the current strategy key.
+        # Ideally, we populate ALL keys to be safe.
+        
+        main_keys = {'balaustre', 'prancha', 'convite'}
+        has_main_keys = any(k in doc_settings_raw for k in main_keys)
+        
+        if doc_settings_raw and not has_main_keys:
+             # It's a legacy flat dictionary. Convert to hierarchical.
+             # We apply the same settings to all types to be safe.
+             doc_settings_raw = {
+                 'balaustre': doc_settings_raw,
+                 'prancha': doc_settings_raw,
+                 'convite': doc_settings_raw
+             }
+
+        try:
+             return DocumentSettings(**doc_settings_raw)
+        except:
+             return DocumentSettings()
 
     def _get_common_context(self, lodge: models.Lodge, doc_settings: DocumentSettings) -> Dict[str, Any]:
         """

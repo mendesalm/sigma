@@ -16,3 +16,21 @@ router = APIRouter(
 @router.get("/")
 def read_documents():
     return {"message": "Documents endpoint"}
+
+from pydantic import BaseModel
+from typing import Dict, Any
+
+class PreviewRequest(BaseModel):
+    template_name: str
+    context: Dict[str, Any]
+
+@router.post("/preview/render")
+def render_preview(payload: PreviewRequest, db: Session = Depends(database.get_db)):
+    """
+    Renders a partial template (header/footer) given a context.
+    """
+    from services.document_generation_service import DocumentGenerationService
+    service = DocumentGenerationService(db)
+    
+    html_content = service.render_partial(payload.template_name, payload.context)
+    return {"html": html_content}

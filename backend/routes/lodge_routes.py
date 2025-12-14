@@ -107,3 +107,48 @@ async def upload_lodge_logo(
         raise HTTPException(status_code=500, detail=f"Erro ao salvar logo: {str(e)}")
         
     return {"message": "Logo atualizado com sucesso", "path": file_path}
+
+
+@router.post("/{lodge_id}/upload_asset", summary="Upload de Asset Genérico da Loja")
+async def upload_lodge_asset(
+    lodge_id: int,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Upload a generic asset file (image, etc) for the lodge.
+    Returns the URL to access the file.
+    """
+    # Verify Permissions
+    user_type = current_user.get("user_type")
+    user_lodge_id = current_user.get("lodge_id")
+    
+    if user_type != "super_admin":
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Not authorized to upload assets for this lodge"
+            )
+
+    # Sanitize filename
+    safe_filename = file.filename.replace(" ", "_").lower()
+    
+    # Define storage path
+    # storage/lodges/{id}/assets/
+    storage_dir = os.path.join("storage", "lodges", str(lodge_id), "assets")
+    os.makedirs(storage_dir, exist_ok=True)
+    
+    file_path = os.path.join(storage_dir, safe_filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}")
+        
+    # Return Public URL
+    # Assuming /storage is mounted to root storage
+    # Windows paths might use \, force / for URL
+    url_path = f"/storage/lodges/{lodge_id}/assets/{safe_filename}"
+    
+    return {"url": url_path}

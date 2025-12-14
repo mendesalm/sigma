@@ -103,6 +103,31 @@ class DocumentGenerationService:
             'balaustre_eleitoral': ElectoralBalaustreStrategy(self),
         }
 
+    def render_partial(self, template_name: str, context: dict) -> str:
+        """
+        Renders a partial template (e.g., a header) with the provided context.
+        Used for frontend previews.
+        """
+        try:
+            # Add partials/ prefix if not present, as usually requested
+            if not template_name.startswith('partials/') and not template_name.endswith('.html'):
+                 # Assuming full path logic or relative to templates root
+                 pass 
+            
+            # Since frontend sends 'header_classico.html', and it's in templates/partials/
+            # We might need to adjust path if the loader is at templates/
+            
+            # Best effort: try to load as is, or with partials/ prefix
+            try:
+                template = self.env.get_template(f"partials/{template_name}")
+            except:
+                template = self.env.get_template(template_name)
+                
+            return template.render(**context)
+        except Exception as e:
+            print(f"Error rendering partial {template_name}: {e}")
+            return f"<div style='color:red'>Error rendering template: {str(e)}</div>"
+
     def get_strategy(self, doc_type: str):
          strategy = self.strategies.get(doc_type)
          if not strategy:
@@ -331,7 +356,26 @@ class DocumentGenerationService:
 
         # Injeta logo dinâmico (Assets)
         lodge_id = data.get('lodge_id')
-        if lodge_id:
+        
+        # Check for custom logo in styles
+        custom_logo_url = None
+        styles = data.get('styles')
+        if styles:
+            # Handle both dict and Pydantic object
+            if isinstance(styles, dict):
+                header_config = styles.get('header_config', {})
+                if isinstance(header_config, dict):
+                    custom_logo_url = header_config.get('logo_url')
+                else: 
+                     custom_logo_url = getattr(header_config, 'logo_url', None)
+            else: 
+                 header_config = getattr(styles, 'header_config', None)
+                 if header_config:
+                     custom_logo_url = getattr(header_config, 'logo_url', None)
+
+        if custom_logo_url:
+             data['header_image'] = custom_logo_url
+        elif lodge_id:
             data['header_image'] = self._get_lodge_logo(lodge_id)
         else:
             data['header_image'] = self._get_base64_asset("images/logoJPJ_.png")

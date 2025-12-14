@@ -24,7 +24,8 @@ O módulo oferece flexibilidade através de componentes configuráveis:
 *   **Cabeçalhos Modulares:** Suporte a troca dinâmica de arquivos parciais (`partials`), permitindo layouts como "Clássico" (Brasão centralizado), "Moderno" (Minimalista), ou "Grid" (Informações laterais).
 *   **Tipografia Dinâmica:** Fontes (serifadas, sans-serif, cursivas), tamanhos e espaçamentos (line-height) são injetados diretamente no CSS (`@page`), permitindo controle da densidade do texto.
 *   **Layout Condicional:** Lógica de layout (`Standard` vs `Condensed`) para otimizar o uso de papel em documentos extensos.
-*   **Elementos Opcionais:** Bordas, numeração de páginas, marcas d'água e cor primária customizável.
+*   **Controle de Alinhamento:** Opções granulares para alinhamento horizontal (Esquerda, Centro, Direita) do Título da Loja e do Subtítulo (Afiliação), permitindo adaptação a diferentes layouts de papel timbrado.
+*   **Elementos Decorativos:** Bordas personalizáveis para o rodapé do cabeçalho (com controle de espessura, cor e estilo), numeração de páginas, marcas d'água e cor primária customizável.
 
 ## 4. Estrutura de Dados (Schema)
 As configurações são armazenadas no formato JSON validado pelo seguinte esquema (simplificado):
