@@ -103,17 +103,139 @@
 
     .content {
       flex-grow: 1;
-      /* Pushes footer down */
-      text-align: justify;
-      padding: 2cm 0;
+
+      text-align: {
+          {
+          styles.content_config.alignment
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.content_config.font_family or styles.font_family
+        }
+      }
+
+      ;
+
+      font-size: {
+          {
+          styles.content_config.font_size
+        }
+      }
+
+      ;
+
+      line-height: {
+          {
+          styles.content_config.line_height
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.content_config.color or styles.primary_color
+        }
+      }
+
+      ;
+      margin-top: 20px;
+    }
+
+    .content p {
+      margin-bottom: {
+          {
+          styles.content_config.spacing
+        }
+      }
+
+      ;
     }
 
     .title-section {
-      text-align: center;
-      margin-bottom: 2cm;
-      font-weight: bold;
-      font-size: 1.2em;
-      text-transform: uppercase;
+      text-align: {
+          {
+          styles.titles_config.alignment
+        }
+      }
+
+      ;
+
+      margin-top: {
+          {
+          styles.titles_config.margin_top
+        }
+      }
+
+      ;
+
+      margin-bottom: {
+          {
+          styles.titles_config.margin_bottom
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.titles_config.font_family or styles.font_family
+        }
+      }
+
+      ;
+
+      font-size: {
+          {
+          styles.titles_config.font_size
+        }
+      }
+
+      ;
+
+      font-weight: {
+          {
+          'bold' if styles.titles_config.bold else 'normal'
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.titles_config.color or styles.primary_color
+        }
+      }
+
+      ;
+
+      text-transform: {
+          {
+          'uppercase' if styles.titles_config.uppercase else 'none'
+        }
+      }
+
+      ;
+
+      line-height: {
+          {
+          styles.titles_config.line_height
+        }
+      }
+
+      ;
+
+      display: {
+          {
+          'block' if styles.titles_config.show else 'none'
+        }
+      }
+
+      ;
     }
 
     .footer {

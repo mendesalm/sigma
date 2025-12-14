@@ -119,7 +119,9 @@ const DocumentConfigPage = () => {
     const [allSettings, setAllSettings] = useState({
         balaustre: { ...DEFAULT_SETTINGS },
         prancha: { ...DEFAULT_SETTINGS, styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 } },
-        convite: { ...DEFAULT_SETTINGS, header: 'header_moderno.html', styles: { ...DEFAULT_SETTINGS.styles, font_family: "'Times New Roman', serif", show_border: true, border_style: 'double' } }
+        edital: { ...DEFAULT_SETTINGS, styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true } },
+        convite: { ...DEFAULT_SETTINGS, header: 'header_moderno.html', styles: { ...DEFAULT_SETTINGS.styles, font_family: "'Times New Roman', serif", show_border: true, border_style: 'double' } },
+        certificado: { ...DEFAULT_SETTINGS, header: 'header_timbre.html', styles: { ...DEFAULT_SETTINGS.styles, orientation: 'landscape', show_border: true, border_style: 'solid', border_width: '5px' } }
     });
 
     const currentSettings = allSettings[currentType as keyof typeof allSettings];
@@ -130,6 +132,13 @@ const DocumentConfigPage = () => {
             fetchSettings();
         }
     }, [user]);
+
+    const formatMasonicText = (text: string | null | undefined) => {
+        if (!text) return '';
+        return text
+            .replace(/\bA\.?R\.?L\.?S\.?\b/gi, 'A∴R∴L∴S∴')
+            .replace(/\bA\.?R\.?B\.?L\.?S\.?\b/gi, 'A∴R∴B∴L∴S∴');
+    };
 
     const fetchSettings = async () => {
         setLoading(true);
@@ -172,10 +181,20 @@ const DocumentConfigPage = () => {
                             ...data.prancha, 
                             styles: deepMergeStyles(prev.prancha.styles, data.prancha?.styles)
                         },
+                        edital: { 
+                            ...prev.edital, 
+                            ...data.edital, 
+                            styles: deepMergeStyles(prev.edital.styles, data.edital?.styles)
+                        },
                         convite: { 
                             ...prev.convite, 
                             ...data.convite, 
                             styles: deepMergeStyles(prev.convite.styles, data.convite?.styles)
+                        },
+                        certificado: { 
+                            ...prev.certificado, 
+                            ...data.certificado, 
+                            styles: deepMergeStyles(prev.certificado.styles, data.certificado?.styles)
                         }
                     }));
                 }
@@ -316,7 +335,7 @@ const DocumentConfigPage = () => {
                 const context = {
                     lodge_name: lodgeData?.lodge_name || 'NOME DA LOJA',
                     lodge_number: lodgeData?.lodge_number || '0000',
-                    lodge_title_formatted: lodgeData?.lodge_title || 'A.R.L.S.',
+                    lodge_title_formatted: formatMasonicText(lodgeData?.lodge_title || 'A.R.L.S.'),
                     session_number: '_____',
                     exercicio_maconico: '2025/2026',
                     styles: currentSettings.styles,
@@ -369,7 +388,7 @@ const DocumentConfigPage = () => {
         const bgColor = contentConfig.background_color || 'transparent';
         const bgImage = contentConfig.background_image ? `url(${contentConfig.background_image})` : undefined;
 
-        const lodgeTitle = lodgeData?.lodge_title || 'A.R.L.S.';
+        const lodgeTitle = formatMasonicText(lodgeData?.lodge_title || 'A.R.L.S.');
         const lodgeName = lodgeData?.lodge_name || 'Exemplo de Loja';
         const lodgeNumber = lodgeData?.lodge_number ? `Nº ${lodgeData.lodge_number}` : '';
         const lodgeCity = lodgeData?.city || 'Oriente de ...';
@@ -404,6 +423,28 @@ const DocumentConfigPage = () => {
             );
         }
 
+        if (currentType === 'certificado') {
+            return (
+               <div style={{ ...commonStyle, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+                   <Typography variant="h2" sx={{ fontFamily: 'serif', mb: 2, color: styles.primary_color }}>Certificado</Typography>
+                   <Typography paragraph sx={{ fontSize: '1.5em', mb: 4 }}>
+                       Certificamos que o Irmão
+                   </Typography>
+                   <Typography variant="h3" sx={{ fontFamily: 'cursive', mb: 4 }}>
+                       Fulano de Tal
+                   </Typography>
+                   <Typography paragraph sx={{ fontSize: '1.2em' }}>
+                       Participou com aproveitamento do Seminário de Administração Maçônica,<br/>
+                       realizado no dia 15 de Outubro de 2025.
+                   </Typography>
+                   <div style={{ marginTop: 'auto', paddingBottom: '2cm', display: 'flex', justifyContent: 'space-around' }}>
+                        <div>__________________________<br/>Venerável Mestre</div>
+                        <div>__________________________<br/>Secretário</div>
+                   </div>
+               </div>
+           );
+       }
+
         if (currentType === 'prancha') {
             return (
                 <div style={{ ...commonStyle }}>
@@ -434,6 +475,35 @@ const DocumentConfigPage = () => {
             );
         }
 
+        if (currentType === 'edital') {
+            return (
+                <div style={{ ...commonStyle }}>
+                    <div style={{ textAlign: 'right', marginBottom: '2cm' }}>
+                        {lodgeCity}, 15 de Outubro de 2025.
+                    </div>
+                    <div style={{ marginBottom: '1cm', textAlign: 'left' }}>
+                        <strong>Aos<br/>
+                        Respeitáveis Irmãos do Quadro</strong>
+                    </div>
+                    <Typography paragraph sx={{ textIndent: '2cm' }}>
+                        <strong>ASSUNTO: EDITAL DE ELEIÇÕES.</strong>
+                    </Typography>
+                    <Typography paragraph sx={{ textIndent: '2cm' }}>
+                         Pelo presente Edital, em conformidade com o Regulamento Geral, convoco todos os Obreiros 
+                         desta Oficina para a Sessão Magna de Eleição da Administração para o próximo exercício maçonico.
+                    </Typography>
+                    <Typography paragraph sx={{ textIndent: '2cm' }}>
+                        A votação ocorrerá no Templo da Loja, iniciando-se às 20h00, em primeira convocação.
+                    </Typography>
+                    <div style={{ textAlign: 'center', marginTop: '4cm' }}>
+                        <p>Fraternalmente,</p>
+                        <br/><br/>
+                        <strong>Venerável Mestre</strong>
+                    </div>
+                </div>
+            );
+        }
+
         // Padrão: Balaústre
         const isCondensed = currentSettings.styles.content_layout === 'condensed';
 
@@ -450,6 +520,52 @@ const DocumentConfigPage = () => {
                 <div style={{ fontSize: contentConfig.font_size || '12pt', textAlign: contentConfig.alignment as any || 'justify', flexGrow: 1 }}>
                     {/* DUMB DATA FOR PREVIEW */}
                     {(() => {
+                        if (currentType === 'prancha') {
+                            return (
+                                <>
+                                    <div style={{
+                                        marginBottom: '20px',
+                                        textAlign: (currentSettings.styles.titles_config?.alignment as any) || 'center',
+                                        fontFamily: currentSettings.styles.titles_config?.font_family || currentSettings.styles.font_family,
+                                        fontSize: currentSettings.styles.titles_config?.font_size || '14pt',
+                                        fontWeight: currentSettings.styles.titles_config?.bold ? 'bold' : 'normal',
+                                        textTransform: currentSettings.styles.titles_config?.uppercase ? 'uppercase' : 'none',
+                                        color: currentSettings.styles.titles_config?.color || currentSettings.styles.primary_color,
+                                        display: currentSettings.styles.titles_config?.show === false ? 'none' : 'block',
+                                        lineHeight: currentSettings.styles.titles_config?.line_height || 1.2
+                                    }}>
+                                        EDITAL DE CONVOCAÇÃO<br/>
+                                        SESSÃO MAGNA DE INICIAÇÃO
+                                    </div>
+
+                                    <div style={{
+                                        textAlign: contentConfig.alignment as any,
+                                        fontFamily: contentConfig.font_family || currentSettings.styles.font_family,
+                                        fontSize: contentConfig.font_size,
+                                        lineHeight: contentConfig.line_height,
+                                        color: contentConfig.color || currentSettings.styles.primary_color
+                                    }}>
+                                        <p style={{ marginBottom: contentConfig.spacing, textIndent: '0cm' }}>
+                                            O Venerável Mestre da <strong>{lodgeData?.lodge_title || 'A.R.L.S.'} {lodgeData?.lodge_name || 'NOME DA LOJA'} Nº {lodgeData?.lodge_number || '0000'}</strong>,
+                                            conforme as disposições legais e regulamentares,
+                                            <strong>CONVOCA</strong> todos os Obreiros do Quadro e convida os Irmãos Regulares para a Sessão
+                                            Magna de Iniciação a ser realizada no dia <strong>20/08/2025</strong> (Quarta-feira),
+                                            com início às <strong>20:00</strong>, em seu Templo situado à Rua Exemplo, 123.
+                                        </p>
+
+                                        <p style={{ marginBottom: contentConfig.spacing, textIndent: '0cm' }}>
+                                            <strong>ORDEM DO DIA:</strong><br/>
+                                            Iniciação do Sr. João da Silva.
+                                        </p>
+
+                                        <p style={{ marginBottom: contentConfig.spacing, textIndent: '0cm' }}>
+                                            <strong>Traje:</strong> Rigor ou Balandrau
+                                        </p>
+                                    </div>
+                                </>
+                            );
+                        }
+
                         const dumbData = {
                             abertura: `Precisamente às 20:00 horas do dia 20 de Agosto de 2025 da E∴ V∴, reuniram-se os Obreiros da ${lodgeTitle} ${lodgeName} ${lodgeNumber}, em seu Templo situado à ${lodgeData?.street_address || 'Rua Exemplo, 123'}, para realizarem Sessão Ordinária no Grau de Aprendiz Maçom.`,
                             cargos: `Ficando a Loja assim constituída: Venerável Mestre: Ir. João da Silva; 1º Vigilante: Ir. Pedro Santos; 2º Vigilante: Ir. Carlos Oliveira; Orador: Ir. Marcos Souza; Secretário: Ir. Antonio Lima; Tesoureiro: Ir. Bruno Ferreira; Chanceler: Ir. Daniel Costa.`,
@@ -553,12 +669,10 @@ const DocumentConfigPage = () => {
     // Document Types
     const DOC_TYPES = [
         { key: 'balaustre', label: 'Balaústre' },
+        { key: 'prancha', label: 'Prancha' },
         { key: 'edital', label: 'Edital' },
-        { key: 'prancha_externa', label: 'Prancha Externa' },
-        { key: 'prancha_interna', label: 'Prancha Interna' },
-        { key: 'certificado', label: 'Certificado de Agradecimento' },
-        { key: 'cartao_aniversario', label: 'Cartão de Aniversário' },
-        { key: 'cartao_agradecimento', label: 'Cartão de Agradecimento' }
+        { key: 'convite', label: 'Convite' },
+        { key: 'certificado', label: 'Certificado' }
     ];
 
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>('header_section');
@@ -872,12 +986,11 @@ const DocumentConfigPage = () => {
                                             size="small"
                                         />
                                     </Grid>
-
                                 </Grid>
                             </AccordionDetails>
                         </Accordion>
 
-                         {/* TÍTULOS */}
+                         {/* TÍTULOS (TITLES) */}
                         <Accordion expanded={expandedAccordion === 'titles_section'} onChange={handleAccordionChange('titles_section')}>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                 <Typography sx={{ fontWeight: 'bold' }}>Títulos</Typography>
@@ -885,91 +998,89 @@ const DocumentConfigPage = () => {
                             <AccordionDetails>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12}>
-                                        <FormControl fullWidth size="small">
-                                            <InputLabel>Fonte dos Títulos</InputLabel>
-                                            <Select
-                                                value={currentSettings.styles.titles_config?.font_family || ''}
-                                                label="Fonte dos Títulos"
-                                                onChange={(e) => updateNestedSetting('titles_config', 'font_family', e.target.value)}
-                                            >
-                                                <MenuItem value="">Herdar da Página</MenuItem>
-                                                <MenuItem value="Arial, sans-serif">Arial</MenuItem>
-                                                <MenuItem value="'Times New Roman', serif">Times New Roman</MenuItem>
-                                                <MenuItem value="'Roboto', sans-serif">Roboto</MenuItem>
-                                                <MenuItem value="'Great Vibes', cursive">Manuscrita</MenuItem>
-                                            </Select>
-                                        </FormControl>
+                                        <FormControlLabel control={
+                                            <Switch checked={currentSettings.styles.titles_config?.show !== false} onChange={(e) => updateNestedSetting('titles_config', 'show', e.target.checked)} />
+                                        } label="Exibir Título" />
+                                    </Grid>
+                                    
+                                     {/* ALIGNMENT CONTROL */}
+                                    <Grid item xs={12}>
+                                        <Typography variant="caption" display="block" gutterBottom>Alinhamento do Título</Typography>
+                                        <ToggleButtonGroup
+                                            value={currentSettings.styles.titles_config?.alignment || 'center'}
+                                            exclusive
+                                            onChange={(_, newValue) => newValue && updateNestedSetting('titles_config', 'alignment', newValue)}
+                                            aria-label="alinhamento do título"
+                                            size="small"
+                                            fullWidth
+                                        >
+                                            <ToggleButton value="left" aria-label="left aligned">
+                                                <FormatAlignLeftIcon />
+                                            </ToggleButton>
+                                            <ToggleButton value="center" aria-label="centered">
+                                                <FormatAlignCenterIcon />
+                                            </ToggleButton>
+                                            <ToggleButton value="right" aria-label="right aligned">
+                                                <FormatAlignRightIcon />
+                                            </ToggleButton>
+                                        </ToggleButtonGroup>
+                                    </Grid>
+
+                                    <Grid item xs={6}>
+                                        <TextField label="Fonte Título" fullWidth size="small"
+                                            value={currentSettings.styles.titles_config?.font_family || ''}
+                                            placeholder="Ex: Arial, serif"
+                                            onChange={(e) => updateNestedSetting('titles_config', 'font_family', e.target.value)}
+                                        />
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <FormControl fullWidth size="small">
-                                            <InputLabel>Tamanho Fonte</InputLabel>
-                                            <Select
-                                                value={currentSettings.styles.titles_config?.font_size || '14pt'}
-                                                label="Tamanho Fonte"
-                                                onChange={(e) => updateNestedSetting('titles_config', 'font_size', e.target.value)}
-                                            >
-                                                <MenuItem value="10pt">10pt</MenuItem>
-                                                <MenuItem value="11pt">11pt</MenuItem>
-                                                <MenuItem value="12pt">12pt</MenuItem>
-                                                <MenuItem value="14pt">14pt</MenuItem>
-                                                <MenuItem value="16pt">16pt</MenuItem>
-                                                <MenuItem value="18pt">18pt</MenuItem>
-                                                <MenuItem value="24pt">24pt</MenuItem>
-                                            </Select>
-                                        </FormControl>
+                                        <TextField label="Tam. Fonte" fullWidth size="small"
+                                            value={currentSettings.styles.titles_config?.font_size || '14pt'}
+                                            onChange={(e) => updateNestedSetting('titles_config', 'font_size', e.target.value)}
+                                        />
                                     </Grid>
                                     <Grid item xs={6}>
-                                        <FormControl fullWidth size="small">
-                                            <InputLabel>Alinhamento</InputLabel>
-                                            <Select
-                                                value={currentSettings.styles.titles_config?.alignment || 'center'}
-                                                label="Alinhamento"
-                                                onChange={(e) => updateNestedSetting('titles_config', 'alignment', e.target.value)}
-                                            >
-                                                <MenuItem value="left">Esquerda</MenuItem>
-                                                <MenuItem value="center">Centralizado</MenuItem>
-                                                <MenuItem value="right">Direita</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                        <TextField label="Cor Texto" type="color" fullWidth size="small"
+                                        <TextField label="Cor Texto" type="color" fullWidth size="small" 
                                             value={currentSettings.styles.titles_config?.color || '#000000'}
                                             onChange={(e) => updateNestedSetting('titles_config', 'color', e.target.value)}
                                             InputLabelProps={{ shrink: true }}
                                         />
+                                        <FormControlLabel control={
+                                            <Switch size="small" checked={currentSettings.styles.titles_config?.color === 'transparent'} 
+                                            onChange={(e) => updateNestedSetting('titles_config', 'color', e.target.checked ? 'transparent' : '#000000')} />
+                                        } label="Transparente" />
                                     </Grid>
                                     <Grid item xs={6}>
+                                        <FormControlLabel control={
+                                            <Switch checked={currentSettings.styles.titles_config?.uppercase || false} 
+                                                onChange={(e) => updateNestedSetting('titles_config', 'uppercase', e.target.checked)} />
+                                        } label="MAIÚSCULAS" />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <FormControlLabel control={
+                                            <Switch checked={currentSettings.styles.titles_config?.bold || false} 
+                                                onChange={(e) => updateNestedSetting('titles_config', 'bold', e.target.checked)} />
+                                        } label="Negrito" />
+                                    </Grid>
+                                    <Grid item xs={12}>
                                         <TextField label="Margem Superior" fullWidth size="small"
                                             value={currentSettings.styles.titles_config?.margin_top || '10px'}
                                             onChange={(e) => updateNestedSetting('titles_config', 'margin_top', e.target.value)}
                                         />
                                     </Grid>
-                                    <Grid item xs={6}>
+                                    <Grid item xs={12}>
                                         <TextField label="Margem Inferior" fullWidth size="small"
                                             value={currentSettings.styles.titles_config?.margin_bottom || '20px'}
                                             onChange={(e) => updateNestedSetting('titles_config', 'margin_bottom', e.target.value)}
                                         />
                                     </Grid>
-                                    <Grid item xs={12}>
-                                        <FormControlLabel control={
-                                            <Switch checked={currentSettings.styles.titles_config?.show !== false} 
-                                                onChange={(e) => updateNestedSetting('titles_config', 'show', e.target.checked)} />
-                                        } label="Mostrar Seção de Títulos" />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                        <FormControlLabel control={
-                                            <Switch checked={currentSettings.styles.titles_config?.uppercase !== false} 
-                                                onChange={(e) => updateNestedSetting('titles_config', 'uppercase', e.target.checked)} />
-                                        } label="Caixa Alta (Uppercase)" />
-                                        <FormControlLabel control={
-                                            <Switch checked={currentSettings.styles.titles_config?.bold !== false} 
-                                                onChange={(e) => updateNestedSetting('titles_config', 'bold', e.target.checked)} />
-                                        } label="Negrito" />
-                                    </Grid>
                                 </Grid>
                             </AccordionDetails>
                         </Accordion>
+
+
+
+
 
                         {/* CONTEÚDO */}
                         <Accordion expanded={expandedAccordion === 'content_section'} onChange={handleAccordionChange('content_section')}>
@@ -1195,6 +1306,16 @@ const DocumentConfigPage = () => {
                                             InputLabelProps={{ shrink: true }}
                                         />
                                     </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField label="Imagem de Fundo (URL)" fullWidth size="small"
+                                            value={currentSettings.styles.background_image || ''}
+                                            onChange={(e) => updateCurrentSetting('background_image', e.target.value, true)}
+                                        />
+                                        <Button component="label" variant="outlined" size="small" sx={{ mt: 1, width: '100%' }}>
+                                            Upload Imagem de Fundo
+                                            <input type="file" hidden onChange={(e) => handleFileUpload(e, 'styles', 'background_image')} />
+                                        </Button>
+                                    </Grid>
                                     
                                     <Grid item xs={12}><Divider sx={{ my: 1 }}><Typography variant="caption">Bordas</Typography></Divider></Grid>
                                     
@@ -1218,6 +1339,7 @@ const DocumentConfigPage = () => {
                                                 <MenuItem value="double">Linha Dupla</MenuItem>
                                                 <MenuItem value="dashed">Tracejado</MenuItem>
                                                 <MenuItem value="dotted">Pontilhado</MenuItem>
+                                                <MenuItem value="masonic_v1">Borda Maçônica</MenuItem>
                                             </Select>
                                         </FormControl>
                                     </Grid>
@@ -1298,13 +1420,16 @@ const DocumentConfigPage = () => {
                                 padding: currentSettings.styles.page_margin || '1cm', 
                                 boxSizing: 'border-box',
                                 backgroundColor: currentSettings.styles.background_color || '#fff',
-                                backgroundImage: currentSettings.styles.background_image !== 'none' ? `url(${currentSettings.styles.background_image})` : 'none',
+                                backgroundImage: currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? `url(${currentSettings.styles.background_image})` : undefined,
                                 backgroundSize: 'cover',
-                                // border removed from here to fix visual overlap
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'center',
+                                // Re-enable border visualization
                                 position: 'relative',
                                 display: 'flex', 
-                                flexDirection: 'column'
-                            }}>
+                                flexDirection: 'column',
+                                // border removed from here to prevent duplicate borders
+                             }}>
                                 {/* Marca d'Água */}
                                 {currentSettings.styles.watermark_image && (
                                     <div style={{
@@ -1331,7 +1456,10 @@ const DocumentConfigPage = () => {
                                         left: currentSettings.styles.page_margin || '1cm', 
                                         right: currentSettings.styles.page_margin || '1cm', 
                                         bottom: currentSettings.styles.page_margin || '1cm',
-                                        border: `${currentSettings.styles.border_width || '3px'} ${currentSettings.styles.border_style} ${currentSettings.styles.border_color || currentSettings.styles.primary_color}`,
+                                        border: currentSettings.styles.border_style === 'masonic_v1' 
+                                            ? `${currentSettings.styles.border_width || '3px'} solid transparent`
+                                            : `${currentSettings.styles.border_width || '3px'} ${currentSettings.styles.border_style} ${currentSettings.styles.border_color || currentSettings.styles.primary_color}`,
+                                        borderImage: currentSettings.styles.border_style === 'masonic_v1' ? `url(/borders/border_masonic_v1.png) 30 round` : 'none',
                                         pointerEvents: 'none',
                                         zIndex: 50
                                     }} />
@@ -1360,7 +1488,12 @@ const DocumentConfigPage = () => {
                                     )}
 
                                     {/* TÍTULOS (Balaústre/Standard) */}
-                                    {currentSettings.styles.titles_config?.show !== false && (
+                                    {/* TÍTULOS (Balaústre/Standard) - Rendered inside renderPreviewContent for granularity or here? 
+                                        Actually, for Balaustre the title is separate from content in template.
+                                        For Prancha, title is often part of the flow but stylized.
+                                        Let's keep generic title logic here if it applies to all, or conditional.
+                                    */}
+                                    {(currentType === 'balaustre' || currentType === 'prancha' || currentType === 'edital') && currentSettings.styles.titles_config?.show !== false && (
                                         <div style={{
                                             textAlign: (currentSettings.styles.titles_config?.alignment as any) || 'center',
                                             marginTop: currentSettings.styles.titles_config?.margin_top || '10px',
@@ -1373,8 +1506,11 @@ const DocumentConfigPage = () => {
                                             fontSize: currentSettings.styles.titles_config?.font_size || '14pt'
                                         }}>
                                             À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br/>
-                                            {lodgeData?.lodge_title || 'A.R.L.S.'} {lodgeData?.lodge_name || 'NOME DA LOJA'} Nº {lodgeData?.lodge_number || '0000'} <br/>
-                                            BALAÚSTRE DA _____ª SESSÃO DO E∴ M∴ 2025/2026
+                                            {formatMasonicText(lodgeData?.lodge_title || 'A.R.L.S.')} {lodgeData?.lodge_name || 'NOME DA LOJA'} Nº {lodgeData?.lodge_number || '0000'} <br/>
+                                            
+                                            {currentType === 'balaustre' && "BALAÚSTRE DA _____ª SESSÃO DO E∴ M∴ 2025/2026"}
+                                            {currentType === 'prancha' && "PRANCHA Nº 123/2025"}
+                                            {currentType === 'edital' && "EDITAL DE CONVOCAÇÃO"}
                                         </div>
                                     )}
 
