@@ -1,472 +1,19 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 
 <head>
   <meta charset="UTF-8">
-  <title>Balaústre</title>
-  <style>
-    @page {
-      size: {
-          {
-          styles.page_size
-        }
-      }
-
-        {
-          {
-          styles.orientation
-        }
-      }
-
-      ;
-
-      margin: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-        {
-        % if styles.show_page_numbers %
-      }
-
-      @bottom-center {
-        content: "Página " counter(page);
-        font-size: 10pt;
-
-        font-family: {
-            {
-            styles.font_family
-          }
-        }
-
-        ;
-      }
-
-        {
-        % endif %
-      }
-    }
-
-    body {
-      font-family: {
-          {
-          styles.font_family
-        }
-      }
-
-      ;
-      font-size: 12pt;
-
-      line-height: {
-          {
-          styles.line_height
-        }
-      }
-
-      ;
-
-      color: {
-          {
-          styles.primary_color
-        }
-      }
-
-      ;
-
-      background-color: {
-          {
-          styles.background_color
-        }
-      }
-
-      ;
-
-        {
-        % if styles.background_image and styles.background_image !='none' %
-      }
-
-      background-image: url('{{ styles.background_image }}');
-      background-size: cover;
-      background-repeat: no-repeat;
-
-        {
-        % endif %
-      }
-
-      /* Margin and padding logic moved to page-content and page-border */
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Watermark Style */
-    .watermark {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 60%;
-      height: auto;
-      z-index: -1;
-
-      opacity: {
-          {
-          styles.watermark_opacity
-        }
-      }
-
-      ;
-      background-image: url('{{ styles.watermark_image }}');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    /* Fixed border for every page at dynamic margin from edge */
-    .page-border {
-      position: fixed;
-
-      top: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      left: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      bottom: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      right: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-        {
-        % if styles.show_border %
-      }
-
-      border: {
-          {
-          styles.border_width
-        }
-      }
-
-        {
-          {
-          styles.border_style
-        }
-      }
-
-        {
-          {
-          styles.border_color
-        }
-      }
-
-      ;
-
-        {
-        % else %
-      }
-
-      border: none;
-
-        {
-        % endif %
-      }
-
-      z-index: 2147483647;
-      pointer-events: none;
-    }
-
-    /* Container to handle margins relative to the border */
-    .page-content {
-      /* Content position starts after margin */
-      position: absolute;
-
-      top: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      left: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      right: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      bottom: {
-          {
-          styles.page_margin
-        }
-      }
-
-      ;
-
-      /* Internal padding from border to text */
-      padding: {
-          {
-          styles.page_padding
-        }
-      }
-
-      ;
-
-      width: auto;
-      box-sizing: border-box;
-      overflow: hidden;
-      /* Prevent spillover */
-    }
-
-    /* Header Styles (Default) - Specific headers may override via inline styles */
-    .header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .header img {
-      height: {
-          {
-          styles.header_config.logo_size
-        }
-      }
-
-      ;
-      width: auto;
-      margin-bottom: 10px;
-    }
-
-    .header-text {
-      font-weight: bold;
-      text-transform: uppercase;
-
-      font-size: {
-          {
-          styles.header_config.font_size_title
-        }
-      }
-
-      ;
-      margin: 3px 0;
-      line-height: 1.2;
-
-      color: {
-          {
-          styles.header_config.color or '#000'
-        }
-      }
-
-      ;
-    }
-
-    .content {
-      text-align: {
-          {
-          styles.content_config.alignment
-        }
-      }
-
-      ;
-
-      font-size: {
-          {
-          styles.content_config.font_size
-        }
-      }
-
-      ;
-
-      font-family: {
-          {
-          styles.content_config.font_family or styles.font_family
-        }
-      }
-
-      ;
-
-      line-height: {
-          {
-          styles.content_config.line_height
-        }
-      }
-
-      ;
-
-      color: {
-          {
-          styles.content_config.color or '#000'
-        }
-      }
-
-      ;
-    }
-
-    p {
-      margin-bottom: {
-          {
-          styles.content_config.spacing
-        }
-      }
-
-      ;
-      text-indent: 0;
-    }
-
-    strong {
-      font-weight: bold;
-    }
-
-    .footer {
-      margin-top: {
-          {
-          styles.footer_config.spacing_top
-        }
-      }
-
-      ;
-      text-align: center;
-      page-break-inside: avoid;
-
-      font-size: {
-          {
-          styles.footer_config.font_size
-        }
-      }
-
-      ;
-
-      font-family: {
-          {
-          styles.font_family
-        }
-      }
-
-      ;
-
-      /* Footer usually follows global font or its own if added */
-      color: {
-          {
-          styles.footer_config.color or '#000'
-        }
-      }
-
-      ;
-    }
-
-    .footer-date {
-      text-align: right;
-      margin-bottom: 60px;
-    }
-
-    .signatures-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    .signatures-table td {
-      vertical-align: top;
-      text-align: center;
-      width: 33%;
-      padding: 0 10px;
-    }
-
-    .signature-line {
-      border-top: 1px solid {
-          {
-          styles.footer_config.color or '#000'
-        }
-      }
-
-      ;
-      margin-bottom: 5px;
-      width: 90%;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .signature-name {
-      font-size: {
-          {
-          styles.footer_config.font_size
-        }
-      }
-
-      ;
-      margin-bottom: 2px;
-    }
-
-    .signature-role {
-      font-size: {
-          {
-          styles.footer_config.font_size
-        }
-      }
-
-      ;
-      text-transform: uppercase;
-    }
-
-    .page-number {
-      position: fixed;
-      bottom: 0.5cm;
-      width: 100%;
-      text-align: center;
-      font-size: 10pt;
-      color: #333;
-    }
-
-    .validation-footer {
-      margin-top: 30px;
-      border-top: 1px dashed #ccc;
-      padding-top: 10px;
-      text-align: center;
-      font-size: 9pt;
-      page-break-inside: avoid;
-    }
-  </style>
+  <title>{{ session_title_formatted }}</title>
+  <!-- DEBUG STYLES: {{ styles }} -->
+  {{ dynamic_style_block | safe }}
 </head>
 
 <body>
 
   <div class="watermark"></div>
-
   <div class="page-border"></div>
 
   <div class="page-content">
-
     <!-- Modular Header -->
     {% if header_template %}
     {% include header_template %}
@@ -474,7 +21,8 @@
 
     <!-- BALAÚSTRE Title Section -->
     {% if styles.titles_config.show | default(true) %}
-    <div class="document-title" style="text-align: {{ styles.titles_config.alignment }};
+    <div class="document-title"
+      style="text-align: {{ styles.titles_config.alignment }};
                 margin-top: {{ styles.titles_config.margin_top }};
                 margin-bottom: {{ styles.titles_config.margin_bottom }};
                 font-family: {{ styles.titles_config.font_family or styles.font_family }};
@@ -482,7 +30,10 @@
                 line-height: {{ styles.titles_config.line_height }};
                 {% if styles.titles_config.uppercase %}text-transform: uppercase;{% endif %}
                 {% if styles.titles_config.bold %}font-weight: bold;{% endif %}
-                font-size: {{ styles.titles_config.font_size }};">
+                font-size: {{ styles.titles_config.font_size }};
+                background-color: {{ styles.titles_config.background_color or 'transparent' }};
+                padding: {{ styles.titles_config.padding or '0' }};
+                {% if styles.titles_config.background_image %}background-image: url('{{ styles.titles_config.background_image }}'); background-size: cover;{% endif %}">
       À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br>
       {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
       BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
@@ -611,6 +162,12 @@
     </div>
 
   </div>
+
+  {% if styles.show_page_numbers %}
+  <div class="page-number">
+    Página <span style="content: counter(page)"></span>
+  </div>
+  {% endif %}
 
 </body>
 

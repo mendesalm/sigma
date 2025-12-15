@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SESSÃO ORDINÁRIA NO GRAU DE APRENDIZ MAÇOM</title>
+  <!-- DEBUG STYLES: page_size='A4' orientation='portrait' page_margin='1cm' font_family='Arial, sans-serif' line_height=1.5 primary_color='#000000' show_border=True border_style='solid' content_layout='standard' show_page_numbers=True background_color='#ffffff' background_image='none' page_padding='0cm' border_width='3px' border_color='#220202' watermark_image='' watermark_opacity=0.1 header_config=HeaderConfig(logo_size='80px', logo_url='http://localhost:8000/storage/lodges/1/assets/logojpj.png', logo_obedience='http://localhost:8000/storage/lodges/1/assets/logo-gob.png', font_family="'Times New Roman', serif", font_size_title='16pt', font_size_subtitle='6pt', alignment_title='right', alignment_subtitle='right', line_height=1.1, color='#e5e0e0', background_color='#220202', background_image='', background_opacity=1.0, padding='0.3cm', spacing_bottom='0px', border_bottom_show=False, border_bottom_style='solid', border_bottom_width='1px', border_bottom_color=None) titles_config=TitlesConfig(font_family='Arial, sans-serif', font_size='12pt', color=None, bold=True, uppercase=True, alignment='center', line_height=1.2, margin_top='10px', margin_bottom='0px', show=True, background_color='transparent', background_image=None, background_opacity=1.0, padding='0') content_config=SectionStyles(font_family=None, font_size='12pt', color='#000000', background_color='#ffffff', background_image='', bold=False, italic=False, alignment='justify', line_height=1.5, spacing='10px', padding_top='0px') signatures_config=SignaturesConfig(font_family=None, font_size='11pt', color=None, line_color='#000000', spacing_top='50px', show_date=True) footer_config=FooterConfig(font_size='10pt', color=None, background_color='#ffffff', background_image='', spacing_top='40px') -->
+  <style>
+    @page {
+      size: {
+          {
+          styles.page_size
+        }
+      }
+
+        {
+          {
+          styles.orientation
+        }
+      }
+
+      ;
+
+      margin: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+        {
+        % if styles.show_page_numbers %
+      }
+
+      @bottom-center {
+        content: "Página " counter(page);
+        font-size: 10pt;
+
+        font-family: {
+            {
+            styles.font_family
+          }
+        }
+
+        ;
+      }
+
+        {
+        % endif %
+      }
+    }
+
+    body {
+      font-family: {
+          {
+          styles.font_family
+        }
+      }
+
+      ;
+      font-size: 12pt;
+
+      line-height: {
+          {
+          styles.line_height
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.primary_color
+        }
+      }
+
+      ;
+
+      background-color: {
+          {
+          styles.background_color
+        }
+      }
+
+      ;
+
+        {
+        % if styles.background_image and styles.background_image !='none' %
+      }
+
+      background-image: url('none');
+      background-size: cover;
+      background-repeat: no-repeat;
+
+        {
+        % endif %
+      }
+
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Watermark Style */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: auto;
+      z-index: -1;
+
+      opacity: {
+          {
+          styles.watermark_opacity | default('0.1')
+        }
+      }
+
+      ;
+      background-image: url('');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* Fixed border for every page at dynamic margin from edge */
+    .page-border {
+      position: fixed;
+
+      top: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      left: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      bottom: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      right: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+        {
+        % if styles.show_border %
+      }
+
+      border: {
+          {
+          styles.border_width | default('1px')
+        }
+      }
+
+        {
+          {
+          styles.border_style | default('solid')
+        }
+      }
+
+        {
+          {
+          styles.border_color | default('#000000')
+        }
+      }
+
+      ;
+
+        {
+        % else %
+      }
+
+      border: none;
+
+        {
+        % endif %
+      }
+
+      z-index: 2147483647;
+      pointer-events: none;
+    }
+
+    /* Container to handle margins relative to the border */
+    .page-content {
+      position: absolute;
+
+      top: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      left: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      right: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      bottom: {
+          {
+          styles.page_margin | default('1cm')
+        }
+      }
+
+      ;
+
+      padding: {
+          {
+          styles.page_padding | default('0cm')
+        }
+      }
+
+      ;
+      width: auto;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* Header Styles (Default) */
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header img {
+      height: {
+          {
+          styles.header_config.logo_size | default('60px')
+        }
+      }
+
+      ;
+      width: auto;
+      margin-bottom: 10px;
+    }
+
+    .header-text {
+      font-weight: bold;
+      text-transform: uppercase;
+
+      font-size: {
+          {
+          styles.header_config.font_size_title | default('14pt')
+        }
+      }
+
+      ;
+      margin: 3px 0;
+      line-height: 1.2;
+
+      color: {
+          {
+          styles.header_config.color or '#000'
+        }
+      }
+
+      ;
+    }
+
+    .content {
+      /* Add side padding to separate text from border */
+      padding-left: 0.3cm;
+      padding-right: 0.3cm;
+
+      padding-top: {
+          {
+          styles.content_config.padding_top | default('0px')
+        }
+      }
+
+      ;
+
+      text-align: {
+          {
+          styles.content_config.alignment | default('justify')
+        }
+      }
+
+      ;
+
+      font-size: {
+          {
+          styles.content_config.font_size | default('12pt')
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.content_config.font_family or styles.font_family | default('Arial')
+        }
+      }
+
+      ;
+
+      line-height: {
+          {
+          styles.content_config.line_height | default('1.5')
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.content_config.color or '#000'
+        }
+      }
+
+      ;
+
+      background-color: {
+          {
+          styles.content_config.background_color or 'transparent'
+        }
+      }
+
+      ;
+
+        {
+        % if styles.content_config.background_image %
+      }
+
+      background-image: url('');
+      background-size: cover;
+
+        {
+        % endif %
+      }
+    }
+
+    p {
+      margin-bottom: {
+          {
+          styles.content_config.spacing | default('10px')
+        }
+      }
+
+      ;
+      text-indent: 0;
+      text-align: inherit;
+      line-height: inherit;
+    }
+
+    strong {
+      font-weight: bold;
+    }
+
+    .footer {
+      margin-top: {
+          {
+          styles.footer_config.spacing_top | default('30px')
+        }
+      }
+
+      ;
+      text-align: center;
+      page-break-inside: avoid;
+
+      font-size: {
+          {
+          styles.footer_config.font_size | default('10pt')
+        }
+      }
+
+      ;
+
+      font-family: {
+          {
+          styles.font_family | default('Arial')
+        }
+      }
+
+      ;
+
+      color: {
+          {
+          styles.footer_config.color or '#000'
+        }
+      }
+
+      ;
+    }
+
+    .footer-date {
+      text-align: right;
+      margin-bottom: 60px;
+    }
+
+    .signatures-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .signatures-table td {
+      vertical-align: top;
+      text-align: center;
+      width: 33%;
+      padding: 0 10px;
+    }
+
+    .signature-line {
+      border-top: 1px solid {
+          {
+          styles.footer_config.color or '#000'
+        }
+      }
+
+      ;
+      margin-bottom: 5px;
+      width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .signature-name {
+      font-size: {
+          {
+          styles.footer_config.font_size | default('10pt')
+        }
+      }
+
+      ;
+      margin-bottom: 2px;
+    }
+
+    .signature-role {
+      font-size: {
+          {
+          styles.footer_config.font_size | default('10pt')
+        }
+      }
+
+      ;
+      text-transform: uppercase;
+    }
+
+    .page-number {
+      position: fixed;
+      bottom: 0.5cm;
+      width: 100%;
+      text-align: center;
+      font-size: 10pt;
+      color: #333;
+    }
+
+    .validation-footer {
+      margin-top: 30px;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+      text-align: center;
+      font-size: 9pt;
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="watermark"></div>
+  <div class="page-border"></div>
+
+  <div class="page-content">
+    <!-- Modular Header -->
+    
+    <div class="header-wrapper"
+  style="position: relative; margin-bottom: 0px; font-family: 'Times New Roman', serif; line-height: 1.1; text-align: left;">
+
+  <!-- Background Layer -->
+  <div class="header-bg" style="
+        position: absolute; 
+        top: 0; left: 0; right: 0; bottom: 0; 
+        background-color: #220202;
+        
+        opacity: 1.0;
+        z-index: 0;
+    "></div>
+
+  <!-- Content Layer -->
+  <div class="header-content"
+    style="position: relative; z-index: 1; padding: 0.3cm; box-sizing: border-box; ">
+
+    <!-- Classic Layout: Logo Left, Text Right/Center -->
+    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 20px;">
+      
+      <div style="flex-shrink: 0;">
+        <img src="http://localhost:8000/storage/lodges/1/assets/logojpj.png" alt="Logo" style="max-height: 80px; width: auto;">
+      </div>
+      
+
+      <div
+        style="flex-grow: 1; font-size: 16pt; color: #e5e0e0; font-weight: bold; margin: 5px 0; text-transform: uppercase; text-align: right;">
+        ARBLS João Pedro Junqueira Nº 2181 <br>
+        <span
+          style="font-size: 6pt; display: block; line-height: 1.2; font-weight: normal; margin-top: 5px; text-align: right;">
+          Federada ao Grande Oriente do Brasil <br>
+          Jurisdicionada ao GOB-SP
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    <!-- BALAÚSTRE Title Section -->
+    
+    <div class="document-title"
+      style="text-align: center;
+                margin-top: 10px;
+                margin-bottom: 0px;
+                font-family: Arial, sans-serif;
+                color: #000000;
+                line-height: 1.2;
+                text-transform: uppercase;
+                font-weight: bold;
+                font-size: 12pt;
+                background-color: transparent;
+                padding: 0;
+                ">
+      À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br>
+      ARBLS João Pedro Junqueira Nº 2181 <br>
+      BALAÚSTRE DA 2ª SESSÃO DO E∴ M∴ 2024/2025
+    </div>
+    
+
+    <div class="content">
+      
+      <p><strong>ABERTURA:</strong> Precisamente às 19:30 do dia 26 de dezembro de 2025 da E∴ V∴, a ARBLS João Pedro Junqueira n° 2181, Jurisdicionada à Grande Loja..., Regular e Perfeita, reuniu-se em seu Templo, sito à Avenida 9, Área 2, Conjunto Mirage, oriente de Anápolis - GO, em SESSÃO ORDINÁRIA NO GRAU DE APRENDIZ MAÇOM, ficando a Loja assim constituída: <strong>Venerável Mestre</strong> Jose Antonio Lisboa; <strong>Primeiro Vigilante</strong> Ruberval Ferreira de Morais Júnior; <strong>Segundo Vigilante</strong> Max Lânio Aparecido Souza; <strong>Orador</strong> André Luiz Mendes; <strong>Secretário</strong> Valdivino Alves De Oliveira; <strong>Tesoureiro</strong> Luiz Antônio Ferreira Calvalcante e <strong>Chanceler</strong> Vander José Coelho, sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro.</p><p><strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia 15/12/2024, sem emendas.</p><p><strong>EXPEDIENTE RECEBIDO:</strong> Nada constou.</p><p><strong>EXPEDIENTE EXPEDIDO:</strong> Nada constou.</p><p><strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> Nada constou.</p><p><strong>ORDEM DO DIA:</strong> Nada constou.</p><p><strong>TEMPO DE INSTRUÇÃO:</strong> Nada constou.</p><p><strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Ir∴ Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno.</p><p><strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> Reinou silêncio.</p><p><strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às 22:00, tendo eu, Valdivino Alves De Oliveira, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado.</p>
+      
+    </div>
+
+    <div class="footer">
+      <div class="footer-date">
+        Oriente de Anápolis, 26 de dezembro de 2025 da E∴ V∴
+      </div>
+
+      <table class="signatures-table">
+        <tr>
+          <td>
+            <div class="signature-line"></div>
+            <div class="signature-name">Valdivino Alves De Oliveira</div>
+            <div class="signature-role">Secretário</div>
+          </td>
+          <td>
+            <div class="signature-line"></div>
+            <div class="signature-name">André Luiz Mendes</div>
+            <div class="signature-role">Orador</div>
+          </td>
+          <td>
+            <div class="signature-line"></div>
+            <div class="signature-name">Jose Antonio Lisboa</div>
+            <div class="signature-role">Venerável Mestre</div>
+          </td>
+        </tr>
+      </table>
+
+      
+    </div>
+
+  </div>
+
+  
+  <div class="page-number">
+    Página <span style="content: counter(page)"></span>
+  </div>
+  
+
+</body>
+
+</html>

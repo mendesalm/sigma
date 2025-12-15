@@ -9,9 +9,10 @@ class SectionStyles(BaseModel):
     background_image: Optional[str] = None
     bold: bool = False
     italic: bool = False
-    alignment: Literal["left", "center", "right", "justify"] = "left"
+    alignment: Literal["left", "center", "right", "justify"] = "justify"
     line_height: float = 1.5
     spacing: str = Field(default="10px", description="Espaçamento padrão (margin/padding)")
+    padding_top: str = Field(default="0px", description="Padding superior")
 
 class HeaderConfig(BaseModel):
     logo_size: str = Field(default="80px", description="Altura do logo (ex: 80px, 2cm, 12pt)")
@@ -45,6 +46,10 @@ class TitlesConfig(BaseModel):
     margin_top: str = Field(default="10px", description="Espaço acima dos Títulos")
     margin_bottom: str = Field(default="20px", description="Espaço abaixo dos Títulos")
     show: bool = Field(default=True, description="Exibir seção de títulos")
+    background_color: Optional[str] = None
+    background_image: Optional[str] = None
+    background_opacity: float = Field(default=1.0)
+    padding: str = Field(default="0", description="Padding interno")
 
 class SignaturesConfig(BaseModel):
     font_family: Optional[str] = None

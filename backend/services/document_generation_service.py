@@ -313,6 +313,10 @@ class DocumentGenerationService:
         # Mapeamento de Caminhos
         subpath = None
         if template_name == "balaustre_template.html":
+            # Force FILE usage during dev/debug to bypass stale DB
+            template = self.env.get_template(template_name)
+            return template.render(data)
+        elif template_name == "balaustre_template.html":
             subpath = os.path.join("templates", "balaustre", template_name)
         elif template_name == "edital_template.html":
             subpath = os.path.join("templates", "edital", template_name)
@@ -410,10 +414,10 @@ class DocumentGenerationService:
                 format="A4",
                 print_background=True,
                 margin={
-                    "top": "1cm",
-                    "bottom": "1cm",
-                    "left": "1cm",
-                    "right": "1cm"
+                    "top": "0cm",
+                    "bottom": "0cm",
+                    "left": "0cm",
+                    "right": "0cm"
                 }
             )
             
@@ -558,34 +562,75 @@ class DocumentGenerationService:
             attendees = session_data.get("attendees", [])
             attendees_text = ", ".join(attendees) if attendees else "Nenhum registro de presença."
             
-            # Match the requested "First Section" text structure
-            text = (
-                f"<p>"
-                f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
-                f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
-                f"{session_data['affiliation_text_1']}, {session_data['affiliation_text_2']}, "
-                f"reuniu-se em seu Templo, sito à {session_data['lodge_address']}, em {session_data['session_title_formatted']}, "
-                f"ficando a Loja assim constituída: "
-                f"<strong>Venerável Mestre</strong> {session_data['Veneravel']}; "
-                f"<strong>Primeiro Vigilante</strong> {session_data['PrimeiroVigilante']}; "
-                f"<strong>Segundo Vigilante</strong> {session_data['SegundoVigilante']}; "
-                f"<strong>Orador</strong> {session_data['Orador']}; "
-                f"<strong>Secretário</strong> {session_data['Secretario']}; "
-                f"<strong>Tesoureiro</strong> {session_data['Tesoureiro']} e "
-                f"<strong>Chanceler</strong> {session_data['Chanceler']}, "
-                f"sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro. "
-                f"<strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {session_data['SessaoAnterior']}, sem emendas. "
-                f"<strong>EXPEDIENTE RECEBIDO:</strong> {session_data['ExpedienteRecebido']} "
-                f"<strong>EXPEDIENTE EXPEDIDO:</strong> {session_data['ExpedienteExpedido']} "
-                f"<strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {session_data['SacoProposta']} "
-                f"<strong>ORDEM DO DIA:</strong> {session_data['OrdemDia']} "
-                f"<strong>TEMPO DE INSTRUÇÃO:</strong> {session_data['TempoInstrucao']} "
-                f"<strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Ir∴ Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno. "
-                f"<strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {session_data['Palavra']} "
-                f"<strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
-                f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado. "
-                f"</p>"
-            )
+            # Determine layout from styles (default standard)
+            # Strategy collect_data now returns 'styles' key (Pydantic object or dict)
+            styles = session_data.get('styles', {})
+            # If styles is Pydantic model (DocumentStyles), convert to dict or access attr
+            if hasattr(styles, 'content_layout'):
+                 layout = styles.content_layout
+            elif isinstance(styles, dict):
+                 layout = styles.get('content_layout', 'standard')
+            else:
+                 layout = 'standard'
+
+            if layout == 'condensed':
+                 # Condensed: One single paragraph with running text
+                 text = (
+                    f"<p>"
+                    f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
+                    f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
+                    f"{session_data['affiliation_text_1']}, {session_data['affiliation_text_2']}, "
+                    f"reuniu-se em seu Templo, sito à {session_data['lodge_address']}, em {session_data['session_title_formatted']}, "
+                    f"ficando a Loja assim constituída: "
+                    f"<strong>Venerável Mestre</strong> {session_data['Veneravel']}; "
+                    f"<strong>Primeiro Vigilante</strong> {session_data['PrimeiroVigilante']}; "
+                    f"<strong>Segundo Vigilante</strong> {session_data['SegundoVigilante']}; "
+                    f"<strong>Orador</strong> {session_data['Orador']}; "
+                    f"<strong>Secretário</strong> {session_data['Secretario']}; "
+                    f"<strong>Tesoureiro</strong> {session_data['Tesoureiro']} e "
+                    f"<strong>Chanceler</strong> {session_data['Chanceler']}, "
+                    f"sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro. "
+                    f"<strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {session_data['SessaoAnterior']}, sem emendas. "
+                    f"<strong>EXPEDIENTE RECEBIDO:</strong> {session_data['ExpedienteRecebido']} "
+                    f"<strong>EXPEDIENTE EXPEDIDO:</strong> {session_data['ExpedienteExpedido']} "
+                    f"<strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {session_data['SacoProposta']} "
+                    f"<strong>ORDEM DO DIA:</strong> {session_data['OrdemDia']} "
+                    f"<strong>TEMPO DE INSTRUÇÃO:</strong> {session_data['TempoInstrucao']} "
+                    f"<strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Ir∴ Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno. "
+                    f"<strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {session_data['Palavra']} "
+                    f"<strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
+                    f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado. "
+                    f"</p>"
+                 )
+            else:
+                 # Standard: Multiple paragraphs
+                 text = (
+                    f"<p>"
+                    f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
+                    f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
+                    f"{session_data['affiliation_text_1']}, {session_data['affiliation_text_2']}, "
+                    f"reuniu-se em seu Templo, sito à {session_data['lodge_address']}, em {session_data['session_title_formatted']}, "
+                    f"ficando a Loja assim constituída: "
+                    f"<strong>Venerável Mestre</strong> {session_data['Veneravel']}; "
+                    f"<strong>Primeiro Vigilante</strong> {session_data['PrimeiroVigilante']}; "
+                    f"<strong>Segundo Vigilante</strong> {session_data['SegundoVigilante']}; "
+                    f"<strong>Orador</strong> {session_data['Orador']}; "
+                    f"<strong>Secretário</strong> {session_data['Secretario']}; "
+                    f"<strong>Tesoureiro</strong> {session_data['Tesoureiro']} e "
+                    f"<strong>Chanceler</strong> {session_data['Chanceler']}, "
+                    f"sendo os demais cargos preenchidos pelos seus titulares ou Irmãos do Quadro. "
+                    f"</p>"
+                    f"<p><strong>BALAÚSTRE:</strong> foi lido e aprovado o Balaústre da Sessão do dia {session_data['SessaoAnterior']}, sem emendas.</p>"
+                    f"<p><strong>EXPEDIENTE RECEBIDO:</strong> {session_data['ExpedienteRecebido']}</p>"
+                    f"<p><strong>EXPEDIENTE EXPEDIDO:</strong> {session_data['ExpedienteExpedido']}</p>"
+                    f"<p><strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {session_data['SacoProposta']}</p>"
+                    f"<p><strong>ORDEM DO DIA:</strong> {session_data['OrdemDia']}</p>"
+                    f"<p><strong>TEMPO DE INSTRUÇÃO:</strong> {session_data['TempoInstrucao']}</p>"
+                    f"<p><strong>TRONCO DE BENEFICÊNCIA:</strong> fez o seu giro habitual pelo Ir∴ Hospitaleiro e foi entregue ao Irmão Tesoureiro para conferência e anúncio, em momento oportuno.</p>"
+                    f"<p><strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {session_data['Palavra']}</p>"
+                    f"<p><strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
+                    f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado.</p>"
+                 )
             
             
             return {"text": text, "data": session_data}
@@ -630,6 +675,29 @@ class DocumentGenerationService:
             # 2. Render Template
             html_content = self._render_template(strategy.get_template_name(), context)
             
+            # DEBUG: Save HTML to file to inspect styles
+            try:
+                debug_path = f"debug_document_{doc_type}_{main_entity_id}.html"
+                with open(debug_path, "w", encoding="utf-8") as f:
+                    # Inject detailed style log at the top of the HTML file for easy debugging
+                    if 'styles' in context:
+                        import json
+                        # Attempt to dump styles to JSON for readability
+                        try:
+                            # If it's a Pydantic model, dump it
+                            styles_dict = context['styles'].model_dump()
+                            styles_json = json.dumps(styles_dict, indent=2, default=str)
+                        except:
+                            # Fallback if not pydantic or other error
+                            styles_json = str(context['styles'])
+                        
+                        f.write(f"<!-- \nDEBUG STYLE PARAMETERS:\n{styles_json}\n-->\n")
+                    
+                    f.write(html_content)
+                print(f"saved debug html to {debug_path}")
+            except Exception as e:
+                print(f"Could not write debug file: {e}")
+            
             # 3. Generate PDF
             pdf_bytes = await self._generate_pdf_from_html(html_content)
             
@@ -639,7 +707,14 @@ class DocumentGenerationService:
             db.close()
 
     async def generate_balaustre_preview(self, session_id: int, custom_content: dict = None) -> bytes:
-        html, pdf, _ = await self.generate_document('balaustre', session_id, {}, custom_content=custom_content)
+        # Unpack custom_content to pass as top-level kwargs to strategy
+        kwargs = {}
+        if custom_content:
+            kwargs['custom_text'] = custom_content.get('text')
+            kwargs['styles'] = custom_content.get('styles')
+            # Add any other relevant overrides from custom_content if needed
+            
+        html, pdf, _ = await self.generate_document('balaustre', session_id, {}, **kwargs)
         return pdf
 
     async def regenerate_balaustre_text(self, session_id: int, custom_data: dict) -> str:

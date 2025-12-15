@@ -322,6 +322,20 @@ async def preview_balaustre(
 ):
     try:
         print(f"DEBUG: preview_balaustre received content: {content}")
+        
+        # --- DEBUG CAPTURE ---
+        try:
+            import json
+            import os
+            # Save payload to file for analysis
+            capture_file = "frontend_payload_capture.json"
+            with open(capture_file, "w", encoding="utf-8") as f:
+                json.dump(content, f, indent=2, default=str)
+            print(f"DEBUG: Saved frontend payload to {os.path.abspath(capture_file)}")
+        except Exception as e:
+            print(f"DEBUG: Failed to save capture: {e}")
+        # ---------------------
+
         pdf_bytes = await session_service.preview_balaustre(
             db=db,
             session_id=session_id,

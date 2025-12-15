@@ -78,6 +78,8 @@ class DocumentStrategy(ABC):
             'header_moderno.html': 'partials/header_moderno.html',
             'header_duplo.html': 'partials/header_duplo.html',
             'header_grid.html': 'partials/header_grid.html',
+            'header_timbre.html': 'partials/header_timbre.html',
+            'header_invertido.html': 'partials/header_invertido.html',
         }
         
         header_template = None

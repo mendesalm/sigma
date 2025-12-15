@@ -4,7 +4,6 @@ import {
   Box, 
   Button, 
   Container, 
-  Paper, 
   Typography, 
   CircularProgress, 
   TextField,
@@ -52,15 +51,7 @@ const BalaustreEditor: React.FC = () => {
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-  const [styles, setStyles] = useState({
-    header_bg_color: 'transparent',
-    header_text_color: '#380404',
-    page_bg_color: 'white',
-    logo_height: '80px',
-    border_color: 'black',
-    border_style: 'solid',
-    border_width: '1px'
-  });
+  const [styles, setStyles] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
@@ -82,9 +73,8 @@ const BalaustreEditor: React.FC = () => {
         // Initialize form data with session data
         setFormData(response.data.data || {});
         
-        // Load saved styles if available
         if (response.data.data.styles) {
-            setStyles(prev => ({ ...prev, ...response.data.data.styles }));
+            setStyles(response.data.data.styles);
         }
         
       } catch (error) {
@@ -421,217 +411,286 @@ const BalaustreEditor: React.FC = () => {
         </Box>
       </Drawer>
 
-      <Container maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-        <Paper 
-          elevation={3}
-          sx={{ 
-            width: A4_WIDTH, 
-            minHeight: A4_HEIGHT, 
-            p: '1cm', // Margem externa para a borda
-            bgcolor: styles.page_bg_color, // Dynamic Page Background
-            boxSizing: 'border-box',
-            fontFamily: '"Times New Roman", Times, serif',
-            color: 'black'
-          }}
-        >
-          <Box sx={{ 
-            borderWidth: styles.border_width,
-            borderStyle: styles.border_style,
-            borderColor: styles.border_color,
-            minHeight: 'calc(297mm - 2cm)', // Altura A4 menos as margens
-            pt: '0.5cm', // Margem superior reduzida
-            px: '0.5cm', // Margem lateral reduzida
-            pb: '0.5cm', // Margem inferior reduzida
-            display: 'flex', 
-            flexDirection: 'column' 
-          }}>
-            {/* Cabeçalho Dinâmico (Centralizado) */}
-            <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                mb: 4, 
-                pb: 2,
-                bgcolor: styles.header_bg_color,
-                color: styles.header_text_color
-            }}>
-              <Box sx={{ mb: 2 }}>
-                 {sessionData?.header_image ? (
-                   <img src={sessionData.header_image} alt="Logo" style={{ maxHeight: styles.logo_height, maxWidth: '100%' }} />
-                 ) : (
-                   <Box sx={{ width: 80, height: 80, bgcolor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logo</Box>
-                 )}
-              </Box>
-              
-              <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', color: 'inherit', m: 0 }}>
-                À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴
-              </Typography>
-              
-              <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', color: 'inherit', mt: 0.5 }}>
-                A∴R∴B∴L∴S {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number}
-              </Typography>
-              
-              
-              <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12pt', color: 'inherit', mt: 0.5 }}>
-                BALAÚSTRE DA {sessionData?.NumeroAta || '_______'}ª SESSÃO DO E∴ M∴ {sessionData?.ExercicioMaconico || '_______'}
-              </Typography>
-            </Box>
+      <Container maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 8 }}>
+        {/* PAGE CONTAINER - mimics @page size */}
+        <Box sx={{
+          width: A4_WIDTH,
+          minHeight: A4_HEIGHT, // Although in Web min-height is better, real PDF is fixed height per page. 
+          // For Editor, we default to minHeight A4 but let it grow (scroll) as we edit.
+          bgcolor: styles?.background_color || '#ffffff',
+          position: 'relative', // Context for absolute positioning of border/content
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', // Elevation replacement
+          // Background Image
+          backgroundImage: styles?.background_image && styles.background_image !== 'none' ? `url(${styles.background_image})` : 'none',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          overflow: 'hidden' // Clip content to page
+        }}>
 
-            {/* ReactQuill Editor */}
-            <Box sx={{ 
-                flexGrow: 1, 
-                display: 'flex', 
-                flexDirection: 'column',
-                position: 'relative',
-                '& .ql-container': {
-                    flexGrow: 1,
-                    border: 'none',
-                    fontFamily: '"Times New Roman", Times, serif',
-                    fontSize: '12pt'
-                },
-                '& .ql-editor': {
-                    minHeight: '500px',
-                    padding: 0,
-                    textAlign: 'justify',
-                    fontFamily: '"Times New Roman", Times, serif',
-                    fontSize: '12pt'
-                },
-                '& .ql-editor p': {
-                    // orphans: 3,
-                    // widows: 3
-                },
-                /* Toolbar Flutuante Horizontal (Topo Centralizado) com Glassmorphism */
-                '& .ql-toolbar': {
-                    position: 'fixed',
-                    left: '58%',
-                    top: '160px', /* Logo abaixo da AppBar */
-                    transform: 'translateX(-50%)',
-                    width: 'fit-content',
-                    maxWidth: '95vw',
-                    
-                    /* Glassmorphism */
-                    background: 'rgba(255, 255, 255, 0.85)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                    borderRadius: '12px',
-                    
-                    padding: '8px 16px',
-                    zIndex: 1200,
-                    display: editorFocused ? 'flex' : 'none',
-                    opacity: editorFocused ? 1 : 0,
-                    visibility: editorFocused ? 'visible' : 'hidden',
-                    transition: 'all 0.3s ease-in-out',
-                    
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    gap: '12px',
-                    
-                    maxHeight: 'none',
-                    overflow: 'visible'
-                },
-                '& .ql-toolbar .ql-formats': {
-                    marginRight: 0,
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: '4px',
-                    borderBottom: 'none',
-                    borderRight: '1px solid rgba(0,0,0,0.1)',
-                    paddingBottom: 0,
-                    paddingRight: '12px',
-                    marginBottom: 0,
-                    width: 'auto'
-                },
-                '& .ql-toolbar .ql-formats:last-child': {
-                    borderRight: 'none',
-                    paddingRight: 0
-                },
-                '& .ql-toolbar button': {
-                    width: '28px',
-                    height: '28px',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'background 0.2s',
-                    color: '#444'
-                },
-                '& .ql-toolbar button:hover': {
-                    background: 'rgba(0,0,0,0.05)',
-                    color: '#000'
-                },
-                '& .ql-toolbar button.ql-active': {
-                    background: 'rgba(25, 118, 210, 0.1)',
-                    color: '#1976d2'
-                },
-                '& .ql-toolbar .ql-picker': {
-                    height: '24px',
-                    display: 'flex',
-                    alignItems: 'center'
-                },
-                '& .ql-toolbar .ql-picker-label': {
-                    padding: '0 4px',
-                    border: 'none',
-                    outline: 'none',
-                    color: '#555',
-                    fontWeight: 500,
-                    display: 'flex',
-                    alignItems: 'center'
-                },
-                '& .ql-toolbar .ql-picker-label:hover': {
-                    color: '#000',
-                    background: 'transparent'
-                },
-                 /* Ícones SVG */
-                '& .ql-toolbar button svg': {
-                   width: '18px',
-                   height: '18px'
-                },
-                '& .ql-toolbar .ql-stroke': {
-                    strokeWidth: '1.5px !important'
-                }
-            }}>
-                <ReactQuill 
-                    theme="snow"
-                    value={documentContent.text}
-                    onChange={(value) => setDocumentContent({ ...documentContent, text: value })}
-                    modules={modules}
-                    formats={formats}
-                    onFocus={() => setEditorFocused(true)}
-                    onBlur={() => {
-                        // Delay para permitir verificação de interação com a toolbar
-                        setTimeout(() => {
-                            const toolbar = document.querySelector('.ql-toolbar');
-                            if (toolbar && toolbar.matches(':hover')) {
-                                return;
-                            }
-                            setEditorFocused(false);
-                        }, 200);
-                    }}
-                />
-            </Box>
+            {/* LAYER 1: BORDER (Fixed Position relative to Page) */}
+            {styles?.show_border !== false && (
+                <Box sx={{
+                    position: 'absolute',
+                    top: styles?.page_margin || '1cm',
+                    left: styles?.page_margin || '1cm',
+                    right: styles?.page_margin || '1cm',
+                    bottom: styles?.page_margin || '1cm',
+                    borderWidth: styles?.border_width || '1px',
+                    borderStyle: styles?.border_style || 'solid',
+                    borderColor: styles?.border_color || '#000',
+                    zIndex: 1, // Above background, below content? No, PDF border is usually on top or around. 
+                    // In PDF template, .page-border has z-index: big and pointer-events: none.
+                    pointerEvents: 'none'
+                }} />
+            )}
 
-            <Box sx={{ mt: 'auto', pt: 8, display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
-              <Box>
-                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                  Secretário
-                </Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                  Orador
-                </Typography>
-              </Box>
-              <Box>
-                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                  Venerável Mestre
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Paper>
+            {/* LAYER 2: CONTENT CONTAINER (Absolute/Relative positioning matching PDF .page-content) */}
+            <Box sx={{
+                position: 'absolute', // mimics .page-content { position: absolute }
+                top: styles?.page_margin || '1cm',
+                left: styles?.page_margin || '1cm',
+                right: styles?.page_margin || '1cm',
+                bottom: styles?.page_margin || '1cm',
+                padding: styles?.page_padding || '0cm',
+                display: 'flex',
+                flexDirection: 'column',
+                zIndex: 2,
+                overflowY: 'auto' // Allow scrolling if content overflows A4 in Editor
+            }}>
+
+                {/* HEADER SECTION (Top of Content) */}
+                {(() => {
+                    const headerTemplate = sessionData?.header_template || 'header_classico.html';
+                    
+                    const logo = (
+                         <Box sx={{ mb: 1 }}>
+                            {sessionData?.header_image ? (
+                            <img src={sessionData.header_image} alt="Logo" style={{ maxHeight: styles?.header_config?.logo_size || '80px', maxWidth: '100%' }} />
+                            ) : (
+                            <Box sx={{ width: 80, height: 80, bgcolor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logo</Box>
+                            )}
+                        </Box>
+                    );
+
+                    // Note: Header Text is DIFFERENT from Title Section.
+                    // Header text usually contains "À GL..." and Lodge Name.
+                    // HEADER TEXT (Matches header_classico.html: Lodge Name + Obedience)
+                    const headerText = (
+                        <Box sx={{ 
+                            textAlign: styles?.header_config?.alignment_title || 'center',
+                            color: styles?.header_config?.color || '#000',
+                            flexGrow: 1
+                        }}>
+                             <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: styles?.header_config?.font_size_title || '12pt', color: 'inherit', m: 0, lineHeight: 1.2 }}>
+                                {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number}
+                            </Typography>
+                             <Typography variant="body1" sx={{ 
+                                 fontFamily: 'inherit', 
+                                 fontWeight: 'normal', 
+                                 fontSize: styles?.header_config?.font_size_subtitle || '12pt', 
+                                 color: 'inherit', 
+                                 mt: 0.5, 
+                                 lineHeight: 1.2,
+                                 textAlign: styles?.header_config?.alignment_subtitle || 'center' // Explicit Subtitle Alignment
+                             }}>
+                                Federada ao {sessionData?.obedience_name || 'Grande Oriente do Brasil'} <br/>
+                                Jurisdicionada ao {sessionData?.subobedience_name || 'GOB-SP'}
+                            </Typography>
+                        </Box>
+                    );
+
+                    // CSS for Header Container needs to match header_classico wrapper logic
+                    const headerContainerSx = {
+                        mb: styles?.header_config?.spacing_bottom || '20px', 
+                        bgcolor: styles?.header_config?.background_color || 'transparent',
+                        p: styles?.header_config?.padding || '0',
+                        // Border Bottom Logic to match header_classico.html
+                        borderBottomWidth: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_width || '1px') : 0,
+                        borderBottomStyle: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_style || 'solid') : 'none',
+                        borderBottomColor: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_color || styles?.primary_color || '#000') : 'transparent',
+                    };
+
+                    if (headerTemplate.includes('timbre')) {
+                        return (
+                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                {logo}
+                                {headerText}
+                            </Box>
+                        );
+                    } else if (headerTemplate.includes('invertido')) {
+                        return (
+                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ flex: 1 }}>{headerText}</Box>
+                                <Box sx={{ ml: 2 }}>{logo}</Box>
+                            </Box>
+                        );
+                    } else if (headerTemplate.includes('duplo')) {
+                         return (
+                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ mr: 2 }}>{logo}</Box>
+                                <Box sx={{ flex: 1 }}>{headerText}</Box>
+                                <Box sx={{ ml: 2, opacity: 0.5 }}>{logo}</Box> 
+                            </Box>
+                        );
+                    } else {
+                         return (
+                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: '20px' }}>
+                                <Box>{logo}</Box>
+                                <Box sx={{ flex: 1 }}>{headerText}</Box>
+                            </Box>
+                        );
+                    }
+                })()}
+
+                {/* TITLE SECTION (Document Title - Matches balaustre_template.html logic) */}
+                {styles?.titles_config?.show !== false && (
+                <Box sx={{
+                    textAlign: styles?.titles_config?.alignment || 'center',
+                    mt: styles?.titles_config?.margin_top || '10px',
+                    mb: styles?.titles_config?.margin_bottom || '20px',
+                    bgcolor: styles?.titles_config?.background_color || 'transparent',
+                    p: styles?.titles_config?.padding || '0',
+                    border: '1px solid transparent', // Prevent margin collapse
+                    flexShrink: 0,
+                    // Apply Font Styles from TitlesConfig
+                    fontFamily: styles?.titles_config?.font_family || 'inherit', 
+                    color: styles?.titles_config?.color || '#000000',
+                    lineHeight: styles?.titles_config?.line_height || 1.2
+                }}>
+                     <Typography variant="body1" component="div" sx={{ 
+                        fontFamily: 'inherit',
+                        fontWeight: styles?.titles_config?.bold ? 'bold' : 'normal', 
+                        textTransform: styles?.titles_config?.uppercase ? 'uppercase' : 'none', 
+                        fontSize: styles?.titles_config?.font_size || '14pt', 
+                        color: styles?.titles_config?.color || '#000000'
+                    }}>
+                        À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴ <br/>
+                        {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number} <br/>
+                        BALAÚSTRE DA {sessionData?.session_number || '_______'}ª SESSÃO DO E∴ M∴ {sessionData?.exercicio_maconico || '_______'}
+                    </Typography>
+                </Box>
+                )}
+
+                {/* EDITOR CONTENT AREA */}
+                {/* This mimics .content { ...styles.content_config } */}
+                <Box sx={{ 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    position: 'relative',
+                    
+                    // Content Config Application
+                    textAlign: styles?.content_config?.alignment || 'justify',
+                    fontFamily: styles?.content_config?.font_family || styles?.font_family || 'inherit',
+                    fontSize: styles?.content_config?.font_size || '12pt',
+                    lineHeight: styles?.content_config?.line_height || 1.5,
+                    color: styles?.content_config?.color || '#000',
+                    paddingTop: styles?.content_config?.padding_top || '0px',
+                    paddingLeft: '0.3cm',
+                    paddingRight: '0.3cm',
+                    
+                    // ReactQuill Internals Override
+                    '& .ql-container': {
+                        flexGrow: 1,
+                        border: 'none',
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit'
+                    },
+                    '& .ql-editor': {
+                        padding: 0,
+                        textAlign: 'inherit', // Inherit from parent Box
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        lineHeight: 'inherit'
+                    },
+                    
+                    // Spacing Override for Paragraphs
+                    '& p': {
+                        marginBottom: styles?.content_config?.spacing || '10px',
+                        marginTop: 0,
+                        textIndent: 0 // Reset default indent
+                    },
+
+                     /* Toolbar Flutuante Horizontal (Topo Centralizado) com Glassmorphism */
+                    '& .ql-toolbar': {
+                        position: 'fixed',
+                        left: '58%',
+                        top: '160px', /* Logo abaixo da AppBar */
+                        transform: 'translateX(-50%)',
+                        width: 'fit-content',
+                        maxWidth: '95vw',
+                        
+                        /* Glassmorphism */
+                        background: 'rgba(255, 255, 255, 0.85)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.5)',
+                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                        borderRadius: '12px',
+                        
+                        padding: '8px 16px',
+                        zIndex: 1200,
+                        display: editorFocused ? 'flex' : 'none',
+                        opacity: editorFocused ? 1 : 0,
+                        visibility: editorFocused ? 'visible' : 'hidden',
+                        transition: 'all 0.3s ease-in-out',
+                        
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        
+                        maxHeight: 'none',
+                        overflow: 'visible'
+                    },
+                    // ... (keep previous ql-toolbar styles if possible, omitting for brevity in diff but assuming user wants them)
+                    '& .ql-toolbar .ql-formats': { marginRight: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', borderBottom: 'none', borderRight: '1px solid rgba(0,0,0,0.1)', paddingBottom: 0, paddingRight: '12px' },
+                    '& .ql-toolbar button': { width: '28px', height: '28px', padding: '4px', borderRadius: '4px', color: '#444' },
+                    '& .ql-toolbar button:hover': { background: 'rgba(0,0,0,0.05)', color: '#000' },
+                    '& .ql-toolbar button.ql-active': { background: 'rgba(25, 118, 210, 0.1)', color: '#1976d2' },
+                    '& .ql-toolbar .ql-picker-label': { padding: '0 4px', color: '#555', fontWeight: 500 },
+                    '& .ql-toolbar button svg': { width: '18px', height: '18px' },
+                    '& .ql-toolbar .ql-stroke': { strokeWidth: '1.5px !important' }
+
+                }}>
+                    <ReactQuill 
+                        theme="snow"
+                        value={documentContent.text}
+                        onChange={(value) => setDocumentContent({ ...documentContent, text: value })}
+                        modules={modules}
+                        formats={formats}
+                        onFocus={() => setEditorFocused(true)}
+                        onBlur={() => {
+                            setTimeout(() => {
+                                const toolbar = document.querySelector('.ql-toolbar');
+                                if (toolbar && toolbar.matches(':hover')) return;
+                                setEditorFocused(false);
+                            }, 200);
+                        }}
+                    />
+                </Box>
+
+                {/* FOOTER SECTION: SIGNATURES MOCKUP */}
+                 <Box sx={{ mt: 'auto', pt: 8, display: 'flex', justifyContent: 'space-between', textAlign: 'center', flexShrink: 0 }}>
+                  <Box>
+                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                      Secretário
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                      Orador
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                      Venerável Mestre
+                    </Typography>
+                  </Box>
+                </Box>
+
+            </Box> {/* End Layer 2 Content */}
+        </Box> {/* End Page Container */}
       </Container>
 
       <Drawer
@@ -641,122 +700,22 @@ const BalaustreEditor: React.FC = () => {
       >
         <Box sx={{ width: 300, p: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Personalizar Aparência
+            Personalizar
           </Typography>
-          <Divider sx={{ mb: 2 }} />
-
-          <Typography variant="subtitle2" gutterBottom>
-            Logo da Loja
-          </Typography>
-          <Button
-            variant="outlined"
-            component="label"
-            fullWidth
-            disabled={uploadingLogo}
-            sx={{ mb: 2 }}
-          >
-            {uploadingLogo ? 'Enviando...' : 'Alterar Logo'}
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleLogoUpload}
-            />
-          </Button>
-          <TextField
-            label="Altura do Logo"
-            value={styles.logo_height}
-            onChange={(e) => setStyles({ ...styles, logo_height: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-          />
-
-          <Divider sx={{ my: 2 }} />
+          <Box sx={{ mt: 2, mb: 2 }}>
+            <Alert severity="info">
+                A personalização de estilos foi movida para o <strong>Construtor de Documentos</strong>.
+                Utilize o menu "Configurar Documentos" no painel administrativo para alterar cores, bordas e cabeçalhos.
+            </Alert>
+          </Box>
           
-          <Typography variant="subtitle2" gutterBottom>
-            Cores e Estilos
-          </Typography>
-          
-          <TextField
-            label="Cor do Texto (Cabeçalho)"
-            value={styles.header_text_color}
-            onChange={(e) => setStyles({ ...styles, header_text_color: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-            type="color"
-          />
-          
-          <TextField
-            label="Cor de Fundo (Cabeçalho)"
-            value={styles.header_bg_color}
-            onChange={(e) => setStyles({ ...styles, header_bg_color: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-          />
-
-          <TextField
-            label="Cor de Fundo (Página)"
-            value={styles.page_bg_color}
-            onChange={(e) => setStyles({ ...styles, page_bg_color: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-            type="color"
-          />
-
-          <Divider sx={{ my: 2 }} />
-
-          <Typography variant="subtitle2" gutterBottom>
-            Borda da Página
-          </Typography>
-
-          <TextField
-            label="Largura da Borda"
-            value={styles.border_width}
-            onChange={(e) => setStyles({ ...styles, border_width: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-          />
-
-          <TextField
-            label="Cor da Borda"
-            value={styles.border_color}
-            onChange={(e) => setStyles({ ...styles, border_color: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-            type="color"
-          />
-           <TextField
-            label="Estilo da Borda"
-            value={styles.border_style}
-            onChange={(e) => setStyles({ ...styles, border_style: e.target.value })}
-            fullWidth
-            margin="normal"
-            size="small"
-            select
-            SelectProps={{
-              native: true,
-            }}
-          >
-            <option value="solid">Sólida</option>
-            <option value="dashed">Tracejada</option>
-            <option value="dotted">Pontilhada</option>
-            <option value="double">Dupla</option>
-            <option value="none">Nenhuma</option>
-          </TextField>
-
           <Box sx={{ mt: 4 }}>
             <Button 
               variant="contained" 
               fullWidth 
               onClick={() => setDrawerOpen(false)}
             >
-              Concluir
+              Fechar
             </Button>
           </Box>
         </Box>

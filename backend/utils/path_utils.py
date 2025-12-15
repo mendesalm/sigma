@@ -21,6 +21,7 @@ def get_tenant_path(id_obediencia: int, id_loja: int, resource_type: str) -> Pat
     # Garante que o resource_type seja seguro para nomes de diretórios
     safe_resource_type = "".join(c for c in resource_type if c.isalnum() or c in ("-", "_")).lower()
 
-    tenant_path = STORAGE_ROOT / str(id_obediencia) / str(id_loja) / safe_resource_type
+    # Updated to flatten hierarchy as requested: storage/lodges/{id_loja}/{resource_type}
+    tenant_path = STORAGE_ROOT / "lodges" / str(id_loja) / safe_resource_type
     tenant_path.mkdir(parents=True, exist_ok=True)  # Cria o diretório se não existir
     return tenant_path
