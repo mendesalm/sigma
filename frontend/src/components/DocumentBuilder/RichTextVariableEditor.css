@@ -1,0 +1,150 @@
+/* CSS for the document editor to simulate A4 Page */
+
+.document-editor-container .ql-toolbar {
+    border-bottom: 1px solid #ddd;
+    background-color: #f3f3f3;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.document-editor-container .ql-container {
+    border: none;
+    font-family: 'Times New Roman', Times, serif;
+    background-color: white;
+}
+
+.document-editor-container .ql-editor {
+    /* Simulate A4 Page Visuals */
+    background-color: white;
+    /* In a real print scenario, these margins are handled by @page, 
+       but for visual feedback in editor we pad the editor content */
+    line-height: 1.15; /* Tighter default spacing */
+    text-align: justify; /* Default alignment, overridable */
+}
+
+.document-editor-container .ql-editor p {
+    margin-bottom: 0; 
+    margin-top: 0;
+    padding-bottom: 0;
+    color: #000000;
+}
+
+/* Custom Size Picker Labels */
+.ql-snow .ql-picker.ql-size {
+    width: 60px;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before {
+    content: attr(data-value) !important;
+}
+
+/* Default label when nothing selected or matching */
+.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before {
+    content: "Tam.";
+}
+
+/* Force specific labels if attr() fails in some browsers or contexts (redundant but safe) */
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8pt"]::before { content: "8pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="9pt"]::before { content: "9pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10pt"]::before { content: "10pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="11pt"]::before { content: "11pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12pt"]::before { content: "12pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14pt"]::before { content: "14pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16pt"]::before { content: "16pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18pt"]::before { content: "18pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24pt"]::before { content: "24pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="30pt"]::before { content: "30pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="36pt"]::before { content: "36pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48pt"]::before { content: "48pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="60pt"]::before { content: "60pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="72pt"]::before { content: "72pt"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="96pt"]::before { content: "96pt"; }
+
+/* -------------------------------------------------------------------------- */
+/* Line Height Picker Labels */
+/* -------------------------------------------------------------------------- */
+.ql-snow .ql-picker.ql-line-height {
+    width: 60px;
+}
+.ql-snow .ql-picker.ql-line-height .ql-picker-label::before,
+.ql-snow .ql-picker.ql-line-height .ql-picker-item::before {
+    content: attr(data-value);
+}
+.ql-snow .ql-picker.ql-line-height .ql-picker-label:not([data-value])::before {
+    content: "Esp."; /* Default Label */
+}
+/* Mapeamento de Labels Específicos */
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.0"]::before { content: "1.0"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.15"]::before { content: "1.15"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.5"]::before { content: "1.5"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="2.0"]::before { content: "2.0"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="2.5"]::before { content: "2.5"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="3.0"]::before { content: "3.0"; }
+
+
+/* -------------------------------------------------------------------------- */
+/* Margin Top Picker Labels */
+/* -------------------------------------------------------------------------- */
+.ql-snow .ql-picker.ql-margin-top {
+    width: 70px;
+}
+.ql-snow .ql-picker.ql-margin-top .ql-picker-label::before,
+.ql-snow .ql-picker.ql-margin-top .ql-picker-item::before {
+    content: attr(data-value);
+}
+.ql-snow .ql-picker.ql-margin-top .ql-picker-label:not([data-value])::before {
+    content: "M.Sup"; /* Default Label */
+}
+/* Values reuse attribute content mainly */
+
+
+/* -------------------------------------------------------------------------- */
+/* Margin Bottom Picker Labels */
+/* -------------------------------------------------------------------------- */
+.ql-snow .ql-picker.ql-margin-bottom {
+    width: 70px;
+}
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label::before,
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-item::before {
+    content: attr(data-value);
+}
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label:not([data-value])::before {
+    content: "M.Inf"; /* Default Label */
+}
+
+/* -------------------------------------------------------------------------- */
+/* Font Family Picker Labels */
+/* -------------------------------------------------------------------------- */
+.ql-snow .ql-picker.ql-font {
+    width: 150px;
+}
+.ql-snow .ql-picker.ql-font .ql-picker-label::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item::before {
+    content: attr(data-value);
+}
+.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before {
+    content: "Fonte Padrão";
+}
+/* Mapeamento de Labels de Fontes */
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before { content: "Arial"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before { content: "Times New Roman"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="courier-new"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="courier-new"]::before { content: "Courier New"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="georgia"]::before { content: "Georgia"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="verdana"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="verdana"]::before { content: "Verdana"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="tahoma"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="tahoma"]::before { content: "Tahoma"; }
+
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="trebuchet-ms"]::before, 
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="trebuchet-ms"]::before { content: "Trebuchet MS"; }
