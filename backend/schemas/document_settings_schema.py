@@ -19,15 +19,39 @@ class HeaderConfig(BaseModel):
     logo_url: Optional[str] = Field(default=None, description="URL do logo personalizado (substitui o da loja)")
     logo_obedience: Optional[str] = Field(default=None, description="URL do logo da obediência")
     font_family: Optional[str] = None
+    
+    # Title/Subtitle Typography
     font_size_title: str = Field(default="16pt", description="Tamanho da fonte do Título")
     font_size_subtitle: str = Field(default="12pt", description="Tamanho da fonte do Subtítulo")
+    color: Optional[str] = None # Fallback color
+    color_title: Optional[str] = None
+    color_subtitle: Optional[str] = None
+    margin_title: str = Field(default="0", description="Margem do Título")
+    margin_subtitle: str = Field(default="5px 0 0 0", description="Margem do Subtítulo")
+    
+    # Layout Strategy
+    layout_mode: Literal["timbre", "classic", "inverted", "centered_stack", "double", "custom"] = Field(default="classic", description="Modo de layout do cabeçalho")
+    
+    # Custom Text Overrides (Optional - if set, overrides dynamic placeholders)
+    custom_title_text: Optional[str] = Field(default=None, description="Texto fixo do título (sobrescreve variável)")
+    custom_subtitle_text: Optional[str] = Field(default=None, description="Texto fixo do subtítulo (sobrescreve variável)")
+
+    # Grid/Slot Configuration (Legacy/Fallback)
+    slot_left: Optional[str] = Field(default="logo_url", description="Conteúdo do slot esquerdo (logo_url, text, empty)")
+    slot_center: Optional[str] = Field(default="text", description="Conteúdo do slot central")
+    slot_right: Optional[str] = Field(default="empty", description="Conteúdo do slot direito")
+    show_affiliations: bool = Field(default=True, description="Mostrar afiliações (Federada/Jurisdicionada)")
+
     alignment_title: Literal["left", "center", "right"] = "center"
     alignment_subtitle: Literal["left", "center", "right"] = "center"
     line_height: float = 1.2
-    color: Optional[str] = None
+    
+    # Background
     background_color: Optional[str] = None
     background_image: Optional[str] = None
     background_opacity: float = Field(default=1.0, description="Opacidade do fundo do cabeçalho")
+    image_opacity: float = Field(default=1.0, description="Alias para opacidade da imagem de fundo se usado separadamente")
+    
     padding: str = Field(default="0.3cm", description="Padding interno do cabeçalho")
     spacing_bottom: str = Field(default="20px", description="Espaço abaixo do cabeçalho")
     border_bottom_show: bool = Field(default=False, description="Exibir borda inferior")
@@ -98,6 +122,10 @@ class DocumentTypeSettings(BaseModel):
     header: str = Field(default="header_classico.html", description="Template parcial do cabeçalho")
     body: str = Field(default="template_padrao.html", description="Template do corpo")
     footer: str = Field(default="footer_padrao.html", description="Template do rodapé")
+    content_template: Optional[str] = Field(default=None, description="Template personalizado do corpo do texto (HTML/Jinja2)")
+    titles_template: Optional[str] = Field(default=None, description="Template personalizado da seção de títulos (HTML/Jinja2)")
+    header_template: Optional[str] = Field(default=None, description="Template personalizado do cabeçalho (HTML/Jinja2)")
+    footer_template: Optional[str] = Field(default=None, description="Template personalizado do rodapé (HTML/Jinja2)")
     styles: DocumentStyles = Field(default_factory=DocumentStyles)
 
 class DocumentSettings(BaseModel):

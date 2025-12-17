@@ -1,0 +1,162 @@
+{# --- MACROS --- #}
+
+{% macro render_text_block(settings, placeholders) %}
+<div class="header-text-block" style="
+    text-align: {{ settings.text_alignment }}; 
+    color: {{ settings.color }};
+    font-family: {{ settings.font_family or 'inherit' }};
+">
+    {# TÍTULO PRINCIPAL #}
+    <div class="header-main-title" style="
+        font-size: {{ settings.font_size_title }};
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: {{ settings.margin_title }};
+        line-height: 1.2;
+        color: {{ settings.color_title or 'inherit' }};
+    ">
+        {% if settings.custom_title_text %}
+        {{ settings.custom_title_text }}
+        {% else %}
+        {{ placeholders.lodge_title_formatted }} {{ placeholders.lodge_name }} Nº {{ placeholders.lodge_number }}
+        {% endif %}
+    </div>
+
+    {# SUBTITULO (AFILIAÇÕES) #}
+    {% if settings.show_affiliations %}
+    <div class="header-subtitle" style="
+        font-size: {{ settings.font_size_subtitle }};
+        margin: {{ settings.margin_subtitle }};
+        line-height: 1.4;
+        color: {{ settings.color_subtitle or 'inherit' }};
+    ">
+        {% if settings.custom_subtitle_text %}
+        {{ settings.custom_subtitle_text }}
+        {% else %}
+        Federada ao {{ placeholders.lodge_obedience }}<br>
+        Jurisdicionada ao {{ placeholders.lodge_subobedience }}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_logo(img_url, size) %}
+<div class="header-logo" style="display: flex; justify-content: center; align-items: center;">
+    {% if img_url %}
+    <img src="{{ img_url }}" style="height: {{ size }}; width: auto; max-width: 100%; object-fit: contain;"
+        alt="Logo" />
+    {% else %}
+    <div
+        style="width: {{ size }}; height: {{ size }}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #999;">
+        Logo</div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# --- MAIN LAYOUT LOGIC --- #}
+
+{% set config = styles.header_config %}
+{% set placeholders = {
+'lodge_title_formatted': lodge_title_formatted or 'A∴R∴L∴S∴',
+'lodge_name': lodge_name or 'Nome da Loja',
+'lodge_number': lodge_number or '0000',
+'lodge_obedience': lodge_obedience or 'Grande Oriente do Brasil',
+'lodge_subobedience': lodge_subobedience or 'GOB-Estadual'
+} %}
+
+<div class="header-universal-container" style="
+    position: relative;
+    padding: {{ config.padding }};
+    margin-bottom: {{ config.spacing_bottom }};
+    background-color: {{ config.background_color or 'transparent' }};
+    {% if config.border_bottom_show %}
+    border-bottom: {{ config.border_bottom_width }} {{ config.border_bottom_style }} {{ config.border_bottom_color or '#000' }};
+    {% endif %}
+">
+    {# Background Image Only #}
+    {% if config.background_image %}
+    <div style="
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background-image: url('{{ config.background_image }}');
+        background-size: cover;
+        background-position: center;
+        opacity: {{ config.image_opacity }};
+        z-index: 0;
+    "></div>
+    {% endif %}
+
+    <div class="header-content-layer" style="position: relative; z-index: 1;">
+
+        {# --- MODE: TIMBRE (CENTER LOGO ONLY) --- #}
+        {% if config.layout_mode == 'timbre' %}
+        <div style="text-align: center;">
+            {{ render_logo(config.logo_url or header_image, config.logo_size) }}
+        </div>
+
+        {# --- MODE: CLASSIC (LOGO LEFT, TEXT CENTER/RIGHT) --- #}
+        {% elif config.layout_mode == 'classic' %}
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="flex-shrink: 0;">
+                {{ render_logo(config.logo_url or header_image, config.logo_size) }}
+            </div>
+            <div style="flex-grow: 1;">
+                {{ render_text_block(config, placeholders) }}
+            </div>
+        </div>
+
+        {# --- MODE: INVERTED (TEXT LEFT, LOGO RIGHT) --- #}
+        {% elif config.layout_mode == 'inverted' %}
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="flex-grow: 1;">
+                {{ render_text_block(config, placeholders) }}
+            </div>
+            <div style="flex-shrink: 0;">
+                {{ render_logo(config.logo_url or header_image, config.logo_size) }}
+            </div>
+        </div>
+
+        {# --- MODE: CENTERED_STACK (LOGO TOP, TEXT BOTTOM) --- #}
+        {% elif config.layout_mode == 'centered_stack' %}
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div>
+                {{ render_logo(config.logo_url or header_image, config.logo_size) }}
+            </div>
+            <div>
+                {{ render_text_block(config, placeholders) }}
+            </div>
+        </div>
+
+        {# --- MODE: DOUBLE (LOGO LEFT, TEXT CENTER, LOGO RIGHT) --- #}
+        {% elif config.layout_mode == 'double' %}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+            <div style="flex-shrink: 0; width: {{ config.logo_size }}; text-align: left;">
+                {{ render_logo(config.logo_url or header_image, config.logo_size) }}
+            </div>
+            <div style="flex-grow: 1; text-align: center;">
+                {{ render_text_block(config, placeholders) }}
+            </div>
+            <div style="flex-shrink: 0; width: {{ config.logo_size }}; text-align: right;">
+                {{ render_logo(config.logo_obedience or footer_image, config.logo_size) }}
+            </div>
+        </div>
+
+        {# --- FALLBACK: DEFAULT GRID (OLD LOGIC WRAPPED) --- #}
+        {% else %}
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;">
+            <div style="justify-self: start;">
+                {% if config.slot_left == 'logo_url' %}{{ render_logo(config.logo_url or header_image, config.logo_size)
+                }}{% endif %}
+            </div>
+            <div style="justify-self: center; text-align: center;">
+                {{ render_text_block(config, placeholders) }}
+            </div>
+            <div style="justify-self: end;">
+                {% if config.slot_right == 'logo_url' %}{{ render_logo(config.logo_url or header_image,
+                config.logo_size) }}{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>

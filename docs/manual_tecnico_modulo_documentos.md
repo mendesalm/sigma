@@ -92,3 +92,24 @@ Para adicionar um novo documento (ex: "Declaração de Regularidade"):
 ## 5. Manutenção e Troubleshooting
 - **Erro "Template Not Found"**: Verifique se `strategy.get_template_name()` retorna o nome exato do arquivo em `backend/templates/`.
 - **Erro de Validação Pydantic**: Se a geração falhar silenciosamente, verifique se o JSON `document_settings` da Loja está em conformidade com o schema `DocumentSettings`. O sistema faz *fallback* para configurações padrão, mas loga o erro.
+
+## 6. Configuração de Cabeçalho e Layout
+O sistema de cabeçalhos foi arquitetado para máxima flexibilidade e consistência, utilizando um único template mestre (`header_master.html`) controlado por modos de layout.
+
+### 6.1 Modos de Layout (Backend)
+O arquivo `header_master.html` processa variáveis de contexto baseadas no campo `header_config.layout_mode`:
+- **timbre**: Exibe apenas o logo centralizado.
+- **classic**: Logo à esquerda, textos (Título/Subtítulo) à direita ou centralizados.
+- **inverted**: Texto à esquerda, logo à direita.
+- **double**: Dois logos (lateral esquerda e direita), com texto centralizado.
+- **centered_stack**: Logo no topo, seguido pelos textos abaixo (vertical).
+
+### 6.2 Sobrescrita de Texto
+Permite que o usuário defina textos fixos, ignorando as variáveis dinâmicas:
+- `custom_title_text`: Substitui o nome da loja padrão.
+- `custom_subtitle_text`: Substitui as linhas de afiliação/jurisdição.
+
+### 6.3 Schema `HeaderConfig`
+Atualizado para incluir:
+- `layout_mode`: Literal['timbre', 'classic', 'inverted', 'double', 'centered_stack']
+- `image_opacity`: Controle de transparência para imagens de fundo.
