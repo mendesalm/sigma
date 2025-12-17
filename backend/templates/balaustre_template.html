@@ -15,12 +15,51 @@
 
   <div class="page-content">
     <!-- Modular Header -->
-    {% if header_template %}
+    <!-- Modular Header -->
+    {% if custom_header %}
+    <div class="header-wrapper"
+      style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }};">
+      <div class="header-bg" style="
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: {{ styles.header_config.background_color or 'transparent' }};
+            {% if styles.header_config.background_image %}
+            background-image: url('{{ styles.header_config.background_image }}');
+            background-size: cover;
+            background-position: center;
+            {% endif %}
+            opacity: {{ styles.header_config.background_opacity }};
+            z-index: 0;
+        "></div>
+      <div class="header-content" style="
+            position: relative; 
+            z-index: 1; 
+            padding: {{ styles.header_config.padding or '0.3cm' }}; 
+            box-sizing: border-box; 
+            {% if styles.header_config.border_bottom_show %}
+            border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};
+            {% endif %}
+        ">
+        {{ custom_header | safe }}
+      </div>
+    </div>
+    {% elif header_template %}
     {% include header_template %}
     {% endif %}
 
     <!-- BALAÚSTRE Title Section -->
     {% if styles.titles_config.show | default(true) %}
+
+    {% if custom_titles %}
+    <div class="document-title-custom" style="
+            margin-top: {{ styles.titles_config.margin_top }};
+            margin-bottom: {{ styles.titles_config.margin_bottom }};
+            text-align: {{ styles.titles_config.alignment }};
+            font-family: {{ styles.titles_config.font_family or styles.font_family }};
+    ">
+      {{ custom_titles | safe }}
+    </div>
+    {% else %}
     <div class="document-title"
       style="text-align: {{ styles.titles_config.alignment }};
                 margin-top: {{ styles.titles_config.margin_top }};
@@ -38,6 +77,8 @@
       {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
       BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
     </div>
+    {% endif %}
+
     {% endif %}
 
     <div class="content">
@@ -127,6 +168,18 @@
     </div>
 
     <div class="footer">
+      {% if custom_footer %}
+      <div class="footer-custom" style="
+           margin-top: {{ styles.footer_config.spacing_top }};
+           color: {{ styles.footer_config.color or styles.primary_color }};
+           font-family: {{ styles.footer_config.font_family or styles.font_family }};
+           font-size: {{ styles.footer_config.font_size }};
+           background-color: {{ styles.footer_config.background_color or 'transparent' }};
+           {% if styles.footer_config.background_image %}background-image: url('{{ styles.footer_config.background_image }}'); background-size: cover;{% endif %}
+      ">
+        {{ custom_footer | safe }}
+      </div>
+      {% else %}
       <div class="footer-date">
         Oriente de {{ CidadeLoja }}, {{ DataAssinatura }} da E∴ V∴
       </div>
@@ -150,6 +203,8 @@
           </td>
         </tr>
       </table>
+
+      {% endif %}
 
       {% if is_signed %}
       <div class="validation-footer">

@@ -109,6 +109,12 @@ class DocumentGenerationService:
         Used for frontend previews.
         """
         try:
+            # Handle Custom Templates from Frontend Editor
+            if template_name == 'header_custom' or template_name == 'custom':
+                 return context.get('header_template', '')
+            if template_name == 'footer_custom':
+                 return context.get('footer_template', '')
+
             # Add partials/ prefix if not present, as usually requested
             if not template_name.startswith('partials/') and not template_name.endswith('.html'):
                  # Assuming full path logic or relative to templates root
@@ -235,36 +241,33 @@ class DocumentGenerationService:
     # --- Helper Methods ---
     def get_lodge_officers_at_date(self, db: Session, lodge_id: int, target_date: date, administration_id: int | None = None) -> dict[str, str]:
         """
-        Busca os oficiais ativos da Loja.
+        Busca TODOS os oficiais ativos da Loja para a data ou administração especificada.
+        Retorna um dicionário { 'Nome do Cargo': 'Nome do Membro' }.
         """
-        officer_roles = {
-            "Venerável Mestre": None, "Primeiro Vigilante": None, "Segundo Vigilante": None,
-            "Orador": None, "Secretário": None, "Tesoureiro": None, "Chanceler": None, "Hospitaleiro": None,
-        }
+        officer_roles = {}
+         
+        # Query base: RoleHistory + Role + Member
+        query = (
+            db.query(models.RoleHistory, models.Role, models.Member)
+            .join(models.Role, models.RoleHistory.role_id == models.Role.id)
+            .join(models.Member, models.RoleHistory.member_id == models.Member.id)
+            .filter(
+                models.RoleHistory.lodge_id == lodge_id,
+            )
+        )
 
-        for role_name in officer_roles.keys():
-            query = (
-                db.query(models.RoleHistory)
-                .join(models.Role)
-                .filter(
-                    models.RoleHistory.member_id.isnot(None),
-                    models.Role.name == role_name,
-                    models.RoleHistory.lodge_id == lodge_id,
-                )
+        if administration_id:
+            query = query.filter(models.RoleHistory.administration_id == administration_id)
+        else:
+            query = query.filter(
+                models.RoleHistory.start_date <= target_date,
+                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None))
             )
 
-            if administration_id:
-                query = query.filter(models.RoleHistory.administration_id == administration_id)
-            else:
-                query = query.filter(
-                    models.RoleHistory.start_date <= target_date,
-                    (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None))
-                )
+        results = query.all()
 
-            officer_history = query.first()
-
-            if officer_history and officer_history.member:
-                officer_roles[role_name] = officer_history.member.full_name
+        for role_history, role, member in results:
+            officer_roles[role.name] = member.full_name
 
         return officer_roles
 
@@ -397,6 +400,99 @@ class DocumentGenerationService:
         # Fallback Final
         template = self.env.get_template(template_name)
         return template.render(data)
+
+    def get_variables_for_document_type(self, doc_type: str, lodge_id: int = None) -> dict:
+        """
+        Retorna o dicionário de variáveis disponíveis para construção de templates dinâmicos.
+        """
+        if doc_type == 'balaustre':
+            variables = {
+                "groups": [
+                    {
+                        "id": "info",
+                        "label": "Informações da Sessão",
+                        "variables": [
+                            {"key": "DiaSessao", "label": "Data (Extenso)", "example": "20 de Dezembro de 2024"},
+                            {"key": "HoraInicioSessao", "label": "Hora Início"},
+                            {"key": "Encerramento", "label": "Hora Encerramento"},
+                            {"key": "session_number", "label": "Número da Sessão"},
+                            {"key": "session_title_formatted", "label": "Tipo de Sessão (Ex: MAGNA DE INICIAÇÃO)"},
+                            {"key": "exercicio_maconico", "label": "Exercício Maçônico"},
+                            {"key": "DataAssinatura", "label": "Data da Assinatura"},
+                            {"key": "NumIrmaosPresentes", "label": "Nº Irmãos do Quadro Presentes"},
+                            {"key": "NumVisitantes", "label": "Nº Visitantes"},
+                            {"key": "ValorTronco", "label": "Valor Arrecadado (Tronco)"},
+                        ]
+                    },
+                    {
+                        "id": "lodge",
+                        "label": "Dados da Loja",
+                        "variables": [
+                            {"key": "NomeLoja", "label": "Nome da Loja", "example": "Aurora"},
+                            {"key": "NumeroLoja", "label": "Número da Loja"},
+                            {"key": "TituloLoja", "label": "Título Distintivo (Ex: A∴R∴L∴S∴)"},
+                            {"key": "CidadeLoja", "label": "Cidade do Oriente"},
+                            {"key": "EnderecoLoja", "label": "Endereço Completo"},
+                            {"key": "NomeObediencia", "label": "Obediência"},
+                            {"key": "affiliation_text_1", "label": "Texto Afiliação 1"},
+                            {"key": "affiliation_text_2", "label": "Texto Afiliação 2"},
+                            {"key": "header_image", "label": "Logo da Loja (URL)"},
+                        ]
+                    },
+                     {
+                        "id": "blocks",
+                        "label": "Blocos de Texto",
+                        "variables": [
+                             {"key": "BalaustreAnterior", "label": "Balaústre Anterior", "type": "block"},
+                             {"key": "ExpedienteRecebido", "label": "Expediente Recebido", "type": "block"},
+                             {"key": "ExpedienteExpedido", "label": "Expediente Expedido", "type": "block"},
+                             {"key": "SacoProposta", "label": "Saco de Propostas", "type": "block"},
+                             {"key": "OrdemDia", "label": "Ordem do Dia", "type": "block"},
+                             {"key": "TempoInstrucao", "label": "Tempo de Instrução", "type": "block"},
+                             {"key": "Tronco", "label": "Tronco (Texto Completo)", "type": "block"},
+                             {"key": "Palavra", "label": "Palavra a Bem da Ordem", "type": "block"},
+                        ]
+                    }
+                ]
+            }
+            
+            # Officers
+            officer_vars = []
+            # Standard legacy keys
+            legacy_officers = [
+                {"key": "Veneravel", "label": "Venerável Mestre (Simples)"},
+                {"key": "PrimeiroVigilante", "label": "1º Vigilante (Simples)"},
+                {"key": "SegundoVigilante", "label": "2º Vigilante (Simples)"},
+                {"key": "Orador", "label": "Orador (Simples)"},
+                {"key": "Secretario", "label": "Secretário (Simples)"},
+                {"key": "Tesoureiro", "label": "Tesoureiro (Simples)"},
+                {"key": "Chanceler", "label": "Chanceler (Simples)"},
+                 {"key": "Hospitaleiro", "label": "Hospitaleiro (Simples)"},
+            ]
+            
+            if self.db: 
+                # Fetch all distinct role names
+                all_roles = self.db.query(models.Role.name).distinct().order_by(models.Role.name).all()
+                for (r_name,) in all_roles:
+                    officer_vars.append({
+                        "key": f"officers['{r_name}']", 
+                        "label": r_name, 
+                        "type": "person"
+                    })
+            
+            variables["groups"].append({
+                "id": "officers_dynamic",
+                "label": "Oficiais (Todos)",
+                "variables": officer_vars
+            })
+            variables["groups"].append({
+                "id": "officers_legacy",
+                "label": "Oficiais (Atalhos)",
+                "variables": legacy_officers
+            })
+            
+            return variables
+        return {}
 
     def _generate_pdf_sync(self, html_content: str) -> bytes:
         """Versão síncrona da geração de PDF para rodar em thread separada."""
@@ -710,12 +806,29 @@ class DocumentGenerationService:
         # Unpack custom_content to pass as top-level kwargs to strategy
         kwargs = {}
         if custom_content:
-            kwargs['custom_text'] = custom_content.get('text')
-            kwargs['styles'] = custom_content.get('styles')
-            # Add any other relevant overrides from custom_content if needed
+             kwargs.update(custom_content)
+             
+        return await self.generate_document('balaustre', session_id, {}, **kwargs)
+
+    def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None) -> str:
+        """
+        Generates the full HTML preview for a document type using the provided settings.
+        Uses mock data if no lodge_id provided, or mixes lodge data with mock session data.
+        """
+        db = SessionLocal()
+        try:
+            strategy = self.get_strategy(doc_type)
             
-        html, pdf, _ = await self.generate_document('balaustre', session_id, {}, **kwargs)
-        return pdf
+            if hasattr(strategy, 'get_preview_context'):
+                context = strategy.get_preview_context(db, lodge_id, settings)
+            else:
+                # Fallback for strategies without preview support
+                context = {"styles": settings.get("styles", {}), "mock_data": True}
+                
+            return self._render_template(strategy.get_template_name(), context)
+        finally:
+            db.close()
+
 
     async def regenerate_balaustre_text(self, session_id: int, custom_data: dict) -> str:
         # This is for the frontend editor content, usually just HTML body, not full PDF.

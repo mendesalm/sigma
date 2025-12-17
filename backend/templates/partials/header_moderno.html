@@ -19,21 +19,27 @@
     <div class="header-content"
         style="position: relative; z-index: 1; padding: {{ styles.header_config.padding }}; box-sizing: border-box; border-bottom: 2px solid {{ styles.header_config.color or styles.primary_color }};">
 
+        <!-- Moderno Layout: Text Left/Center, Logo Right -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div
-                style="flex-grow: 1; font-size: 1em; color: {{ styles.header_config.color or styles.primary_color }}; font-weight: bold; margin: 5px 0; text-transform: uppercase;">
-                À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴ <br>
-                {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
-                BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
+            <div style="flex-grow: 1; text-align: {{ styles.header_config.alignment_title or 'center' }};">
+                <div
+                    style="font-size: {{ styles.header_config.font_size_subtitle }}; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase;">
+                    À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴
+                </div>
+                <div
+                    style="font-size: {{ styles.header_config.font_size_title }}; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }}; font-weight: bold; margin: {{ styles.header_config.margin_title or '5px 0' }}; text-transform: uppercase;">
+                    {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
+                </div>
+                <div
+                    style="font-size: {{ styles.header_config.font_size_subtitle }}; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase; margin: {{ styles.header_config.margin_subtitle or '0' }};">
+                    BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
+                </div>
             </div>
-
-            <div style="text-align: right;">
+            <div style="width: 120px; text-align: right;">
                 {% if header_image %}
-                <img src="{{ header_image }}" alt="Logo"
-                    style="max-height: {{ styles.header_config.logo_size }}; max-width: 100%; height: auto;">
+                <img src="{{ header_image }}"
+                    style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;" />
                 {% endif %}
-
-
             </div>
         </div>
 

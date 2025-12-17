@@ -1,0 +1,97 @@
+{#
+The macros `render_logo` and `render_text` have been inlined into the main template
+to resolve potential scope issues and simplify rendering logic.
+#}
+
+<div class="header-content" style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.5cm' }}; 
+           box-sizing: border-box; 
+           {% if styles.header_config.background_color %}background-color: {{ styles.header_config.background_color }};{% endif %}
+           {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}
+           display: grid; 
+           grid-template-columns: 1fr auto 1fr; 
+           align-items: center;
+           gap: 15px;
+           ">
+
+    <!-- Background Image -->
+    {% if styles.header_config.background_image %}
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                background-image: url('{{ styles.header_config.background_image }}'); 
+                background-size: cover; background-position: center; 
+                opacity: {{ styles.header_config.image_opacity or 1.0 }}; z-index: -1;">
+    </div>
+    {% endif %}
+
+    <!-- Slot Left -->
+    <div style="text-align: left; justify-self: start; width: 100%; min-width: 120px;">
+        {% set slot_val = styles.header_config.slot_left or 'logo_url' %}
+        {% if slot_val == 'text' %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_title or '16pt' }}; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase; margin: {{ styles.header_config.margin_title or '0' }}; line-height: 1.2;">
+            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
+        </div>
+        {% if styles.header_config.show_affiliations %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_subtitle or '12pt' }}; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; margin: {{ styles.header_config.margin_subtitle or '5px 0 0 0' }}; line-height: 1.2;">
+            Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }}<br>
+            Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
+        </div>
+        {% endif %}
+        {% elif slot_val == 'logo_url' and header_image %}
+        <img src="{{ header_image }}" style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;"
+            alt="Logo" />
+        {% elif slot_val == 'logo_obedience' and styles.header_config.logo_obedience %}
+        <img src="{{ styles.header_config.logo_obedience }}"
+            style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;" alt="Obedience" />
+        {% endif %}
+    </div>
+
+    <!-- Slot Center -->
+    <div style="text-align: center; justify-self: center; width: 100%;">
+        {% set slot_val = styles.header_config.slot_center or 'text' %}
+        {% if slot_val == 'text' %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_title or '16pt' }}; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase; margin: {{ styles.header_config.margin_title or '0' }}; line-height: 1.2;">
+            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
+        </div>
+        {% if styles.header_config.show_affiliations %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_subtitle or '12pt' }}; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; margin: {{ styles.header_config.margin_subtitle or '5px 0 0 0' }}; line-height: 1.2;">
+            Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }}<br>
+            Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
+        </div>
+        {% endif %}
+        {% elif slot_val == 'logo_url' and header_image %}
+        <img src="{{ header_image }}" style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;"
+            alt="Logo" />
+        {% elif slot_val == 'logo_obedience' and styles.header_config.logo_obedience %}
+        <img src="{{ styles.header_config.logo_obedience }}"
+            style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;" alt="Obedience" />
+        {% endif %}
+    </div>
+
+    <!-- Slot Right -->
+    <div style="text-align: right; justify-self: end; width: 100%; min-width: 120px;">
+        {% set slot_val = styles.header_config.slot_right or 'empty' %}
+        {% if slot_val == 'text' %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_title or '16pt' }}; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }}; font-weight: bold; text-transform: uppercase; margin: {{ styles.header_config.margin_title or '0' }}; line-height: 1.2;">
+            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
+        </div>
+        {% if styles.header_config.show_affiliations %}
+        <div
+            style="font-size: {{ styles.header_config.font_size_subtitle or '12pt' }}; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; margin: {{ styles.header_config.margin_subtitle or '5px 0 0 0' }}; line-height: 1.2;">
+            Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }}<br>
+            Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
+        </div>
+        {% endif %}
+        {% elif slot_val == 'logo_url' and header_image %}
+        <img src="{{ header_image }}" style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;"
+            alt="Logo" />
+        {% elif slot_val == 'logo_obedience' and styles.header_config.logo_obedience %}
+        <img src="{{ styles.header_config.logo_obedience }}"
+            style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;" alt="Obedience" />
+        {% endif %}
+    </div>
+
+</div>

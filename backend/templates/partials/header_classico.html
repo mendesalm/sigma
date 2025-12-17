@@ -20,21 +20,22 @@
     style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.3cm' }}; box-sizing: border-box; {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}">
 
     <!-- Classic Layout: Logo Left, Text Right/Center -->
-    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 20px;">
-      {% if header_image %}
-      <div style="flex-shrink: 0;">
-        <img src="{{ header_image }}" alt="Logo" style="max-height: {{ styles.header_config.logo_size }}; width: auto;">
+    <div style="display: flex; align-items: center; justify-content: flex-start;">
+      <div style="width: 120px; text-align: center; margin-right: 15px;">
+        {% if header_image %}
+        <img src="{{ header_image }}" style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;" />
+        {% endif %}
       </div>
-      {% endif %}
-
-      <div
-        style="flex-grow: 1; font-size: {{ styles.header_config.font_size_title }}; color: {{ styles.header_config.color or styles.primary_color }}; font-weight: bold; margin: 5px 0; text-transform: uppercase; text-align: {{ styles.header_config.alignment_title }};">
-        {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }} <br>
-        <span
-          style="font-size: {{ styles.header_config.font_size_subtitle }}; display: block; line-height: 1.2; font-weight: normal; margin-top: 5px; text-align: {{ styles.header_config.alignment_subtitle }};">
-          Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }} <br>
-          Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
-        </span>
+      <div style="flex-grow: 1; text-align: center;">
+        <p
+          style="font-size: {{ styles.header_config.font_size_title }}; font-weight: bold; text-transform: uppercase; margin: {{ styles.header_config.margin_title or '0' }}; line-height: 1.2; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }};">
+          {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
+        </p>
+        <p
+          style="font-size: {{ styles.header_config.font_size_subtitle }}; margin: {{ styles.header_config.margin_subtitle or '5px 0 0 0' }}; line-height: 1.2; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }};">
+          Federada ao {{ lodge_obedience }}<br>
+          Jurisdicionada ao {{ lodge_subobedience }}
+        </p>
       </div>
     </div>
   </div>

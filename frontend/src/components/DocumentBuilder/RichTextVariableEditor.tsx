@@ -24,7 +24,27 @@ const fontWhitelist = [
   'georgia', 
   'verdana', 
   'tahoma', 
-  'trebuchet-ms'
+  'trebuchet-ms',
+  'alfa-slab-one',
+  'cal-sans',
+  'cinzel-decorative',
+  'dm-serif-text',
+  'great-vibes',
+  'kapakana',
+  'lexend-deca',
+  'manufacturing-consent',
+  'meie-script',
+  'noto-sans',
+  'oleo-script',
+  'open-sans',
+  'parisienne',
+  'poppins',
+  'prata',
+  'roboto',
+  'source-sans-3',
+  'tangerine',
+  'tinos',
+  'unifrakturmaguntia'
 ];
 FontStyle.whitelist = fontWhitelist;
 Quill.register(FontStyle, true);
