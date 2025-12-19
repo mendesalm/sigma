@@ -58,9 +58,27 @@ class DocumentStrategy(ABC):
              }
 
         try:
-             return DocumentSettings(**doc_settings_raw)
+             settings = DocumentSettings(**doc_settings_raw)
         except:
-             return DocumentSettings()
+             settings = DocumentSettings()
+             
+        # FALLBACK: Inject factory defaults if custom templates are missing
+        doc_key = self.get_document_type_key()
+        if hasattr(settings, doc_key):
+             type_settings = getattr(settings, doc_key)
+             # Check if content is empty (indicating no custom config)
+             if not type_settings.content_template:
+                 # Fetch defaults from backend file system
+                 defaults = self.service.get_default_templates(doc_key)
+                 if defaults:
+                     if not type_settings.content_template:
+                         type_settings.content_template = defaults.get('content_template', '')
+                     if hasattr(type_settings, 'signatures_template') and not type_settings.signatures_template:
+                         type_settings.signatures_template = defaults.get('signatures_template', '')
+                     if hasattr(type_settings, 'preamble_template') and not type_settings.preamble_template:
+                         type_settings.preamble_template = defaults.get('preamble_template', '')
+        
+        return settings
 
     def _get_common_context(self, lodge: models.Lodge, doc_settings: DocumentSettings) -> Dict[str, Any]:
         """
