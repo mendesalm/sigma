@@ -97,6 +97,7 @@ class DocumentGenerationService:
         self.strategies = {
             'balaustre': BalaustreStrategy(self),
             'prancha': PranchaStrategy(self),
+            'edital': PranchaStrategy(self), # Alias for prancha/edital
             'certificado': CertificateStrategy(self),
             'convite': InvitationStrategy(self),
             'congratulacao': CongratulationStrategy(self),
@@ -455,44 +456,75 @@ class DocumentGenerationService:
                     }
                 ]
             }
-            
-            # Officers
-            officer_vars = []
-            # Standard legacy keys
-            legacy_officers = [
-                {"key": "Veneravel", "label": "Venerável Mestre (Simples)"},
-                {"key": "PrimeiroVigilante", "label": "1º Vigilante (Simples)"},
-                {"key": "SegundoVigilante", "label": "2º Vigilante (Simples)"},
-                {"key": "Orador", "label": "Orador (Simples)"},
-                {"key": "Secretario", "label": "Secretário (Simples)"},
-                {"key": "Tesoureiro", "label": "Tesoureiro (Simples)"},
-                {"key": "Chanceler", "label": "Chanceler (Simples)"},
-                 {"key": "Hospitaleiro", "label": "Hospitaleiro (Simples)"},
-            ]
-            
-            if self.db: 
-                # Fetch all distinct role names
-                all_roles = self.db.query(models.Role.name).distinct().order_by(models.Role.name).all()
-                for (r_name,) in all_roles:
-                    officer_vars.append({
-                        "key": f"officers['{r_name}']", 
-                        "label": r_name, 
-                        "type": "person"
-                    })
-            
-            variables["groups"].append({
-                "id": "officers_dynamic",
-                "label": "Oficiais (Todos)",
-                "variables": officer_vars
-            })
-            variables["groups"].append({
-                "id": "officers_legacy",
-                "label": "Oficiais (Atalhos)",
-                "variables": legacy_officers
-            })
-            
-            return variables
-        return {}
+        elif doc_type in ['prancha', 'edital']:
+             variables = {
+                "groups": [
+                    {
+                        "id": "info",
+                        "label": "Informações Gerais",
+                        "variables": [
+                            {"key": "DiaSessao", "label": "Data da Sessão (Extenso)"},
+                            {"key": "HoraInicioSessao", "label": "Hora Início"},
+                            {"key": "session_title_formatted", "label": "Tipo de Sessão"},
+                            {"key": "DataAssinatura", "label": "Data da Assinatura (Hojem)"},
+                             {"key": "ObrigatoriedadeTraje", "label": "Traje"},
+                        ]
+                    },
+                    {
+                        "id": "lodge",
+                        "label": "Dados da Loja",
+                        "variables": [
+                            {"key": "NomeLoja", "label": "Nome da Loja"},
+                            {"key": "NumeroLoja", "label": "Número da Loja"},
+                            {"key": "TituloLoja", "label": "Título Distintivo"},
+                            {"key": "CidadeLoja", "label": "Cidade do Oriente"},
+                            {"key": "EnderecoLoja", "label": "Endereço Completo"},
+                            {"key": "NomeObediencia", "label": "Obediência"},
+                            {"key": "header_image", "label": "Logo da Loja (URL)"},
+                        ]
+                    },
+                    # Officers can be shared below
+                ]
+             }
+        else:
+             return {}
+
+        # Officers (Shared Logic)
+        officer_vars = []
+        # Standard legacy keys
+        legacy_officers = [
+            {"key": "Veneravel", "label": "Venerável Mestre"},
+            {"key": "PrimeiroVigilante", "label": "1º Vigilante"},
+            {"key": "SegundoVigilante", "label": "2º Vigilante"},
+            {"key": "Orador", "label": "Orador"},
+            {"key": "Secretario", "label": "Secretário"},
+            {"key": "Tesoureiro", "label": "Tesoureiro"},
+            {"key": "Chanceler", "label": "Chanceler"},
+                {"key": "Hospitaleiro", "label": "Hospitaleiro"},
+        ]
+        
+        if self.db: 
+            # Fetch all distinct role names
+            all_roles = self.db.query(models.Role.name).distinct().order_by(models.Role.name).all()
+            for (r_name,) in all_roles:
+                officer_vars.append({
+                    "key": f"officers['{r_name}']", 
+                    "label": r_name, 
+                    "type": "person"
+                })
+        
+        variables["groups"].append({
+            "id": "officers_dynamic",
+            "label": "Oficiais (Todos)",
+            "variables": officer_vars
+        })
+        variables["groups"].append({
+            "id": "officers_legacy",
+            "label": "Oficiais (Atalhos)",
+            "variables": legacy_officers
+        })
+        
+        return variables
 
     def _generate_pdf_sync(self, html_content: str) -> bytes:
         """Versão síncrona da geração de PDF para rodar em thread separada."""

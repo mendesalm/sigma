@@ -51,6 +51,9 @@ interface DocumentSettings {
     titles_template: string;
     header_template: string;
     footer_template: string;
+    preamble_template: string;
+    signatures_template: string;
+    date_place_template: string;
     styles: {
         font_family: string;
         primary_color: string;
@@ -85,6 +88,9 @@ const DEFAULT_SETTINGS = {
     titles_template: '',
     header_template: '',
     footer_template: '',
+    preamble_template: '',
+    signatures_template: '',
+    date_place_template: '',
     styles: {
         font_family: 'Arial, sans-serif',
         primary_color: '#000000',
@@ -157,6 +163,9 @@ const DEFAULT_SETTINGS = {
             background_image: '',
             image_opacity: 1.0,
             spacing_top: '40px'
+        },
+        signatures_config: {
+            spacing_top: '2cm'
         }
     }
 };
@@ -179,7 +188,7 @@ const DocumentConfigPage = () => {
     const [currentType, setCurrentType] = useState('balaustre');
     const [activeConfigTab, setActiveConfigTab] = useState(0); // 0: Layout/Timbre, 1: Conteúdo/Modelo
     const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
-    const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer'>('content'); // Which template to edit in editor mode
+    const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer' | 'preamble' | 'signatures' | 'date_place'>('content'); // Which template to edit in editor mode
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>('page_section');
 
     const editorRef = useRef<any>(null);
@@ -209,10 +218,82 @@ const DocumentConfigPage = () => {
 <p style="text-align: justify;"><strong>PALAVRA A BEM DA ORDEM:</strong> {{ Palavra }}</p>
 
 <p style="text-align: justify;"><strong>ENCERRAMENTO:</strong> Nada mais havendo a tratar, a sessão foi encerrada às {{ Encerramento }}.</p>
-            `.trim()
+            `.trim(),
+            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
+<div style="overflow: hidden; padding-bottom: 2px;">
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+</div>
+<div style="overflow: hidden; text-align: center; font-size: 10pt;">
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">ORADOR</p></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+</div>
+<div style="clear: both;"></div>
+</div>`
         },
-        prancha: { ...DEFAULT_SETTINGS, styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 } },
-        edital: { ...DEFAULT_SETTINGS, styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true } },
+        prancha: { 
+            ...DEFAULT_SETTINGS, 
+            preamble_template: `<div style="font-size: 12pt; line-height: 1.15; text-indent: 0; font-family: Arial, sans-serif;">
+<p style="margin: 0; padding: 0;">Pranc ∴ nº ##/2025-2027</p>
+<p style="margin: 0; padding: 0;"><br></p>
+<p style="margin: 0; padding: 0;">Ao Conselho Estadual</p>
+<p style="margin: 0; padding: 0;">Grande Oriente do Brasil/Goiás – GOB-GO</p>
+<p style="margin: 0; padding: 0;">Goiânia – GO.</p>
+</div>`,
+            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
+<div style="overflow: hidden; padding-bottom: 2px;">
+<div style="float: left; width: 2cm; height: 1px;"></div>
+<div style="float: left; width: 6cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 3cm; height: 1px;"></div>
+<div style="float: left; width: 6cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 2cm; height: 1px;"></div>
+</div>
+<div style="overflow: hidden; text-align: center; font-size: 10pt;">
+<div style="float: left; width: 2cm; height: 1px;"></div>
+<div style="float: left; width: 6cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
+<div style="float: left; width: 3cm; height: 1px;"></div>
+<div style="float: left; width: 6cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
+<div style="float: left; width: 2cm; height: 1px;"></div>
+</div>
+<div style="clear: both;"></div>
+</div>`,
+            styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 } 
+        },
+        edital: { 
+            ...DEFAULT_SETTINGS, 
+            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
+<div style="overflow: hidden; padding-bottom: 2px;">
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+</div>
+<div style="overflow: hidden; text-align: center; font-size: 10pt;">
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
+<div style="float: left; width: 1cm; height: 1px;"></div>
+</div>
+<div style="clear: both;"></div>
+</div>`,
+            styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true } 
+        },
         convite: { ...DEFAULT_SETTINGS, header: 'header_moderno.html', styles: { ...DEFAULT_SETTINGS.styles, font_family: "'Times New Roman', serif", show_border: true, border_style: 'double' } },
         certificado: { ...DEFAULT_SETTINGS, header: 'header_timbre.html', styles: { ...DEFAULT_SETTINGS.styles, orientation: 'landscape', show_border: true, border_style: 'solid', border_width: '5px' } }
     });
@@ -234,71 +315,7 @@ const DocumentConfigPage = () => {
             const response = await api.get(`/lodges/${user.lodge_id}`);
             setLodgeData(response.data);
             const data = response.data.document_settings;
-            const HEADER_TEMPLATES: Record<string, string> = {
-    'classic': `
-<div style="display: flex; align-items: center; justify-content: flex-start;">
-    <div style="width: 120px; text-align: center; margin-right: 15px;">
-        <img src="{{ header_image }}" style="width: 80px; height: auto;" />
-    </div>
-    <div style="flex-grow: 1; text-align: center;">
-        <p style="font-size: 16pt; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2;">
-            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
-        </p>
-        <p style="font-size: 12pt; margin: 5px 0 0 0; line-height: 1.2;">
-            Federada ao {{ lodge_obedience }}<br>
-            Jurisdicionada ao {{ lodge_subobedience }}
-        </p>
-    </div>
-</div>`,
-    'inverted': `
-<div style="display: flex; align-items: center; justify-content: flex-end;">
-    <div style="flex-grow: 1; text-align: center; margin-right: 15px;">
-        <p style="font-size: 16pt; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2;">
-            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
-        </p>
-        <p style="font-size: 12pt; margin: 5px 0 0 0; line-height: 1.2;">
-            Federada ao {{ lodge_obedience }}<br>
-            Jurisdicionada ao {{ lodge_subobedience }}
-        </p>
-    </div>
-    <div style="width: 120px; text-align: center;">
-        <img src="{{ header_image }}" style="width: 80px; height: auto;" />
-    </div>
-</div>`,
-    'modern': `
-<div style="display: flex; align-items: center; justify-content: space-between;">
-    <div style="flex-grow: 1; text-align: left;">
-        <p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2;">
-            À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴<br>
-            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
-        </p>
-        <p style="font-size: 12pt; font-weight: bold; text-transform: uppercase; margin: 5px 0 0 0; line-height: 1.2;">
-            BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}
-        </p>
-    </div>
-    <div style="width: 120px; text-align: right;">
-        <img src="{{ header_image }}" style="width: 80px; height: auto;" />
-    </div>
-</div>`,
-    'double': `
-<div style="display: flex; align-items: center; justify-content: space-between;">
-    <div style="width: 120px; text-align: left;">
-        <img src="{{ footer_image }}" style="width: 80px; height: auto;" alt="Potencia"/>
-    </div>
-    <div style="flex-grow: 1; text-align: center; margin: 0 15px;">
-        <p style="font-size: 16pt; font-weight: bold; text-transform: uppercase; margin: 0; line-height: 1.2;">
-            {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
-        </p>
-        <p style="font-size: 12pt; margin: 5px 0 0 0; line-height: 1.2;">
-            Federada ao {{ lodge_obedience }}<br>
-            Jurisdicionada ao {{ lodge_subobedience }}
-        </p>
-    </div>
-    <div style="width: 120px; text-align: right;">
-        <img src="{{ header_image }}" style="width: 80px; height: auto;" alt="Loja"/>
-    </div>
-</div>`
-};
+
 
 
             
@@ -678,7 +695,7 @@ const DocumentConfigPage = () => {
                 </AccordionDetails>
             </Accordion>
 
-             <Accordion expanded={expandedAccordion === 'footer_section'} onChange={handleAccordionChange('footer_section')}>
+            <Accordion expanded={expandedAccordion === 'footer_section'} onChange={handleAccordionChange('footer_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Rodapé</Typography>
                 </AccordionSummary>
@@ -713,6 +730,19 @@ const DocumentConfigPage = () => {
                             Editar Modelo de Rodapé
                         </Button>
                      </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            <Accordion expanded={expandedAccordion === 'signatures_layout_section'} onChange={handleAccordionChange('signatures_layout_section')}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Assinaturas (Layout)</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                             <TextField label="Espaço Superior" size="small" fullWidth value={currentSettings.styles.signatures_config?.spacing_top || '2cm'} onChange={(e) => updateNestedSetting('signatures_config', 'spacing_top', e.target.value)} />
+                        </Grid>
+                    </Grid>
                 </AccordionDetails>
             </Accordion>
             
@@ -828,6 +858,75 @@ const DocumentConfigPage = () => {
                             }}
                         >
                             Editar Modelo de Texto
+                        </Button>
+                     </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            <Accordion expanded={expandedAccordion === 'preamble_section'} onChange={handleAccordionChange('preamble_section')}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Preâmbulo</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo do Preâmbulo:</Typography>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<EditIcon />} 
+                            fullWidth 
+                            size="small"
+                            onClick={() => {
+                                setContentEditMode('preamble');
+                                setViewMode('editor');
+                            }}
+                        >
+                            Editar Modelo de Preâmbulo
+                        </Button>
+                     </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            <Accordion expanded={expandedAccordion === 'signatures_section'} onChange={handleAccordionChange('signatures_section')}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Assinaturas da Prancha</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo de Assinaturas:</Typography>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<EditIcon />} 
+                            fullWidth 
+                            size="small"
+                            onClick={() => {
+                                setContentEditMode('signatures');
+                                setViewMode('editor');
+                            }}
+                        >
+                            Editar Modelo de Assinaturas
+                        </Button>
+                     </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            <Accordion expanded={expandedAccordion === 'date_place_section'} onChange={handleAccordionChange('date_place_section')}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Data e Local</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo de Data e Local:</Typography>
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<EditIcon />} 
+                            fullWidth 
+                            size="small"
+                            onClick={() => {
+                                setContentEditMode('date_place');
+                                setViewMode('editor');
+                            }}
+                        >
+                            Editar Modelo de Data e Local
                         </Button>
                      </Box>
                 </AccordionDetails>
@@ -1023,7 +1122,11 @@ const DocumentConfigPage = () => {
                                             Editando: <strong style={{ color: '#e2e8f0' }}>{
                                                 contentEditMode === 'content' ? 'Modelo do Corpo do Texto' : 
                                                 contentEditMode === 'titles' ? 'Modelo dos Títulos' :
-                                                contentEditMode === 'header' ? 'Modelo de Cabeçalho' : 'Modelo de Rodapé'
+                                                contentEditMode === 'header' ? 'Modelo de Cabeçalho' : 
+                                                contentEditMode === 'preamble' ? 'Modelo de Preâmbulo' :
+                                                contentEditMode === 'signatures' ? 'Modelo de Assinaturas' :
+                                                contentEditMode === 'date_place' ? 'Modelo de Data e Local' :
+                                                'Modelo de Rodapé'
                                             }</strong>
                                          </Typography>
                                     </Box>
@@ -1033,17 +1136,21 @@ const DocumentConfigPage = () => {
                                         <RichTextVariableEditor 
                                             ref={editorRef}
                                             value={
-                                                contentEditMode === 'content' ? (currentSettings.content_template || '') : 
-                                                contentEditMode === 'header' ? (currentSettings.header_template || '') :
-                                                contentEditMode === 'footer' ? (currentSettings.footer_template || '') :
-                                                (currentSettings.titles_template || '')
+                                                contentEditMode === 'content' ? (currentSettings.content_template || (DEFAULT_SETTINGS as any)[currentType]?.content_template || '') : 
+                                                contentEditMode === 'header' ? (currentSettings.header_template || (DEFAULT_SETTINGS as any)[currentType]?.header_template || '') :
+                                                contentEditMode === 'footer' ? (currentSettings.footer_template || (DEFAULT_SETTINGS as any)[currentType]?.footer_template || '') :
+                                                contentEditMode === 'preamble' ? (currentSettings.preamble_template || (DEFAULT_SETTINGS as any)[currentType]?.preamble_template || '') :
+                                                contentEditMode === 'signatures' ? (currentSettings.signatures_template || (DEFAULT_SETTINGS as any)[currentType]?.signatures_template || '') :
+                                                contentEditMode === 'date_place' ? (currentSettings.date_place_template || (DEFAULT_SETTINGS as any)[currentType]?.date_place_template || '') :
+                                                (currentSettings.titles_template || (DEFAULT_SETTINGS as any)[currentType]?.titles_template || '')
                                             }
                                             onChange={(val) => {
                                                 if (contentEditMode === 'content') updateCurrentSetting('content_template', val);
-                                                else if (contentEditMode === 'header') {
-                                                    updateCurrentSetting('header_template', val);
-                                                }
+                                                else if (contentEditMode === 'header') updateCurrentSetting('header_template', val);
                                                 else if (contentEditMode === 'footer') updateCurrentSetting('footer_template', val);
+                                                else if (contentEditMode === 'preamble') updateCurrentSetting('preamble_template', val);
+                                                else if (contentEditMode === 'signatures') updateCurrentSetting('signatures_template', val);
+                                                else if (contentEditMode === 'date_place') updateCurrentSetting('date_place_template', val);
                                                 else updateCurrentSetting('titles_template', val);
                                             }}
                                         />

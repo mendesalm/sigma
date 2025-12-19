@@ -1,3 +1,6 @@
+/* -------------------------------------------------------------------------- */
+/* Modern Editor Fonts */
+/* -------------------------------------------------------------------------- */
 @font-face { font-family: 'Alfa Slab One'; src: url('/storage/assets/fonts/Alfa_Slab_One/AlfaSlabOne-Regular.ttf'); }
 @font-face { font-family: 'Cal Sans'; src: url('/storage/assets/fonts/Cal_Sans/CalSans-Regular.ttf'); }
 @font-face { font-family: 'Cinzel Decorative'; src: url('/storage/assets/fonts/Cinzel_Decorative/CinzelDecorative-Regular.ttf'); }
@@ -19,139 +22,229 @@
 @font-face { font-family: 'Tinos'; src: url('/storage/assets/fonts/Tinos/Tinos-Regular.ttf'); }
 @font-face { font-family: 'UnifrakturMaguntia'; src: url('/storage/assets/fonts/UnifrakturMaguntia/UnifrakturMaguntia-Regular.ttf'); }
 
-/* CSS for the document editor to simulate A4 Page */
 
-.document-editor-container .ql-toolbar {
-    border-bottom: 1px solid #ddd;
-    background-color: #f3f3f3;
+/* -------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* Modern Editor Design System - Dark Theme Adaptation */
+/* -------------------------------------------------------------------------- */
+
+.document-editor-container {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    box-sizing: border-box;
+}
+
+/* Toolbar Container - Dark Theme */
+.document-editor-container .ql-toolbar.ql-snow {
+    background-color: #1a1a1a; /* Dark background matching sidebar/app theme */
+    border: none;
+    border-bottom: 2px solid #333;
+    border-radius: 8px 8px 0 0;
+    padding: 12px 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 100;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: #e0e0e0;
 }
 
-.document-editor-container .ql-container {
-    border: none;
-    font-family: 'Times New Roman', Times, serif;
-    background-color: white;
+/* Toolbar Groups */
+.ql-toolbar.ql-snow .ql-formats {
+    display: flex;
+    align-items: center;
+    margin-right: 12px;
+    padding-right: 12px;
+    border-right: 1px solid #444; /* Darker separator */
+}
+.ql-toolbar.ql-snow .ql-formats:last-child {
+    border-right: none;
 }
 
-.document-editor-container .ql-editor {
-    /* Simulate A4 Page Visuals */
-    background-color: white;
-    /* In a real print scenario, these margins are handled by @page, 
-       but for visual feedback in editor we pad the editor content */
-    line-height: 1.15; /* Tighter default spacing */
-    text-align: justify; /* Default alignment, overridable */
+/* Buttons - Icon Handling (Dark Theme) */
+.ql-toolbar.ql-snow button {
+    height: 36px;
+    width: 36px;
+    border-radius: 6px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin: 0 2px;
+    background: transparent;
+    color: #ccc;
+    position: relative;
 }
 
-.document-editor-container .ql-editor p {
-    margin-bottom: 0; 
-    margin-top: 0;
-    padding-bottom: 0;
-    color: #000000;
+/* Ensure Icons Scaled Correctly - Force Size */
+.ql-toolbar.ql-snow button svg,
+.ql-toolbar.ql-snow .ql-picker-label svg {
+    width: 22px !important;
+    height: 22px !important;
+    opacity: 0.9;
 }
 
-/* Custom Size Picker Labels */
-.ql-snow .ql-picker.ql-size {
-    width: 60px;
+/* Icon Colors - Invert for Dark Theme */
+.ql-toolbar.ql-snow .ql-stroke {
+    stroke: #ccc !important;
+}
+.ql-toolbar.ql-snow .ql-fill {
+    fill: #ccc !important;
+}
+.ql-toolbar.ql-snow .ql-picker {
+    color: #ccc !important;
 }
 
-.ql-snow .ql-picker.ql-size .ql-picker-label::before,
-.ql-snow .ql-picker.ql-size .ql-picker-item::before {
-    content: attr(data-value) !important;
+/* Interaction States */
+.ql-toolbar.ql-snow button:hover,
+.ql-toolbar.ql-snow .ql-picker-label:hover {
+    background-color: #333 !important;
+    color: #fff !important;
+}
+.ql-toolbar.ql-snow button:hover .ql-stroke,
+.ql-toolbar.ql-snow .ql-picker-label:hover .ql-stroke {
+    stroke: #fff !important;
+}
+.ql-toolbar.ql-snow button:hover .ql-fill,
+.ql-toolbar.ql-snow .ql-picker-label:hover .ql-fill {
+    fill: #fff !important;
 }
 
-/* Default label when nothing selected or matching */
-.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before {
-    content: "Tam.";
+/* Active State */
+.ql-toolbar.ql-snow button.ql-active,
+.ql-toolbar.ql-snow .ql-picker-label.ql-active {
+    background-color: #1976d2 !important; /* Primary Blue */
+    color: #fff !important;
+}
+.ql-toolbar.ql-snow button.ql-active .ql-stroke,
+.ql-toolbar.ql-snow .ql-picker-label.ql-active .ql-stroke {
+    stroke: #fff !important;
+}
+.ql-toolbar.ql-snow button.ql-active .ql-fill,
+.ql-toolbar.ql-snow .ql-picker-label.ql-active .ql-fill {
+    fill: #fff !important;
 }
 
-/* Force specific labels if attr() fails in some browsers or contexts (redundant but safe) */
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="8pt"]::before { content: "8pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="9pt"]::before { content: "9pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10pt"]::before { content: "10pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="11pt"]::before { content: "11pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12pt"]::before { content: "12pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14pt"]::before { content: "14pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16pt"]::before { content: "16pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18pt"]::before { content: "18pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24pt"]::before { content: "24pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="30pt"]::before { content: "30pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="36pt"]::before { content: "36pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="48pt"]::before { content: "48pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="60pt"]::before { content: "60pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="72pt"]::before { content: "72pt"; }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="96pt"]::before { content: "96pt"; }
+/* Clean Button */
+.ql-clean .ql-stroke {
+    stroke: #ef5350 !important; /* Red */
+}
+.ql-clean:hover {
+    background-color: rgba(239, 83, 80, 0.2) !important;
+}
+
+/* Pickers (Dropdowns) */
+.ql-toolbar.ql-snow .ql-picker {
+    height: 36px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.ql-toolbar.ql-snow .ql-picker-label {
+    padding: 0 8px;
+    border: 1px solid transparent;
+}
+/* Dropdown Options (Light bg for readability inside, or Dark?) 
+   Let's use White for Dropdowns to ensure contrast with text colors, or Dark?
+   Standard Quill options are usually white. Let's keep them white for now but fix text. */
+.ql-toolbar.ql-snow .ql-picker-options {
+    background-color: #2e2e2e;
+    border: 1px solid #444;
+    color: #eee;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.ql-toolbar.ql-snow .ql-picker-item {
+    color: #ccc;
+}
+.ql-toolbar.ql-snow .ql-picker-item:hover {
+    background-color: #444;
+    color: #fff;
+}
+.ql-toolbar.ql-snow .ql-picker-item.ql-selected {
+    background-color: #1976d2;
+    color: #fff;
+}
 
 /* -------------------------------------------------------------------------- */
-/* Line Height Picker Labels */
+/* Tooltips */
 /* -------------------------------------------------------------------------- */
-.ql-snow .ql-picker.ql-line-height {
-    width: 60px;
-}
-.ql-snow .ql-picker.ql-line-height .ql-picker-label::before,
-.ql-snow .ql-picker.ql-line-height .ql-picker-item::before {
-    content: attr(data-value);
-}
-.ql-snow .ql-picker.ql-line-height .ql-picker-label:not([data-value])::before {
-    content: "Esp."; /* Default Label */
-}
-/* Mapeamento de Labels Específicos */
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.0"]::before { content: "1.0"; }
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.15"]::before { content: "1.15"; }
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="1.5"]::before { content: "1.5"; }
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="2.0"]::before { content: "2.0"; }
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="2.5"]::before { content: "2.5"; }
-.ql-snow .ql-picker.ql-line-height .ql-picker-item[data-value="3.0"]::before { content: "3.0"; }
-
-
-/* -------------------------------------------------------------------------- */
-/* Margin Top Picker Labels */
-/* -------------------------------------------------------------------------- */
-.ql-snow .ql-picker.ql-margin-top {
-    width: 70px;
-}
-.ql-snow .ql-picker.ql-margin-top .ql-picker-label::before,
-.ql-snow .ql-picker.ql-margin-top .ql-picker-item::before {
-    content: attr(data-value);
-}
-.ql-snow .ql-picker.ql-margin-top .ql-picker-label:not([data-value])::before {
-    content: "M.Sup"; /* Default Label */
-}
-/* Values reuse attribute content mainly */
-
-
-/* -------------------------------------------------------------------------- */
-/* Margin Bottom Picker Labels */
-/* -------------------------------------------------------------------------- */
-.ql-snow .ql-picker.ql-margin-bottom {
-    width: 70px;
-}
-.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label::before,
-.ql-snow .ql-picker.ql-margin-bottom .ql-picker-item::before {
-    content: attr(data-value);
-}
-.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label:not([data-value])::before {
-    content: "M.Inf"; /* Default Label */
+.ql-toolbar.ql-snow button:hover::after {
+    background: #000;
+    color: #fff;
+    border: 1px solid #333;
 }
 
 /* -------------------------------------------------------------------------- */
-/* Font Family Picker Labels */
+/* Custom Pickers - Explicit Prefixes */
 /* -------------------------------------------------------------------------- */
-/* -------------------------------------------------------------------------- */
-/* Font Family Picker Labels */
-/* -------------------------------------------------------------------------- */
-.ql-snow .ql-picker.ql-font {
-    width: 220px;
+
+/* Size */
+.ql-snow .ql-picker.ql-size { width: 85px; }
+.ql-snow .ql-picker.ql-size .ql-picker-label::before { content: "Tam: " attr(data-value); }
+.ql-snow .ql-picker.ql-size .ql-picker-label:not([data-value])::before { content: "Tamanho"; }
+.ql-snow .ql-picker.ql-size .ql-picker-item::before { content: attr(data-value); }
+
+/* Line Height */
+.ql-snow .ql-picker.ql-line-height { width: 90px; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-label::before { content: "Alt: " attr(data-value); }
+.ql-snow .ql-picker.ql-line-height .ql-picker-label:not([data-value])::before { content: "Altura"; }
+.ql-snow .ql-picker.ql-line-height .ql-picker-item::before { content: attr(data-value); }
+
+/* Margin Top */
+.ql-snow .ql-picker.ql-margin-top { width: 100px; }
+.ql-snow .ql-picker.ql-margin-top .ql-picker-label::before { content: "Sup: " attr(data-value); }
+.ql-snow .ql-picker.ql-margin-top .ql-picker-label:not([data-value])::before { content: "Mg. Sup"; }
+.ql-snow .ql-picker.ql-margin-top .ql-picker-item::before { content: attr(data-value); }
+
+/* Margin Bottom */
+.ql-snow .ql-picker.ql-margin-bottom { width: 100px; }
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label::before { content: "Inf: " attr(data-value); }
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-label:not([data-value])::before { content: "Mg. Inf"; }
+.ql-snow .ql-picker.ql-margin-bottom .ql-picker-item::before { content: attr(data-value); }
+
+/* Text Indent */
+.ql-snow .ql-picker.ql-text-indent { width: 100px; }
+.ql-snow .ql-picker.ql-text-indent .ql-picker-label::before { content: "Pár: " attr(data-value); }
+.ql-snow .ql-picker.ql-text-indent .ql-picker-label:not([data-value])::before { content: "Parág."; }
+.ql-snow .ql-picker.ql-text-indent .ql-picker-item::before { content: attr(data-value); }
+
+/* Letter Spacing */
+.ql-snow .ql-picker.ql-letter-spacing { width: 110px; }
+.ql-snow .ql-picker.ql-letter-spacing .ql-picker-label::before { content: "Esp: " attr(data-value); }
+.ql-snow .ql-picker.ql-letter-spacing .ql-picker-label:not([data-value])::before { content: "Esp. Let."; }
+.ql-snow .ql-picker.ql-letter-spacing .ql-picker-item::before { content: attr(data-value); }
+
+/* Font Family - Width adjustment */
+.ql-snow .ql-picker.ql-font { width: 160px; }
+/* ... mappings remain ... */
+
+/* Color & Alignment Icons Sizing Fixes specifically */
+/* Dropdown arrows need to be visible */
+.ql-toolbar.ql-snow .ql-picker-label svg {
+    /* The SVG is the icon. The Arrow is a separate polygon usually? No, in Quill it's stroke/fill logic on SVG */
+    /* Ensure right alignment of dropdown arrow? */
 }
-.ql-snow .ql-picker.ql-font .ql-picker-label::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item::before {
-    content: attr(data-value);
+.ql-toolbar.ql-snow .ql-picker-label::before {
+    /* Text position */
+    line-height: 36px;
 }
-.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before {
-    content: "Fonte Padrão";
+
+/* Custom Insert Table Button */
+.ql-insertTable {
+    width: auto !important;
+    padding: 0 10px !important;
+    font-weight: 500;
 }
-/* Mapeamento de Labels de Fontes */
+.ql-insertTable::before {
+    color: #ccc; 
+}
+.ql-insertTable:hover::before {
+    color: #fff;
+}
+
+/* Font Mappings (Keep explicit values for safety) */
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before, .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before { content: "Arial"; font-family: 'Arial'; }
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before, .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before { content: "Times New Roman"; font-family: 'Times New Roman'; }
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="courier-new"]::before, .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="courier-new"]::before { content: "Courier New"; font-family: 'Courier New'; }

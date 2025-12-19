@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<meta charset="UTF-8">
+<title>Prancha</title>
+{{ dynamic_style_block | safe }}
+<style>
+    .preamble-section,
+    .content,
+    .footer-date,
+    .signatures-section,
+    .default-signatures {
+        padding-left: 0.3cm;
+        padding-right: 0.3cm;
+    }
+</style>
+</head>
+
+<body>
+
+    <div class="watermark"></div>
+    <div class="page-border"></div>
+
+    <div class="page-content">
+
+        <!-- Modular Header -->
+        {% if custom_header %}
+        <div class="header-wrapper"
+            style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }};">
+            <div class="header-bg" style="
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: {{ styles.header_config.background_color or 'transparent' }};
+            {% if styles.header_config.background_image %}
+            background-image: url('{{ styles.header_config.background_image }}');
+            background-size: cover;
+            background-position: center;
+            {% endif %}
+            opacity: {{ styles.header_config.background_opacity }};
+            z-index: 0;
+        "></div>
+            <div class="header-content" style="
+            position: relative; 
+            z-index: 1; 
+            padding: {{ styles.header_config.padding or '0.3cm' }}; 
+            box-sizing: border-box; 
+            {% if styles.header_config.border_bottom_show %}
+            border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};
+            {% endif %}
+        ">
+                {{ custom_header | safe }}
+            </div>
+        </div>
+        {% elif header_template %}
+        {% include header_template %}
+        {% endif %}
+
+        <!-- Preamble Section -->
+        {% if custom_preamble %}
+        <div class="preamble-section" style="margin-bottom: 20px;">
+            {{ custom_preamble | safe }}
+        </div>
+        {% endif %}
+
+        <div class="content">
+            <div class="title-section">
+                {% if custom_titles %}
+                {{ custom_titles | safe }}
+                {% else %}
+                PRANCHA<br>
+                {% endif %}
+            </div>
+
+            {% if custom_content %}
+            {{ custom_content | safe }}
+            {% else %}
+            <p>
+                [Conteúdo da Prancha]
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="footer">
+            <div class="footer-date">
+                {% if custom_date_place %}
+                {{ custom_date_place | safe }}
+                {% else %}
+                Oriente de {{ CidadeLoja }}, {{ DataAssinatura }} da E∴ V∴
+                {% endif %}
+            </div>
+
+            {% if custom_signatures %}
+            <div class="signatures-section">
+                {{ custom_signatures | safe }}
+            </div>
+            {% else %}
+            <div class="default-signatures" style="margin-top: {{ styles.signatures_config.spacing_top or '2cm' }};">
+                <table style="width: 100%; border-collapse: collapse; border: none;">
+                    <tr>
+                        <td
+                            style="width: 50%; text-align: center; vertical-align: bottom; border: none; padding: 0 10px;">
+                            <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto 5px auto;"></div>
+                            <div class="signature-name">{{ Veneravel }}</div>
+                            <div class="signature-role">Venerável Mestre</div>
+                        </td>
+                        <td
+                            style="width: 50%; text-align: center; vertical-align: bottom; border: none; padding: 0 10px;">
+                            <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto 5px auto;"></div>
+                            <div class="signature-name">{{ SecretarioNome }}</div>
+                            <div class="signature-role">Secretário</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+
+</html>
