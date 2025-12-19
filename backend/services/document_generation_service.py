@@ -17,6 +17,8 @@ from services.document_strategies.certificate_strategy import CertificateStrateg
 from services.document_strategies.invitation_strategy import InvitationStrategy
 from services.document_strategies.congratulation_strategy import CongratulationStrategy
 from services.document_strategies.electoral_balaustre_strategy import ElectoralBalaustreStrategy
+from services.pdf_service import PdfService
+
 from sqlalchemy import func, cast, Date
 import qrcode
 import io
@@ -103,6 +105,10 @@ class DocumentGenerationService:
             'congratulacao': CongratulationStrategy(self),
             'balaustre_eleitoral': ElectoralBalaustreStrategy(self),
         }
+        
+        self.pdf_service = PdfService()
+        
+
 
     def render_partial(self, template_name: str, context: dict) -> str:
         """
@@ -526,36 +532,29 @@ class DocumentGenerationService:
         
         return variables
 
-    def _generate_pdf_sync(self, html_content: str) -> bytes:
-        """Versão síncrona da geração de PDF para rodar em thread separada."""
-        from playwright.sync_api import sync_playwright
+    def get_default_templates(self, doc_type: str) -> dict:
+        """
+        Returns the default template parts (content, signatures, etc.) for a given document type.
+        """
+        defaults = {}
+        backend_dir = os.path.dirname(os.path.dirname(__file__))
+        defaults_dir = os.path.join(backend_dir, 'templates', 'defaults')
         
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            
-            # Carrega o conteúdo HTML
-            page.set_content(html_content, wait_until="networkidle")
-            
-            # Gera o PDF
-            pdf_bytes = page.pdf(
-                format="A4",
-                print_background=True,
-                margin={
-                    "top": "0cm",
-                    "bottom": "0cm",
-                    "left": "0cm",
-                    "right": "0cm"
-                }
-            )
-            
-            browser.close()
-            return pdf_bytes
+        # Helper to read file
+        def read_default(name):
+             path = os.path.join(defaults_dir, f"{doc_type}_{name}.html")
+             if os.path.exists(path):
+                 with open(path, "r", encoding="utf-8") as f:
+                     return f.read()
+             return ""
+             
+        defaults['content_template'] = read_default('content')
+        defaults['signatures_template'] = read_default('signatures')
+        defaults['preamble_template'] = read_default('preamble')
+        
+        return defaults
 
-    async def _generate_pdf_from_html(self, html_content: str) -> bytes:
-        """Converte conteúdo HTML em PDF usando Playwright (Sync via Thread)."""
-        import asyncio
-        return await asyncio.to_thread(self._generate_pdf_sync, html_content)
+
 
     def _format_full_address(self, lodge: models.Lodge) -> str:
         """Helper para formatar o endereço completo da loja."""
@@ -827,7 +826,7 @@ class DocumentGenerationService:
                 print(f"Could not write debug file: {e}")
             
             # 3. Generate PDF
-            pdf_bytes = await self._generate_pdf_from_html(html_content)
+            pdf_bytes = await self.pdf_service.generate_pdf_from_html(html_content)
             
             return html_content, pdf_bytes, context
             
@@ -942,7 +941,7 @@ class DocumentGenerationService:
              
              # Render
              html = self._render_template(strategy.get_template_name(), context)
-             pdf = await self._generate_pdf_from_html(html)
+             pdf = await self.pdf_service.generate_pdf_from_html(html)
              
              # Save
              title = f"Balaústre OFICIAL - {context.get('session_number', '')}"
@@ -1047,7 +1046,7 @@ class DocumentGenerationService:
                 html_content = self._render_template(strategy.get_template_name(), cert_data)
                 
                 # 5. Gerar PDF
-                pdf_bytes = await self._generate_pdf_from_html(html_content)
+                pdf_bytes = await self.pdf_service.generate_pdf_from_html(html_content)
                 
                 # 6. Salvar Documento
                 title = f"Certificado de Presença - {cert_data['member_name']}"

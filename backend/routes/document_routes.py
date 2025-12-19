@@ -43,6 +43,15 @@ def get_document_variables(doc_type: str, lodge_id: Optional[int] = None, db: Se
     from services.document_generation_service import DocumentGenerationService
     service = DocumentGenerationService(db)
     return service.get_variables_for_document_type(doc_type, lodge_id)
+    
+@router.get("/defaults/{doc_type}")
+def get_document_defaults(doc_type: str, db: Session = Depends(database.get_db)):
+    """
+    Returns the default HTML templates (content, signatures) for the doc type.
+    """
+    from services.document_generation_service import DocumentGenerationService
+    service = DocumentGenerationService(db)
+    return service.get_default_templates(doc_type)
 
 
 @router.post("/preview/{doc_type}")

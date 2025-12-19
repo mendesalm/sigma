@@ -196,102 +196,18 @@ const DocumentConfigPage = () => {
     const [allSettings, setAllSettings] = useState({
         balaustre: { 
             ...DEFAULT_SETTINGS,
-            content_template: `
-<p style="text-align: justify;"><strong>ABERTURA:</strong> Aos {{ DiaSessao }}, às {{ HoraInicioSessao }}, reuniu-se a {{ TituloLoja }} {{ NomeLoja }} nº {{ NumeroLoja }}, no seu Templo sito à {{ EnderecoLoja }}, sob a presidência do Venerável Mestre {{ Veneravel }}.</p>
-
-<p style="text-align: justify;"><strong>COMPOSIÇÃO:</strong> Os cargos em Loja foram preenchidos pelos Irmãos: 1º Vig. {{ PrimeiroVigilante }}, 2º Vig. {{ SegundoVigilante }}, Orador {{ Orador }}, Secretário {{ Secretario }}, Tesoureiro {{ Tesoureiro }}, Chanceler {{ Chanceler }}, Hospitaleiro {{ Hospitaleiro }}.</p>
-
-<p style="text-align: justify;"><strong>BALAÚSTRE:</strong> {{ BalaustreAnterior }}</p>
-
-<p style="text-align: justify;"><strong>EXPEDIENTE RECEBIDO:</strong> {{ ExpedienteRecebido }}</p>
-
-<p style="text-align: justify;"><strong>EXPEDIENTE EXPEDIDO:</strong> {{ ExpedienteExpedido }}</p>
-
-<p style="text-align: justify;"><strong>SACO DE PROPOSTAS E INFORMAÇÕES:</strong> {{ SacoProposta }}</p>
-
-<p style="text-align: justify;"><strong>ORDEM DO DIA:</strong> {{ OrdemDia }}</p>
-
-<p style="text-align: justify;"><strong>TEMPO DE INSTRUÇÃO:</strong> {{ TempoInstrucao }}</p>
-
-<p style="text-align: justify;"><strong>TRONCO DE BENEFICÊNCIA:</strong> {{ Tronco }}</p>
-
-<p style="text-align: justify;"><strong>PALAVRA A BEM DA ORDEM:</strong> {{ Palavra }}</p>
-
-<p style="text-align: justify;"><strong>ENCERRAMENTO:</strong> Nada mais havendo a tratar, a sessão foi encerrada às {{ Encerramento }}.</p>
-            `.trim(),
-            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
-<div style="overflow: hidden; padding-bottom: 2px;">
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-</div>
-<div style="overflow: hidden; text-align: center; font-size: 10pt;">
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">ORADOR</p></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-</div>
-<div style="clear: both;"></div>
-</div>`
+            content_template: '',
+            signatures_template: ''
         },
         prancha: { 
             ...DEFAULT_SETTINGS, 
-            preamble_template: `<div style="font-size: 12pt; line-height: 1.15; text-indent: 0; font-family: Arial, sans-serif;">
-<p style="margin: 0; padding: 0;">Pranc ∴ nº ##/2025-2027</p>
-<p style="margin: 0; padding: 0;"><br></p>
-<p style="margin: 0; padding: 0;">Ao Conselho Estadual</p>
-<p style="margin: 0; padding: 0;">Grande Oriente do Brasil/Goiás – GOB-GO</p>
-<p style="margin: 0; padding: 0;">Goiânia – GO.</p>
-</div>`,
-            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
-<div style="overflow: hidden; padding-bottom: 2px;">
-<div style="float: left; width: 2cm; height: 1px;"></div>
-<div style="float: left; width: 6cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 3cm; height: 1px;"></div>
-<div style="float: left; width: 6cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 2cm; height: 1px;"></div>
-</div>
-<div style="overflow: hidden; text-align: center; font-size: 10pt;">
-<div style="float: left; width: 2cm; height: 1px;"></div>
-<div style="float: left; width: 6cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
-<div style="float: left; width: 3cm; height: 1px;"></div>
-<div style="float: left; width: 6cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
-<div style="float: left; width: 2cm; height: 1px;"></div>
-</div>
-<div style="clear: both;"></div>
-</div>`,
+            preamble_template: '',
+            signatures_template: '',
             styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 } 
         },
         edital: { 
             ...DEFAULT_SETTINGS, 
-            signatures_template: `<div style="width: 19cm; margin-top: 2cm; margin-left: auto; margin-right: auto; font-family: Arial, sans-serif;">
-<div style="overflow: hidden; padding-bottom: 2px;">
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm; border-top: 1pt solid #000; height: 1px;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-</div>
-<div style="overflow: hidden; text-align: center; font-size: 10pt;">
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">SECRETÁRIO</p></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-<div style="float: left; width: 5cm;"><p style="text-align: center; margin-top: 5px; margin-bottom: 0px;">VENERÁVEL MESTRE</p></div>
-<div style="float: left; width: 1cm; height: 1px;"></div>
-</div>
-<div style="clear: both;"></div>
-</div>`,
+            signatures_template: '',
             styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true } 
         },
         convite: { ...DEFAULT_SETTINGS, header: 'header_moderno.html', styles: { ...DEFAULT_SETTINGS.styles, font_family: "'Times New Roman', serif", show_border: true, border_style: 'double' } },
@@ -302,6 +218,42 @@ const DocumentConfigPage = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
     // --- Effects & Data Loading ---
+    
+    const loadDefaults = async (type: string) => {
+         try {
+             if (!['balaustre', 'prancha', 'edital'].includes(type)) return;
+             
+             const response = await api.get(`/documents/defaults/${type}`);
+             if (response.data) {
+                 const { content_template, signatures_template, preamble_template } = response.data;
+                 setAllSettings(prev => {
+                    const current = prev[type as keyof typeof prev];
+                    return {
+                        ...prev,
+                        [type]: {
+                            ...current,
+                            content_template: (!current.content_template && content_template) ? content_template : current.content_template,
+                            signatures_template: (!current.signatures_template && signatures_template) ? signatures_template : current.signatures_template,
+                            preamble_template: (!current.preamble_template && preamble_template) ? preamble_template : current.preamble_template
+                        }
+                    };
+                 });
+                 // showSnackbar('Padrão carregado.', 'success'); 
+             }
+         } catch (error) {
+             console.error("Erro ao carregar defaults:", error);
+         }
+    };
+
+    useEffect(() => {
+        const current = allSettings[currentType as keyof typeof allSettings];
+        // If content is completely missing, try to load default
+        if (currentType === 'balaustre' || currentType === 'prancha' || currentType === 'edital') {
+             if (!current?.content_template && !current?.signatures_template) {
+                 loadDefaults(currentType);
+             }
+        }
+    }, [currentType]);
 
     useEffect(() => {
         if (user?.lodge_id) {
