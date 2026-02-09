@@ -1,13 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Container, TextField, Typography, Select, MenuItem, FormControl, InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent } from '@mui/material';
+import { 
+  Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
+  InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent, 
+  Stack, Divider, useTheme, Alert, Snackbar 
+} from '@mui/material';
+import {
+  AccountBalance as AccountBalanceIcon,
+  LocationOn as LocationOnIcon,
+  ContactMail as ContactMailIcon,
+  Class as ClassIcon,
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon,
+  Search as SearchIcon
+} from '@mui/icons-material';
 import api from '../../services/api';
 import axios from 'axios';
 import { formatCNPJ, formatPhone, formatCEP, formatState } from '../../utils/formatters';
 import { validateCNPJ, validateEmail } from '../../utils/validators';
-import { Snackbar, Alert } from '@mui/material';
 
-// ...
+// Reuse SectionHeader pattern
+const SectionHeader = ({ title, icon, color = "primary" }: { title: string, icon?: React.ReactNode, color?: "primary" | "secondary" | "info" | "warning" | "success" }) => {
+    const theme = useTheme();
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
+            {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
+            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
+        </Box>
+    );
+};
 
 const ObedienceForm = () => {
   const [formData, setFormData] = useState({
@@ -35,6 +59,7 @@ const ObedienceForm = () => {
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
   const { id } = useParams();
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchObeidences = async () => {
@@ -182,159 +207,199 @@ const ObedienceForm = () => {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom color="primary">
-          {id ? 'Editar Obediência' : 'Nova Obediência'}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Preencha os dados abaixo para cadastrar uma nova obediência.
-        </Typography>
+    <Container maxWidth="xl" sx={{ pb: 5 }}>
+        {/* Page Header */}
+       <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {id ? 'Editar Obediência' : 'Nova Obediência'}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+            {id ? 'Atualize os dados da obediência.' : 'Preencha os dados abaixo para cadastrar uma nova obediência.'}
+            </Typography>
+        </Box>
+        <Button 
+            variant="outlined" 
+            startIcon={<ArrowBackIcon />} 
+            onClick={() => navigate('/dashboard/management/obediences')}
+            sx={{ borderRadius: 2 }}
+        >
+            Voltar
+        </Button>
       </Box>
 
-      <Paper sx={{ p: 4 }}>
-        <form onSubmit={handleSubmit}>
-          <Typography variant="h6" gutterBottom sx={{ mb: 2, color: 'primary.main' }}>
-            Dados Gerais
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField name="name" label="Nome" value={formData.name} onChange={handleChange} fullWidth required />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField name="acronym" label="Sigla" value={formData.acronym} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField 
-                name="cnpj" 
-                label="CNPJ" 
-                value={formData.cnpj} 
-                onChange={handleChange} 
-                fullWidth 
-                error={!!errors.cnpj}
-                helperText={errors.cnpj}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo</InputLabel>
-                <Select name="type" value={formData.type} label="Tipo" onChange={handleChange} required>
-                  <MenuItem value="Federal">Federal</MenuItem>
-                  <MenuItem value="Estadual">Estadual</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Obediência Mãe</InputLabel>
-                <Select name="parent_obedience_id" value={formData.parent_obedience_id} label="Obediência Mãe" onChange={handleChange}>
-                  <MenuItem value="">
-                    <em>Nenhuma</em>
-                  </MenuItem>
-                  {obediences.map((obedience: any) => (
-                    <MenuItem key={obedience.id} value={obedience.id}>
-                      {obedience.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+      <form onSubmit={handleSubmit}>
+         <Grid container spacing={3}>
+             {/* Left Column */}
+            <Grid item xs={12} md={9}>
+                {/* 1. Dados Gerais */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Dados Gerais" icon={<AccountBalanceIcon />} />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                        <TextField name="name" label="Nome da Obediência" value={formData.name} onChange={handleChange} fullWidth required variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                        <TextField name="acronym" label="Sigla" value={formData.acronym} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                        <TextField 
+                            name="cnpj" 
+                            label="CNPJ" 
+                            value={formData.cnpj} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            error={!!errors.cnpj}
+                            helperText={errors.cnpj}
+                            variant="outlined"
+                        />
+                        </Grid>
+                        
+                        <Grid item xs={12} md={4}>
+                        <TextField 
+                            name="email" 
+                            label="Email Principal" 
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            variant="outlined"
+                        />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                        <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                        <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* 2. Endereço */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Localização" icon={<LocationOnIcon />} color="info" />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={3}>
+                        <TextField 
+                            name="zip_code" 
+                            label="CEP" 
+                            value={formData.zip_code} 
+                            onChange={handleChange} 
+                            onBlur={handleCepBlur}
+                            fullWidth 
+                            variant="outlined"
+                            InputProps={{
+                            endAdornment: loadingCep ? <CircularProgress size={20} /> : <SearchIcon color="action" />
+                            }}
+                        />
+                        </Grid>
+                        <Grid item xs={12} md={7}>
+                        <TextField name="street_address" label="Logradouro" value={formData.street_address} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={2}>
+                        <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                        <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={4}>
+                        <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                        <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={1}>
+                        <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* 3. Contato Técnico */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Contato Técnico" icon={<ContactMailIcon />} color="secondary" />
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                        <TextField name="technical_contact_name" label="Nome do Responsável Técnico" value={formData.technical_contact_name} onChange={handleChange} fullWidth required variant="outlined" />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                        <TextField 
+                            name="technical_contact_email" 
+                            label="Email do Responsável" 
+                            value={formData.technical_contact_email} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            required 
+                            error={!!errors.technical_contact_email}
+                            helperText={errors.technical_contact_email}
+                            variant="outlined"
+                        />
+                        </Grid>
+                    </Grid>
+                </Paper>
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <TextField 
-                name="email" 
-                label="Email" 
-                value={formData.email} 
-                onChange={handleChange} 
-                fullWidth 
-                error={!!errors.email}
-                helperText={errors.email}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth />
-            </Grid>
-          </Grid>
-
-          <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main' }}>
-            Endereço
-          </Typography>
-          <Grid container spacing={3}>
+            {/* Right Column (Sidebar) */}
             <Grid item xs={12} md={3}>
-              <TextField 
-                name="zip_code" 
-                label="CEP" 
-                value={formData.zip_code} 
-                onChange={handleChange} 
-                onBlur={handleCepBlur}
-                fullWidth 
-                InputProps={{
-                  endAdornment: loadingCep ? <CircularProgress size={20} /> : null
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={7}>
-              <TextField name="street_address" label="Endereço" value={formData.street_address} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth />
-            </Grid>
-            <Grid item xs={12} md={1}>
-              <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth />
-            </Grid>
-          </Grid>
+                 <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+                    <SectionHeader title="Classificação" icon={<ClassIcon />} />
+                    <Stack spacing={2}>
+                        <FormControl fullWidth variant="outlined" size="small">
+                            <InputLabel>Tipo</InputLabel>
+                            <Select name="type" value={formData.type} label="Tipo" onChange={handleChange} required>
+                            <MenuItem value="Federal">Federal</MenuItem>
+                            <MenuItem value="Estadual">Estadual</MenuItem>
+                            </Select>
+                        </FormControl>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main' }}>
-            Contato Técnico
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <TextField name="technical_contact_name" label="Nome do Responsável" value={formData.technical_contact_name} onChange={handleChange} fullWidth required />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField 
-                name="technical_contact_email" 
-                label="Email do Responsável" 
-                value={formData.technical_contact_email} 
-                onChange={handleChange} 
-                fullWidth 
-                required 
-                error={!!errors.technical_contact_email}
-                helperText={errors.technical_contact_email}
-              />
-            </Grid>
-          </Grid>
+                        <FormControl fullWidth variant="outlined" size="small">
+                            <InputLabel>Obediência Mãe</InputLabel>
+                            <Select name="parent_obedience_id" value={formData.parent_obedience_id} label="Obediência Mãe" onChange={handleChange}>
+                            <MenuItem value="">
+                                <em>Nenhuma (Raiz)</em>
+                            </MenuItem>
+                            {obediences.map((obedience: any) => (
+                                <MenuItem key={obedience.id} value={obedience.id}>
+                                {obedience.name}
+                                </MenuItem>
+                            ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                 </Paper>
 
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" onClick={() => navigate('/dashboard/management/obediences')}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" color="primary" size="large" disabled={loading}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar'}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
+                 <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+                        Ações
+                    </Typography>
+                     <Stack spacing={2}>
+                         <Button 
+                            type="submit" 
+                            variant="contained" 
+                            color="primary" 
+                            size="large" 
+                            fullWidth 
+                            startIcon={<SaveIcon />} 
+                            disabled={loading}
+                        >
+                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar'}
+                        </Button>
+                        <Button variant="text" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/obediences')}>
+                        Cancelar
+                        </Button>
+                     </Stack>
+                 </Paper>
+            </Grid>
+         </Grid>
+      </form>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

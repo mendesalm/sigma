@@ -20,12 +20,39 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  FormLabel
+  FormLabel,
+  Stack,
+  Divider,
+  useTheme
 } from '@mui/material';
+import {
+  Event as EventIcon,
+  Schedule as ScheduleIcon,
+  Class as ClassIcon,
+  Description as DescriptionIcon,
+  Person as PersonIcon,
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon
+} from '@mui/icons-material';
 import api from '../../services/api';
 import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '../../types';
 
+// Utility Component for Section Headers
+const SectionHeader = ({ title, icon, color = "primary" }: { title: string, icon?: React.ReactNode, color?: "primary" | "secondary" | "info" | "warning" | "success" }) => {
+    const theme = useTheme();
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
+            {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
+            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
+        </Box>
+    );
+};
+
 const SessionForm = () => {
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     title: '',
     session_number: '',
@@ -127,8 +154,6 @@ const SessionForm = () => {
             received_expedients: session.received_expedients || '',
             study_director_id: session.study_director_id || '',
           });
-          // Tentar inferir grau ou tipo de ingresso pelo título seria complexo e propenso a erro 
-          // sem persistir esses dados, então mantemos os defaults do state ou deixamos o usuário reajustar se necessário
         } else {
           const token = localStorage.getItem('token');
           if (token) {
@@ -176,7 +201,7 @@ const SessionForm = () => {
           break;
         case 'Filiação e Regularização':
           if (ingressType.length === 0) {
-            newTitle = 'Sessão Ordinária de Filiação e Regularização'; // Default ou aguardando seleção
+            newTitle = 'Sessão Ordinária de Filiação e Regularização';
           } else if (ingressType.includes('Filiação') && ingressType.includes('Regularização')) {
             newTitle = 'Sessão Ordinária de Filiação e Regularização';
           } else if (ingressType.includes('Filiação')) {
@@ -196,9 +221,7 @@ const SessionForm = () => {
       }
     } else if (type === 'Magna') {
       newTitle = `Sessão Magna de ${subtype}`;
-      // Ajustes finos se necessário para concordância não cobertos genericamente
     } else if (type === 'Extraordinária') {
-      // Regra: 'Tipo de Sessão' + 'de' + 'Subtipo'
       newTitle = `Sessão Extraordinária de ${subtype}`;
     }
 
@@ -255,7 +278,6 @@ const SessionForm = () => {
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
       study_director_id: formData.study_director_id ? parseInt(formData.study_director_id) : null,
-      // 'degree' e 'ingressType' não são enviados ao backend, servindo apenas para compor o título
     };
 
     try {
@@ -280,240 +302,284 @@ const SessionForm = () => {
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom color="primary">
-          {id ? 'Editar Sessão' : 'Nova Sessão'}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {id ? 'Atualize os dados da sessão.' : 'Agende uma nova sessão maçônica.'}
-        </Typography>
+    <Container maxWidth="lg" sx={{ pb: 5 }}>
+      {/* Page Header */}
+      <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {id ? 'Editar Sessão' : 'Agendar Sessão'}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+            {id ? 'Atualize as informações da sessão abaixo.' : 'Preencha os dados para criar uma nova sessão.'}
+            </Typography>
+        </Box>
+        <Button 
+            variant="outlined" 
+            startIcon={<ArrowBackIcon />} 
+            onClick={() => navigate(basePath)}
+            sx={{ borderRadius: 2 }}
+        >
+            Voltar
+        </Button>
       </Box>
 
-      <Paper sx={{ p: 4 }}>
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-        
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+      
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={3}>
             
-            {/* Título - Read Only */}
-            <Grid item xs={12} md={8}>
-              <TextField
-                name="title"
-                label="Título (Gerado Automaticamente)"
-                value={formData.title}
-                fullWidth
-                disabled
-                variant="filled"
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </Grid>
+            {/* 1. Identificação Básica */}
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                <SectionHeader title="Identificação" icon={<EventIcon />} />
+                <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                        <TextField
+                            name="title"
+                            label="Título da Sessão"
+                            value={formData.title}
+                            fullWidth
+                            variant="outlined"
+                            InputProps={{
+                                readOnly: true,
+                                sx: { bgcolor: theme.palette.action.hover, fontWeight: 'bold' }
+                            }}
+                            helperText="O título é gerado automaticamente com base no tipo e subtipo."
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                         <TextField
+                            name="session_date"
+                            label="Data da Sessão"
+                            type="date"
+                            value={formData.session_date}
+                            onChange={handleChange}
+                            fullWidth
+                            required
+                            InputLabelProps={{ shrink: true }}
+                            sx={{ '& input': { fontWeight: 500 } }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} md={4}>
+                        <TextField
+                            name="start_time"
+                            label="Início"
+                            type="time"
+                            value={formData.start_time}
+                            onChange={handleChange}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                            InputProps={{
+                                startAdornment: <ScheduleIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                            }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} md={4}>
+                        <TextField
+                            name="end_time"
+                            label="Término (Previsto)"
+                            type="time"
+                            value={formData.end_time}
+                            onChange={handleChange}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                            InputProps={{
+                                startAdornment: <ScheduleIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                            }}
+                        />
+                    </Grid>
+                     <Grid item xs={12} md={4}>
+                         <TextField
+                            name="session_number"
+                            label="Número da Sessão"
+                            type="number"
+                            value={formData.session_number}
+                            onChange={handleChange}
+                            fullWidth
+                            placeholder="Automático"
+                            helperText="Deixe em branco para o sistema gerar o próximo número sequencial."
+                            InputLabelProps={{ shrink: true }}
+                        />
+                    </Grid>
+                </Grid>
+            </Paper>
 
-            <Grid item xs={12} md={4}>
-              <TextField
-                name="session_number"
-                label="Número da Sessão (Opcional)"
-                type="number"
-                value={formData.session_number}
-                onChange={handleChange}
-                fullWidth
-                placeholder="Auto"
-                helperText="Deixe em branco para numeração automática"
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Tipo de Sessão</InputLabel>
-                <Select
-                  name="type"
-                  value={formData.type}
-                  label="Tipo de Sessão"
-                  onChange={handleSelectChange}
+            {/* 2. Classificação */}
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                <SectionHeader title="Classificação" icon={<ClassIcon />} color="info" />
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <FormControl fullWidth required>
+                            <InputLabel>Tipo de Sessão</InputLabel>
+                            <Select
+                                name="type"
+                                value={formData.type}
+                                label="Tipo de Sessão"
+                                onChange={handleSelectChange}
+                            >
+                                {Object.values(SessionTypeEnum).map((type) => (
+                                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                        <FormControl fullWidth required disabled={!formData.type}>
+                            <InputLabel>Subtipo</InputLabel>
+                            <Select
+                                name="subtype"
+                                value={formData.subtype}
+                                label="Subtipo"
+                                onChange={handleSelectChange}
+                            >
+                                {formData.type && subtypesByType[formData.type]?.map((subtype) => (
+                                    <MenuItem key={subtype} value={subtype}>{subtype}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    {/* Campos Condicionais */}
+                    {formData.type === 'Ordinária' && formData.subtype === 'Regular' && (
+                        <Grid item xs={12} md={6}>
+                            <FormControl fullWidth>
+                                <InputLabel>Trabalho no Grau</InputLabel>
+                                <Select
+                                    value={degree}
+                                    label="Trabalho no Grau"
+                                    onChange={handleDegreeChange}
+                                >
+                                    <MenuItem value="Aprendiz">Aprendiz</MenuItem>
+                                    <MenuItem value="Companheiro">Companheiro</MenuItem>
+                                    <MenuItem value="Mestre">Mestre</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    )}
+
+                    {formData.type === 'Ordinária' && formData.subtype === 'Filiação e Regularização' && (
+                        <Grid item xs={12} md={6}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Tipo de Ingresso</FormLabel>
+                                <FormGroup row>
+                                    <FormControlLabel control={<Checkbox checked={ingressType.includes('Filiação')} onChange={handleIngressTypeChange} name="Filiação" />} label="Filiação" />
+                                    <FormControlLabel control={<Checkbox checked={ingressType.includes('Regularização')} onChange={handleIngressTypeChange} name="Regularização" />} label="Regularização" />
+                                </FormGroup>
+                            </Paper>
+                        </Grid>
+                    )}
+                </Grid>
+            </Paper>
+
+            {/* 3. Pauta e Expediente */}
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                <SectionHeader title="Ordem do Dia e Expediente" icon={<DescriptionIcon />} color="warning" />
+                 <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                        <TextField
+                            name="agenda"
+                            label="Pauta / Ordem do Dia"
+                            value={formData.agenda}
+                            onChange={handleChange}
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            placeholder="Liste os principais assuntos a serem tratados na Ordem do Dia..."
+                            variant="outlined"
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <TextField
+                            name="received_expedients"
+                            label="Expediente Recebido"
+                            value={formData.received_expedients}
+                            onChange={handleChange}
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            placeholder="Correspondências recebidas..."
+                            variant="outlined"
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <TextField
+                            name="sent_expedients"
+                            label="Expediente Expedido"
+                            value={formData.sent_expedients}
+                            onChange={handleChange}
+                            fullWidth
+                            multiline
+                            minRows={3}
+                            placeholder="Correspondências enviadas..."
+                            variant="outlined"
+                        />
+                    </Grid>
+                 </Grid>
+            </Paper>
+
+            {/* 4. Responsáveis */}
+            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                <SectionHeader title="Responsáveis" icon={<PersonIcon />} color="success" />
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={8}>
+                        <Autocomplete
+                            options={members}
+                            getOptionLabel={(option) => option.full_name}
+                            value={members.find(m => m.id.toString() === formData.study_director_id.toString()) || null}
+                            onChange={(_, newValue) => {
+                                setFormData(prev => ({
+                                    ...prev,
+                                    study_director_id: newValue ? newValue.id.toString() : ''
+                                }));
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Diretor de Estudos (Responsável pelo Tempo de Estudos)"
+                                    placeholder="Digite para buscar um irmão..."
+                                    fullWidth
+                                    variant="outlined"
+                                />
+                            )}
+                            noOptionsText="Nenhum membro encontrado"
+                        />
+                    </Grid>
+                </Grid>
+            </Paper>
+
+            {/* Actions */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                <Button 
+                    variant="outlined" 
+                    onClick={() => navigate(basePath)}
+                    size="large"
+                    sx={{ px: 4, borderRadius: 2 }}
                 >
-                  {Object.values(SessionTypeEnum).map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required disabled={!formData.type}>
-                <InputLabel>Subtipo</InputLabel>
-                <Select
-                  name="subtype"
-                  value={formData.subtype}
-                  label="Subtipo"
-                  onChange={handleSelectChange}
+                    Cancelar
+                </Button>
+                <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    size="large" 
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                    sx={{ px: 4, borderRadius: 2, boxShadow: 2 }}
                 >
-                  {formData.type && subtypesByType[formData.type]?.map((subtype) => (
-                    <MenuItem key={subtype} value={subtype}>
-                      {subtype}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+                    {loading ? 'Salvando...' : 'Salvar Sessão'}
+                </Button>
+            </Box>
 
-            {/* Campos Condicionais de Processamento */}
-            {formData.type === 'Ordinária' && formData.subtype === 'Regular' && (
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Grau</InputLabel>
-                  <Select
-                    value={degree}
-                    label="Grau"
-                    onChange={handleDegreeChange}
-                  >
-                    <MenuItem value="Aprendiz">Aprendiz</MenuItem>
-                    <MenuItem value="Companheiro">Companheiro</MenuItem>
-                    <MenuItem value="Mestre">Mestre</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
+        </Stack>
+      </form>
 
-            {formData.type === 'Ordinária' && formData.subtype === 'Filiação e Regularização' && (
-              <Grid item xs={12} md={6}>
-                <FormControl component="fieldset">
-                  <FormLabel component="legend">Tipo de Ingresso</FormLabel>
-                  <FormGroup row>
-                    <FormControlLabel
-                      control={
-                        <Checkbox checked={ingressType.includes('Filiação')} onChange={handleIngressTypeChange} name="Filiação" />
-                      }
-                      label="Filiação"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox checked={ingressType.includes('Regularização')} onChange={handleIngressTypeChange} name="Regularização" />
-                      }
-                      label="Regularização"
-                    />
-                  </FormGroup>
-                </FormControl>
-              </Grid>
-            )}
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                name="session_date"
-                label="Data"
-                type="date"
-                value={formData.session_date}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                name="start_time"
-                label="Horário de Início"
-                type="time"
-                value={formData.start_time}
-                onChange={handleChange}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                name="end_time"
-                label="Horário de Término (Previsto)"
-                type="time"
-                value={formData.end_time}
-                onChange={handleChange}
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                name="agenda"
-                label="Pauta(s) para Ordem do Dia"
-                value={formData.agenda}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={4}
-                placeholder="Descreva os assuntos a serem tratados..."
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                name="sent_expedients"
-                label="Expediente(s) Expedido(s)"
-                value={formData.sent_expedients}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={3}
-              />
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <TextField
-                name="received_expedients"
-                label="Expediente(s) Recebido(s)"
-                value={formData.received_expedients}
-                onChange={handleChange}
-                fullWidth
-                multiline
-                rows={3}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Autocomplete
-                options={members}
-                getOptionLabel={(option) => option.full_name}
-                value={members.find(m => m.id.toString() === formData.study_director_id.toString()) || null}
-                onChange={(_, newValue) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    study_director_id: newValue ? newValue.id.toString() : ''
-                  }));
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Responsável pelo Tempo de Estudos"
-                    placeholder="Digite para buscar..."
-                    fullWidth
-                  />
-                )}
-                noOptionsText="Nenhum membro encontrado"
-              />
-            </Grid>
-
-          </Grid>
-
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" onClick={() => navigate(basePath)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="contained" color="primary" size="large" disabled={loading}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar'}
-            </Button>
-          </Box>
-        </form>
-      </Paper>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

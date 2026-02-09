@@ -170,7 +170,10 @@ class DocumentStrategy(ABC):
 
             .page-border {{
                 position: fixed;
-                top: 0; left: 0; bottom: 0; right: 0;
+                top: {styles_model.page_margin};
+                left: {styles_model.page_margin};
+                bottom: {styles_model.page_margin};
+                right: {styles_model.page_margin};
                 border: {styles_model.border_width} {styles_model.border_style} {styles_model.border_color};
                 z-index: 2147483647;
                 pointer-events: none;
@@ -191,8 +194,10 @@ class DocumentStrategy(ABC):
                 margin-bottom: 20px;
             }}
             .header img {{
-                height: {styles_model.header_config.logo_size};
+                max-height: {styles_model.header_config.logo_size};
+                height: auto;
                 width: auto;
+                max-width: 100%;
                 margin-bottom: 10px;
             }}
             .header-text {{

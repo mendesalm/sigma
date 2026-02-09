@@ -1,19 +1,33 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
   InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert, 
-  Avatar, Stack, Checkbox, FormControlLabel, Tooltip, IconButton, CircularProgress
+  Avatar, Stack, Checkbox, FormControlLabel, IconButton, CircularProgress,
+  Divider, useTheme
 } from '@mui/material';
-import { PhotoCamera, Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon } from '@mui/icons-material';
+import { 
+  PhotoCamera, 
+  Add as AddIcon, 
+  Delete as DeleteIcon, 
+  Search as SearchIcon,
+  Person as PersonIcon,
+  Home as HomeIcon,
+  School as SchoolIcon,
+  Groups as GroupsIcon,
+  History as HistoryIcon,
+  Star as StarIcon,
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  Badge as BadgeIcon,
+} from '@mui/icons-material';
+import Chip from '@mui/material/Chip'; // Explicit import for Chip
 import api from '../../services/api';
 import { MemberResponse, DegreeEnum, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum } from '../../types';
 import { formatCPF, formatPhone, formatCEP } from '../../utils/formatters';
 import { validateCPF, validateEmail } from '../../utils/validators';
 import RoleAssignmentDialog from '../../components/RoleAssignmentDialog';
 import { fetchAddressByCep } from '../../services/cepService';
-
 import { useAuth } from '../../hooks/useAuth';
 
 interface Role {
@@ -31,8 +45,23 @@ interface FamilyMemberLocal {
   is_deceased: boolean;
 }
 
+// Reuse SectionHeader pattern
+const SectionHeader = ({ title, icon, color = "primary" }: { title: string, icon?: React.ReactNode, color?: "primary" | "secondary" | "info" | "warning" | "success" }) => {
+    const theme = useTheme();
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
+            {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
+            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
+        </Box>
+    );
+};
+
 const MemberForm: React.FC = () => {
   const { user } = useAuth();
+  const theme = useTheme();
   const [formState, setFormState] = useState<any>({
     full_name: '',
     email: '',
@@ -99,6 +128,7 @@ const MemberForm: React.FC = () => {
           street_address: address.logradouro,
           neighborhood: address.bairro,
           city: address.localidade,
+          state: address.uf,
         }));
       } else {
         setSnackbar({ open: true, message: 'CEP não encontrado.', severity: 'error' });
@@ -429,38 +459,38 @@ const MemberForm: React.FC = () => {
     }
   };
 
-  const renderSectionTitle = (title: string) => (
-    <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main' }}>
-      {title}
-    </Typography>
-  );
-
   // --- RENDER CIM CHECK STEP ---
   if (!isCimVerified && !id) {
     return (
       <Container maxWidth="sm">
-        <Paper sx={{ p: 4, mt: 8, textAlign: 'center' }}>
-          <Typography variant="h5" gutterBottom color="primary">
-            Cadastro de Membro
+        <Paper elevation={0} sx={{ p: 4, mt: 8, textAlign: 'center', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                <SearchIcon sx={{ fontSize: 60, color: 'text.secondary' }} />
+            </Box>
+          <Typography variant="h5" gutterBottom color="primary" sx={{ fontWeight: 700 }}>
+            Cadastro de Novo Membro
           </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            Informe o CIM para iniciar o cadastro. O sistema verificará se o membro já existe.
+          <Typography variant="body1" sx={{ mb: 4, color: 'text.secondary' }}>
+            Informe o CIM para iniciarmos. O sistema verificará se o irmão já possui cadastro na base unificada.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch' }}>
             <TextField
-              label="CIM"
+              label="Número do CIM"
               value={formState.cim}
               onChange={(e) => setFormState({ ...formState, cim: e.target.value })}
               fullWidth
               variant="outlined"
+              placeholder="Ex: 12345"
             />
             <Button 
               variant="contained" 
               onClick={handleCheckCim}
               disabled={cimCheckLoading}
-              startIcon={cimCheckLoading ? <CircularProgress size={20} /> : <SearchIcon />}
+              size="large"
+              sx={{ px: 4, minWidth: '140px' }}
+              startIcon={cimCheckLoading ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
             >
-              Verificar
+              {cimCheckLoading ? 'Buscando' : 'Verificar'}
             </Button>
           </Box>
         </Paper>
@@ -469,11 +499,25 @@ const MemberForm: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom color="primary">
-          {id ? 'Editar Membro' : (existingMemberId ? 'Associar Membro Existente' : 'Novo Membro')}
-        </Typography>
+    <Container maxWidth="xl" sx={{ pb: 5 }}>
+       {/* Page Header */}
+       <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+            {id ? 'Editar Membro' : (existingMemberId ? 'Associar Membro' : 'Novo Membro')}
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary">
+            {id ? 'Atualize as informações do cadastro.' : 'Preencha os dados abaixo para cadastrar um novo irmão.'}
+            </Typography>
+        </Box>
+        <Button 
+            variant="outlined" 
+            startIcon={<ArrowBackIcon />} 
+            onClick={() => navigate('/dashboard/management/members')}
+            sx={{ borderRadius: 2 }}
+        >
+            Voltar
+        </Button>
       </Box>
 
       <form onSubmit={handleSubmit}>
@@ -481,40 +525,42 @@ const MemberForm: React.FC = () => {
           {/* Main Content Column */}
           <Grid item xs={12} md={9}>
             
-            {/* DADOS PESSOAIS */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Dados Pessoais')}
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Avatar
-                    sx={{ width: 120, height: 120, mb: 2 }}
-                    src={formState.profile_picture_path}
-                    alt={formState.full_name}
-                  />
-                  <Button
-                    variant="outlined"
-                    startIcon={<PhotoCamera />}
-                    component="label"
-                    size="small"
-                    sx={{ fontSize: '0.75rem' }}
-                  >
-
-                    Alterar Foto
-                    <input 
-                      hidden 
-                      accept="image/*" 
-                      type="file" 
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          const file = e.target.files[0];
-                          setSelectedFile(file);
-                          // Create a preview URL
-                          const previewUrl = URL.createObjectURL(file);
-                          setFormState({ ...formState, profile_picture_path: previewUrl });
-                        }
-                      }}
-                    />
-                  </Button>
+            {/* 1. DADOS PESSOAIS */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Dados Pessoais" icon={<PersonIcon />} />
+              <Grid container spacing={3}>
+              <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                   <Box sx={{ position: 'relative' }}>
+                        <Avatar
+                            variant="rounded"
+                            sx={{ width: 150, height: 200, mb: 2, boxShadow: theme.shadows[3], objectFit: 'cover' }}
+                            src={formState.profile_picture_path ? (formState.profile_picture_path.startsWith('blob:') ? formState.profile_picture_path : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${formState.profile_picture_path}`) : undefined}
+                            alt={formState.full_name}
+                        />
+                        <IconButton 
+                            color="primary" 
+                            aria-label="upload picture" 
+                            component="label"
+                            sx={{ position: 'absolute', bottom: 16, right: 0, bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                        >
+                            <PhotoCamera />
+                            <input 
+                            hidden 
+                            accept="image/*" 
+                            type="file" 
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                const file = e.target.files[0];
+                                setSelectedFile(file);
+                                // Create a preview URL
+                                const previewUrl = URL.createObjectURL(file);
+                                setFormState({ ...formState, profile_picture_path: previewUrl });
+                                }
+                            }}
+                            />
+                        </IconButton>
+                   </Box>
+                   <Typography variant="caption" color="text.secondary">Foto de Perfil</Typography>
                 </Grid>
                 <Grid item xs={12} md={9}>
                   <Grid container spacing={2}>
@@ -527,9 +573,7 @@ const MemberForm: React.FC = () => {
                         fullWidth
                         required
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                        placeholder="Nome civil completo"
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -542,15 +586,12 @@ const MemberForm: React.FC = () => {
                         error={!!errors.cpf}
                         helperText={errors.cpf}
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <TextField
                         name="email"
-                        label="Email"
+                        label="Email Principal"
                         value={formState.email}
                         onChange={handleChange}
                         fullWidth
@@ -558,22 +599,16 @@ const MemberForm: React.FC = () => {
                         error={!!errors.email}
                         helperText={errors.email}
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <TextField
                         name="identity_document"
-                        label="Identidade (RG)"
+                        label="RG / Documento de Identidade"
                         value={formState.identity_document}
                         onChange={handleChange}
                         fullWidth
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -584,10 +619,8 @@ const MemberForm: React.FC = () => {
                         value={formState.birth_date || ''}
                         onChange={handleChange}
                         fullWidth
-                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ shrink: true }}
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
@@ -598,23 +631,18 @@ const MemberForm: React.FC = () => {
                         value={formState.marriage_date || ''}
                         onChange={handleChange}
                         fullWidth
-                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ shrink: true }}
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                     <Grid item xs={12} md={4}>
                       <TextField
                         name="phone"
-                        label="Telefone"
+                        label="Celular / WhatsApp"
                         value={formState.phone}
                         onChange={handleChange}
                         fullWidth
                         variant="outlined"
-                        size="small"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                       />
                     </Grid>
                   </Grid>
@@ -622,220 +650,9 @@ const MemberForm: React.FC = () => {
               </Grid>
             </Paper>
 
-            {/* INFORMAÇÕES DE ACESSO */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Informações de Acesso')}
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
-                  <FormControl fullWidth variant="outlined" size="small">
-                    <InputLabel sx={{ fontSize: '0.9rem' }}>Credencial</InputLabel>
-                    <Select
-                      value="Webmaster" // Placeholder
-                      label="Credencial"
-                      disabled
-                      sx={{ fontSize: '0.9rem' }}
-                    >
-                      <MenuItem value="Webmaster">Webmaster</MenuItem>
-                      <MenuItem value="Admin">Admin</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                   <FormControl fullWidth variant="outlined" size="small">
-                    <InputLabel sx={{ fontSize: '0.9rem' }}>Status na Loja</InputLabel>
-                    <Select
-                      name="status"
-                      value={formState.status}
-                      label="Status na Loja"
-                      onChange={handleChange}
-                      sx={{ fontSize: '0.9rem' }}
-                    >
-                      <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
-                      <MenuItem value={MemberStatusEnum.INACTIVE}>Inativo</MenuItem>
-                      <MenuItem value={MemberStatusEnum.DISABLED}>Desativado (Falecido)</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                   <FormControl fullWidth variant="outlined" size="small">
-                    <InputLabel sx={{ fontSize: '0.9rem' }}>Classe</InputLabel>
-                    <Select
-                      name="member_class"
-                      value={formState.member_class}
-                      label="Classe"
-                      onChange={handleChange}
-                      sx={{ fontSize: '0.9rem' }}
-                    >
-                      <MenuItem value={MemberClassEnum.REGULAR}>Regular</MenuItem>
-                      <MenuItem value={MemberClassEnum.IRREGULAR}>Irregular</MenuItem>
-                      <MenuItem value={MemberClassEnum.EMERITUS}>Emérito</MenuItem>
-                      <MenuItem value={MemberClassEnum.REMITTED}>Remido</MenuItem>
-                      <MenuItem value={MemberClassEnum.HONORARY}>Honorário</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                {!id && !existingMemberId ? (
-                  <Grid item xs={12}>
-                    <TextField
-                      name="password"
-                      label="Senha Inicial *"
-                      type="password"
-                      value={formState.password}
-                      onChange={handleChange}
-                      fullWidth
-                      required
-                      variant="outlined"
-                      size="small"
-                      InputProps={{ style: { fontSize: '0.9rem' } }}
-                      InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                    />
-                  </Grid>
-                ) : (
-                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary" sx={{ mt: 1, mb: 1 }}>
-                      Alterar Senha (Opcional)
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          name="password"
-                          label="Nova Senha"
-                          type="password"
-                          value={formState.password || ''}
-                          onChange={handleChange}
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          helperText="Deixe em branco para manter a atual"
-                          InputProps={{ style: { fontSize: '0.9rem' } }}
-                          InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          name="confirmPassword"
-                          label="Confirmar Nova Senha"
-                          type="password"
-                          value={formState.confirmPassword || ''}
-                          onChange={handleChange}
-                          fullWidth
-                          variant="outlined"
-                          size="small"
-                          error={formState.password && formState.password !== formState.confirmPassword}
-                          helperText={formState.password && formState.password !== formState.confirmPassword ? "As senhas não conferem" : ""}
-                          InputProps={{ style: { fontSize: '0.9rem' } }}
-                          InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                )}
-              </Grid>
-            </Paper>
-
-            {/* FAMILIARES */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Familiares')}
-              {familyMembers.map((member, index) => (
-                <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #333', borderRadius: 1 }}>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} md={3}>
-                      <TextField
-                        label="Nome do Familiar"
-                        value={member.full_name}
-                        onChange={(e) => handleFamilyMemberChange(index, 'full_name', e.target.value)}
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={2}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel sx={{ fontSize: '0.9rem' }}>Parentesco</InputLabel>
-                        <Select
-                          value={member.relationship_type}
-                          label="Parentesco"
-                          onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)}
-                          sx={{ fontSize: '0.9rem' }}
-                        >
-                          <MenuItem value={RelationshipTypeEnum.SPOUSE}>Cônjuge</MenuItem>
-                          <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
-                          <MenuItem value={RelationshipTypeEnum.DAUGHTER}>Filha</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                    <Grid item xs={12} md={2}>
-                      <TextField
-                        label="Data de Nasc."
-                        type="date"
-                        value={member.birth_date}
-                        onChange={(e) => handleFamilyMemberChange(index, 'birth_date', e.target.value)}
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
-                        variant="outlined"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={2}>
-                      <TextField
-                        label="Telefone"
-                        value={member.phone}
-                        onChange={(e) => handleFamilyMemberChange(index, 'phone', e.target.value)}
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={2}>
-                      <TextField
-                        label="Email"
-                        value={member.email}
-                        onChange={(e) => handleFamilyMemberChange(index, 'email', e.target.value)}
-                        fullWidth
-                        size="small"
-                        variant="outlined"
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
-                        InputLabelProps={{ style: { fontSize: '0.9rem' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} md={1} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={member.is_deceased}
-                            onChange={(e) => handleFamilyMemberChange(index, 'is_deceased', e.target.checked)}
-                            size="small"
-                          />
-                        }
-                        label="Falecido?"
-                        sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.8rem' } }}
-                      />
-                      <Tooltip title="Remover Familiar">
-                        <IconButton onClick={() => removeFamilyMember(index)} color="error" size="small">
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Grid>
-                  </Grid>
-                </Box>
-              ))}
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <Tooltip title="Adicionar Familiar">
-                  <IconButton onClick={addFamilyMember} color="secondary" size="large">
-                    <AddIcon fontSize="large" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Paper>
-
-            {/* ENDEREÇO */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Endereço')}
+             {/* 2. ENDEREÇO */}
+             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Endereço Residencial" icon={<HomeIcon />} color="info" />
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3}>
                   <TextField
@@ -846,9 +663,8 @@ const MemberForm: React.FC = () => {
                     onBlur={handleCepBlur}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                    placeholder="00000-000"
+                    InputProps={{ endAdornment: <SearchIcon color="action" /> }}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -859,9 +675,6 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -872,12 +685,9 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={5}>
                   <TextField
                     name="neighborhood"
                     label="Bairro"
@@ -885,12 +695,9 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={5}>
                   <TextField
                     name="city"
                     label="Cidade"
@@ -898,17 +705,24 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
+                </Grid>
+                <Grid item xs={12} md={2}>
+                     <TextField
+                        name="state"
+                        label="UF"
+                        value={formState.state || ''}
+                        onChange={handleChange}
+                        fullWidth
+                        variant="outlined"
+                     />
                 </Grid>
               </Grid>
             </Paper>
 
-            {/* DADOS PROFISSIONAIS */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Dados Profissionais')}
+            {/* 3. DADOS PROFISSIONAIS */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Dados Profissionais e Formação" icon={<SchoolIcon />} color="secondary" />
               <Grid container spacing={2}>
                 <Grid item xs={12} md={4}>
                   <TextField
@@ -918,9 +732,7 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                    placeholder="Ex: Superior Completo"
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
@@ -931,30 +743,25 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
+                    placeholder="Ex: Engenheiro Civil"
                   />
                 </Grid>
                 <Grid item xs={12} md={4}>
                   <TextField
                     name="workplace"
-                    label="Local de Trabalho"
+                    label="Local de Trabalho / Empresa"
                     value={formState.workplace}
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
               </Grid>
             </Paper>
 
-            {/* DADOS MAÇÔNICOS */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Dados Maçônicos')}
+            {/* 4. DADOS MAÇÔNICOS */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Dados Maçônicos" icon={<BadgeIcon />} color="warning" />
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3}>
                   <TextField
@@ -964,21 +771,18 @@ const MemberForm: React.FC = () => {
                     onChange={handleChange}
                     fullWidth
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                     disabled={!!existingMemberId} // Disable CIM editing if imported
+                    InputProps={{ sx: { bgcolor: existingMemberId ? 'action.hover' : 'inherit' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
-                  <FormControl fullWidth variant="outlined" size="small">
-                    <InputLabel sx={{ fontSize: '0.9rem' }}>Grau</InputLabel>
+                  <FormControl fullWidth variant="outlined">
+                    <InputLabel>Grau</InputLabel>
                     <Select
                       name="degree"
                       value={formState.degree}
                       label="Grau"
                       onChange={handleChange}
-                      sx={{ fontSize: '0.9rem' }}
                     >
                       <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
                       <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
@@ -992,13 +796,10 @@ const MemberForm: React.FC = () => {
                     label="Cargo Atual"
                     value={roles.find(r => r.id === roleHistory.find(h => !h.end_date)?.role_id)?.name || 'Nenhum'}
                     fullWidth
-                    variant="outlined"
-                    size="small"
+                    variant="filled"
                     InputProps={{ 
                       readOnly: true,
-                      style: { fontSize: '0.9rem', backgroundColor: 'rgba(255, 255, 255, 0.05)' } 
                     }}
-                    InputLabelProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -1009,10 +810,8 @@ const MemberForm: React.FC = () => {
                     value={formState.initiation_date || ''}
                     onChange={handleChange}
                     fullWidth
-                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ shrink: true }}
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -1023,10 +822,8 @@ const MemberForm: React.FC = () => {
                     value={formState.elevation_date || ''}
                     onChange={handleChange}
                     fullWidth
-                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ shrink: true }}
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
                 <Grid item xs={12} md={3}>
@@ -1037,121 +834,193 @@ const MemberForm: React.FC = () => {
                     value={formState.exaltation_date || ''}
                     onChange={handleChange}
                     fullWidth
-                    InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
+                    InputLabelProps={{ shrink: true }}
                     variant="outlined"
-                    size="small"
-                    InputProps={{ style: { fontSize: '0.9rem' } }}
                   />
                 </Grid>
               </Grid>
             </Paper>
 
-            {/* ADICIONAR NOVO CARGO (ROLE HISTORY) */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Adicionar Novo Cargo')}
-              <Box sx={{ p: 2, border: '1px solid #333', borderRadius: 1, mb: 2 }}>
+             {/* 5. HISTÓRICO DE CARGOS */}
+             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+               <SectionHeader title="Histórico de Cargos" icon={<HistoryIcon />} color="success" />
+               
+               {/* Add Form */}
+               <Box sx={{ p: 2, bgcolor: theme.palette.action.hover, borderRadius: 2, mb: 3 }}>
+                   <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Adicionar Novo Registro</Typography>
+                   <Grid container spacing={2} alignItems="center">
+                     <Grid item xs={12} md={4}>
+                       <FormControl fullWidth size="small">
+                         <InputLabel>Cargo</InputLabel>
+                         <Select
+                           label="Cargo"
+                           value={newRole.role_id}
+                           onChange={(e) => setNewRole({ ...newRole, role_id: e.target.value })}
+                         >
+                            <MenuItem value="">-- Selecione --</MenuItem>
+                            {roles.map((role) => (
+                             <MenuItem key={role.id} value={role.id}>
+                               {role.name}
+                             </MenuItem>
+                           ))}
+                         </Select>
+                       </FormControl>
+                     </Grid>
+                     <Grid item xs={6} md={3}>
+                       <TextField
+                         label="Data de Início"
+                         type="date"
+                         fullWidth
+                         size="small"
+                         InputLabelProps={{ shrink: true }}
+                         value={newRole.start_date}
+                         onChange={(e) => setNewRole({ ...newRole, start_date: e.target.value })}
+                       />
+                     </Grid>
+                     <Grid item xs={6} md={3}>
+                       <TextField
+                         label="Data de Término"
+                         type="date"
+                         fullWidth
+                         size="small"
+                         InputLabelProps={{ shrink: true }}
+                         value={newRole.end_date}
+                         onChange={(e) => setNewRole({ ...newRole, end_date: e.target.value })}
+                       />
+                     </Grid>
+                     <Grid item xs={12} md={2}>
+                        <Button 
+                            fullWidth 
+                            variant="contained" 
+                            size="small" 
+                            startIcon={<AddIcon />}
+                            onClick={handleAddRole}
+                        >
+                            Adicionar
+                        </Button>
+                     </Grid>
+                   </Grid>
+               </Box>
+
+                {/* List Table */}
+                <Box sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: 'hidden' }}>
+                    {/* Table Header */}
+                   <Box sx={{ display: 'flex', bgcolor: theme.palette.action.selected, p: 1.5 }}>
+                     <Box sx={{ flex: 4, fontWeight: 'bold', fontSize: '0.85rem' }}>CARGO</Box>
+                     <Box sx={{ flex: 3, fontWeight: 'bold', fontSize: '0.85rem' }}>INÍCIO</Box>
+                     <Box sx={{ flex: 3, fontWeight: 'bold', fontSize: '0.85rem' }}>TÉRMINO</Box>
+                     <Box sx={{ flex: 2, fontWeight: 'bold', fontSize: '0.85rem', textAlign: 'center' }}>AÇÕES</Box>
+                   </Box>
+                   {roleHistory.length > 0 ? (
+                     roleHistory.map((history, index) => {
+                       const roleName = roles.find(r => r.id === history.role_id)?.name || 'Cargo Desconhecido';
+                       return (
+                         <Box key={index} sx={{ display: 'flex', p: 1.5, borderTop: `1px solid ${theme.palette.divider}`, alignItems: 'center' }}>
+                           <Box sx={{ flex: 4, fontSize: '0.9rem' }}>{roleName}</Box>
+                           <Box sx={{ flex: 3, fontSize: '0.9rem', color: 'text.secondary' }}>{history.start_date ? new Date(history.start_date).toLocaleDateString('pt-BR') : '-'}</Box>
+                           <Box sx={{ flex: 3, fontSize: '0.9rem', color: 'text.secondary' }}>{history.end_date ? new Date(history.end_date).toLocaleDateString('pt-BR') : <Chip label="Atual" size="small" color="success" variant="outlined" />}</Box>
+                           <Box sx={{ flex: 2, textAlign: 'center' }}>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteRole(history.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                           </Box>
+                         </Box>
+                       );
+                     })
+                   ) : (
+                     <Box sx={{ p: 4, textAlign: 'center', color: 'text.secondary' }}>
+                       Nenhum histórico de cargo registrado.
+                     </Box>
+                   )}
+                </Box>
+             </Paper>
+
+            {/* 6. FAMILIARES */}
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Familiares" icon={<GroupsIcon />} />
+              
+              {familyMembers.map((member, index) => (
+                <Paper key={index} variant="outlined" sx={{ mb: 2, p: 2, borderRadius: 2, position: 'relative' }}>
+                   <Box sx={{ position: 'absolute', right: 8, top: 8 }}>
+                       <IconButton onClick={() => removeFamilyMember(index)} color="error" size="small">
+                          <DeleteIcon />
+                       </IconButton>
+                   </Box>
                   <Grid container spacing={2} alignItems="center">
                     <Grid item xs={12} md={4}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel sx={{ fontSize: '0.9rem' }}>Cargo</InputLabel>
+                      <TextField
+                        label="Nome do Familiar"
+                        value={member.full_name}
+                        onChange={(e) => handleFamilyMemberChange(index, 'full_name', e.target.value)}
+                        fullWidth
+                        size="small"
+                        variant="standard"
+                      />
+                    </Grid>
+                    <Grid item xs={6} md={3}>
+                      <FormControl fullWidth size="small" variant="standard">
+                        <InputLabel>Parentesco</InputLabel>
                         <Select
-                          label="Cargo"
-                          value={newRole.role_id}
-                          onChange={(e) => setNewRole({ ...newRole, role_id: e.target.value })}
-                          sx={{ fontSize: '0.9rem' }}
+                          value={member.relationship_type}
+                          label="Parentesco"
+                          onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)}
                         >
-                           <MenuItem value="">-- Selecione --</MenuItem>
-                           {roles.map((role) => (
-                            <MenuItem key={role.id} value={role.id}>
-                              {role.name}
-                            </MenuItem>
-                          ))}
+                          <MenuItem value={RelationshipTypeEnum.SPOUSE}>Cônjuge</MenuItem>
+                          <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
+                          <MenuItem value={RelationshipTypeEnum.DAUGHTER}>Filha</MenuItem>
+                          <MenuItem value={RelationshipTypeEnum.FATHER}>Pai</MenuItem>
+                          <MenuItem value={RelationshipTypeEnum.MOTHER}>Mãe</MenuItem>
                         </Select>
                       </FormControl>
                     </Grid>
-                    <Grid item xs={12} md={3}>
+                    <Grid item xs={6} md={3}>
                       <TextField
-                        label="Data de Início"
+                        label="Data de Nasc."
                         type="date"
+                        value={member.birth_date}
+                        onChange={(e) => handleFamilyMemberChange(index, 'birth_date', e.target.value)}
                         fullWidth
                         size="small"
-                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
-                        variant="outlined"
-                        value={newRole.start_date}
-                        onChange={(e) => setNewRole({ ...newRole, start_date: e.target.value })}
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                        InputLabelProps={{ shrink: true }}
+                        variant="standard"
                       />
                     </Grid>
-                    <Grid item xs={12} md={3}>
-                      <TextField
-                        label="Data de Término (opcional)"
-                        type="date"
-                        fullWidth
-                        size="small"
-                        InputLabelProps={{ shrink: true, style: { fontSize: '0.9rem' } }}
-                        variant="outlined"
-                        value={newRole.end_date}
-                        onChange={(e) => setNewRole({ ...newRole, end_date: e.target.value })}
-                        InputProps={{ style: { fontSize: '0.9rem' } }}
+                    <Grid item xs={12} md={2}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={member.is_deceased}
+                            onChange={(e) => handleFamilyMemberChange(index, 'is_deceased', e.target.checked)}
+                            size="small"
+                          />
+                        }
+                        label={<Typography variant="body2">Falecido?</Typography>}
                       />
                     </Grid>
-                    <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
-                      <Tooltip title="Adicionar Cargo">
-                        <IconButton 
-                          onClick={handleAddRole}
-                          color="primary"
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Grid>
                   </Grid>
-                </Box>
+                </Paper>
+              ))}
+              <Button 
+                startIcon={<AddIcon />} 
+                onClick={addFamilyMember} 
+                variant="outlined" 
+                fullWidth 
+                sx={{ borderStyle: 'dashed' }}
+              >
+                Adicionar Familiar
+              </Button>
+            </Paper>
 
-                {/* Role History List */}
-                <Box>
-                  <Grid container spacing={2} sx={{ borderBottom: '1px solid #444', pb: 1, mb: 1 }}>
-                    <Grid item xs={4}><Typography variant="caption">CARGO</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="caption">INÍCIO</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="caption">TÉRMINO</Typography></Grid>
-                    <Grid item xs={2}><Typography variant="caption">AÇÕES</Typography></Grid>
-                  </Grid>
-                  {roleHistory.length > 0 ? (
-                    roleHistory.map((history, index) => {
-                      const roleName = roles.find(r => r.id === history.role_id)?.name || 'Cargo Desconhecido';
-                      return (
-                        <Grid container spacing={2} alignItems="center" key={index} sx={{ py: 1, '&:hover': { bgcolor: 'action.hover' } }}>
-                          <Grid item xs={4}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{roleName}</Typography></Grid>
-                          <Grid item xs={3}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{history.start_date ? new Date(history.start_date).toLocaleDateString('pt-BR') : '-'}</Typography></Grid>
-                          <Grid item xs={3}><Typography variant="body2" sx={{ fontSize: '0.85rem' }}>{history.end_date ? new Date(history.end_date).toLocaleDateString('pt-BR') : 'Presente'}</Typography></Grid>
-                          <Grid item xs={2}>
-                             <IconButton size="small" onClick={() => console.log('Edit role', history.id)}>
-                               <EditIcon fontSize="small" />
-                             </IconButton>
-                             <IconButton size="small" color="error" onClick={() => handleDeleteRole(history.id)}>
-                               <DeleteIcon fontSize="small" />
-                             </IconButton>
-                          </Grid>
-                        </Grid>
-                      );
-                    })
-                  ) : (
-                    <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2, fontSize: '0.85rem' }}>
-                      Nenhum histórico de cargo encontrado.
-                    </Typography>
-                  )}
-                </Box>
-              </Paper>
-
-            {/* CONDECORAÇÕES */}
-            <Paper sx={{ p: 2, mb: 2 }}>
-              {renderSectionTitle('Condecorações')}
-              <Box sx={{ p: 2, border: '1px dashed grey', borderRadius: 1, textAlign: 'center' }}>
-                <Tooltip title="Adicionar Condecoração">
-                  <IconButton onClick={() => console.log('Add Decoration')} color="primary" size="large">
-                    <AddIcon fontSize="large" />
-                  </IconButton>
-                </Tooltip>
+             {/* 7. CONDECORAÇÕES (Placeholder for improvements) */}
+             <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Condecorações" icon={<StarIcon />} color="warning" />
+              <Box sx={{ p: 4, border: '1px dashed grey', borderRadius: 2, textAlign: 'center', bgcolor: theme.palette.action.hover }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Esta seção está em desenvolvimento.
+                </Typography>
+                <Button onClick={() => console.log('Add Decoration')} color="primary" startIcon={<AddIcon />}>
+                    Adicionar Condecoração
+                </Button>
               </Box>
             </Paper>
 
@@ -1159,23 +1028,142 @@ const MemberForm: React.FC = () => {
 
           {/* Sidebar Actions Column */}
           <Grid item xs={12} md={3}>
-            <Paper sx={{ p: 3, position: 'sticky', top: 20 }}>
-              <Typography variant="h6" gutterBottom align="center">
-                Ações
+            {/* INFORMAÇÕES DE ACESSO */}
+            <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+               <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    Configurações
+               </Typography>
+               <Divider sx={{ mb: 2 }} />
+               
+               <Stack spacing={2}>
+                    <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Credencial</InputLabel>
+                    <Select
+                        value="Webmaster" // Placeholder
+                        label="Credencial"
+                        disabled
+                    >
+                        <MenuItem value="Webmaster">Webmaster</MenuItem>
+                        <MenuItem value="Admin">Admin</MenuItem>
+                    </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Status na Loja</InputLabel>
+                    <Select
+                        name="status"
+                        value={formState.status}
+                        label="Status na Loja"
+                        onChange={handleChange}
+                    >
+                        <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
+                        <MenuItem value={MemberStatusEnum.INACTIVE}>Inativo</MenuItem>
+                        <MenuItem value={MemberStatusEnum.DISABLED}>Desativado (Falecido)</MenuItem>
+                    </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth variant="outlined" size="small">
+                    <InputLabel>Classe</InputLabel>
+                    <Select
+                        name="member_class"
+                        value={formState.member_class}
+                        label="Classe"
+                        onChange={handleChange}
+                    >
+                        <MenuItem value={MemberClassEnum.REGULAR}>Regular</MenuItem>
+                        <MenuItem value={MemberClassEnum.IRREGULAR}>Irregular</MenuItem>
+                        <MenuItem value={MemberClassEnum.EMERITUS}>Emérito</MenuItem>
+                        <MenuItem value={MemberClassEnum.REMITTED}>Remido</MenuItem>
+                        <MenuItem value={MemberClassEnum.HONORARY}>Honorário</MenuItem>
+                    </Select>
+                    </FormControl>
+               </Stack>
+
+               <Divider sx={{ my: 3 }} />
+               
+               {/* Password Section */}
+               {!id && !existingMemberId ? (
+                   <Box>
+                       <Typography variant="subtitle2" sx={{ mb: 1 }}>Definir Senha de Acesso</Typography>
+                        <TextField
+                        name="password"
+                        label="Senha Inicial *"
+                        type="password"
+                        value={formState.password}
+                        onChange={handleChange}
+                        fullWidth
+                        required
+                        variant="outlined"
+                        size="small"
+                        sx={{ mb: 2 }}
+                        />
+                         <TextField
+                          name="confirmPassword"
+                          label="Confirmar Senha"
+                          type="password"
+                          value={formState.confirmPassword || ''}
+                          onChange={handleChange}
+                          fullWidth
+                          required
+                          variant="outlined"
+                          size="small"
+                          error={formState.password && formState.password !== formState.confirmPassword}
+                        />
+                   </Box>
+                ) : (
+                    <Box>
+                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Alterar Senha</Typography>
+                        <TextField
+                           name="password"
+                           label="Nova Senha"
+                           type="password"
+                           value={formState.password || ''}
+                           onChange={handleChange}
+                           fullWidth
+                           variant="outlined"
+                           size="small"
+                           placeholder="Opcional"
+                           sx={{ mb: 2 }}
+                        />
+                         <TextField
+                           name="confirmPassword"
+                           label="Confirmar Nova Senha"
+                           type="password"
+                           value={formState.confirmPassword || ''}
+                           onChange={handleChange}
+                           fullWidth
+                           variant="outlined"
+                           size="small"
+                           error={formState.password && formState.password !== formState.confirmPassword}
+                         />
+                    </Box>
+                )}
+            </Paper>
+
+            <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
+              <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+                Ações de Registro
               </Typography>
-              <Typography variant="body2" color="text.secondary" align="center" paragraph>
-                Reveja os dados com atenção antes de salvar. Todos os campos obrigatórios devem ser preenchidos.
+              <Typography variant="caption" color="text.secondary" display="block" align="center" paragraph>
+                Verifique os dados antes de salvar.
               </Typography>
               <Stack spacing={2}>
-                <Button type="submit" variant="contained" color="primary" fullWidth>
-                  {id ? 'Salvar Alterações' : 'Criar Membro'}
+                <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    fullWidth 
+                    size="large"
+                    startIcon={<SaveIcon />}
+                >
+                  {id ? 'Salvar Alterações' : 'Finalizar Cadastro'}
                 </Button>
-                {id && (
-                  <Button variant="contained" color="secondary" fullWidth>
+                {/* {id && (
+                  <Button variant="outlined" color="secondary" fullWidth>
                     Redefinir Senha
                   </Button>
-                )}
-                <Button variant="outlined" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/members')}>
+                )} */}
+                <Button variant="text" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/members')}>
                   Cancelar
                 </Button>
               </Stack>
@@ -1201,7 +1189,7 @@ const MemberForm: React.FC = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
           {snackbar.message}
         </Alert>
       </Snackbar>

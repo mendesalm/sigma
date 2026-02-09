@@ -54,6 +54,8 @@ class RelationshipTypeEnum(str, enum.Enum):
     SPOUSE = "Esposa"
     SON = "Filho"
     DAUGHTER = "Filha"
+    FATHER = "Pai"
+    MOTHER = "Mãe"
 
 
 class DegreeEnum(str, enum.Enum):
@@ -271,6 +273,7 @@ class Member(BaseModel):
     street_number = Column(String(50), nullable=True)
     neighborhood = Column(String(100), nullable=True)
     city = Column(String(100), nullable=True)
+    state = Column(String(2), nullable=True) # Added state column
     zip_code = Column(String(9), nullable=True)
     phone = Column(String(20), nullable=True)
     place_of_birth = Column(String(100), nullable=True)

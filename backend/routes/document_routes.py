@@ -65,10 +65,11 @@ def get_full_document_preview(doc_type: str, payload: Dict[str, Any], db: Sessio
     
     settings = payload.get("settings", {})
     lodge_id = payload.get("lodge_id")
+    session_id = payload.get("session_id")
     
-    print(f"DEBUG: Preview Settings Payload: {settings}")
+    print(f"DEBUG: Preview Settings Payload: {settings}, Session ID: {session_id}")
     
-    html = service.generate_preview_html(doc_type, settings, lodge_id)
+    html = service.generate_preview_html(doc_type, settings, lodge_id, session_id=session_id)
     
     try:
         with open("debug_preview_output.html", "w", encoding="utf-8") as f:

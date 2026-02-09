@@ -20,7 +20,6 @@ import {
   Logout,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
-  BrokenImage as BrokenImageIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../../context/AuthContext';
 

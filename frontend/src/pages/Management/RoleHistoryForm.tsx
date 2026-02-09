@@ -35,11 +35,11 @@ const RoleHistoryForm: React.FC = () => {
     }
   }, [id, memberId]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>)=> {
-    const { name, value } = event.target as HTMLInputElement;
+  const handleChange = (event: any)=> {
+    const { name, value } = event.target;
     setFormState((prevState) => ({
       ...prevState,
-      [name as string]: value,
+      [name]: value,
     }));
   };
 

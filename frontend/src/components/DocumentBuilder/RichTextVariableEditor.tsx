@@ -152,10 +152,11 @@ interface RichTextVariableEditorProps {
   value: string;
   onChange: (value: string) => void;
   readOnly?: boolean;
+  placeholder?: string;
 }
 
 const RichTextVariableEditor = React.forwardRef<ReactQuill, RichTextVariableEditorProps>(
-  ({ value, onChange, readOnly }, ref) => {
+  ({ value, onChange, readOnly, placeholder }, ref) => {
     
     const [viewSource, setViewSource] = useState(false);
     
@@ -353,6 +354,7 @@ const RichTextVariableEditor = React.forwardRef<ReactQuill, RichTextVariableEdit
                 formats={formats}
                 readOnly={readOnly}
                 preserveWhitespace
+                placeholder={placeholder}
               />
               
               <Dialog open={tableDialogOpen} onClose={() => setTableDialogOpen(false)}>

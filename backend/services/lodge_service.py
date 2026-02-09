@@ -64,7 +64,7 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
         # templates/balaustre (singular), templates/edital, templates/convite, templates/prancha
         # users/profile_pictures
         
-        os.makedirs(os.path.join(storage_path, "assets", "images", "logo"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "assets", "images"), exist_ok=True)
         os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
         
         os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
@@ -77,6 +77,23 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     except Exception as e:
         db.rollback()
         raise e
+
+    # --- Initial Assets Copying ---
+    try:
+        import shutil
+        
+        # 1. Copy Generic Logo
+        # Assuming 'storage/general_assets/logo_generico.png' exists
+        generic_logo_path = os.path.join("storage", "general_assets", "logo_generico.png")
+        if os.path.exists(generic_logo_path):
+            # Target: storage/lodges/{folder}/assets/images/logo.png (Matches DocumentGenerationService lookup)
+            target_logo_path = os.path.join(storage_path, "assets", "images", "logo.png")
+            shutil.copy2(generic_logo_path, target_logo_path)
+            
+            
+    except Exception as copy_error:
+        # Log error but don't fail the lodge creation just for assets
+        print(f"Warning: Failed to copy initial assets for lodge {db_lodge.id}: {copy_error}")
 
     return db_lodge
 

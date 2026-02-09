@@ -17,6 +17,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from routes import (  # noqa: E402
+    admin_template_routes, # New
     attendance_routes,
     auth_routes,
     check_in_routes,
@@ -213,6 +214,7 @@ app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
 app.include_router(template_routes.router) # Included template_routes
+app.include_router(admin_template_routes.router) # New
 
 
 
@@ -234,8 +236,8 @@ from pathlib import Path
 
 # Get the project root directory (parent of backend)
 BACKEND_DIR = Path(__file__).parent
-PROJECT_ROOT = BACKEND_DIR.parent
-STORAGE_DIR = PROJECT_ROOT / "storage"
+# PROJECT_ROOT = BACKEND_DIR.parent # No longer needed for storage
+STORAGE_DIR = BACKEND_DIR / "storage"
 
 # Create storage directory if it doesn't exist
 STORAGE_DIR.mkdir(exist_ok=True)

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { 
   Box, 
   Typography, 
@@ -6,8 +6,6 @@ import {
   Grid, 
   InputAdornment, 
   Paper, 
-  FormControlLabel, 
-  Switch, 
   Alert,
   Divider,
   Stack,
@@ -19,13 +17,9 @@ import {
   Person as PersonIcon, 
   AccessTime as AccessTimeIcon, 
   Event as EventIcon, 
-  Edit as EditIcon,
   Description as DescriptionIcon,
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
-
-import VariablePalette from '../../../components/DocumentBuilder/VariablePalette';
-import RichTextVariableEditor from '../../../components/DocumentBuilder/RichTextVariableEditor';
 
 interface BalaustreDocumentFormProps {
   formData: any;
@@ -91,24 +85,10 @@ const SectionHeader = ({ title, icon }: { title: string, icon?: React.ReactNode 
 };
 
 const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData, onChange, readOnly = false, members = [] }) => {
-  const theme = useTheme();
-  const [advancedMode, setAdvancedMode] = useState(false);
-  const editorRef = useRef<any>(null);
+  const theme = useTheme(); // Correctly placed inside the component
 
   const handleChange = (field: string, value: any) => {
     onChange({ ...formData, [field]: value });
-  };
-
-  const handleInsertVariable = (variableKey: string) => {
-    if (editorRef.current) {
-        const quill = editorRef.current.getEditor();
-        quill.focus(); 
-        const cursor = quill.getSelection();
-        const index = cursor ? cursor.index : quill.getLength();
-        quill.insertEmbed(index, 'variable', variableKey);
-        quill.insertText(index + 1, ' ');
-        quill.setSelection(index + 2);
-    }
   };
 
   return (
@@ -117,57 +97,20 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
             <Box sx={{ 
                 mb: 3, 
                 p: 2, 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
                 bgcolor: theme.palette.background.paper,
                 borderRadius: 2,
                 boxShadow: 1
             }}>
-                <Box>
-                     <Typography variant="subtitle1" fontWeight="bold">Editor de Balaústre</Typography>
-                     <Typography variant="caption" color="text.secondary">
-                        {advancedMode ? 'Editando o corpo do texto livremente' : 'Preenchendo os campos estruturados'}
-                     </Typography>
-                </Box>
-                <FormControlLabel
-                    control={<Switch checked={advancedMode} onChange={(e) => setAdvancedMode(e.target.checked)} color="primary" />}
-                    label={
-                        <Stack direction="row" spacing={1} alignItems="center">
-                             <EditIcon fontSize="small" />
-                             <Typography>Modo Avançado</Typography>
-                        </Stack>
-                    }
-                />
+                 <Typography variant="subtitle1" fontWeight="bold">Editor de Dados do Balaústre</Typography>
+                 <Typography variant="caption" color="text.secondary">
+                    Preencha os campos abaixo para alimentar o modelo. Ao clicar em aplicar, o texto será regenerado.
+                 </Typography>
             </Box>
         )}
 
-        {advancedMode ? (
-            <Grid container spacing={3}>
-                <Grid item xs={12} md={3}>
-                    <Paper sx={{ p: 2, height: '100%', borderRadius: 2 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Variáveis Disponíveis</Typography>
-                        <VariablePalette 
-                            documentType="balaustre" 
-                            onInsertVariable={handleInsertVariable} 
-                        />
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} md={9}>
-                    <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
-                        Você está no modo de edição livre. O texto abaixo será usado como corpo do documento, substituindo a estrutura padrão.
-                    </Alert>
-                    <RichTextVariableEditor
-                        ref={editorRef}
-                        value={formData.text || ''}
-                        onChange={(val) => handleChange('text', val)}
-                        readOnly={readOnly}
-                    />
-                </Grid>
-            </Grid>
-        ) : (
-            <Stack spacing={3}>
-                {/* Cabeçalho da Loja */}
+        <Stack spacing={3}>
+            {/* Cabeçalho da Loja */}
+
                 <Paper sx={{ p: 3, borderRadius: 2 }}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
                         <Box>
@@ -432,7 +375,7 @@ const BalaustreDocumentForm: React.FC<BalaustreDocumentFormProps> = ({ formData,
                      </Grid>
                 </Paper>
             </Stack>
-        )}
+
     </Box>
   );
 };

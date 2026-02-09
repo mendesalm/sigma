@@ -437,6 +437,116 @@ def approve_session_minutes_endpoint(
     )
 
 
+@router.get(
+    "/{session_id}/debug-generation",
+    summary="Debug Balaustre Generation Logic",
+    description="Runs the generation logic and returns internal state for debugging.",
+)
+async def debug_balaustre_generation(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    log = []
+    def logger(msg):
+        log.append(str(msg))
+    
+    try:
+        logger(f"Debugging Session: {session_id}")
+        
+        # 1. Fetch Session & Lodge
+        session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+        if not session:
+            return {"error": "Session not found", "log": log}
+            
+        lodge = db.query(models.Lodge).filter(models.Lodge.id == session.lodge_id).first()
+        logger(f"Lodge: {lodge.lodge_name} (ID: {lodge.id})")
+        
+        # 2. Check Settings
+        settings = lodge.document_settings or {}
+        # Convert Pydantic if needed
+        if hasattr(settings, 'model_dump'):
+            settings = settings.model_dump()
+            
+        logger(f"Settings Keys: {settings.keys()}")
+        
+        balaustre_config = settings.get('balaustre')
+        if not balaustre_config:
+             logger("CRITICAL: 'balaustre' key missing in document_settings")
+        else:
+             content_tmpl = balaustre_config.get('content_template')
+             logger(f"Custom Content Template Length: {len(content_tmpl) if content_tmpl else 0}")
+             if content_tmpl:
+                 logger(f"Template Preview: {content_tmpl[:100]}...")
+        
+        # 3. Simulate Strategy Execution
+        from services.document_generation_service import DocumentGenerationService
+        service = DocumentGenerationService(db)
+        strategy = service.get_strategy('balaustre')
+        
+        # Run Collect Data
+        logger("Running strategy.collect_data()...")
+        context = await strategy.collect_data(db, session_id) # No overrides first
+        
+        logger("Context Keys created: " + str(list(context.keys())))
+        
+        if 'custom_text' in context:
+            logger(f"Generated 'custom_text' Length: {len(context['custom_text'])}")
+            logger(f"Snippet: {context['custom_text'][:200]}...")
+            if "{{ Veneravel }}" in context['custom_text']:
+                logger("FAIL: Placeholders still present in output!")
+            else:
+                 logger("SUCCESS: Placeholders processed (or absent).")
+        else:
+            logger("CRITICAL: 'custom_text' NOT found in context!")
+            
+        # 4. Check for 'has_manual_edit' trigger logic
+        if 'text' in context:
+             logger("WARNING: 'text' key found in context (Manual Edit Flag might be on)")
+
+        return {
+            "status": "Debug Complete",
+            "log": log,
+            "final_output_preview": context.get('custom_text', '')[:500]
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "log": log
+        }
+
+@router.post(
+    "/{session_id}/rebuild-balaustre",
+    summary="Reconstruir Balaústre (Hard Reset)",
+    description="Descarta quaisquer edições manuais e recria o texto do balaústre usando estritamente o template oficial e os dados atuais do banco.",
+)
+async def rebuild_balaustre(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    from services.document_generation_service import DocumentGenerationService
+    
+    # Security Check
+    session_service.get_session_by_id(db, session_id, current_user_payload)
+    
+    service = DocumentGenerationService(db)
+    strategy = service.get_strategy('balaustre')
+    
+    # Collect Data STRICTLY from DB (No overrides)
+    context = await strategy.collect_data(db, session_id)
+    
+    # Get the rendered text
+    new_text = context.get('custom_text', '')
+    
+    return {
+        "text": new_text, 
+        "message": "Balaústre recriado com sucesso baseando-se no modelo oficial."
+    }
+
 @router.post(
     "/{session_id}/reopen",
     response_model=masonic_session_schema.MasonicSessionResponse,

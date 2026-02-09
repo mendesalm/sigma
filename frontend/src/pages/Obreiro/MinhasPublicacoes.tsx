@@ -9,8 +9,7 @@ import {
     Chip, 
     CircularProgress, 
     Alert, 
-    Container, 
-    Divider,
+    Container,
     Tabs,
     Tab
 } from '@mui/material';
@@ -61,7 +60,7 @@ const MinhasPublicacoes: React.FC = () => {
         window.open(url, '_blank');
     };
 
-    const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
         setCurrentTab(newValue);
     };
 

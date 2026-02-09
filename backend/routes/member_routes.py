@@ -543,8 +543,8 @@ async def upload_profile_picture(
     # Structure: storage/lodges/loja_{lodge_number}/profile_pictures/{cim}.ext
     from pathlib import Path
     BACKEND_DIR = Path(__file__).parent.parent
-    PROJECT_ROOT = BACKEND_DIR.parent  # Go up to sigma/ directory
-    STORAGE_DIR = PROJECT_ROOT / "storage" / "lodges"
+    # PROJECT_ROOT = BACKEND_DIR.parent  # Go up to sigma/ directory
+    STORAGE_DIR = BACKEND_DIR / "storage" / "lodges"
     
     # Get lodge to access lodge_number
     if user_type == "webmaster":
@@ -564,7 +564,7 @@ async def upload_profile_picture(
     
     # Use lodge_number for directory name (e.g., loja_2181)
     lodge_number = lodge_for_upload.lodge_number if lodge_for_upload.lodge_number else str(lodge_for_upload.id)
-    directory = STORAGE_DIR / f"loja_{lodge_number}" / "profile_pictures"
+    directory = STORAGE_DIR / f"loja_{lodge_number}" / "users" / "profile_pictures"
     directory.mkdir(parents=True, exist_ok=True)
     
     # Get file extension
@@ -578,11 +578,15 @@ async def upload_profile_picture(
         buffer.write(file_contents)
         
     # Update member profile_picture_path in DB
-    # Store path relative to storage mount: /storage/lodges/loja_{lodge_number}/profile_pictures/{cim}.ext
-    relative_path = f"/storage/lodges/loja_{lodge_number}/profile_pictures/{new_filename}"
+    # Store path relative to storage mount: /storage/lodges/loja_{lodge_number}/users/profile_pictures/{cim}.ext
+    relative_path = f"/storage/lodges/loja_{lodge_number}/users/profile_pictures/{new_filename}"
     
     # Update using service or direct DB update (since we already have the object)
     db_member.profile_picture_path = relative_path
+    db.commit()
+    db.refresh(db_member)
+    
+    return {"filename": new_filename, "path": relative_path}
 
 
 

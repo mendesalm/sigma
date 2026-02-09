@@ -152,3 +152,186 @@ async def upload_lodge_asset(
     url_path = f"/storage/lodges/{lodge_id}/assets/{safe_filename}"
     
     return {"url": url_path}
+
+
+# --- Document Settings Routes ---
+
+from schemas.document_settings_schema import DocumentTypeSettings
+from sqlalchemy.orm.attributes import flag_modified
+
+@router.get("/{lodge_id}/document-settings/{doc_type}", response_model=DocumentTypeSettings)
+def get_lodge_document_settings(
+    lodge_id: int,
+    doc_type: str,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Recupera as configurações de documento para um tipo específico (balaustre, prancha, etc).
+    """
+    lodge = lodge_service.get_lodge(db, lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+
+    # Verifica permissão de leitura (membro da loja pode ler?)
+    # Por enquanto, se tiver payload válido e for da mesma loja (ou superadmin), ok.
+    user_lodge_id = current_user.get("lodge_id")
+    user_type = current_user.get("user_type")
+    
+    if user_type != "super_admin":
+         if str(user_lodge_id) != str(lodge_id):
+             raise HTTPException(status_code=403, detail="Acesso negado a esta loja.")
+
+    settings_raw = lodge.document_settings or {}
+    
+    # Fallback/Migration: If settings are legacy (flat) and we request 'balaustre', 
+    # we might try to map it, but DocumentConfigPage saves hierarchically now.
+    # If the key exists, return it.
+    if doc_type in settings_raw:
+        return settings_raw[doc_type]
+    
+    # If not found (new or legacy flat structure mixed), return default empty
+    # The frontend will populate with defaults 
+    return DocumentTypeSettings()
+
+
+@router.post("/{lodge_id}/document-settings/{doc_type}")
+def update_lodge_document_settings(
+    lodge_id: int,
+    doc_type: str,
+    settings: DocumentTypeSettings,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Salva as configurações de documento para um tipo específico.
+    """
+    lodge = lodge_service.get_lodge(db, lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+
+    # Verifica permissão: Apenas Webmaster da loja ou SuperAdmin
+    user_lodge_id = current_user.get("lodge_id")
+    user_type = current_user.get("user_type")
+    
+    if user_type != "super_admin":
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Apenas o Webmaster pode alterar configurações de documentos."
+            )
+
+    # Load existing settings
+    current_json = dict(lodge.document_settings or {})
+    
+    # --- Copy-on-Write Logic ---
+    # Before saving 'personalizations' (JSON), ensure the physical template exists locally.
+    # If not, copy from 'model' (Global Master) -> 'loja_X' (Local Shadow).
+    
+    if lodge.lodge_number:
+        safe_number = "".join(c for c in str(lodge.lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+        folder_name = f"loja_{safe_number}"
+    else:
+        folder_name = f"loja_id_{lodge.id}"
+        
+    base_storage = os.path.join("storage", "lodges")
+    local_template_dir = os.path.join(base_storage, folder_name, "templates", doc_type)
+    
+    # Check if local templates exist (any file in the dir is enough signal)
+    # If not, populate from Master
+    if not os.path.exists(local_template_dir) or not os.listdir(local_template_dir):
+        os.makedirs(local_template_dir, exist_ok=True)
+        
+        # Source: Master Model
+        # TODO: This mapping should be centralized in DocumentGenerationService ideally
+        if doc_type == "balaustre":
+            master_file = "balaustre_template.html"
+            subpath = os.path.join("templates", "balaustre")
+        elif doc_type == "edital":
+             master_file = "edital_template.html"
+             # Assuming structure...
+             subpath = os.path.join("templates", "edital")
+        else:
+             # Generic fallback
+             master_file = f"{doc_type}_template.html"
+             subpath = os.path.join("templates", doc_type)
+
+        master_path = os.path.join(base_storage, "model", subpath, master_file)
+        
+        if os.path.exists(master_path):
+            import shutil
+            target_path = os.path.join(local_template_dir, master_file)
+            try:
+                shutil.copy2(master_path, target_path)
+                print(f"DEBUG: Copy-on-Write triggered. Cloned {master_file} to {target_path}")
+            except Exception as e:
+                print(f"ERROR: Failed to clone master template: {e}")
+                # We do NOT raise here, preventing save failure, but logging is critical.
+        else:
+             print(f"WARNING: Master template not found at {master_path}. Lodge {lodge_id} saving settings without physical base file.")
+
+    # Update specific doc_type
+    current_json[doc_type] = settings.model_dump()
+    
+    # Save back
+    lodge.document_settings = current_json
+    flag_modified(lodge, "document_settings") # Important for JSON columns in some SQLA versions
+    
+    db.commit()
+    return {"message": "Configurações salvas com sucesso."}
+
+
+@router.delete("/{lodge_id}/document-settings/{doc_type}/reset")
+def reset_lodge_document_settings(
+    lodge_id: int,
+    doc_type: str,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Restaura as configurações de documento para o padrão do sistema (Sigma).
+    Isso exclui quaisquer personalizações locais (arquivos e configurações) da loja.
+    """
+    lodge = lodge_service.get_lodge(db, lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+
+    # Verifica permissão: Apenas Webmaster da loja ou SuperAdmin
+    user_lodge_id = current_user.get("lodge_id")
+    user_type = current_user.get("user_type")
+    
+    if user_type != "super_admin":
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail="Apenas o Webmaster pode redefinir configurações de documentos."
+            )
+
+    # 1. Update DB: Remove Settings Key
+    current_json = dict(lodge.document_settings or {})
+    if doc_type in current_json:
+        del current_json[doc_type]
+        lodge.document_settings = current_json
+        flag_modified(lodge, "document_settings")
+        db.commit()
+
+    # 2. Delete Physical Template Files
+    # Path: storage/lodges/loja_X/templates/{doc_type}/
+    if lodge.lodge_number:
+        safe_number = "".join(c for c in str(lodge.lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+        folder_name = f"loja_{safe_number}"
+    else:
+        folder_name = f"loja_id_{lodge.id}"
+        
+    base_storage = os.path.join("storage", "lodges")
+    template_dir = os.path.join(base_storage, folder_name, "templates", doc_type)
+    
+    try:
+        if os.path.exists(template_dir):
+            shutil.rmtree(template_dir)
+            # Re-create empty dir? No, absence of dir signals "Use Master"
+    except Exception as e:
+        # Log but don't fail, DB is already updated
+        print(f"Erro ao excluir arquivos de template em {template_dir}: {e}")
+        
+    return {"message": "Configurações restauradas para o padrão do sistema."}

@@ -6,7 +6,7 @@ import { getClassifieds } from '../../services/api';
 const Classificados: React.FC = () => {
   const theme = useTheme();
   const [ads, setAds] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAd, setSelectedAd] = useState<any | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -21,8 +21,6 @@ const Classificados: React.FC = () => {
       setAds(response.data);
     } catch (error) {
       console.error("Error loading classifieds", error);
-    } finally {
-      setLoading(false);
     }
   };
 

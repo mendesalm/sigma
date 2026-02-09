@@ -49,7 +49,7 @@ class MasonicSessionBase(BaseModel):
     @classmethod
     def validate_status(cls, v):
         """Valida status da sessão."""
-        valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA'}
+        valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', 'ENCERRADA'}
         
         v_upper = v.upper()
         
@@ -183,7 +183,7 @@ class MasonicSessionUpdate(BaseModel):
     def validate_status(cls, v):
         """Valida status se fornecido."""
         if v is not None:
-            valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA'}
+            valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', 'ENCERRADA'}
             v_upper = v.upper()
             if v_upper not in valid_statuses:
                 raise ValueError(f'Status inválido. Use: {", ".join(valid_statuses)}')

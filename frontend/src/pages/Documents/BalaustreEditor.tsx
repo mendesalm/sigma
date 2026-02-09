@@ -6,7 +6,6 @@ import {
   Container, 
   Typography, 
   CircularProgress, 
-  TextField,
   AppBar,
   Toolbar,
   IconButton,
@@ -15,9 +14,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Drawer,
-  Divider
+  DialogActions
 } from '@mui/material';
 import { 
   ArrowBack, 
@@ -26,13 +23,11 @@ import {
   Edit,
   VerifiedUser
 } from '@mui/icons-material';
-import api, { uploadLodgeLogo } from '../../services/api';
+import api from '../../services/api';
 import BalaustreDocumentForm from './components/BalaustreDocumentForm';
 // @ts-ignore
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-
-// ... (inside component)
 
 // Estilos para simular folha A4
 const A4_WIDTH = '210mm';
@@ -51,16 +46,13 @@ const BalaustreEditor: React.FC = () => {
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-  const [styles, setStyles] = useState<any>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [styles, setStyles] = useState<any>({});
   const [editorFocused, setEditorFocused] = useState(false);
 
   // Data Form State
   const [dataDialogOpen, setDataDialogOpen] = useState(false);
   const [formData, setFormData] = useState<any>({});
 
-  // ... inside component ...
   const [members, setMembers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -105,7 +97,11 @@ const BalaustreEditor: React.FC = () => {
   const handleRegenerateText = async () => {
     setSaving(true);
     try {
-      const response = await api.post(`/masonic-sessions/${sessionId}/regenerate-balaustre-text`, formData);
+      // Create payload excluding 'text' and 'custom_text' to force template regeneration
+      // We must strip any existing text content to force the backend to use the stored template
+      // @ts-ignore
+      const { text, custom_text, html, content, ...payload } = formData;
+      const response = await api.post(`/masonic-sessions/${sessionId}/regenerate-balaustre-text`, payload);
       setDocumentContent({ text: response.data.text });
       setSessionData({ ...sessionData, ...formData }); // Update local session data
       setDataDialogOpen(false);
@@ -191,33 +187,7 @@ const BalaustreEditor: React.FC = () => {
     }
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0] && sessionData?.lodge_id) {
-      const file = event.target.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      setUploadingLogo(true);
-      try {
-        await uploadLodgeLogo(sessionData.lodge_id, formData);
-        
-        setSnackbar({ open: true, message: 'Logo atualizado com sucesso!', severity: 'success' });
-        
-        // Atualizar o estado local da imagem imediatamente
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            setSessionData((prev: any) => ({ ...prev, header_image: e.target?.result as string }));
-        };
-        reader.readAsDataURL(file);
 
-      } catch (error) {
-        console.error('Erro ao fazer upload do logo:', error);
-        setSnackbar({ open: true, message: 'Erro ao atualizar logo.', severity: 'error' });
-      } finally {
-        setUploadingLogo(false);
-      }
-    }
-  };
 
   const modules = {
     toolbar: [
@@ -241,6 +211,23 @@ const BalaustreEditor: React.FC = () => {
     'link'
   ];
 
+  const handleRebuild = async () => {
+    if (!window.confirm("Isso apagará todas as edições atuais e recarregará o documento a partir do Modelo Oficial configurado na Loja. Continuar?")) {
+        return;
+    }
+    setSaving(true);
+    try {
+        const response = await api.post(`/masonic-sessions/${sessionId}/rebuild-balaustre`);
+        setDocumentContent({ text: response.data.text });
+        setSnackbar({ open: true, message: 'Documento reiniciado a partir do padrão da Loja.', severity: 'success' });
+    } catch (error) {
+        console.error('Erro ao reconstruir:', error);
+        setSnackbar({ open: true, message: 'Erro ao reconstruir documento.', severity: 'error' });
+    } finally {
+        setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -261,19 +248,22 @@ const BalaustreEditor: React.FC = () => {
           </Typography>
           <Button 
             variant="outlined" 
+            color="warning"
+            onClick={handleRebuild}
+            sx={{ mr: 2 }}
+            disabled={saving}
+          >
+            Resetar pelo Modelo
+          </Button>
+          <Button 
+            variant="outlined" 
             startIcon={<Edit />}
             onClick={() => setDataDialogOpen(true)}
             sx={{ mr: 2 }}
           >
             Dados do Balaústre
           </Button>
-          <Button 
-            variant="outlined" 
-            onClick={() => setDrawerOpen(true)}
-            sx={{ mr: 2 }}
-          >
-            Personalizar
-          </Button>
+
           <Button 
             variant="contained" 
             color="secondary"
@@ -304,127 +294,18 @@ const BalaustreEditor: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <Box sx={{ width: 300, p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 3 }}>Personalização</Typography>
-          
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Cor do Fundo da Página</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <input 
-              type="color" 
-              value={styles.page_bg_color} 
-              onChange={(e) => setStyles({...styles, page_bg_color: e.target.value})} 
-              style={{ marginRight: '10px' }}
-            />
-            <Typography variant="body2">{styles.page_bg_color}</Typography>
-          </Box>
-
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Cor do Fundo do Cabeçalho</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <input 
-              type="color" 
-              value={styles.header_bg_color} 
-              onChange={(e) => setStyles({...styles, header_bg_color: e.target.value})} 
-              style={{ marginRight: '10px' }}
-            />
-            <Typography variant="body2">{styles.header_bg_color}</Typography>
-          </Box>
-
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Cor do Texto do Cabeçalho</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <input 
-              type="color" 
-              value={styles.header_text_color} 
-              onChange={(e) => setStyles({...styles, header_text_color: e.target.value})} 
-              style={{ marginRight: '10px' }}
-            />
-            <Typography variant="body2">{styles.header_text_color}</Typography>
-          </Box>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Tamanho do Logo (px)</Typography>
-          <TextField
-            fullWidth
-            type="text"
-            value={styles.logo_height}
-            onChange={(e) => setStyles({...styles, logo_height: e.target.value})}
-            sx={{ mb: 3 }}
-            helperText="Ex: 80px, 2cm"
-          />
-
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Estilo da Borda</Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 100 }}>Cor:</Typography>
-                <input 
-                  type="color" 
-                  value={styles.border_color} 
-                  onChange={(e) => setStyles({...styles, border_color: e.target.value})} 
-                />
-             </Box>
-             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 100 }}>Espessura:</Typography>
-                <TextField
-                  size="small"
-                  value={styles.border_width}
-                  onChange={(e) => setStyles({...styles, border_width: e.target.value})}
-                />
-             </Box>
-             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 100 }}>Tipo:</Typography>
-                <select 
-                  value={styles.border_style}
-                  onChange={(e) => setStyles({...styles, border_style: e.target.value})}
-                  style={{ padding: '8px', width: '100%' }}
-                >
-                  <option value="solid">Sólida</option>
-                  <option value="dashed">Tracejada</option>
-                  <option value="dotted">Pontilhada</option>
-                  <option value="double">Dupla</option>
-                  <option value="none">Sem Borda</option>
-                </select>
-             </Box>
-          </Box>
-
-          <Divider sx={{ my: 3 }} />
-          
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Logo da Loja</Typography>
-          <Button
-            variant="contained"
-            component="label"
-            fullWidth
-            disabled={uploadingLogo}
-          >
-            {uploadingLogo ? 'Enviando...' : 'Alterar Logo'}
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleLogoUpload}
-            />
-          </Button>
-        </Box>
-      </Drawer>
-
       <Container maxWidth={false} sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 8 }}>
         {/* PAGE CONTAINER - mimics @page size */}
         <Box sx={{
           width: A4_WIDTH,
-          minHeight: A4_HEIGHT, // Although in Web min-height is better, real PDF is fixed height per page. 
-          // For Editor, we default to minHeight A4 but let it grow (scroll) as we edit.
+          minHeight: A4_HEIGHT, 
           bgcolor: styles?.background_color || '#ffffff',
-          position: 'relative', // Context for absolute positioning of border/content
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', // Elevation replacement
-          // Background Image
+          position: 'relative', 
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', 
           backgroundImage: styles?.background_image && styles.background_image !== 'none' ? `url(${styles.background_image})` : 'none',
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
-          overflow: 'hidden' // Clip content to page
+          overflow: 'hidden' 
         }}>
 
             {/* LAYER 1: BORDER (Fixed Position relative to Page) */}
@@ -438,15 +319,14 @@ const BalaustreEditor: React.FC = () => {
                     borderWidth: styles?.border_width || '1px',
                     borderStyle: styles?.border_style || 'solid',
                     borderColor: styles?.border_color || '#000',
-                    zIndex: 1, // Above background, below content? No, PDF border is usually on top or around. 
-                    // In PDF template, .page-border has z-index: big and pointer-events: none.
+                    zIndex: 1, 
                     pointerEvents: 'none'
                 }} />
             )}
 
-            {/* LAYER 2: CONTENT CONTAINER (Absolute/Relative positioning matching PDF .page-content) */}
+            {/* LAYER 2: CONTENT CONTAINER */}
             <Box sx={{
-                position: 'absolute', // mimics .page-content { position: absolute }
+                position: 'absolute', 
                 top: styles?.page_margin || '1cm',
                 left: styles?.page_margin || '1cm',
                 right: styles?.page_margin || '1cm',
@@ -455,8 +335,16 @@ const BalaustreEditor: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 zIndex: 2,
-                overflowY: 'auto' // Allow scrolling if content overflows A4 in Editor
+                overflowY: 'auto' 
             }}>
+                {/* HEADER SECTION (Logic identical to before, omitted for brevity but preserved in replacement content via context usage if possible, or just copy paste) */}
+                {/* Since we can't use wildcards effectively here without full context, and I don't want to break the header logic, I will target the Button removal and Drawer removal separately if possible. But replace_file_content requires contiguous block. */}
+                {/* Actually, it's safer to just target the button and the drawer separately or in one large block? */}
+                {/* The Drawer is at the end. The Button is at the top. */}
+                {/* I will do two edits. One for Button, one for Drawer. */}
+                {/* WAIT. The instruction says "Remove conditional rendering...". */}
+                {/* I'll use multi_replace for BalaustreEditor.tsx to handle Button and Drawer separately. */}
+
 
                 {/* HEADER SECTION (Top of Content) */}
                 {(() => {
@@ -693,33 +581,7 @@ const BalaustreEditor: React.FC = () => {
         </Box> {/* End Page Container */}
       </Container>
 
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      >
-        <Box sx={{ width: 300, p: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Personalizar
-          </Typography>
-          <Box sx={{ mt: 2, mb: 2 }}>
-            <Alert severity="info">
-                A personalização de estilos foi movida para o <strong>Construtor de Documentos</strong>.
-                Utilize o menu "Configurar Documentos" no painel administrativo para alterar cores, bordas e cabeçalhos.
-            </Alert>
-          </Box>
-          
-          <Box sx={{ mt: 4 }}>
-            <Button 
-              variant="contained" 
-              fullWidth 
-              onClick={() => setDrawerOpen(false)}
-            >
-              Fechar
-            </Button>
-          </Box>
-        </Box>
-      </Drawer>
+
 
       <Dialog open={dataDialogOpen} onClose={() => setDataDialogOpen(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Dados do Balaústre</DialogTitle>

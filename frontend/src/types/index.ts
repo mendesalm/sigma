@@ -15,6 +15,8 @@ export enum RelationshipTypeEnum {
   SPOUSE = "Esposa",
   SON = "Filho",
   DAUGHTER = "Filha",
+  FATHER = "Pai",
+  MOTHER = "Mãe",
 }
 
 export enum RiteEnum {

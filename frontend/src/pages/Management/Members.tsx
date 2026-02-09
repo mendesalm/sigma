@@ -76,7 +76,8 @@ const Members = () => {
 
   const filteredMembers = members.filter(member => 
     member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (member.cim && member.cim.includes(searchTerm))
   );
 
   const handleExport = () => {
@@ -181,7 +182,7 @@ const Members = () => {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Buscar membro por nome ou email..."
+          placeholder="Buscar membro por nome, email ou CIM..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           sx={{ 
@@ -268,7 +269,7 @@ const Members = () => {
                   }}
                 >
                   <Avatar 
-                    src={member.profile_picture_path ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${member.profile_picture_path}` : undefined} 
+                    src={member.profile_picture_path ? (member.profile_picture_path.startsWith('http') ? member.profile_picture_path : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${member.profile_picture_path}`) : undefined} 
                     alt={member.full_name}
                     sx={{ 
                       width: 32, // Smaller avatar

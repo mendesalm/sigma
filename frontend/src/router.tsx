@@ -40,6 +40,7 @@ import DashboardHome from './pages/Dashboard/DashboardHome';
 import DocumentTemplates from './pages/Management/DocumentTemplates';
 import BalaustreEditor from './pages/Documents/BalaustreEditor';
 import DocumentValidation from './pages/Public/DocumentValidation';
+import AdminTemplateEditor from './pages/Management/AdminTemplateEditor';
 
 // Obreiro Pages
 import MeuCadastro from './pages/Obreiro/MeuCadastro';
@@ -269,6 +270,7 @@ const router = createBrowserRouter([
                   { path: 'role-history/new', element: <RoleHistoryForm /> },
                   { path: 'role-history/edit/:id', element: <RoleHistoryForm /> },
                   { path: 'templates', element: <DocumentTemplates /> },
+                  { path: 'admin-templates', element: <AdminTemplateEditor /> },
                 ],
               },
               {

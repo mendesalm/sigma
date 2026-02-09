@@ -672,6 +672,11 @@ class DocumentGenerationService:
                 return {"text": text, "data": session_data}
 
             # Se não houver rascunho, gera o texto padrão
+            # PRIORIDADE 1: Verificar se a Strategy retornou um template personalizado (Webmaster)
+            if session_data.get('custom_text'):
+                return {"text": session_data['custom_text'], "data": session_data}
+
+            # PRIORIDADE 2: Geração Hardcoded (Legacy Fallback)
             officers = {
                 "Venerável Mestre": session_data.get("Veneravel"),
                 "1º Vigilante": session_data.get("PrimeiroVigilante"),
@@ -839,19 +844,21 @@ class DocumentGenerationService:
         if custom_content:
              kwargs.update(custom_content)
              
-        return await self.generate_document('balaustre', session_id, {}, **kwargs)
+        _, pdf_bytes, _ = await self.generate_document('balaustre', session_id, {}, **kwargs)
+        return pdf_bytes
 
-    def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None) -> str:
+    def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None, session_id: int = None) -> str:
         """
         Generates the full HTML preview for a document type using the provided settings.
-        Uses mock data if no lodge_id provided, or mixes lodge data with mock session data.
+        Uses mock data if no lodge_id/session_id provided, or real data if session_id is present.
         """
         db = SessionLocal()
         try:
             strategy = self.get_strategy(doc_type)
             
             if hasattr(strategy, 'get_preview_context'):
-                context = strategy.get_preview_context(db, lodge_id, settings)
+                # Pass session_id to context builder
+                context = strategy.get_preview_context(db, lodge_id, settings, session_id=session_id)
             else:
                 # Fallback for strategies without preview support
                 context = {"styles": settings.get("styles", {}), "mock_data": True}
@@ -862,17 +869,16 @@ class DocumentGenerationService:
 
 
     async def regenerate_balaustre_text(self, session_id: int, custom_data: dict) -> str:
-        # This is for the frontend editor content, usually just HTML body, not full PDF.
-        # However, strategy returns full context.
-        # We can simulate render with strategy to get the HTML.
+        # This is for the frontend editor content, usually just HTML body.
+        # We want ONLY the body text (custom_text), not the full PDF wrapper (header/footer).
         db = SessionLocal()
         try:
              strategy = self.get_strategy('balaustre')
-             context = await strategy.collect_data(db, session_id, custom_text=custom_data.get('text'))
-             if custom_data:
-                  context.update(custom_data) # Override specifics
-             html = self._render_template(strategy.get_template_name(), context)
-             return html
+             # Pass all custom_data as kwargs so collect_data can use them for overrides BEFORE rendering
+             context = await strategy.collect_data(db, session_id, **custom_data)
+             
+             # Return only the rendered content part
+             return context.get('custom_text', '')
         finally:
              db.close()
 

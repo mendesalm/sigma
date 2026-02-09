@@ -8,6 +8,7 @@ from pydantic_settings import SettingsConfigDict
 class MemberInfo(BaseModel):
     id: int
     full_name: str
+    cim: str | None = None
 
     model_config = SettingsConfigDict(from_attributes=True)
 
@@ -16,10 +17,12 @@ class MemberInfo(BaseModel):
 class VisitorInfo(BaseModel):
     id: int
     full_name: str
+    degree: str | None = None # Added degree
     manual_lodge_name: str | None = None
     manual_lodge_number: str | None = None
     manual_lodge_obedience: str | None = None
     origin_lodge_id: int | None = None
+    cim: str | None = None
 
     model_config = SettingsConfigDict(from_attributes=True)
 
@@ -48,10 +51,9 @@ class SessionAttendanceResponse(SessionAttendanceBase):
 class SessionAttendanceWithMemberResponse(SessionAttendanceResponse):
     member: MemberInfo | None = None
     visitor: VisitorInfo | None = None
-
+    
 
 class CheckInRequest(BaseModel):
     qr_code_token: str
     latitude: float
     longitude: float
-

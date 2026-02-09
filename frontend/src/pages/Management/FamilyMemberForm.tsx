@@ -23,11 +23,11 @@ const FamilyMemberForm: React.FC = () => {
     }
   }, [id, memberId]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>)=> {
-    const { name, value, type, checked } = event.target as HTMLInputElement;
+  const handleChange = (event: any)=> {
+    const { name, value, type, checked } = event.target;
     setFormState((prevState) => ({
       ...prevState,
-      [name as string]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 

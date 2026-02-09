@@ -5,19 +5,12 @@ import {
   Paper,
   Button,
   Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Avatar,
   Card,
   CardContent,
   Divider,
   Alert,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -30,7 +23,6 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  CheckCircle as CheckCircleIcon,
   DateRange as DateRangeIcon,
   Person as PersonIcon,
   Save as SaveIcon
@@ -368,7 +360,7 @@ const AdministrationPage: React.FC = () => {
       {/* Dialog for Create/Edit */}
       <Dialog 
         open={openModal} 
-        onClose={(event, reason) => {
+        onClose={(_, reason) => {
             if (reason !== 'backdropClick') {
                 setOpenModal(false);
             }

@@ -127,6 +127,11 @@ const MeuCadastro: React.FC = () => {
           return;
         }
 
+        if (user.user_type === 'webmaster') {
+          setLoading(false);
+          return;
+        }
+
         // Try to fetch member data
         console.log('Fetching member data for ID:', user.user_id);
         const response = await api.get<MemberResponse>(`/members/${user.user_id}`);
@@ -162,7 +167,7 @@ const MeuCadastro: React.FC = () => {
           errorMessage = 'Membro não encontrado. Você pode não ter um cadastro como membro.';
         } else if (error.response?.status === 403) {
           errorMessage = 'Você não tem permissão para acessar estes dados.';
-       } else if (error.response?.data?.detail) {
+        } else if (error.response?.data?.detail) {
           errorMessage = error.response.data.detail;
         }
         
@@ -337,8 +342,21 @@ const MeuCadastro: React.FC = () => {
           </Typography>
         </Box>
       </Box>
+      
+      {user?.user_type === 'webmaster' && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight="bold">Perfil Administrativo</Typography>
+          <Typography variant="body2">
+            Você está logado com uma conta de Webmaster (Administração Técnica). 
+            Esta página é destinada ao perfil de Membros da Loja (Obreiros).
+            <br />
+            Para gerenciar os dados da Loja, utilize o menu <strong>Webmaster {'>'} Minha Loja</strong>.
+          </Typography>
+        </Alert>
+      )}
 
-      <Grid container spacing={3}>
+      {user?.user_type !== 'webmaster' && (
+        <Grid container spacing={3}>
         {/* Main Content */}
         <Grid item xs={12} md={9}>
           {/* Dados Pessoais */}
@@ -885,6 +903,7 @@ const MeuCadastro: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+      )}
 
       {/* Snackbar for notifications */}
       <Snackbar 
