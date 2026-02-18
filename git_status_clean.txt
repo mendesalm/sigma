@@ -1,0 +1,10 @@
+﻿?? backend/services/document_strategies/edital_strategy.py
+?? backend/templates/components/
+?? backend/templates/layouts/
+?? commits_ahead.txt
+?? debug_document_balaustre_22.html
+?? git_diff_frontend.txt
+?? git_status_clean.txt
+?? git_status_now.txt
+?? today_modified.txt
+?? today_src_modified.txt

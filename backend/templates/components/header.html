@@ -1,0 +1,79 @@
+{% macro render_text_block(settings, placeholders) %}
+<div class="header-text-block" style="text-align: {{ settings.text_alignment }}; color: {{ settings.color }};">
+    <div class="header-main-title"
+        style="font-size: {{ settings.font_size_title }}; color: {{ settings.color_title or settings.color }}; font-weight: bold; text-transform: uppercase; margin: {{ settings.margin_title }}; line-height: 1.2;">
+        {% if settings.custom_title_text %}{{ settings.custom_title_text }}{% else %}{{
+        placeholders.lodge_title_formatted }} {{ placeholders.lodge_name }} Nº {{ placeholders.lodge_number }}{% endif
+        %}
+    </div>
+    {% if settings.show_affiliations %}
+    <div class="header-subtitle"
+        style="font-size: {{ settings.font_size_subtitle }}; color: {{ settings.color_subtitle or settings.color }}; margin: {{ settings.margin_subtitle }}; line-height: 1.4;">
+        {% if settings.custom_subtitle_text %}{{ settings.custom_subtitle_text }}{% else %}Federada ao {{
+        placeholders.lodge_obedience }}<br>Jurisdicionada ao {{ placeholders.lodge_subobedience }}{% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro render_logo(img_url, size, settings=None) %}
+{% if img_url %}
+<img src="{{ img_url }}"
+    style="height: {{ size }}; width: auto; max-width: none; display: block; padding: {{ settings.logo_padding if settings else '0' }};"
+    alt="Logo" />
+{% else %}
+<div
+    style="width: {{ size }}; height: {{ size }}; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #999;">
+    Logo</div>
+{% endif %}
+{% endmacro %}
+
+{% set config = settings.styles.header_config if settings.styles else settings.header_config %}
+{% set placeholders = {
+'lodge_title_formatted': lodge_title_formatted or 'A∴R∴L∴S∴',
+'lodge_name': lodge_name or 'Nome da Loja',
+'lodge_number': lodge_number or '0000',
+'lodge_obedience': lodge_obedience or 'GOB',
+'lodge_subobedience': lodge_subobedience or 'GOBGO'
+} %}
+
+<header class="document-header" style="
+    padding: {{ config.padding }};
+    margin-bottom: {{ config.spacing_bottom }};
+    background-color: {{ 'transparent' if config.layout_mode == 'timbre' else (config.background_color or 'transparent') }};
+    {% if config.border_bottom_show %}border-bottom: {{ config.border_bottom_width }} {{ config.border_bottom_style }} {{ config.border_bottom_color or '#000' }};{% endif %}
+">
+    {# Layout Modes #}
+    {% if config.layout_mode == 'timbre' %}
+    <div style="display: flex; justify-content: center; padding-top: 0.4cm;">{{ render_logo(config.logo_url or
+        header_image,
+        config.logo_size, config) }}</div>
+
+    {% elif config.layout_mode == 'classic' %}
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="flex-shrink: 0;">{{ render_logo(config.logo_url or header_image, config.logo_size, config) }}</div>
+        <div style="flex-grow: 1;">{{ render_text_block(config, placeholders) }}</div>
+    </div>
+
+    {% elif config.layout_mode == 'inverted' %}
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="flex-grow: 1;">{{ render_text_block(config, placeholders) }}</div>
+        <div style="flex-shrink: 0;">{{ render_logo(config.logo_url or header_image, config.logo_size, config) }}</div>
+    </div>
+
+    {% elif config.layout_mode == 'centered_stack' %}
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <div>{{ render_logo(config.logo_url or header_image, config.logo_size, config) }}</div>
+        <div>{{ render_text_block(config, placeholders) }}</div>
+    </div>
+
+    {% elif config.layout_mode == 'double' %}
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+        <div style="flex-shrink: 0; width: {{ config.logo_size }}; text-align: left;">{{ render_logo(config.logo_url or
+            header_image, config.logo_size, config) }}</div>
+        <div style="flex-grow: 1; text-align: center;">{{ render_text_block(config, placeholders) }}</div>
+        <div style="flex-shrink: 0; width: {{ config.logo_size }}; text-align: right;">{{
+            render_logo(config.logo_obedience or footer_image, config.logo_size, config) }}</div>
+    </div>
+    {% endif %}
+</header>

@@ -1,0 +1,12 @@
+{% set config = settings.closing_config %}
+<div class="document-section-closing" style="
+    text-align: {{ config.alignment or 'center' }};
+    margin: {{ config.margin_top or '0.5cm' }} 0 {{ config.margin_bottom or '1cm' }};
+    color: {{ config.color or '#000' }};
+">
+    {% if custom_closing %}
+    {{ custom_closing | safe }}
+    {% else %}
+    <p>Receba meu TFA,</p>
+    {% endif %}
+</div>

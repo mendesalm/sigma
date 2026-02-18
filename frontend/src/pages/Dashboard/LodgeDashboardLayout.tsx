@@ -54,8 +54,8 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const MENU_CONFIG = [
   {
     id: 'home',
-    label: 'Home',
-    icon: <img src={HomeIcon} alt="Home" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    label: 'Dashboard',
+    icon: <img src={HomeIcon} alt="Dashboard" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard',
     subItems: [] // HOME não possui menu secundário
   },
@@ -398,7 +398,7 @@ const LodgeDashboardLayout: React.FC = () => {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 600 }}>
+                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 600, color: '#D4AF37' }}>
                   {item.label}
                 </Typography>
               </ListItemButton>

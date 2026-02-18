@@ -1,0 +1,13 @@
+{% set config = settings.date_place_config %}
+<div class="document-section-dateplace" style="
+    text-align: {{ config.alignment or 'right' }};
+    margin: {{ config.margin_top or '0' }} 0 {{ config.margin_bottom or '1cm' }};
+    font-style: italic;
+    color: {{ config.color or '#000' }};
+">
+    {% if custom_date_place %}
+    {{ custom_date_place | safe }}
+    {% else %}
+    {{ lodge_city }} ({{ lodge_state }}), {{ DataAssinatura }}.
+    {% endif %}
+</div>

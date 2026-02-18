@@ -1,0 +1,44 @@
+{% set config = settings.signatures_config %}
+<div class="document-section-signatures" style="
+    margin-top: {{ config.spacing_top or '2cm' }};
+    font-family: {{ config.font_family or 'inherit' }};
+">
+    {% if custom_signatures %}
+    {{ custom_signatures | safe }}
+    {% else %}
+    {% if document_type == 'balaustre' %}
+    <table class="signatures-table" style="width: 100%; border-collapse: separate; border-spacing: 0.5cm 0;">
+        <tr>
+            <td style="text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto 0.5cm;"></div>
+                <div style="font-weight: bold;">SECRETÁRIO (A)</div>
+                <div>{{ SecretarioNome }}</div>
+            </td>
+            <td style="text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto 0.5cm;"></div>
+                <div style="font-weight: bold;">ORADOR (A)</div>
+                <div>{{ Orador }}</div>
+            </td>
+            <td style="text-align: center; vertical-align: bottom;">
+                <div style="border-top: 1px solid #000; width: 80%; margin: 0 auto 0.5cm;"></div>
+                <div style="font-weight: bold;">VENERÁVEL MESTRE</div>
+                <div>{{ Veneravel }}</div>
+            </td>
+        </tr>
+    </table>
+
+    {% elif document_type == 'prancha' or document_type == 'edital' %}
+    <table class="signatures-table" style="width: 100%;">
+        <tr>
+            <td style="text-align: center;">
+                <div style="margin-bottom: 2cm;">Atenciosamente,</div>
+                <div style="border-top: 1px solid #000; display: inline-block; padding-top: 0.5cm; width: 50%;">
+                    <strong>{{ signature_name or 'Secretário da Loja' }}</strong><br>
+                    {{ signature_role or 'Secretário' }}
+                </div>
+            </td>
+        </tr>
+    </table>
+    {% endif %}
+    {% endif %}
+</div>

@@ -1,0 +1,5 @@
+﻿96238f4 | 2026-02-09 14:51:23 -0300 | feat: Initialize Antigravity Kit
+87e8af6 | 2025-12-19 09:55:52 -0300 | UI: Modernize BalaustreDocumentForm with Material-UI components and responsive layout
+8f7ffa7 | 2025-12-19 09:51:40 -0300 | Feature: Implement auto-fallback to default templates in Backend Strategy
+1d55a11 | 2025-12-19 09:46:44 -0300 | Refactor: Decouple Frontend Defaults and Backend Strategy Cleanups
+e2dacd7 | 2025-12-19 09:35:35 -0300 | Snapshot: Save point before Document Module refactoring and improvements

@@ -92,6 +92,7 @@ class MemberBase(BaseModel):
     initiation_date: date | None = Field(None, description="Data de iniciação")
     elevation_date: date | None = Field(None, description="Data de elevação")
     exaltation_date: date | None = Field(None, description="Data de exaltação")
+    installation_date: date | None = Field(None, description="Data de instalação")
     affiliation_date: date | None = Field(None, description="Data de filiação")
     regularization_date: date | None = None
     philosophical_degree: str | None = Field(None, max_length=100)
@@ -293,6 +294,7 @@ class MemberUpdate(BaseModel):
     initiation_date: date | None = None
     elevation_date: date | None = None
     exaltation_date: date | None = None
+    installation_date: date | None = None
     affiliation_date: date | None = None
     regularization_date: date | None = None
     philosophical_degree: str | None = Field(None, max_length=100)

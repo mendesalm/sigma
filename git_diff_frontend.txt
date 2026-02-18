@@ -1,0 +1,12 @@
+﻿A	frontend/Dockerfile
+A	frontend/build_log.txt
+A	frontend/src/components/DocumentBuilder/DocumentBuilder.tsx
+A	frontend/src/pages/Management/AdminTemplateEditor.tsx
+A	frontend/tsc_output_2.txt
+A	frontend/tsc_output_3.txt
+A	frontend/tsc_output_4.txt
+A	frontend/tsc_output_5.txt
+A	frontend/tsc_output_6.txt
+A	frontend/tsc_output_7.txt
+A	frontend/tsc_output_8.txt
+A	frontend/tsc_output_final.txt

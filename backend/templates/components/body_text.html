@@ -1,0 +1,25 @@
+{% set config = settings.content_config %}
+<div class="document-section-body" style="
+    font-size: {{ config.font_size or '12pt' }};
+    line-height: {{ config.line_height or '1.5' }};
+    text-align: {{ config.alignment or 'justify' }};
+    color: {{ config.color or '#000' }};
+    padding: {{ config.padding_top or '0' }} 0; /* Only top/bottom padding relevant inside layout */
+">
+    <!-- If user provided custom override text, use it -->
+    {% if custom_text %}
+    {{ custom_text | safe }}
+    {% else %}
+    <!-- Default Content Placeholder based on Type -->
+    {% if document_type == 'balaustre' %}
+    <p><strong>ABERTURA:</strong> Aos {{ DiaSessao }}...</p>
+    <p><strong>ORDEM DO DIA:</strong> {{ OrdemDia }}</p>
+    <p><strong>ENCERRAMENTO:</strong> {{ Encerramento }}</p>
+    {% elif document_type == 'prancha' %}
+    <p>Venerável Mestre e amados Irmãos,</p>
+    <p>Temos a satisfação de comunicar que...</p>
+    {% else %}
+    <p>[Conteúdo do Documento]</p>
+    {% endif %}
+    {% endif %}
+</div>

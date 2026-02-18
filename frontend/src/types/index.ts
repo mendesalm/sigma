@@ -156,6 +156,7 @@ export interface MemberResponse {
   initiation_date?: string;
   elevation_date?: string;
   exaltation_date?: string;
+  installation_date?: string;
   affiliation_date?: string;
   regularization_date?: string;
   philosophical_degree?: string;
@@ -179,4 +180,28 @@ export interface SuperAdminResponse {
   username: string;
   email: string;
   is_active: boolean;
+}
+
+export interface ClassifiedResponse {
+  id: number;
+  title: string;
+  description: string;
+  price?: number;
+  contact_info?: string;
+  contact_email?: string;
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  image_paths?: string[];
+  created_at: string;
+  status: string;
+  member_id: number;
+  member?: {
+    full_name: string;
+    email: string;
+    phone?: string;
+  };
 }

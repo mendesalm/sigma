@@ -35,41 +35,87 @@ def get_dashboard_stats(
         models.Event.start_time >= datetime.now()
     ).order_by(models.Event.start_time).limit(5).all()
     
-    # 3. Next Birthdays (next 30 days)
-    # This is tricky in SQL. We'll fetch active members and filter in python for simplicity or use complex SQL
-    # Python approach for MVP:
+    # 3. Upcoming Birthdays & Anniversaries (Next 30 days)
     active_members = db.query(models.Member).join(models.MemberLodgeAssociation).filter(
         models.MemberLodgeAssociation.lodge_id == lodge_id,
         models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE
-    ).all()
+    ).options(joinedload(models.Member.family_members)).all()
     
     upcoming_birthdays = []
     limit_date = today + timedelta(days=30)
     
-    for member in active_members:
-        if member.birth_date:
-            # Create a date object for the birthday in the current year
-            try:
-                bday_this_year = member.birth_date.replace(year=today.year)
-            except ValueError:
-                # Handle leap year (Feb 29)
-                bday_this_year = member.birth_date.replace(year=today.year, day=28)
-
-            # If birthday has passed this year, look at next year
-            if bday_this_year < today:
-                try:
-                    bday_this_year = member.birth_date.replace(year=today.year + 1)
-                except ValueError:
-                    bday_this_year = member.birth_date.replace(year=today.year + 1, day=28)
+    def get_next_occurrence(date_obj, reference_date):
+        if not date_obj:
+            return None
+        try:
+            this_year = date_obj.replace(year=reference_date.year)
+        except ValueError:
+            this_year = date_obj.replace(year=reference_date.year, day=28)
             
-            # Check if it falls within the next 30 days
-            if today <= bday_this_year <= limit_date:
+        if this_year < reference_date:
+            try:
+                this_year = date_obj.replace(year=reference_date.year + 1)
+            except ValueError:
+                this_year = date_obj.replace(year=reference_date.year + 1, day=28)
+        return this_year
+
+    for member in active_members:
+        # Member Birthday
+        bday = get_next_occurrence(member.birth_date, today)
+        if bday and today <= bday <= limit_date:
+            upcoming_birthdays.append({
+                "name": member.full_name,
+                "date": bday,
+                "type": "aniversario"
+            })
+            
+        # Wedding Anniversary
+        wedding_day = get_next_occurrence(member.marriage_date, today)
+        if wedding_day and today <= wedding_day <= limit_date:
+            upcoming_birthdays.append({
+                "name": member.full_name,
+                "date": wedding_day,
+                "type": "casamento"
+            })
+
+        # Masonic Anniversaries
+        initiation = get_next_occurrence(member.initiation_date, today)
+        if initiation and today <= initiation <= limit_date:
+             upcoming_birthdays.append({
+                "name": member.full_name,
+                "date": initiation,
+                "type": "iniciacao"
+            })
+            
+        elevation = get_next_occurrence(member.elevation_date, today)
+        if elevation and today <= elevation <= limit_date:
+             upcoming_birthdays.append({
+                "name": member.full_name,
+                "date": elevation,
+                "type": "elevacao"
+            })
+            
+        exaltation = get_next_occurrence(member.exaltation_date, today)
+        if exaltation and today <= exaltation <= limit_date:
+             upcoming_birthdays.append({
+                "name": member.full_name,
+                "date": exaltation,
+                "type": "exaltacao"
+            })
+
+        # Family Birthdays
+        for fm in member.family_members:
+            if fm.is_deceased:
+                continue
+            fm_bday = get_next_occurrence(fm.birth_date, today)
+            if fm_bday and today <= fm_bday <= limit_date:
+                rel_type = fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
                 upcoming_birthdays.append({
-                    "name": member.full_name,
-                    "date": bday_this_year,
-                    "type": "Membro"
+                    "name": f"{fm.full_name} ({rel_type} do Ir. {member.full_name})",
+                    "date": fm_bday,
+                    "type": "aniversario_familiar"
                 })
-    
+
     upcoming_birthdays.sort(key=lambda x: x['date'])
     
     # 4. Notices (Active)
@@ -106,6 +152,45 @@ def get_dashboard_stats(
             "date": ds.date
         })
     
+    
+    # 8. Lodge Members Stats (New Widget)
+    ms_apprentices = 0
+    ms_fellows = 0
+    ms_masters = 0
+    members_list_data = []
+
+    for m in active_members:
+        # Count degrees
+        deg = m.degree.value if hasattr(m.degree, "value") else str(m.degree)
+        if deg == "Aprendiz":
+            ms_apprentices += 1
+        elif deg == "Companheiro":
+            ms_fellows += 1
+        elif deg in ["Mestre", "Mestre Instalado"]:
+            ms_masters += 1
+        
+        # Prepare list item
+        members_list_data.append({
+            "id": m.id,
+            "full_name": m.full_name,
+            "cim": m.cim,
+            "email": m.email,
+            "phone": m.phone,
+            "profile_picture_path": m.profile_picture_path,
+            "degree": deg
+        })
+
+    # Sort members list alphabetically
+    members_list_data.sort(key=lambda x: x['full_name'])
+
+    lodge_members_stats = {
+        "total": len(active_members),
+        "masters": ms_masters,
+        "fellows": ms_fellows,
+        "apprentices": ms_apprentices,
+        "members_list": members_list_data
+    }
+
     return {
         "total_members": total_members,
         "next_events": next_events,
@@ -113,7 +198,8 @@ def get_dashboard_stats(
         "active_notices_count": active_notices_count,
         "next_session": next_session,
         "classifieds_count": classifieds_count,
-        "dining_scale": dining_scale
+        "dining_scale": dining_scale,
+        "lodge_members_stats": lodge_members_stats
     }
 
 @router.get("/calendar")
@@ -156,7 +242,7 @@ def get_calendar_events(
     for s in sessions:
         calendar_events.append({
             "date": s.session_date.day,
-            "title": f"Sessão {s.title}",
+            "title": s.title,
             "type": "sessao",
             "full_date": s.session_date
         })

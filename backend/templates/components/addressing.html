@@ -1,0 +1,16 @@
+{% set config = settings.addressing_config %}
+<div class="document-section-addressing" style="
+    text-align: {{ config.alignment or 'left' }};
+    margin: {{ config.margin_top or '0' }} 0 {{ config.margin_bottom or '1cm' }};
+    font-weight: bold;
+    color: {{ config.color or '#000' }};
+">
+    {% if custom_addressing %}
+    {{ custom_addressing | safe }}
+    {% else %}
+    <div>Ao</div>
+    <div>{{ recipient_role or 'Respeitável Irmão' }}</div>
+    <div>{{ recipient_name or '[Nome do Destinatário]' }}</div>
+    <div>{{ recipient_location or '[Local]' }}</div>
+    {% endif %}
+</div>

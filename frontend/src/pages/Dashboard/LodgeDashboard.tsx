@@ -10,39 +10,61 @@ import {
   List,
   ListItem,
   ListItemText,
-  useTheme,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton
+  IconButton,
+  Avatar,
 } from '@mui/material';
 import { 
-  Event as EventIcon,
   Notifications,
-  Cake,
-  Group,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Castle,
+  Restaurant,
+  Campaign,
+  ArrowBackIosNew,
+  ArrowForwardIos,
+  Storefront as StoreIcon, // For Classifieds
+  Add as AddIcon, // Reusing existing if present or adding alias
+  ChevronLeft,
+  ChevronRight
 } from '@mui/icons-material';
-import { getDashboardStats, getCalendarEvents, DashboardStats, CalendarEvent } from '../../services/dashboardService';
+import { getDashboardStats, getCalendarEvents, getClassifieds, DashboardStats, CalendarEvent } from '../../services/dashboardService';
+import { ClassifiedResponse } from '../../types';
+
+// Define Colors
+const COLORS = {
+  background: '#0B0E14', // Darker background
+  cardCheck: '#151B26', // slightly lighter card bg
+  gold: '#D4AF37', // Metallic Gold
+  goldLight: '#F3E5AB',
+  goldDark: '#AA8C2C',
+  text: '#FFFFFF',
+  textSecondary: 'rgba(255, 255, 255, 0.7)',
+  purple: '#8b5cf6',
+  blue: '#0ea5e9',
+  green: '#22c55e',
+  red: '#ef4444',
+  orange: '#f59e0b',
+  pink: '#ec4899',
+  fuchsia: '#d946ef',
+};
 
 const EVENT_COLORS: Record<string, string> = {
-  exaltacao: '#8b5cf6', // Purple
-  aniversario: '#f43f5e', // Pink/Red
-  elevacao: '#6366f1', // Indigo
-  iniciacao: '#22c55e', // Green
-  sessao: '#0ea5e9',    // Blue
-  evento: '#f59e0b',    // Amber
-  aniversario_familiar: '#ec4899', // Pink-500
-  casamento: '#d946ef', // Fuchsia
+  exaltacao: COLORS.purple, 
+  aniversario: COLORS.red, 
+  elevacao: COLORS.blue, 
+  iniciacao: COLORS.green, 
+  sessao: COLORS.blue,    
+  evento: COLORS.orange,    
+  aniversario_familiar: COLORS.pink, 
+  casamento: COLORS.fuchsia, 
 };
 
 const LodgeDashboard: React.FC = () => {
-  const theme = useTheme();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -54,12 +76,46 @@ const LodgeDashboard: React.FC = () => {
     aniversario: true,
     aniversario_familiar: true,
     casamento: true,
-    maconico: true, // Covers iniciacao, elevacao, exaltacao
+    maconico: true, 
   });
 
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  // Notice Modal State
+  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<{ title: string; content: string } | null>(null);
+
+  // Members Modal State (New)
+  const [membersModalOpen, setMembersModalOpen] = useState(false);
+
+  // Classifieds State
+  const [classifiedsModalOpen, setClassifiedsModalOpen] = useState(false);
+  const [classifiedsList, setClassifiedsList] = useState<ClassifiedResponse[]>([]);
+  const [classifiedsPage, setClassifiedsPage] = useState(0);
+  const classifiedsPerPage = 4;
+
+  const handleOpenClassifiedsModal = async () => {
+      setClassifiedsModalOpen(true);
+      try {
+          const data = await getClassifieds();
+          setClassifiedsList(data);
+      } catch (error) {
+          console.error("Error fetching classifieds:", error);
+      }
+  };
+
+  const handlePrevPage = () => {
+        setClassifiedsPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+        const maxPage = Math.ceil(classifiedsList.length / classifiedsPerPage) - 1;
+        setClassifiedsPage((prev) => Math.min(maxPage, prev + 1));
+  };
+
+  const currentClassifieds = classifiedsList.slice(classifiedsPage * classifiedsPerPage, (classifiedsPage + 1) * classifiedsPerPage);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -108,12 +164,15 @@ const LodgeDashboard: React.FC = () => {
     setModalOpen(false);
     setSelectedDay(null);
   };
-  
-  const handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters({
-      ...filters,
-      [event.target.name]: event.target.checked,
-    });
+
+  const handleNoticeClick = (title: string, content: string) => {
+    setSelectedNotice({ title, content });
+    setNoticeModalOpen(true);
+  };
+
+  const handleCloseNoticeModal = () => {
+    setNoticeModalOpen(false);
+    setSelectedNotice(null);
   };
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -127,7 +186,7 @@ const LodgeDashboard: React.FC = () => {
       if (event.type === 'aniversario_familiar') return filters.aniversario_familiar;
       if (event.type === 'casamento') return filters.casamento;
       if (['iniciacao', 'elevacao', 'exaltacao'].includes(event.type)) return filters.maconico;
-      if (event.type === 'evento') return true; // Always show generic events or add a filter if needed
+      if (event.type === 'evento') return true; 
       return true;
     });
   };
@@ -138,7 +197,7 @@ const LodgeDashboard: React.FC = () => {
     const days = [];
     // Empty cells for previous month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(<Box key={`empty-${i}`} sx={{ height: '100%', border: '1px solid rgba(255,255,255,0.1)' }} />);
+        days.push(<Box key={`empty-${i}`} sx={{ height: '100%', border: '1px solid rgba(255,255,255,0.05)' }} />);
     }
     // Days of current month
     const today = new Date();
@@ -153,42 +212,49 @@ const LodgeDashboard: React.FC = () => {
           onClick={() => handleDayClick(day)}
           sx={{ 
             height: '100%', 
-            border: isToday ? `2px solid ${theme.palette.primary.main}` : '1px solid rgba(255,255,255,0.1)', 
-            p: 0.5,
+            minHeight: '80px',
+            border: isToday ? `1px solid ${COLORS.gold}` : '1px solid rgba(255,255,255,0.05)', 
+            p: 1,
             position: 'relative',
-            backgroundColor: isToday ? 'rgba(var(--primary-rgb), 0.1)' : 'transparent',
+            backgroundColor: isToday ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
             '&:hover': { backgroundColor: 'rgba(255,255,255,0.03)', cursor: 'pointer' },
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}
         >
-          <Typography variant="caption" sx={{ position: 'absolute', top: 2, right: 4, color: 'text.secondary', fontSize: '0.7rem' }}>
+          <Typography variant="caption" sx={{ 
+            position: 'absolute', 
+            top: 4, 
+            left: 4, 
+            color: isToday ? COLORS.gold : 'rgba(255,255,255,0.5)', 
+            fontSize: '0.8rem',
+            fontFamily: '"Playfair Display", serif',
+            fontWeight: isToday ? 700 : 400
+          }}>
             {day.toString().padStart(2, '0')}
           </Typography>
-          <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 0.2, flexGrow: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          <Box sx={{ mt: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, overflowY: 'auto' }}>
             {events.map((event, idx) => (
               <Chip
                 key={idx}
                 label={event.title}
                 size="small"
                 sx={{
-                  height: 14,
-                  fontSize: '0.55rem',
-                  backgroundColor: EVENT_COLORS[event.type] || theme.palette.primary.main,
+                  height: 16,
+                  fontSize: '0.6rem',
+                  backgroundColor: event.type === 'sessao' ? '#1e3a8a' : (EVENT_COLORS[event.type] || COLORS.blue),
                   color: '#fff',
                   width: '100%',
                   justifyContent: 'flex-start',
-                  px: 0.2,
+                  px: 0.5,
                   '& .MuiChip-label': { 
-                    paddingLeft: 0.5, 
-                    paddingRight: 0.5,
-                    display: 'block',
+                    padding: 0,
+                    width: '100%',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     textAlign: 'left',
-                    width: '100%'
                   }
                 }}
               />
@@ -200,215 +266,534 @@ const LodgeDashboard: React.FC = () => {
     return days;
   };
 
+  const selectedEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
+  const selectedDateObj = selectedDay ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay) : null;
+
   if (loading && !stats) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: COLORS.background }}>
+        <CircularProgress sx={{ color: COLORS.gold }} />
       </Box>
     );
   }
 
-  const statCards = [
-    { title: 'TOTAL DE MEMBROS ATIVOS', value: stats?.total_members || 0, icon: <Group fontSize="large" />, color: '#0ea5e9' },
-    { title: 'PRÓXIMOS EVENTOS', value: stats?.next_events.length || 0, icon: <EventIcon fontSize="large" />, color: '#8b5cf6' },
-    { title: 'PRÓXIMOS ANIVERSARIANTES', value: stats?.upcoming_birthdays.length || 0, icon: <Cake fontSize="large" />, color: '#f59e0b' },
-    { title: 'AVISOS', value: stats?.active_notices_count || 0, icon: <Notifications fontSize="large" />, color: '#ef4444' },
-  ];
-
-  const selectedEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
-  const selectedDateObj = selectedDay ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay) : null;
-
   return (
-    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Top Stats Row */}
-      <Grid container spacing={2} sx={{ mb: 2, flexShrink: 0 }}>
-        {statCards.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card sx={{ bgcolor: '#1e293b', color: '#fff', height: '100%', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ textAlign: 'center', py: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: 0.5, fontSize: '0.7rem' }}>
-                  {stat.title}
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 700, mt: 0.5, mb: 0.5 }}>
-                  {stat.value}
-                </Typography>
-                {stat.title === 'AVISOS' && stat.value === 0 && (
-                   <Typography variant="caption" sx={{ color: theme.palette.primary.main, cursor: 'pointer', fontSize: '0.7rem' }}>Ver todos</Typography>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Grid container spacing={2} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+    <Box sx={{ 
+      flexGrow: 1, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: 'calc(100vh - 80px)', // Fit screen height minus header
+      bgcolor: COLORS.background,
+      color: COLORS.text,
+      fontFamily: '"Inter", sans-serif',
+      p: 2, // reduced padding
+      overflow: 'hidden' // prevent page scroll
+    }}>
+      
+      {/* Main Grid: Left Side List, Center Calendar, Right Side Widgets */}
+      <Grid container spacing={2} sx={{ flexGrow: 1, height: '100%' }}>
+        
         {/* Left Column */}
-        <Grid item xs={12} md={3}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%', overflowY: 'auto' }}>
-            {/* Next Session */}
-            <Card sx={{ bgcolor: '#1e293b', color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="subtitle1" sx={{ color: theme.palette.primary.main, fontWeight: 700, mb: 1 }}>
-                  Próxima Sessão
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
-                  {stats?.next_session ? (
-                    <>
-                      {new Date(stats.next_session.session_date).toLocaleDateString('pt-BR')} - {stats.next_session.title}
-                      {stats.next_session.start_time && ` às ${stats.next_session.start_time}`}
-                    </>
-                  ) : (
-                    'Nenhuma sessão agendada.'
-                  )}
-                </Typography>
-              </CardContent>
+        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+           
+            {/* Membros da Loja Widget */}
+            <Card 
+                sx={{ 
+                    bgcolor: COLORS.cardCheck, 
+                    color: '#fff', 
+                    borderRadius: 2, 
+                    border: '1px solid rgba(255,255,255,0.05)', 
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    flexGrow: 0, // Should not grow
+                    '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 8px 30px rgba(0,0,0,0.5)`,
+                        borderColor: COLORS.gold
+                    }
+                }}
+                onClick={() => setMembersModalOpen(true)}
+            >
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                    <Grid container alignItems="center">
+                        {/* Left Col: Total */}
+                        <Grid item xs={6} sx={{ borderRight: '1px solid rgba(255,255,255,0.1)', pr: 2 }}>
+                             <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1, mb: 1 }}>
+                                Membros da Loja
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'baseline' }}>
+                                <Typography variant="h3" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                                    {stats?.lodge_members_stats?.total || 0}
+                                </Typography>
+                                <Typography variant="caption" sx={{ ml: 1, color: 'rgba(255,255,255,0.5)' }}>
+                                    Ativos
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        
+                        {/* Right Col: Breakdown */}
+                        <Grid item xs={6} sx={{ pl: 2 }}>
+                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Mestres</Typography>
+                                 <Typography variant="body2" sx={{ color: COLORS.gold, fontWeight: 700 }}>
+                                    {stats?.lodge_members_stats?.masters || 0}
+                                 </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Companheiros</Typography>
+                                 <Typography variant="body2" sx={{ color: COLORS.blue, fontWeight: 700 }}>
+                                    {stats?.lodge_members_stats?.fellows || 0}
+                                 </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Aprendizes</Typography>
+                                 <Typography variant="body2" sx={{ color: COLORS.green, fontWeight: 700 }}>
+                                    {stats?.lodge_members_stats?.apprentices || 0}
+                                 </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </CardContent>
             </Card>
 
-            {/* Classifieds */}
-            <Card sx={{ bgcolor: '#1e293b', color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ textAlign: 'center', py: 2, '&:last-child': { pb: 2 } }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                   <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Classificados</Typography>
-                </Box>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 0.5, fontSize: '0.85rem' }}>
-                  Total de Anúncios Publicados
-                </Typography>
-                <Typography variant="h4" sx={{ color: '#22c55e', fontWeight: 700 }}>
-                  {stats?.classifieds_count || 0}
-                </Typography>
-              </CardContent>
-            </Card>
+            {/* Aniversariantes e Datas List Widget */}
+            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                            <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1.2 }}>
+                                Datas Comemorativas
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                                do mês de <span style={{ textTransform: 'capitalize', color: '#fff' }}>{currentDate.toLocaleDateString('pt-BR', { month: 'long' })}</span>
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <IconButton 
+                                size="small" 
+                                onClick={handlePrevMonth} 
+                                sx={{ 
+                                    color: 'rgba(255,255,255,0.3)', 
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 1,
+                                    p: 0.5,
+                                    '&:hover': { color: COLORS.gold, borderColor: COLORS.gold, bgcolor: 'rgba(212, 175, 55, 0.05)' } 
+                                }}
+                            >
+                                <ArrowBackIosNew sx={{ fontSize: '0.8rem' }} />
+                            </IconButton>
+                            <IconButton 
+                                size="small" 
+                                onClick={handleNextMonth} 
+                                sx={{ 
+                                    color: 'rgba(255,255,255,0.3)', 
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 1,
+                                    p: 0.5,
+                                    '&:hover': { color: COLORS.gold, borderColor: COLORS.gold, bgcolor: 'rgba(212, 175, 55, 0.05)' } 
+                                }}
+                            >
+                                <ArrowForwardIos sx={{ fontSize: '0.8rem' }} />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                    <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1 }}>
+                        {(() => {
+                            // Filter logic: Only show future dates within the selected month
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            
+                            const commemorativeTypes = ['aniversario', 'aniversario_familiar', 'casamento', 'iniciacao', 'elevacao', 'exaltacao'];
+                            
+                            const widgetEvents = calendarEvents
+                                .filter(e => commemorativeTypes.includes(e.type))
+                                .filter(e => {
+                                    // Parse date string YYYY-MM-DD
+                                    const parts = e.full_date.toString().split('T')[0].split('-');
+                                    const eventDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+                                    eventDate.setHours(0,0,0,0);
+                                    
+                                    // If viewing a past month, show nothing? Or show past events?
+                                    // "ignorando as que já se passaram" implies filtering out past events relative to TODAY.
+                                    // But if we are looking at next month, we show all.
+                                    // If we are looking at last month, we show nothing (since all are past).
+                                    return eventDate >= today;
+                                })
+                                .sort((a,b) => a.date - b.date);
 
-            {/* Dining Scale */}
-            <Card sx={{ bgcolor: '#1e293b', color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)' }}>
-              <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-                  Próximos na Escala do Jantar
-                </Typography>
-                <List dense disablePadding>
-                  {stats?.dining_scale && stats.dining_scale.length > 0 ? (
-                    stats.dining_scale.map((item, idx) => (
-                      <ListItem key={idx} sx={{ 
-                        bgcolor: 'rgba(255,255,255,0.03)', 
-                        mb: 0.5, 
-                        borderRadius: 1,
-                        borderLeft: `3px solid ${theme.palette.warning.main}`,
-                        py: 0.5
-                      }}>
-                        <Typography variant="caption" sx={{ color: theme.palette.warning.main, fontWeight: 700, mr: 1 }}>
-                          {item.position}*
-                        </Typography>
-                        <ListItemText 
-                          primary={item.name} 
-                          secondary={new Date(item.date).toLocaleDateString('pt-BR')}
-                          primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 500 }} 
-                          secondaryTypographyProps={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}
+                            if (widgetEvents.length === 0) {
+                                return (
+                                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Nenhuma data futura neste mês.</Typography>
+                                    </Box>
+                                );
+                            }
+
+                            return widgetEvents.map((event, i) => {
+                                const eventColor = EVENT_COLORS[event.type] || COLORS.gold;
+                                // Parse date
+                                const parts = event.full_date.toString().split('T')[0].split('-');
+                                const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+                                
+                                const isToday = today.getMonth() === dateObj.getMonth() && today.getDate() === dateObj.getDate();
+                                
+                                let termo = '';
+                                let nome = '';
+                                let relacionamento = '';
+
+                                // Parse title based on type patterns from backend
+                                if (event.type === 'aniversario_familiar') {
+                                    // Format: "Aniversário (Name, Relation do Ir. MemberName)"
+                                    const match = event.title.match(/^Aniversário \((.*?), (.*)\)$/);
+                                    if (match) {
+                                        termo = 'Aniversário de';
+                                        nome = match[1];
+                                        relacionamento = match[2]; // "filho do Ir. Fulano"
+                                    } else {
+                                         termo = 'Aniversário de';
+                                         nome = event.title;
+                                    }
+                                } else if (event.type === 'aniversario') {
+                                    // Format: "Aniversário (Name)"
+                                    const match = event.title.match(/^Aniversário \((.*)\)$/);
+                                    termo = 'Aniversário de';
+                                    nome = match ? match[1] : event.title;
+                                } else if (event.type === 'casamento') {
+                                    // Format: "Casamento (Name)"
+                                    const match = event.title.match(/^Casamento \((.*)\)$/);
+                                    termo = 'Casamento de';
+                                    nome = match ? match[1] : event.title;
+                                } else if (['iniciacao', 'elevacao', 'exaltacao'].includes(event.type)) {
+                                    // Format: "Iniciação de Name", "Elevação de Name"
+                                    // Split by first " de "
+                                    const splitIndex = event.title.indexOf(' de ');
+                                    if (splitIndex !== -1) {
+                                        termo = event.title.substring(0, splitIndex + 3); // "Iniciação de"
+                                        nome = event.title.substring(splitIndex + 4);
+                                    } else {
+                                        termo = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+                                        nome = event.title;
+                                    }
+                                } else {
+                                    termo = 'Evento';
+                                    nome = event.title;
+                                }
+
+                                return (
+                                <ListItem key={i} sx={{ borderBottom: '1px solid rgba(255,255,255,0.02)', px: 2, py: 1.5, alignItems: 'flex-start' }}>
+                                    <Box sx={{ 
+                                        width: 4, 
+                                        alignSelf: 'stretch', 
+                                        bgcolor: eventColor, 
+                                        mr: 2,
+                                        borderRadius: 1,
+                                        mt: 0.5,
+                                        mb: 0.5
+                                    }} />
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                                            <Typography component="span" variant="caption" sx={{ 
+                                                color: isToday ? COLORS.background : eventColor, 
+                                                bgcolor: isToday ? eventColor : 'transparent',
+                                                mr: 1, 
+                                                fontWeight: 700, 
+                                                border: `1px solid ${eventColor}`, 
+                                                px: 0.8, 
+                                                py: 0.2,
+                                                borderRadius: 0.5, 
+                                                fontSize: '0.7rem',
+                                                lineHeight: 1
+                                            }}>
+                                                {isToday ? 'HOJE' : dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                                                {termo}
+                                            </Typography>
+                                         </Box>
+                                         
+                                         <Typography variant="body1" sx={{ color: '#fff', fontWeight: 500, fontSize: '0.95rem' }}>
+                                            {nome}
+                                         </Typography>
+                                         
+                                         {relacionamento && (
+                                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', fontStyle: 'italic', display: 'block', mt: 0.2 }}>
+                                                 {relacionamento}
+                                             </Typography>
+                                         )}
+                                    </Box>
+                                </ListItem>
+                                )
+                             });
+                        })()}
+                    </List>
+                </CardContent>
+            </Card>
+        </Grid>
+
+        {/* Center Column - Calendar */}
+        <Grid item xs={12} md={6} sx={{ height: '100%' }}>
+             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                     {/* Calendar Toolbar matches image style */}
+                     <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <Box>
+                            <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: COLORS.gold }}>
+                                {currentDate.toLocaleDateString('pt-BR', { month: 'long' })}
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', color: 'rgba(255,255,255,0.5)' }}>
+                                {currentDate.getFullYear()}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button 
+                                variant="outlined" 
+                                size="small" 
+                                onClick={handlePrevMonth}
+                                sx={{ minWidth: 40, borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                            >
+                                <ArrowBackIosNew fontSize="small" />
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                size="small" 
+                                onClick={handleToday}
+                                sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: COLORS.gold, '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                            >
+                                HOJE
+                            </Button>
+                             <Button 
+                                variant="outlined" 
+                                size="small" 
+                                onClick={handleNextMonth}
+                                sx={{ minWidth: 40, borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+                            >
+                                <ArrowForwardIos fontSize="small" />
+                            </Button>
+                        </Box>
+                     </Box>
+
+                     {/* Filters as Chips */}
+                     <Box sx={{ px: 3, pb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip 
+                            label="Sessões" 
+                            size="small" 
+                            onClick={() => setFilters({...filters, sessao: !filters.sessao})}
+                            sx={{ bgcolor: filters.sessao ? COLORS.blue : 'transparent', border: '1px solid', borderColor: COLORS.blue, color: '#fff' }} 
                         />
-                      </ListItem>
-                    ))
-                  ) : (
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>Nenhum registro encontrado.</Typography>
-                  )}
-                </List>
-              </CardContent>
+                         <Chip 
+                            label="Eventos" 
+                            size="small" 
+                            onClick={() => setFilters({...filters, maconico: !filters.maconico})} // Simplified filter logic for demo
+                            sx={{ bgcolor: filters.maconico ? COLORS.orange : 'transparent', border: '1px solid', borderColor: COLORS.orange, color: '#fff' }} 
+                        />
+                     </Box>
+
+                     {/* Calendar Grid Header */}
+                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: '#0f172a', py: 1, borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(d => (
+                            <Typography key={d} variant="caption" sx={{ textAlign: 'center', color: COLORS.gold, fontWeight: 700, letterSpacing: 1 }}>
+                                {d}
+                            </Typography>
+                        ))}
+                     </Box>
+
+                     {/* Calendar Grid Body */}
+                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(5, 1fr)', flexGrow: 1 }}>
+                         {renderCalendarDays()}
+                     </Box>
+                </CardContent>
+             </Card>
+        </Grid>
+
+        {/* Right Column */}
+        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+            
+            {/* Mural de Avisos (Renamed to Mural da Loja) */}
+            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                 <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                            Mural de Avisos
+                        </Typography>
+                        <Notifications sx={{ color: 'rgba(255,255,255,0.3)' }} />
+                    </Box>
+                    <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1 }}>
+                        
+                        {/* 1. Próxima Sessão (Merged here) */}
+                        {stats?.next_session ? (
+                           <ListItem 
+                                button 
+                                onClick={() => handleNoticeClick('Próxima Sessão', `
+                                    <strong>Título:</strong> ${stats.next_session!.title}<br/>
+                                    <strong>Data:</strong> ${new Date(stats.next_session!.session_date).toLocaleDateString('pt-BR')}<br/>
+                                    <strong>Horário:</strong> ${stats.next_session!.start_time || 'A definir'}<br/>
+                                    <strong>Local:</strong> Templo Principal
+                                `)}
+                                sx={{ 
+                                    alignItems: 'flex-start', 
+                                    py: 1.5, 
+                                    borderLeft: `3px solid ${COLORS.gold}`, 
+                                    bgcolor: 'rgba(212, 175, 55, 0.05)',
+                                    mb: 1
+                                }}
+                            >
+                                <Castle sx={{ color: COLORS.gold, fontSize: 18, mt: 0.5, mr: 1.5 }} />
+                                <ListItemText 
+                                    primary="PRÓXIMA SESSÃO"
+                                    primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: 1 }}
+                                    secondary={
+                                        <>
+                                            <Typography component="span" variant="body2" sx={{ color: '#fff', display: 'block', fontWeight: 600, mt: 0.5, fontSize: '0.9rem' }}>
+                                                {stats.next_session.title}
+                                            </Typography>
+                                            <Typography component="span" variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                                                {new Date(stats.next_session.session_date).toLocaleDateString('pt-BR')} às {stats.next_session.start_time} horas
+                                            </Typography>
+                                        </>
+                                    }
+                                />
+                            </ListItem> 
+                        ) : (
+                            <ListItem sx={{ alignItems: 'flex-start', py: 2 }}>
+                                 <Castle sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 20, mt: 0.5, mr: 1.5 }} />
+                                 <ListItemText primary="Nenhuma sessão agendada" secondaryTypographyProps={{ color: 'rgba(255,255,255,0.5)' }} />
+                            </ListItem>
+                        )}
+
+                        {/* 2. Other Notices */}
+                        {stats?.active_notices_count && stats.active_notices_count > 0 ? (
+                             Array.from({length: Math.min(stats.active_notices_count, 3)}).map((_, i) => (
+                                <ListItem 
+                                    key={i} 
+                                    button
+                                    onClick={() => handleNoticeClick(`Aviso da Diretoria ${i+1}`, 'Conteúdo detalhado do aviso da diretoria. Este é um exemplo de texto que viria do backend.')}
+                                    sx={{ alignItems: 'flex-start', py: 1 }}
+                                >
+                                    <Campaign sx={{ color: COLORS.blue, fontSize: 18, mt: 0.5, mr: 1.5 }} />
+                                    <ListItemText 
+                                        primary={`Aviso da Diretoria ${i+1}`}
+                                        secondary="Clique para ver detalhes."
+                                        primaryTypographyProps={{ fontSize: '0.9rem' }}
+                                        secondaryTypographyProps={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', mt: 0 }}
+                                    />
+                                </ListItem>
+                             ))
+                        ) : null}
+                    </List>
+                </CardContent>
             </Card>
-          </Box>
+
+            {/* Escala Ágape */}
+             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 0 }}>
+                <CardContent sx={{ p: 0 }}>
+                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                            Escala Ágape
+                        </Typography>
+                        <Restaurant fontSize="small" sx={{ color: 'rgba(255,255,255,0.3)' }} />
+                    </Box>
+                    <List disablePadding>
+                        {stats?.dining_scale && stats.dining_scale.length > 0 ? (
+                            stats.dining_scale.slice(0, 3).map((item, idx) => (
+                                <ListItem key={idx} sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                                    <Box sx={{ mr: 2, bgcolor: 'rgba(255,255,255,0.05)', p: 1, borderRadius: 1 }}>
+                                        <Restaurant fontSize="small" sx={{ color: COLORS.gold }} />
+                                    </Box>
+                                    <ListItemText
+                                        primary={
+                                            <Typography variant="caption" sx={{ color: COLORS.gold, display: 'block', mb: 0.5, fontWeight: 700 }}>
+                                                IRMÃO HOSPITALEIRO
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            <Typography variant="body2" sx={{ color: '#fff', fontSize: '0.9rem' }}>
+                                                {item.name}
+                                            </Typography>
+                                        }
+                                    />
+                                </ListItem>
+                            ))
+                        ) : (
+                            <Box sx={{ p: 3, textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Nenhuma escala definida.</Typography>
+                            </Box>
+                        )}
+                    </List>
+                </CardContent>
+            </Card>
+
+            {/* Classificados Widget */}
+            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 0, cursor: 'pointer', '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }} onClick={() => handleOpenClassifiedsModal()}>
+                 <CardContent sx={{ p: 0 }}>
+                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                            Classificados
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Chip label={stats?.classifieds_count || 0} size="small" sx={{ bgcolor: COLORS.blue, color: '#fff', height: 20, fontSize: '0.7rem' }} />
+                            <StoreIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 20 }} />
+                        </Box>
+                    </Box>
+                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', mb: 2, display: 'block' }}>
+                             Anúncios ativos na loja
+                         </Typography>
+                         <Button 
+                            variant="outlined" 
+                            size="small" 
+                            fullWidth
+                            startIcon={<AddIcon />} 
+                            onClick={(e) => { e.stopPropagation(); alert('Funcionalidade de inserir anúncio será implementada em breve.'); }}
+                            sx={{ color: COLORS.gold, borderColor: 'rgba(212, 175, 55, 0.3)' }}
+                         >
+                             Inserir Anúncio
+
+                         </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+
         </Grid>
 
-        {/* Right Column - Calendar */}
-        <Grid item xs={12} md={9} sx={{ height: '100%' }}>
-          <Card sx={{ bgcolor: '#1e293b', color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ py: 2, '&:last-child': { pb: 2 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* Calendar Header */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexShrink: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Filtros:</Typography>
-                   <FormGroup row>
-                     <FormControlLabel 
-                       control={<Checkbox checked={filters.sessao} onChange={handleFilterChange} name="sessao" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
-                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Sessões</Typography>} 
-                     />
-                     <FormControlLabel 
-                       control={<Checkbox checked={filters.aniversario} onChange={handleFilterChange} name="aniversario" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
-                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Membros</Typography>} 
-                     />
-                     <FormControlLabel 
-                       control={<Checkbox checked={filters.aniversario_familiar} onChange={handleFilterChange} name="aniversario_familiar" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
-                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Familiares</Typography>} 
-                     />
-                     <FormControlLabel 
-                       control={<Checkbox checked={filters.casamento} onChange={handleFilterChange} name="casamento" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
-                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Casamento</Typography>} 
-                     />
-                     <FormControlLabel 
-                       control={<Checkbox checked={filters.maconico} onChange={handleFilterChange} name="maconico" size="small" sx={{ color: theme.palette.primary.main, p: 0.5 }} />} 
-                       label={<Typography variant="caption" sx={{ fontSize: '0.7rem' }}>Aniv. Maçônico</Typography>} 
-                     />
-                   </FormGroup>
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'rgba(0,0,0,0.2)', p: 0.5, borderRadius: 1, flexShrink: 0 }}>
-                <Box>
-                  <Button size="small" onClick={handleToday} sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.7rem', minWidth: 'auto', px: 1 }}>Hoje</Button>
-                  <Button size="small" onClick={handlePrevMonth} sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.7rem', minWidth: 'auto', px: 1 }}>Anterior</Button>
-                  <Button size="small" onClick={handleNextMonth} sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.7rem', minWidth: 'auto', px: 1 }}>Próximo</Button>
-                </Box>
-                <Typography variant="subtitle2" sx={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                  {currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                </Typography>
-                <Box width={100} /> {/* Spacer */}
-              </Box>
-
-              {/* Calendar Grid */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridTemplateRows: '30px repeat(6, 1fr)', gap: '1px', bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, overflow: 'hidden' }}>
-                {/* Weekdays */}
-                {['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'].map(day => (
-                  <Box key={day} sx={{ p: 0.5, textAlign: 'center', bgcolor: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'lowercase', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{day}</Typography>
-                  </Box>
-                ))}
-                {renderCalendarDays()}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
-
-      {/* Event Details Modal */}
+      
+      {/* Event Details Modal - Dark Theme */}
       <Dialog 
         open={modalOpen} 
         onClose={handleCloseModal}
         PaperProps={{
           sx: {
-            bgcolor: '#1e293b',
+            bgcolor: COLORS.cardCheck,
             color: '#fff',
-            minWidth: 300,
-            backgroundImage: 'none',
-            border: '1px solid rgba(255,255,255,0.1)'
+            minWidth: 320,
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 20px rgba(0,0,0,0.5)`
           }
         }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
             {selectedDateObj?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </Typography>
           <IconButton onClick={handleCloseModal} size="small" sx={{ color: 'rgba(255,255,255,0.5)' }}>
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+        <DialogContent sx={{ mt: 2 }}>
           {selectedEvents.length > 0 ? (
             <List>
               {selectedEvents.map((event, idx) => (
-                <ListItem key={idx} sx={{ px: 0 }}>
+                <ListItem key={idx} sx={{ px: 0, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <Box sx={{ 
-                    width: 10, 
-                    height: 10, 
+                    width: 8, 
+                    height: 8, 
                     borderRadius: '50%', 
-                    bgcolor: EVENT_COLORS[event.type] || theme.palette.primary.main,
+                    bgcolor: EVENT_COLORS[event.type] || COLORS.blue,
                     mr: 2,
-                    flexShrink: 0
+                    mt: 1,
+                    alignSelf: 'flex-start'
                   }} />
                   <ListItemText 
                     primary={event.title}
@@ -420,16 +805,233 @@ const LodgeDashboard: React.FC = () => {
               ))}
             </List>
           ) : (
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', py: 2, textAlign: 'center' }}>
-              Nenhum evento registrado para este dia.
+            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>
+              Nenhum evento registrado.
             </Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal} sx={{ color: 'rgba(255,255,255,0.7)' }}>
-            Fechar
-          </Button>
+      </Dialog>
+
+       {/* Notice Detail Modal */}
+       <Dialog 
+        open={noticeModalOpen} 
+        onClose={handleCloseNoticeModal}
+        PaperProps={{
+          sx: {
+            bgcolor: COLORS.cardCheck,
+            color: '#fff',
+            minWidth: 400,
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 20px rgba(0,0,0,0.5)`
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+            {selectedNotice?.title}
+          </Typography>
+          <IconButton onClick={handleCloseNoticeModal} size="small" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+             {selectedNotice && (
+                 <Typography 
+                    variant="body1" 
+                    sx={{ color: '#fff', lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: selectedNotice.content }} 
+                 />
+             )}
+        </DialogContent>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <Button onClick={handleCloseNoticeModal} sx={{ color: COLORS.gold }}>Fechar</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Members Network Modal */}
+      <Dialog 
+        open={membersModalOpen} 
+        onClose={() => setMembersModalOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: COLORS.background,
+            color: '#fff',
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 30px rgba(0,0,0,0.8)`,
+            minHeight: '60vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 2 }}>
+            <Box>
+                <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                    Obreiros da Loja
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {stats?.lodge_members_stats?.total || 0} Irmãos Ativos
+                </Typography>
+            </Box>
+            <IconButton onClick={() => setMembersModalOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                <CloseIcon />
+            </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2, pb: 4 }}>
+            <Grid container spacing={2}>
+                {stats?.lodge_members_stats?.members_list?.map((member) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={member.id}>
+                        <Card sx={{ bgcolor: COLORS.cardCheck, border: '1px solid rgba(255,255,255,0.05)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 3, transition: 'all 0.2s', '&:hover': { transform: 'translateY(-4px)', borderColor: COLORS.gold, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }}>
+                             <Box sx={{ position: 'relative', mb: 2 }}>
+                                <Avatar 
+                                    src={member.profile_picture_path ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${member.profile_picture_path}` : undefined}
+                                    alt={member.full_name}
+                                    sx={{ width: 80, height: 80, border: `2px solid ${member.degree === 'Aprendiz' ? COLORS.green : member.degree === 'Companheiro' ? COLORS.blue : COLORS.gold}` }}
+                                >
+                                    {member.full_name.charAt(0)}
+                                </Avatar>
+                                <Chip 
+                                    label={member.degree || 'Membro'} 
+                                    size="small" 
+                                    sx={{ 
+                                        position: 'absolute', 
+                                        bottom: -10, 
+                                        left: '50%', 
+                                        transform: 'translateX(-50%)', 
+                                        height: 20, 
+                                        fontSize: '0.65rem',
+                                        bgcolor: COLORS.background, 
+                                        color: member.degree === 'Aprendiz' ? COLORS.green : member.degree === 'Companheiro' ? COLORS.blue : COLORS.gold,
+                                        border: `1px solid ${member.degree === 'Aprendiz' ? COLORS.green : member.degree === 'Companheiro' ? COLORS.blue : COLORS.gold}`
+                                    }} 
+                                />
+                             </Box>
+                             <Typography variant="subtitle1" sx={{ fontWeight: 600, textAlign: 'center', mb: 0.5, lineHeight: 1.2 }}>
+                                 {member.full_name}
+                             </Typography>
+                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', mb: 2 }}>
+                                 CIM: {member.cim || 'N/A'}
+                             </Typography>
+                             
+                             <Box sx={{ width: '100%', pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                     <span style={{opacity: 0.5}}>✉</span> {member.email}
+                                 </Typography>
+                                 <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                     <span style={{opacity: 0.5}}>📞</span> {member.phone || 'Sem telefone'}
+                                 </Typography>
+                             </Box>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
+        </DialogContent>
+      </Dialog>
+
+      {/* Classifieds Modal */}
+      <Dialog 
+        open={classifiedsModalOpen} 
+        onClose={() => setClassifiedsModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: COLORS.background,
+            color: '#fff',
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 30px rgba(0,0,0,0.8)`,
+            minHeight: '50vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 2 }}>
+            <Box>
+                <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                    Mural de Classificados
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                    {classifiedsList.length} Anúncios Disponíveis
+                </Typography>
+            </Box>
+            <IconButton onClick={() => setClassifiedsModalOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                <CloseIcon />
+            </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2, pb: 4, display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {classifiedsList.length > 0 ? (
+                <>
+                    <Grid container spacing={2} sx={{ flexGrow: 1 }}>
+                        {currentClassifieds.map((ad) => (
+                            <Grid item xs={12} sm={6} key={ad.id}>
+                                <Card sx={{ bgcolor: COLORS.cardCheck, border: '1px solid rgba(255,255,255,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                    <Box sx={{ height: 140, bgcolor: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        {ad.image_paths && ad.image_paths.length > 0 ? (
+                                             <img src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${ad.image_paths[0]}`} alt={ad.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <StoreIcon sx={{ fontSize: 40, color: 'rgba(255,255,255,0.1)' }} />
+                                        )}
+                                    </Box>
+                                    <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff', lineHeight: 1.2, mb: 1 }}>
+                                            {ad.title}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: COLORS.textSecondary, mb: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                            {ad.description}
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
+                                            <Typography variant="h6" sx={{ color: COLORS.green, fontWeight: 700 }}>
+                                                {ad.price ? `R$ ${ad.price.toFixed(2)}` : 'A Combinar'}
+                                            </Typography>
+                                            <Chip label={ad.city || 'Local não inf.'} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.7)', fontSize: '0.7rem' }} />
+                                        </Box>
+                                    </CardContent>
+                                    <Box sx={{ p: 2, pt: 0, borderTop: '1px solid rgba(255,255,255,0.05)', mt: 'auto' }}>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block' }}>
+                                            Anunciante: {ad.member?.full_name || 'Desconhecido'}
+                                        </Typography>
+                                         <Typography variant="caption" sx={{ color: COLORS.gold, display: 'block' }}>
+                                            {ad.contact_info || ad.contact_email}
+                                        </Typography>
+                                    </Box>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    
+                    {/* Pagination Controls */}
+                    {classifiedsList.length > 4 && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 3, gap: 2 }}>
+                            <Button 
+                                disabled={classifiedsPage === 0} 
+                                onClick={handlePrevPage}
+                                startIcon={<ChevronLeft />}
+                                sx={{ color: COLORS.gold, '&:disabled': { color: 'rgba(255,255,255,0.1)' } }}
+                            >
+                                Anterior
+                            </Button>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                                Página {classifiedsPage + 1} de {Math.ceil(classifiedsList.length / 4)}
+                            </Typography>
+                            <Button 
+                                disabled={(classifiedsPage + 1) * 4 >= classifiedsList.length} 
+                                onClick={handleNextPage}
+                                endIcon={<ChevronRight />}
+                                sx={{ color: COLORS.gold, '&:disabled': { color: 'rgba(255,255,255,0.1)' } }}
+                            >
+                                Próxima
+                            </Button>
+                        </Box>
+                    )}
+                </>
+            ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 200 }}>
+                    <StoreIcon sx={{ fontSize: 60, color: 'rgba(255,255,255,0.1)', mb: 2 }} />
+                    <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                        Nenhum anúncio disponível no momento.
+                    </Typography>
+                </Box>
+            )}
+        </DialogContent>
       </Dialog>
     </Box>
   );

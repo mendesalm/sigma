@@ -29,6 +29,21 @@ export interface DashboardStats {
     member_id: number;
     name: string;
   }>;
+  lodge_members_stats: {
+    total: number;
+    masters: number;
+    fellows: number;
+    apprentices: number;
+    members_list: Array<{
+      id: number;
+      full_name: string;
+      cim?: string;
+      email: string;
+      phone?: string;
+      profile_picture_path?: string;
+      degree?: string;
+    }>;
+  };
 }
 
 export interface CalendarEvent {
@@ -49,5 +64,10 @@ export const getCalendarEvents = async (month: number, year: number): Promise<Ca
   const response = await api.get('/dashboard/calendar', {
     params: { month, year }
   });
+  return response.data;
+};
+
+export const getClassifieds = async (): Promise<any[]> => {
+  const response = await api.get('/classifieds/');
   return response.data;
 };

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ session_title_formatted or 'Documento Sigma' }}</title>
+
+    <!-- Dynamic CSS Variables & Styles -->
+    <style>
+        :root {
+
+            /* Page Config */
+            --page-size: {
+                    {
+                    page_config.size or 'A4'
+                }
+            }
+
+                {
+                    {
+                    page_config.orientation or 'portrait'
+                }
+            }
+
+            ;
+
+            --page-margin: {
+                    {
+                    page_config.margins or '1cm'
+                }
+            }
+
+            ;
+
+            --page-bg-color: {
+                    {
+                    page_config.background_color or '#ffffff'
+                }
+            }
+
+            ;
+
+            /* Border Config */
+            --border-width: {
+                    {
+                    page_config.border_width or '0px'
+                }
+            }
+
+            ;
+
+            --border-style: {
+                    {
+                    page_config.border_style or 'solid'
+                }
+            }
+
+            ;
+
+            --border-color: {
+                    {
+                    page_config.border_color or '#000'
+                }
+            }
+
+            ;
+
+            /* Typography */
+            --font-main: {
+                    {
+                    styles.font_family or 'Times New Roman, serif'
+                }
+            }
+
+            ;
+
+            --font-size-base: {
+                    {
+                    styles.font_size or '12pt'
+                }
+            }
+
+            ;
+        }
+
+        @page {
+            size: var(--page-size);
+            margin: var(--page-margin);
+        }
+
+        body {
+            font-family: var(--font-main);
+            font-size: var(--font-size-base);
+            background-color: var(--page-bg-color);
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .page-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+
+            /* Visual Border (simulated div) */
+                {
+                % if page_config.border_width and page_config.border_width !='0px' %
+            }
+
+            border: var(--border-width) var(--border-style) var(--border-color);
+            padding: 0;
+            /* Changed from 1cm to allow full-bleed headers */
+
+            min-height: calc(100vh - 2 * var(--page-margin));
+
+            /* Approx full height */
+                {
+                % endif %
+            }
+        }
+
+        /* Component Spacing & Padding */
+        .document-section {
+            padding: 0 1cm;
+            /* Default internal padding for content */
+            margin-bottom: 0.5cm;
+        }
+
+        /* Header specific: Full width, no side padding by default (handled by component config) */
+        #section-header {
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Footer specific: Full width option */
+        #section-footer {
+            padding: 0 1cm;
+            /* Keep footer padded by default, can be overridden if needed */
+        }
+    </style>
+
+    <!-- Custom CSS Injection -->
+    {{ dynamic_style_block | safe }}
+</head>
+
+<body>
+
+    <div class="page-container">
+        {% for section in structure %}
+        <section id="section-{{ section.type }}" class="document-section {{ section.css_class }}">
+            {% include section.template %}
+        </section>
+        {% endfor %}
+    </div>
+
+    <!-- Page Numbers (Optional) -->
+    {% if styles.show_page_numbers %}
+    <div style="position: fixed; bottom: 0.5cm; right: 0.5cm; font-size: 8pt;">
+        Página <span style="content: counter(page)"></span>
+    </div>
+    {% endif %}
+
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+{% set config = settings.subject_config %}
+<div class="document-section-subject" style="
+    text-align: {{ config.alignment or 'center' }};
+    font-weight: bold;
+    text-decoration: underline;
+    margin: {{ config.margin_top or '0.5cm' }} 0 {{ config.margin_bottom or '0.5cm' }};
+    color: {{ config.color or '#000' }};
+">
+    {% if custom_subject %}
+    {{ custom_subject | safe }}
+    {% else %}
+    Assunto: {{ subject or 'Sem Assunto' }}
+    {% endif %}
+</div>

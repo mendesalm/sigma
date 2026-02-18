@@ -290,6 +290,7 @@ class Member(BaseModel):
     initiation_date = Column(Date, nullable=True)
     elevation_date = Column(Date, nullable=True)
     exaltation_date = Column(Date, nullable=True)
+    installation_date = Column(Date, nullable=True)
     affiliation_date = Column(Date, nullable=True)
     regularization_date = Column(Date, nullable=True)
     philosophical_degree = Column(String(100), nullable=True)

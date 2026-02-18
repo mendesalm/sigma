@@ -1,0 +1,72 @@
+﻿ D .agent/.shared/ui-ux-pro-max/data/charts.csv
+ D .agent/.shared/ui-ux-pro-max/data/colors.csv
+ D .agent/.shared/ui-ux-pro-max/data/icons.csv
+ D .agent/.shared/ui-ux-pro-max/data/landing.csv
+ D .agent/.shared/ui-ux-pro-max/data/products.csv
+ D .agent/.shared/ui-ux-pro-max/data/prompts.csv
+ D .agent/.shared/ui-ux-pro-max/data/react-performance.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/flutter.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/html-tailwind.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/jetpack-compose.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/nextjs.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/nuxtjs.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/react-native.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/react.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/shadcn.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/svelte.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/swiftui.csv
+ D .agent/.shared/ui-ux-pro-max/data/stacks/vue.csv
+ D .agent/.shared/ui-ux-pro-max/data/styles.csv
+ D .agent/.shared/ui-ux-pro-max/data/typography.csv
+ D .agent/.shared/ui-ux-pro-max/data/ui-reasoning.csv
+ D .agent/.shared/ui-ux-pro-max/data/ux-guidelines.csv
+ D .agent/.shared/ui-ux-pro-max/data/web-interface.csv
+ D .agent/.shared/ui-ux-pro-max/scripts/core.py
+ M backend/routes/document_routes.py
+ M backend/schemas/document_settings_schema.py
+ M backend/services/document_generation_service.py
+ M backend/services/document_strategies/balaustre_strategy.py
+ M backend/services/document_strategies/base_strategy.py
+ M backend/services/document_strategies/certificate_strategy.py
+ M backend/services/document_strategies/congratulation_strategy.py
+ M backend/services/document_strategies/electoral_balaustre_strategy.py
+ M backend/services/document_strategies/invitation_strategy.py
+ M backend/services/document_strategies/prancha_strategy.py
+ M backend/templates/balaustre_template.html
+ M debug_preview_output.html
+M  frontend/package-lock.json
+M  frontend/package.json
+ M frontend/src/components/DocumentBuilder/DocumentBuilder.tsx
+M  frontend/src/components/DocumentBuilder/RichTextVariableEditor.css
+M  frontend/src/components/DocumentBuilder/RichTextVariableEditor.tsx
+M  frontend/src/pages/Chanceler/Presencas.tsx
+M  frontend/src/pages/Chanceler/Visitantes.tsx
+M  frontend/src/pages/Dashboard/DashboardLayout.tsx
+M  frontend/src/pages/Dashboard/LodgeDashboardLayout.tsx
+M  frontend/src/pages/Documents/BalaustreEditor.tsx
+M  frontend/src/pages/Documents/components/BalaustreDocumentForm.tsx
+M  frontend/src/pages/Management/FamilyMemberForm.tsx
+M  frontend/src/pages/Management/LodgeForm.tsx
+M  frontend/src/pages/Management/MemberForm.tsx
+M  frontend/src/pages/Management/Members.tsx
+M  frontend/src/pages/Management/ObedienceForm.tsx
+M  frontend/src/pages/Management/RoleHistoryForm.tsx
+M  frontend/src/pages/Management/WebmasterForm.tsx
+M  frontend/src/pages/Obreiro/Classificados.tsx
+M  frontend/src/pages/Obreiro/MeuCadastro.tsx
+M  frontend/src/pages/Obreiro/MinhasPublicacoes.tsx
+M  frontend/src/pages/Secretario/Publicacoes.tsx
+M  frontend/src/pages/Sessions/SessionForm.tsx
+M  frontend/src/pages/Webmaster/AdministrationPage.tsx
+M  frontend/src/pages/Webmaster/DocumentConfigPage.tsx
+M  frontend/src/router.tsx
+M  frontend/src/types/index.ts
+?? backend/services/document_strategies/edital_strategy.py
+?? backend/templates/components/
+?? backend/templates/layouts/
+?? debug_document_balaustre_22.html
+?? git_diff_frontend.txt
+?? git_status_now.txt
+?? today_modified.txt
+?? today_src_modified.txt

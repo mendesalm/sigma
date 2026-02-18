@@ -1,0 +1,32 @@
+{% set config = settings.titles_config %}
+<div class="document-section-title" style="
+    text-align: {{ config.alignment or 'center' }}; 
+    font-weight: {{ 'bold' if config.bold else 'normal' }};
+    font-size: {{ config.font_size or '14pt' }};
+    margin-top: {{ config.margin_top or '0.5cm' }};
+    margin-bottom: {{ config.margin_bottom or '0.5cm' }};
+    text-transform: {{ 'uppercase' if config.uppercase else 'none' }};
+    color: {{ config.color or '#000' }};
+">
+    <!-- BALAUSTRE Specific Logic -->
+    {% if document_type == 'balaustre' %}
+    <div>À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴</div>
+    <div>{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
+    <div>BALAÚSTRE DA {{ session_number }}ª SESSÃO DO E∴ M∴ {{ exercicio_maconico }}</div>
+
+    <!-- PRANCHA Specific Logic -->
+    {% elif document_type == 'prancha' or document_type == 'edital' %}
+    <div>À GL∴ DO SUPR∴ ARQ∴ DO UNIV'∴</div>
+    <div>{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</div>
+    <div>PRANCHA Nº {{ document_number }}/{{ current_year }}</div>
+
+    <!-- CONVITE Specific Logic -->
+    {% elif document_type == 'convite' %}
+    <div style="font-size: 1.5em; margin-bottom: 0.5cm;">CONVITE</div>
+    <div>A {{ lodge_title_formatted }} {{ lodge_name }} tem a honra de convidar...</div>
+
+    <!-- CERTIFICADO Specific Logic -->
+    {% elif document_type == 'certificado' %}
+    <div style="font-size: 2em; margin-bottom: 1cm; border-bottom: 2px solid #ccc;">CERTIFICADO</div>
+    {% endif %}
+</div>
