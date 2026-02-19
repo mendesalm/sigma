@@ -119,11 +119,25 @@ def get_dashboard_stats(
     upcoming_birthdays.sort(key=lambda x: x['date'])
     
     # 4. Notices (Active)
-    active_notices_count = db.query(models.Notice).filter(
+    active_notices_query = db.query(models.Notice).filter(
         models.Notice.lodge_id == lodge_id,
         models.Notice.is_active == True,
         or_(models.Notice.expiration_date == None, models.Notice.expiration_date >= today)
-    ).count()
+    ).order_by(models.Notice.created_at.desc()) # Order by most recent
+    
+    active_notices_count = active_notices_query.count()
+    active_notices_list = active_notices_query.limit(5).all()
+    
+    active_notices_data = []
+    for n in active_notices_list:
+        active_notices_data.append({
+            "id": n.id,
+            "title": n.title,
+            "content": n.content,
+            "date_posted": n.created_at,
+            "expiration_date": n.expiration_date,
+            "lodge_id": n.lodge_id
+        })
     
     # 5. Next Session
     next_session = db.query(models.MasonicSession).filter(
@@ -191,15 +205,73 @@ def get_dashboard_stats(
         "members_list": members_list_data
     }
 
+    # 9. Lodge Info (For "Minha Loja" Widget)
+    lodge = db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
+    
+    lodge_info = {}
+    if lodge:
+        # Determine Potência and Subpotência
+        # Logic: If obedience has a parent, Parent is Potência, Obedience is Jurisdicionada (Subpotência).
+        # If no parent, Obedience is Potência.
+        
+        potencia = ""
+        subpotencia = ""
+        
+        if lodge.obedience:
+            if lodge.obedience.parent_obedience:
+                potencia = lodge.obedience.parent_obedience.name
+                subpotencia = lodge.obedience.name
+            else:
+                potencia = lodge.obedience.name
+                subpotencia = "" # Or maybe repeat? Let's leave empty for now or maybe "Jurisdicionada à [Potencia]" redundancy.
+                # User request says: "Federada ao {Potencia} e Jurisdicionada ao {Subpotencia}"
+                # If only one, maybe allow frontend to handle or just duplicate.
+                # Let's try to be smart: If no parent, it is THE Potencia. Subpotencia might not apply or be same.
+                
+        # Format Session Day/Time
+        session_day_str = lodge.session_day.value if hasattr(lodge.session_day, "value") else str(lodge.session_day)
+        session_time_str = lodge.session_time.strftime("%H:%M") if lodge.session_time else ""
+        
+        # Rite value
+        rite_str = lodge.rite.value if hasattr(lodge.rite, "value") else str(lodge.rite)
+
+        # Address Composite
+        address_parts = []
+        if lodge.street_address: address_parts.append(lodge.street_address)
+        if lodge.street_number: address_parts.append(lodge.street_number)
+        if lodge.neighborhood: address_parts.append(lodge.neighborhood)
+        if lodge.city: address_parts.append(lodge.city)
+        if lodge.state: address_parts.append(lodge.state)
+        if lodge.zip_code: address_parts.append(f"CEP {lodge.zip_code}")
+        
+        full_address = ", ".join(filter(None, address_parts))
+
+        lodge_info = {
+            "name": lodge.lodge_name,
+            "number": lodge.lodge_number,
+            "rite": rite_str,
+            "session_day": session_day_str,
+            "session_time": session_time_str,
+            "potencia": potencia,
+            "subpotencia": subpotencia,
+            "foundation_date": lodge.foundation_date.strftime("%d/%m/%Y") if lodge.foundation_date else "",
+            "address": full_address,
+            "email": lodge.email,
+            "cnpj": lodge.cnpj,
+            "id": lodge.id
+        }
+
     return {
         "total_members": total_members,
         "next_events": next_events,
         "upcoming_birthdays": upcoming_birthdays[:5], # Limit to 5
         "active_notices_count": active_notices_count,
+        "active_notices": active_notices_data,
         "next_session": next_session,
         "classifieds_count": classifieds_count,
         "dining_scale": dining_scale,
-        "lodge_members_stats": lodge_members_stats
+        "lodge_members_stats": lodge_members_stats,
+        "lodge_info": lodge_info
     }
 
 @router.get("/calendar")

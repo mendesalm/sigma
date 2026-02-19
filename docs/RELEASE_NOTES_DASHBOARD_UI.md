@@ -28,5 +28,17 @@ Esta atualização foca na otimização do layout do painel de controle (Dashboa
 - Identidade visual mais coesa com o uso consistente da cor dourada em títulos e menus.
 
 ## Próximos Passos
-- Monitorar o comportamento responsivo em telas menores (tablets/laptops com baixa resolução).
 - Validar se a altura fixa não corta conteúdo crítico em resoluções muito baixas.
+
+## Atualização 19/02/2026
+### Interatividade e Mural de Avisos
+- **Widget Minha Loja**:
+    - Agora totalmente interativo. O clique no widget redireciona para a página de gerenciamento da loja.
+    - Correção na verificação de permissões para exibição correta para Webmasters e cargos administrativos.
+- **Mural de Avisos**:
+    - **Correção Geral**: Os avisos ativos agora são exibidos corretamente na lista principal do dashboard.
+    - **Modal "Ver Todos"**: Adicionado suporte para Edição (✏️) e Exclusão (🗑️) de avisos diretamente pelo modal.
+    - **Data de Expiração**: Adicionado campo opcional para definir data de validade do aviso.
+    - **Correção de Data**: Datas de postagem agora são formatadas corretamente, corrigindo o erro "Invalid Date".
+- **Backend**:
+    - Atualização na rota `/dashboard/stats` para retornar a lista completa de objetos de avisos ativos, incluindo `created_at` (mapeado para `date_posted`) e `expiration_date`.

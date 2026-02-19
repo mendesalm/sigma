@@ -498,13 +498,13 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                                     <FormControl fullWidth variant="outlined">
                                         <InputLabel>Dia da Sessão</InputLabel>
                                         <Select name="session_day" value={formData.session_day} label="Dia da Sessão" onChange={handleChange}>
-                                        <MenuItem value="Domingo">Domingo</MenuItem>
-                                        <MenuItem value="Segunda-feira">Segunda-feira</MenuItem>
-                                        <MenuItem value="Terça-feira">Terça-feira</MenuItem>
-                                        <MenuItem value="Quarta-feira">Quarta-feira</MenuItem>
-                                        <MenuItem value="Quinta-feira">Quinta-feira</MenuItem>
-                                        <MenuItem value="Sexta-feira">Sexta-feira</MenuItem>
-                                        <MenuItem value="Sábado">Sábado</MenuItem>
+                                        <MenuItem value="Domingos">Domingos</MenuItem>
+                                        <MenuItem value="Segundas-feiras">Segundas-feiras</MenuItem>
+                                        <MenuItem value="Terças-feiras">Terças-feiras</MenuItem>
+                                        <MenuItem value="Quartas-feiras">Quartas-feiras</MenuItem>
+                                        <MenuItem value="Quintas-feiras">Quintas-feiras</MenuItem>
+                                        <MenuItem value="Sextas-feiras">Sextas-feiras</MenuItem>
+                                        <MenuItem value="Sábados">Sábados</MenuItem>
                                         </Select>
                                     </FormControl>
                                 </Grid>

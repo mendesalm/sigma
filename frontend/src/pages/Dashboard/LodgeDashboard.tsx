@@ -27,12 +27,17 @@ import {
   ArrowBackIosNew,
   ArrowForwardIos,
   Storefront as StoreIcon, // For Classifieds
-  Add as AddIcon, // Reusing existing if present or adding alias
+  Add as AddIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit as EditIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
-import { getDashboardStats, getCalendarEvents, getClassifieds, DashboardStats, CalendarEvent } from '../../services/dashboardService';
+import { getDashboardStats, getCalendarEvents, getClassifieds, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '../../services/dashboardService';
 import { ClassifiedResponse } from '../../types';
+import MinhaLojaWidget from './components/MinhaLojaWidget';
+import { useAuth } from '../../hooks/useAuth'; // Import useAuth
+import { TextField, DialogContentText } from '@mui/material'; // Import form components
 
 // Define Colors
 const COLORS = {
@@ -64,6 +69,15 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 const LodgeDashboard: React.FC = () => {
+  const { user } = useAuth(); // Get user from auth context
+  
+  // Permission Logic
+  const canManageLodge = 
+    user?.user_type === 'super_admin' || 
+    user?.user_type === 'webmaster' || 
+    (user?.user_type === 'member' && ['Venerável Mestre', 'Secretário', 'Secretário Adjunto'].includes(user?.active_role_name));
+  
+  const canManageNotices = canManageLodge; // Same permission for now
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -85,7 +99,16 @@ const LodgeDashboard: React.FC = () => {
 
   // Notice Modal State
   const [noticeModalOpen, setNoticeModalOpen] = useState(false);
+  const [allNoticesModalOpen, setAllNoticesModalOpen] = useState(false); // Modal for all notices
+  const [addNoticeModalOpen, setAddNoticeModalOpen] = useState(false); // Modal for adding notice
   const [selectedNotice, setSelectedNotice] = useState<{ title: string; content: string } | null>(null);
+  const [notices, setNotices] = useState<Notice[]>([]); // Store fetched notices
+  
+  // New Notice Form State
+  const [newNoticeTitle, setNewNoticeTitle] = useState('');
+  const [newNoticeContent, setNewNoticeContent] = useState('');
+  const [newNoticeExpiration, setNewNoticeExpiration] = useState('');
+  const [editingNoticeId, setEditingNoticeId] = useState<number | null>(null);
 
   // Members Modal State (New)
   const [membersModalOpen, setMembersModalOpen] = useState(false);
@@ -174,6 +197,94 @@ const LodgeDashboard: React.FC = () => {
     setNoticeModalOpen(false);
     setSelectedNotice(null);
   };
+  
+  const handleOpenAddNotice = () => {
+    setAddNoticeModalOpen(true);
+  };
+
+  const handleCloseAddNotice = () => {
+    setAddNoticeModalOpen(false);
+    setNewNoticeTitle('');
+    setNewNoticeContent('');
+    setNewNoticeExpiration('');
+    setEditingNoticeId(null);
+  };
+
+  const handleSaveNotice = async () => {
+    if (!newNoticeTitle || !newNoticeContent || !user?.lodge_id) return;
+    try {
+        if (editingNoticeId) {
+             const updatedNotice = await updateNotice(editingNoticeId, {
+                title: newNoticeTitle,
+                content: newNoticeContent,
+                expiration_date: newNoticeExpiration || null,
+                lodge_id: user.lodge_id
+            });
+            setNotices(notices.map(n => n.id === editingNoticeId ? updatedNotice : n));
+            // Update stats logic could be here but handled by refetch usually
+        } else {
+             const newNotice = await createNotice({
+                title: newNoticeTitle,
+                content: newNoticeContent,
+                expiration_date: newNoticeExpiration || undefined,
+                lodge_id: user.lodge_id
+            });
+             setNotices([newNotice, ...notices]);
+             if (stats) {
+                 setStats({
+                     ...stats,
+                     active_notices_count: stats.active_notices_count + 1,
+                     active_notices: [newNotice, ...(stats.active_notices || [])]
+                 });
+             }
+        }
+        handleCloseAddNotice();
+    } catch (error) {
+        console.error("Error saving notice:", error);
+    }
+  };
+  
+  const handleEditClick = (notice: Notice) => {
+      setNewNoticeTitle(notice.title);
+      setNewNoticeContent(notice.content);
+      setNewNoticeExpiration(notice.expiration_date || '');
+      setEditingNoticeId(notice.id);
+      setAddNoticeModalOpen(true);
+      // Close list modal if open? Ideally yes, or keep it open and open edit on top.
+      // Let's close list to avoid z-index issues for now or just stack them.
+      // Keeping list open might be better UX if user wants to edit another. 
+      // But MUI modals stack fine.
+  };
+
+  const handleDeleteClick = async (id: number) => {
+      if (!user?.lodge_id || !window.confirm('Tem certeza que deseja excluir este aviso?')) return;
+      try {
+          await deleteNotice(id, user.lodge_id);
+          setNotices(notices.filter(n => n.id !== id));
+          if (stats) {
+             setStats({
+                 ...stats,
+                 active_notices_count: Math.max(0, stats.active_notices_count - 1),
+                 active_notices: (stats.active_notices || []).filter(n => n.id !== id)
+             });
+          }
+      } catch (error) {
+          console.error("Error deleting notice:", error);
+      }
+  };
+  
+  const handleOpenAllNotices = async () => {
+       setAllNoticesModalOpen(true);
+       if (user?.lodge_id) {
+           try {
+               const data = await getNotices(user.lodge_id);
+               setNotices(data);
+           } catch (error) {
+               console.error("Error fetching notices:", error);
+           }
+       }
+  };
+
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -295,7 +406,10 @@ const LodgeDashboard: React.FC = () => {
         
         {/* Left Column */}
         <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
-           
+            
+            {/* Minha Loja Widget - ADDED HERE */}
+            <MinhaLojaWidget lodgeInfo={stats?.lodge_info} canManageLodge={canManageLodge} />
+
             {/* Membros da Loja Widget */}
             <Card 
                 sx={{ 
@@ -614,10 +728,32 @@ const LodgeDashboard: React.FC = () => {
             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                  <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
-                            Mural de Avisos
-                        </Typography>
-                        <Notifications sx={{ color: 'rgba(255,255,255,0.3)' }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                             <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                                Mural de Avisos
+                            </Typography>
+                             <Chip 
+                                label="VER TODOS" 
+                                size="small" 
+                                onClick={handleOpenAllNotices}
+                                sx={{ 
+                                    height: 20, 
+                                    fontSize: '0.65rem', 
+                                    bgcolor: 'rgba(255,255,255,0.05)', 
+                                    color: 'rgba(255,255,255,0.6)', 
+                                    cursor: 'pointer',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.1)', color: '#fff' }
+                                }} 
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            {canManageNotices && (
+                                <IconButton size="small" onClick={handleOpenAddNotice} sx={{ color: 'rgba(255,255,255,0.5)', '&:hover': { color: COLORS.gold } }}>
+                                    <AddIcon fontSize="small" />
+                                </IconButton>
+                            )}
+                            <Notifications sx={{ color: 'rgba(255,255,255,0.3)' }} />
+                        </Box>
                     </Box>
                     <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1 }}>
                         
@@ -663,17 +799,17 @@ const LodgeDashboard: React.FC = () => {
                         )}
 
                         {/* 2. Other Notices */}
-                        {stats?.active_notices_count && stats.active_notices_count > 0 ? (
-                             Array.from({length: Math.min(stats.active_notices_count, 3)}).map((_, i) => (
+                        {stats?.active_notices && stats.active_notices.length > 0 ? (
+                             stats.active_notices.map((notice) => (
                                 <ListItem 
-                                    key={i} 
+                                    key={notice.id} 
                                     button
-                                    onClick={() => handleNoticeClick(`Aviso da Diretoria ${i+1}`, 'Conteúdo detalhado do aviso da diretoria. Este é um exemplo de texto que viria do backend.')}
+                                    onClick={() => handleNoticeClick(notice.title, notice.content)}
                                     sx={{ alignItems: 'flex-start', py: 1 }}
                                 >
                                     <Campaign sx={{ color: COLORS.blue, fontSize: 18, mt: 0.5, mr: 1.5 }} />
                                     <ListItemText 
-                                        primary={`Aviso da Diretoria ${i+1}`}
+                                        primary={notice.title}
                                         secondary="Clique para ver detalhes."
                                         primaryTypographyProps={{ fontSize: '0.9rem' }}
                                         secondaryTypographyProps={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', mt: 0 }}
@@ -1033,6 +1169,195 @@ const LodgeDashboard: React.FC = () => {
             )}
         </DialogContent>
       </Dialog>
+      
+      {/* Add Notice Modal */}
+      <Dialog 
+        open={addNoticeModalOpen} 
+        onClose={handleCloseAddNotice}
+         PaperProps={{
+          sx: {
+            bgcolor: COLORS.background,
+            color: '#fff',
+            minWidth: 400,
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 20px rgba(0,0,0,0.5)`
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+            Novo Aviso
+          </Typography>
+          <IconButton onClick={handleCloseAddNotice} size="small" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+            <DialogContentText sx={{ color: 'rgba(255,255,255,0.7)', mb: 2 }}>
+                Publique um novo aviso para os membros da loja.
+            </DialogContentText>
+            <TextField
+                autoFocus
+                margin="dense"
+                id="title"
+                label="Título do Aviso"
+                type="text"
+                fullWidth
+                variant="outlined"
+                value={newNoticeTitle}
+                onChange={(e) => setNewNoticeTitle(e.target.value)}
+                sx={{ 
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: COLORS.gold },
+                        '&.Mui-focused fieldset': { borderColor: COLORS.gold },
+                    },
+                    '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: COLORS.gold },
+                }}
+            />
+             <TextField
+                margin="dense"
+                id="content"
+                label="Conteúdo"
+                type="text"
+                fullWidth
+                multiline
+                rows={4}
+                variant="outlined"
+                value={newNoticeContent}
+                onChange={(e) => setNewNoticeContent(e.target.value)}
+                sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: COLORS.gold },
+                        '&.Mui-focused fieldset': { borderColor: COLORS.gold },
+                    },
+                     '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: COLORS.gold },
+                }}
+            />
+             <TextField
+                margin="dense"
+                id="expiration"
+                label="Data de Expiração (Opcional)"
+                type="date"
+                fullWidth
+                variant="outlined"
+                InputLabelProps={{ shrink: true }}
+                value={newNoticeExpiration}
+                onChange={(e) => setNewNoticeExpiration(e.target.value)}
+                sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                        color: '#fff',
+                        '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+                        '&:hover fieldset': { borderColor: COLORS.gold },
+                        '&.Mui-focused fieldset': { borderColor: COLORS.gold },
+                        '& input::-webkit-calendar-picker-indicator': { filter: 'invert(1)' } 
+                    },
+                     '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' },
+                    '& .MuiInputLabel-root.Mui-focused': { color: COLORS.gold },
+                }}
+            />
+        </DialogContent>
+        <DialogActions sx={{ borderTop: '1px solid rgba(255,255,255,0.1)', p: 2 }}>
+            <Button onClick={handleCloseAddNotice} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
+            <Button onClick={handleSaveNotice} variant="contained" sx={{ bgcolor: COLORS.gold, color: '#000', '&:hover': { bgcolor: COLORS.goldDark } }}>
+                {editingNoticeId ? 'Salvar Alterações' : 'Publicar'}
+            </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* All Notices Modal */}
+        <Dialog 
+        open={allNoticesModalOpen} 
+        onClose={() => setAllNoticesModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: COLORS.background,
+            color: '#fff',
+            border: `1px solid ${COLORS.gold}`,
+            boxShadow: `0 0 30px rgba(0,0,0,0.8)`,
+            minHeight: '50vh'
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 2 }}>
+            <Box>
+                <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
+                    Mural de Avisos - Completo
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                    Todos os avisos da loja
+                </Typography>
+            </Box>
+            <IconButton onClick={() => setAllNoticesModalOpen(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                <CloseIcon />
+            </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2, pb: 4 }}>
+            <List>
+                {notices.length > 0 ? (
+                    notices.map((notice) => (
+                        <ListItem 
+                            key={notice.id} 
+                            sx={{ 
+                                bgcolor: COLORS.cardCheck, 
+                                mb: 2, 
+                                borderRadius: 1, 
+                                border: '1px solid rgba(255,255,255,0.05)' 
+                            }}
+                        >
+                            <Box sx={{ width: '100%' }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'flex-start' }}>
+                                    <Box>
+                                        <Typography variant="subtitle1" sx={{ color: COLORS.gold, fontWeight: 700 }}>
+                                            {notice.title}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block' }}>
+                                            Publicado em: {new Date(notice.date_posted).toLocaleDateString('pt-BR')}
+                                        </Typography>
+                                        {notice.expiration_date && (
+                                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'block' }}>
+                                                Expira em: {new Date(notice.expiration_date).toLocaleDateString('pt-BR')}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                    
+                                    {canManageNotices && (
+                                        <Box>
+                                            <IconButton size="small" onClick={() => handleEditClick(notice)} sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: COLORS.blue } }}>
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={() => handleDeleteClick(notice.id)} sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: '#ef4444' } }}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                    )}
+                                </Box>
+                                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', whiteSpace: 'pre-line' }}>
+                                    {notice.content}
+                                </Typography>
+                            </Box>
+                        </ListItem>
+                    ))
+                ) : (
+                    <Box sx={{ textAlign: 'center', py: 5 }}>
+                        <Campaign sx={{ fontSize: 60, color: 'rgba(255,255,255,0.1)', mb: 2 }} />
+                        <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                            Nenhum aviso encontrado.
+                        </Typography>
+                    </Box>
+                )}
+            </List>
+        </DialogContent>
+      </Dialog>
+
     </Box>
   );
 };

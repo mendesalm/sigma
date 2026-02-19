@@ -122,7 +122,9 @@ class LodgeBase(BaseModel):
         valid_days = {
             'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira',
             'Sexta-feira', 'Sábado', 'Domingo',
-            'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'
+            'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo',
+            'Segundas-feiras', 'Terças-feiras', 'Quartas-feiras', 'Quintas-feiras',
+            'Sextas-feiras', 'Sábados', 'Domingos'
         }
         if v not in valid_days:
             raise ValueError(f'Dia inválido. Use: {", ".join(sorted(set([d.split("-")[0] for d in valid_days])))}')

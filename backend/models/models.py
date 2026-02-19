@@ -174,13 +174,13 @@ class Lodge(BaseModel):
     status = Column(String(255), nullable=True)
     session_day = Column(
         SQLAlchemyEnum(
-            "Domingo",
-            "Segunda-feira",
-            "Terça-feira",
-            "Quarta-feira",
-            "Quinta-feira",
-            "Sexta-feira",
-            "Sábado",
+            "Domingos",
+            "Segundas-feiras",
+            "Terças-feiras",
+            "Quartas-feiras",
+            "Quintas-feiras",
+            "Sextas-feiras",
+            "Sábados",
             name="session_day_enum",
         ),
         nullable=True,
