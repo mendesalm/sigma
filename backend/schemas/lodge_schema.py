@@ -1,5 +1,5 @@
 from datetime import date, time
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, computed_field
 
 class LodgeBase(BaseModel):
     lodge_name: str = Field(..., min_length=3, max_length=255, description="Nome da loja")
@@ -8,6 +8,7 @@ class LodgeBase(BaseModel):
     foundation_date: date | None = Field(None, description="Data de fundação da loja")
     rite: str | None = Field(None, max_length=50, description="Rito praticado")
     obedience_id: int = Field(..., description="ID da obediência")
+    subobedience_id: int | None = Field(None, description="ID da subobediência")
     cnpj: str | None = Field(None, max_length=18, description="CNPJ no formato XX.XXX.XXX/XXXX-XX")
     email: EmailStr | None = Field(None, description="Email da loja")
     phone: str | None = Field(None, max_length=20, description="Telefone no formato (XX) XXXXX-XXXX")
@@ -194,6 +195,7 @@ class LodgeUpdate(BaseModel):
     foundation_date: date | None = None
     rite: str | None = Field(None, max_length=50)
     obedience_id: int | None = None
+    subobedience_id: int | None = None
     cnpj: str | None = Field(None, max_length=18)
     email: EmailStr | None = None
     phone: str | None = Field(None, max_length=20)
@@ -220,6 +222,8 @@ class LodgeResponse(LodgeBase):
     id: int
     lodge_code: str
     is_active: bool
+
+    formatted_affiliation: str | None = Field(None, description="Texto formatado das federações")
 
     class Config:
         from_attributes = True

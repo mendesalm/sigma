@@ -96,12 +96,20 @@ const MinhaLojaWidget: React.FC<MinhaLojaWidgetProps> = ({ lodgeInfo, canManageL
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
                             <Business sx={{ color: COLORS.gold, fontSize: 16, mt: 0.3, mr: 1 }} />
                             <Box>
-                                <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
-                                    Federada ao {lodgeInfo.potencia}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
-                                    Jurisdicionada ao {lodgeInfo.subpotencia}
-                                </Typography>
+                                {lodgeInfo.subpotencia ? (
+                                    <>
+                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                            Federada ao {lodgeInfo.potencia}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                            Jurisdicionada ao {lodgeInfo.subpotencia}
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                        Confederada à {lodgeInfo.potencia}
+                                    </Typography>
+                                )}
                             </Box>
                         </Box>
                     </Grid>

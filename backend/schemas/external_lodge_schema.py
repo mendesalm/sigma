@@ -5,6 +5,7 @@ class ExternalLodgeResponse(BaseModel):
     name: str
     number: str | None = None
     obedience: str | None = None
+    subobedience: str | None = None
     city: str | None = None
     state: str | None = None
 

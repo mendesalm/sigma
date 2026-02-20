@@ -37,6 +37,7 @@ def search_external_lodges(
             "name": lodge.lodge_name,
             "number": lodge.lodge_number,
             "obedience": lodge.obedience.name if lodge.obedience else None,
+            "subobedience": lodge.subobedience.name if hasattr(lodge, 'subobedience') and lodge.subobedience else None,
             "city": lodge.city,
             "state": lodge.state
         })

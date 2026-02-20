@@ -48,6 +48,7 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
     foundation_date: '',
     rite: '',
     obedience_id: '',
+    subobedience_id: '',
     cnpj: '',
     email: '',
     phone: '',
@@ -93,7 +94,7 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
     const fetchObediences = async () => {
       try {
         const response = await api.get('/obediences/', {
-          params: { only_top_level: true }
+          params: { limit: 1000 }
         });
         setObediences(response.data);
       } catch (error) {
@@ -150,7 +151,7 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
         city: newValue.city,
         state: newValue.state,
         external_id: newValue.id,
-        // Tenta mapear obediência se possível (lógica simples por string match poderia ser adicionada aqui)
+        // The API returns strings for obedience/subobedience, mapping to IDs would require searching the internal lists.
       }));
       setSnackbar({ open: true, message: 'Dados da loja importados! Complete o cadastro.', severity: 'success' });
     }
@@ -245,6 +246,7 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
     const lodgeData = {
       ...rest,
       obedience_id: obedience_id || null,
+      subobedience_id: rest.subobedience_id || null,
       foundation_date: foundation_date || null,
       session_time: session_time || null,
       email: sanitize(email),
@@ -359,7 +361,7 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                                     <Box>
                                         <Typography variant="body1">{option.name} N. {option.number}</Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {option.obedience} - {option.city}/{option.state}
+                                            {option.obedience}{option.subobedience ? ` / ${option.subobedience}` : ''} - {option.city}/{option.state}
                                         </Typography>
                                     </Box>
                                 </li>
@@ -399,8 +401,11 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                         <Grid item xs={12} md={6}>
                         <FormControl fullWidth variant="outlined">
                             <InputLabel>Obediência</InputLabel>
-                            <Select name="obedience_id" value={formData.obedience_id} label="Obediência" onChange={handleChange} required>
-                            {obediences.map((obedience: any) => (
+                            <Select name="obedience_id" value={formData.obedience_id} label="Obediência" onChange={(e) => {
+                                // Clear subobedience when obedience changes
+                                setFormData(prev => ({...prev, obedience_id: e.target.value as string, subobedience_id: ''}));
+                            }} required>
+                            {obediences.filter((ob: any) => !ob.parent_obedience_id).map((obedience: any) => (
                                 <MenuItem key={obedience.id} value={obedience.id}>
                                 {obedience.name}
                                 </MenuItem>
@@ -408,7 +413,21 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                             </Select>
                         </FormControl>
                         </Grid>
-
+                        {formData.obedience_id && obediences.some((ob: any) => ob.parent_obedience_id === formData.obedience_id) && (
+                            <Grid item xs={12} md={6}>
+                            <FormControl fullWidth variant="outlined">
+                                <InputLabel>Subobediência</InputLabel>
+                                <Select name="subobedience_id" value={formData.subobedience_id || ''} label="Subobediência" onChange={handleChange}>
+                                <MenuItem value="">Nenhuma</MenuItem>
+                                {obediences.filter((ob: any) => ob.parent_obedience_id === formData.obedience_id).map((obedience: any) => (
+                                    <MenuItem key={obedience.id} value={obedience.id}>
+                                    {obedience.name}
+                                    </MenuItem>
+                                ))}
+                                </Select>
+                            </FormControl>
+                            </Grid>
+                        )}
                         <Grid item xs={12} md={4}>
                         <TextField 
                             name="cnpj" 

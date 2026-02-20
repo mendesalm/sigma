@@ -36,6 +36,7 @@ import {
 import { getDashboardStats, getCalendarEvents, getClassifieds, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '../../services/dashboardService';
 import { ClassifiedResponse } from '../../types';
 import MinhaLojaWidget from './components/MinhaLojaWidget';
+import QuickAccessWidget from './components/QuickAccessWidget';
 import { useAuth } from '../../hooks/useAuth'; // Import useAuth
 import { TextField, DialogContentText } from '@mui/material'; // Import form components
 
@@ -822,74 +823,11 @@ const LodgeDashboard: React.FC = () => {
             </Card>
 
             {/* Escala Ágape */}
-             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 0 }}>
-                <CardContent sx={{ p: 0 }}>
-                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
-                            Escala Ágape
-                        </Typography>
-                        <Restaurant fontSize="small" sx={{ color: 'rgba(255,255,255,0.3)' }} />
-                    </Box>
-                    <List disablePadding>
-                        {stats?.dining_scale && stats.dining_scale.length > 0 ? (
-                            stats.dining_scale.slice(0, 3).map((item, idx) => (
-                                <ListItem key={idx} sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                                    <Box sx={{ mr: 2, bgcolor: 'rgba(255,255,255,0.05)', p: 1, borderRadius: 1 }}>
-                                        <Restaurant fontSize="small" sx={{ color: COLORS.gold }} />
-                                    </Box>
-                                    <ListItemText
-                                        primary={
-                                            <Typography variant="caption" sx={{ color: COLORS.gold, display: 'block', mb: 0.5, fontWeight: 700 }}>
-                                                IRMÃO HOSPITALEIRO
-                                            </Typography>
-                                        }
-                                        secondary={
-                                            <Typography variant="body2" sx={{ color: '#fff', fontSize: '0.9rem' }}>
-                                                {item.name}
-                                            </Typography>
-                                        }
-                                    />
-                                </ListItem>
-                            ))
-                        ) : (
-                            <Box sx={{ p: 3, textAlign: 'center' }}>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>Nenhuma escala definida.</Typography>
-                            </Box>
-                        )}
-                    </List>
-                </CardContent>
-            </Card>
-
             {/* Classificados Widget */}
-            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 0, cursor: 'pointer', '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' } }} onClick={() => handleOpenClassifiedsModal()}>
-                 <CardContent sx={{ p: 0 }}>
-                    <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold }}>
-                            Classificados
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <Chip label={stats?.classifieds_count || 0} size="small" sx={{ bgcolor: COLORS.blue, color: '#fff', height: 20, fontSize: '0.7rem' }} />
-                            <StoreIcon sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 20 }} />
-                        </Box>
-                    </Box>
-                    <Box sx={{ p: 2, textAlign: 'center' }}>
-                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', mb: 2, display: 'block' }}>
-                             Anúncios ativos na loja
-                         </Typography>
-                         <Button 
-                            variant="outlined" 
-                            size="small" 
-                            fullWidth
-                            startIcon={<AddIcon />} 
-                            onClick={(e) => { e.stopPropagation(); alert('Funcionalidade de inserir anúncio será implementada em breve.'); }}
-                            sx={{ color: COLORS.gold, borderColor: 'rgba(212, 175, 55, 0.3)' }}
-                         >
-                             Inserir Anúncio
-
-                         </Button>
-                    </Box>
-                </CardContent>
-            </Card>
+            <QuickAccessWidget 
+                onOpenClassifieds={handleOpenClassifiedsModal} 
+                onOpenDiningScale={() => alert("Modal da Escala do Ágape pronto para ser implementado.")}
+            />
 
         </Grid>
 

@@ -152,6 +152,7 @@ class Lodge(BaseModel):
     foundation_date = Column(Date, nullable=True)
     rite = Column(SQLAlchemyEnum(RiteEnum, values_callable=lambda x: [e.value for e in x]), nullable=True, default=RiteEnum.REAA)
     obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=False)
+    subobedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
     cnpj = Column(String(18), unique=True, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -187,11 +188,21 @@ class Lodge(BaseModel):
     )
     periodicity = Column(SQLAlchemyEnum("Semanal", "Quinzenal", "Mensal", name="periodicity_enum"), nullable=True)
     session_time = Column(Time, nullable=True)
-    obedience = relationship("Obedience", backref="lodges")
+    obedience = relationship("Obedience", foreign_keys=[obedience_id], backref="lodges")
+    subobedience = relationship("Obedience", foreign_keys=[subobedience_id], backref="sub_lodges")
     technical_contact_name = Column(String(255), nullable=False)
     technical_contact_email = Column(String(255), nullable=False)
     associations = relationship("MemberLodgeAssociation", back_populates="lodge", cascade="all, delete-orphan")
     document_settings = Column(JSON, nullable=True)
+
+    @property
+    def formatted_affiliation(self) -> str:
+        """Retorna a string formatada das potências da loja."""
+        if self.subobedience and self.obedience:
+            return f"Federada ao {self.obedience.name}\nJurisdicionada ao {self.subobedience.name}"
+        elif self.obedience:
+            return f"Confederada à {self.obedience.name}"
+        return ""
 
     __table_args__ = (
         CheckConstraint("latitude >= -90 AND latitude <= 90", name="chk_lodge_latitude"),

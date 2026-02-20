@@ -110,6 +110,8 @@ class DocumentStrategy(ABC):
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
             "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",
+            "lodge_obedience": lodge.obedience.name if lodge.obedience else "GOB",
+            "lodge_subobedience": lodge.subobedience.name if hasattr(lodge, 'subobedience') and lodge.subobedience else "GOB-Estadual",
             # Common footer assets could go here
         }
 

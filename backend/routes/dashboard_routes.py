@@ -218,15 +218,10 @@ def get_dashboard_stats(
         subpotencia = ""
         
         if lodge.obedience:
-            if lodge.obedience.parent_obedience:
-                potencia = lodge.obedience.parent_obedience.name
-                subpotencia = lodge.obedience.name
-            else:
-                potencia = lodge.obedience.name
-                subpotencia = "" # Or maybe repeat? Let's leave empty for now or maybe "Jurisdicionada à [Potencia]" redundancy.
-                # User request says: "Federada ao {Potencia} e Jurisdicionada ao {Subpotencia}"
-                # If only one, maybe allow frontend to handle or just duplicate.
-                # Let's try to be smart: If no parent, it is THE Potencia. Subpotencia might not apply or be same.
+            potencia = lodge.obedience.name
+            
+        if hasattr(lodge, 'subobedience') and lodge.subobedience:
+            subpotencia = lodge.subobedience.name
                 
         # Format Session Day/Time
         session_day_str = lodge.session_day.value if hasattr(lodge.session_day, "value") else str(lodge.session_day)
