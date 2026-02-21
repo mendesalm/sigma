@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Alert, Snackbar, Chip } from '@mui/material';
-import { Add, Delete, PhotoCamera, Refresh, Edit } from '@mui/icons-material';
-import { getMyClassifieds, createClassified, deleteClassified, reactivateClassified, updateClassified } from '../../services/api';
+import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Alert, Snackbar, Chip, FormControl, InputLabel, Select, MenuItem, IconButton } from '@mui/material';
+import { Add, Delete, PhotoCamera, Refresh, Edit, Close } from '@mui/icons-material';
+import { getMyClassifieds, createClassified, deleteClassified, reactivateClassified, updateClassified, deleteClassifiedPhoto, addClassifiedPhotos } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 const MeusAnuncios: React.FC = () => {
@@ -24,7 +24,10 @@ const MeusAnuncios: React.FC = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [zipCode, setZipCode] = useState('');
+  const [category, setCategory] = useState('Outros');
   const [files, setFiles] = useState<File[]>([]);
+
+  const CATEGORIES = ['Veículos', 'Imóveis', 'Serviços', 'Vestuário', 'Eletrônicos', 'Outros'];
 
   useEffect(() => {
     loadMyAds();
@@ -53,7 +56,8 @@ const MeusAnuncios: React.FC = () => {
       setCity(ad.city || '');
       setState(ad.state || '');
       setZipCode(ad.zip_code || '');
-      setFiles([]); // Files update not supported in edit mode yet for simplicity
+      setCategory(ad.category || 'Outros');
+      setFiles([]); 
     } else {
       setEditingAd(null);
       resetForm();
@@ -109,9 +113,20 @@ const MeusAnuncios: React.FC = () => {
           neighborhood,
           city,
           state,
-          zip_code: zipCode
+          zip_code: zipCode,
+          category
         };
         await updateClassified(editingAd.id, updateData);
+        
+        // Save additional files if added during edit
+        if (files.length > 0) {
+            const formData = new FormData();
+            files.forEach((file) => {
+              formData.append('files', file);
+            });
+            await addClassifiedPhotos(editingAd.id, formData);
+        }
+        
         setSnackbar({ open: true, message: 'Anúncio atualizado com sucesso!', severity: 'success' });
       } else {
         // Create
@@ -133,6 +148,7 @@ const MeusAnuncios: React.FC = () => {
         formData.append('city', city);
         formData.append('state', state);
         formData.append('zip_code', zipCode);
+        formData.append('category', category);
         
         files.forEach((file) => {
           formData.append('files', file);
@@ -189,15 +205,38 @@ const MeusAnuncios: React.FC = () => {
     setCity('');
     setState('');
     setZipCode('');
+    setCategory('Outros');
     setFiles([]);
+  };
+
+  const handleDeletePhoto = async (photoId: number) => {
+    if (!editingAd) return;
+    if (window.confirm('Excluir esta foto?')) {
+        try {
+            await deleteClassifiedPhoto(editingAd.id, photoId);
+            setSnackbar({ open: true, message: 'Foto excluída', severity: 'success' });
+            // Remove locally
+            setEditingAd((prev: any) => ({
+                ...prev,
+                photos: prev.photos.filter((p: any) => p.id !== photoId)
+            }));
+            const response = await getMyClassifieds();
+            setAds(response.data);
+        } catch (error) {
+            console.error(error);
+            setSnackbar({ open: true, message: 'Erro ao excluir foto', severity: 'error' });
+        }
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      if (selectedFiles.length > 5) {
-        setSnackbar({ open: true, message: 'Selecione no máximo 5 fotos', severity: 'warning' });
-        setFiles(selectedFiles.slice(0, 5));
+      const limit = editingAd ? (5 - (editingAd.photos?.length || 0)) : 5;
+      
+      if (selectedFiles.length > limit) {
+        setSnackbar({ open: true, message: `Selecione no máximo ${limit} fotos`, severity: 'warning' });
+        setFiles(selectedFiles.slice(0, limit));
       } else {
         setFiles(selectedFiles);
       }
@@ -224,8 +263,11 @@ const MeusAnuncios: React.FC = () => {
           <Grid item xs={12} sm={6} md={4} key={ad.id}>
             <Card sx={{ bgcolor: '#1e293b', color: '#fff' }}>
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="h6" gutterBottom>{ad.title}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6">{ad.title}</Typography>
+                    <Typography variant="caption" sx={{ color: theme => theme.palette.primary.main }}>{ad.category || 'Outros'}</Typography>
+                  </Box>
                   <Chip 
                     label={ad.status} 
                     color={ad.status === 'ACTIVE' ? 'success' : 'error'} 
@@ -276,7 +318,21 @@ const MeusAnuncios: React.FC = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Categoria</InputLabel>
+                  <Select
+                    value={category}
+                    label="Categoria"
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {CATEGORIES.map(cat => (
+                      <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={8}>
                 <TextField
                   label="Descrição"
                   fullWidth
@@ -373,7 +429,29 @@ const MeusAnuncios: React.FC = () => {
               </Grid>
             </Grid>
             
-            {!editingAd && (
+            {editingAd && editingAd.photos && editingAd.photos.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Fotos Atuais</Typography>
+                    <Grid container spacing={1}>
+                        {editingAd.photos.map((photo: any) => (
+                            <Grid item key={photo.id}>
+                                <Box sx={{ position: 'relative', width: 100, height: 100, border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
+                                    <img src={`${import.meta.env.VITE_API_URL}/storage/${photo.image_path}`} alt="Ad" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <IconButton 
+                                      size="small" 
+                                      sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(255,0,0,0.8)' } }}
+                                      onClick={() => handleDeletePhoto(photo.id)}
+                                    >
+                                        <Close fontSize="small" />
+                                    </IconButton>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+            )}
+
+            {(!editingAd || (editingAd && editingAd.photos?.length < 5)) && (
               <>
                 <Button
                   variant="outlined"
@@ -381,7 +459,7 @@ const MeusAnuncios: React.FC = () => {
                   startIcon={<PhotoCamera />}
                   sx={{ mt: 2 }}
                 >
-                  Upload Fotos (Máx 5)
+                  Upload Fotos (Máx {editingAd ? 5 - editingAd.photos.length : 5})
                   <input
                     type="file"
                     hidden
@@ -405,11 +483,6 @@ const MeusAnuncios: React.FC = () => {
                   </Box>
                 )}
               </>
-            )}
-            {editingAd && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                    * Edição de fotos não disponível nesta versão. Para alterar fotos, exclua e crie um novo anúncio.
-                </Typography>
             )}
           </Box>
         </DialogContent>

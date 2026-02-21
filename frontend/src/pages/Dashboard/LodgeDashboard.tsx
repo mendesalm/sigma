@@ -39,6 +39,7 @@ import MinhaLojaWidget from './components/MinhaLojaWidget';
 import QuickAccessWidget from './components/QuickAccessWidget';
 import { useAuth } from '../../hooks/useAuth'; // Import useAuth
 import { TextField, DialogContentText } from '@mui/material'; // Import form components
+import { useNavigate } from 'react-router-dom';
 
 // Define Colors
 const COLORS = {
@@ -120,14 +121,10 @@ const LodgeDashboard: React.FC = () => {
   const [classifiedsPage, setClassifiedsPage] = useState(0);
   const classifiedsPerPage = 4;
 
-  const handleOpenClassifiedsModal = async () => {
-      setClassifiedsModalOpen(true);
-      try {
-          const data = await getClassifieds();
-          setClassifiedsList(data);
-      } catch (error) {
-          console.error("Error fetching classifieds:", error);
-      }
+  const navigate = useNavigate();
+
+  const handleOpenClassifiedsModal = () => {
+      navigate('/dashboard/lodge-dashboard/obreiro/classificados');
   };
 
   const handlePrevPage = () => {

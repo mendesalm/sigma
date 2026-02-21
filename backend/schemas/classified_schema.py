@@ -23,6 +23,7 @@ class ClassifiedBase(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None
+    category: Optional[str] = None
 
 class ClassifiedCreate(ClassifiedBase):
     pass
@@ -39,6 +40,7 @@ class ClassifiedUpdate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None
+    category: Optional[str] = None
     status: Optional[str] = None
 
 class ClassifiedOut(ClassifiedBase):

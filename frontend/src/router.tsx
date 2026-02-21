@@ -48,6 +48,7 @@ import MinhasPresencas from './pages/Obreiro/MinhasPresencas';
 import MinhasVisitacoes from './pages/Obreiro/MinhasVisitacoes';
 import MinhasPublicacoes from './pages/Obreiro/MinhasPublicacoes';
 import MeusAnuncios from './pages/Obreiro/MeusAnuncios';
+import Classificados from './pages/Obreiro/Classificados';
 import MeusEmprestimos from './pages/Obreiro/MeusEmprestimos';
 
 // Secretário Pages
@@ -61,6 +62,11 @@ import ChancelerPresencas from './pages/Chanceler/Presencas';
 import ChancelerVisitacoes from './pages/Chanceler/Visitacoes';
 import ChancelerVisitantes from './pages/Chanceler/Visitantes';
 import CommitteesPage from './pages/Committees/CommitteesPage';
+
+// Bibliotecário Pages
+import LibraryManage from './pages/Library/LibraryManage';
+import LibraryLoans from './pages/Library/LibraryLoans';
+import MemberLibrary from './pages/Library/MemberLibrary';
 
 import PublicLayout from './components/layout/PublicLayout'; // Import PublicLayout
 import MyLodgePage from './pages/Webmaster/MyLodgePage';
@@ -132,6 +138,14 @@ const router = createBrowserRouter([
                 path: 'obreiro/meus-emprestimos',
                 element: <MeusEmprestimos />,
               },
+              {
+                path: 'obreiro/classificados',
+                element: <Classificados />,
+              },
+              {
+                path: 'obreiro/biblioteca',
+                element: <MemberLibrary />,
+              },
               // Secretário Routes
               {
                 path: 'secretario/cadastro',
@@ -187,6 +201,15 @@ const router = createBrowserRouter([
               {
                 path: 'chanceler/comissoes',
                 element: <CommitteesPage />,
+              },
+              // Bibliotecário Routes
+              {
+                path: 'bibliotecario/acervo',
+                element: <LibraryManage />,
+              },
+              {
+                path: 'bibliotecario/emprestimos',
+                element: <LibraryLoans />,
               },
               // Legacy routes for compatibility
               {

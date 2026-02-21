@@ -783,6 +783,7 @@ class Classified(BaseModel):
     city = Column(String(100), nullable=True)
     state = Column(String(2), nullable=True)
     zip_code = Column(String(9), nullable=True)
+    category = Column(String(50), nullable=True)
     
     status = Column(String(50), default="ACTIVE")  # ACTIVE, EXPIRED
     expires_at = Column(DateTime(timezone=True), nullable=False)
@@ -869,4 +870,99 @@ class CommitteeMember(BaseModel):
 
     committee = relationship("Committee", back_populates="members")
     member = relationship("Member")
+
+
+# --- LIBRARY MODELS ---
+
+class BookConditionEnum(str, enum.Enum):
+    NEW = "Novo"
+    GOOD = "Bom"
+    FAIR = "Regular"
+    POOR = "Ruim"
+
+
+class ItemStatusEnum(str, enum.Enum):
+    AVAILABLE = "Disponível"
+    LOANED = "Emprestado"
+    RESERVED = "Reservado"
+    LOST = "Extraviado"
+
+
+class LoanStatusEnum(str, enum.Enum):
+    ACTIVE = "Ativo"
+    RETURNED = "Devolvido"
+    LATE = "Atrasado"
+
+
+class WaitlistStatusEnum(str, enum.Enum):
+    WAITING = "Aguardando"
+    NOTIFIED = "Notificado"
+    FULFILLED = "Atendido"
+    CANCELED = "Cancelado"
+    EXPIRED = "Expirado"
+
+
+class Book(BaseModel):
+    __tablename__ = "books"
+    id = Column(Integer, primary_key=True, index=True)
+    isbn = Column(String(50), unique=True, nullable=True, index=True)
+    title = Column(String(255), nullable=False)
+    author = Column(String(255), nullable=False)
+    publisher = Column(String(255), nullable=True)
+    publish_year = Column(Integer, nullable=True)
+    pages = Column(Integer, nullable=True)
+    cover_url = Column(String(512), nullable=True)
+    synopsis = Column(Text, nullable=True)
+    required_degree = Column(Integer, nullable=False, default=1)  # 1=Apprentice, 2=Fellowcraft, 3=Master
+
+    __table_args__ = (
+        CheckConstraint("required_degree >= 1 AND required_degree <= 3", name="chk_book_required_degree"),
+    )
+
+
+class LibraryItem(BaseModel):
+    __tablename__ = "library_items"
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    inventory_code = Column(String(100), nullable=True)
+    condition = Column(SQLAlchemyEnum(BookConditionEnum, name="book_condition_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=BookConditionEnum.GOOD)
+    status = Column(SQLAlchemyEnum(ItemStatusEnum, name="item_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=ItemStatusEnum.AVAILABLE)
+
+    book = relationship("Book", backref="items")
+    lodge = relationship("Lodge", backref="library_items")
+
+
+class Loan(BaseModel):
+    __tablename__ = "loans"
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("library_items.id"), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    loan_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    due_date = Column(DateTime(timezone=True), nullable=False)
+    return_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(SQLAlchemyEnum(LoanStatusEnum, name="loan_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=LoanStatusEnum.ACTIVE)
+
+    item = relationship("LibraryItem", backref="loans")
+    member = relationship("Member", backref="loans")
+
+    __table_args__ = (
+        CheckConstraint("due_date > loan_date", name="chk_loan_dates"),
+    )
+
+
+class Waitlist(BaseModel):
+    __tablename__ = "waitlists"
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    request_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    status = Column(SQLAlchemyEnum(WaitlistStatusEnum, name="waitlist_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=WaitlistStatusEnum.WAITING)
+    notification_date = Column(DateTime(timezone=True), nullable=True)
+    expiration_date = Column(DateTime(timezone=True), nullable=True)
+
+    book = relationship("Book", backref="waitlists")
+    lodge = relationship("Lodge", backref="waitlists")
+    member = relationship("Member", backref="waitlists")
 

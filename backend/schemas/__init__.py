@@ -20,3 +20,7 @@ from schemas.super_admin_schema import *
 from schemas.visit_schema import *
 from schemas.visitor_schema import *
 from schemas.webmaster_schema import *
+from schemas.book_schema import *
+from schemas.library_item_schema import *
+from schemas.loan_schema import *
+from schemas.waitlist_schema import *

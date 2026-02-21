@@ -58,7 +58,8 @@ def create_classified(
         status="ACTIVE",
         expires_at=expires_at,
         lodge_id=lodge_id,
-        member_id=member_id
+        member_id=member_id,
+        category=classified_data.category
     )
     db.add(new_classified)
     db.commit()
@@ -84,6 +85,92 @@ def create_classified(
         db.refresh(new_classified)
         
     return new_classified
+
+def add_classified_photos(
+    db: Session,
+    classified_id: int,
+    files: List[UploadFile],
+    current_user_payload: dict
+):
+    member_id = current_user_payload.get("sub")
+    user_type = current_user_payload.get("user_type")
+    
+    classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
+    if not classified:
+        raise HTTPException(status_code=404, detail="Classified not found")
+        
+    if classified.member_id != member_id and user_type != "super_admin":
+         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+         
+    # Check max limit
+    current_photos_count = len(classified.photos)
+    if current_photos_count + len(files) > MAX_FILES:
+        raise HTTPException(status_code=400, detail=f"Maximum of {MAX_FILES} photos allowed. You currently have {current_photos_count}.")
+
+    for file in files:
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        if size > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail=f"File {file.filename} exceeds 2MB limit.")
+
+    if files:
+        classified_dir = os.path.join(UPLOAD_DIR, str(classified.id))
+        os.makedirs(classified_dir, exist_ok=True)
+        
+        for file in files:
+            file_path = os.path.join(classified_dir, file.filename)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            relative_path = f"classifieds/{classified.id}/{file.filename}"
+            photo = models.ClassifiedPhoto(
+                classified_id=classified.id,
+                image_path=relative_path
+            )
+            db.add(photo)
+        db.commit()
+        db.refresh(classified)
+
+    return classified
+
+def delete_classified_photo(
+    db: Session,
+    classified_id: int,
+    photo_id: int,
+    current_user_payload: dict
+):
+    member_id = current_user_payload.get("sub")
+    user_type = current_user_payload.get("user_type")
+    
+    classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
+    if not classified:
+        raise HTTPException(status_code=404, detail="Classified not found")
+        
+    if classified.member_id != member_id and user_type != "super_admin":
+         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+         
+    photo = db.query(models.ClassifiedPhoto).filter(
+        models.ClassifiedPhoto.id == photo_id,
+        models.ClassifiedPhoto.classified_id == classified_id
+    ).first()
+    
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    # Obter caminho base
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    full_path = os.path.join(base_dir, "uploads", photo.image_path)
+    
+    # Apagar arq fisico se existir
+    # Note que image_path = "classifieds/1/foo.jpg". UPLOAD_DIR = "uploads/classifieds"
+    # full_path deve ser base_dir/uploads/classifieds/1/foo.jpg
+    if os.path.exists(full_path):
+        os.remove(full_path)
+    
+    db.delete(photo)
+    db.commit()
+    return None
 
 def get_all_active_classifieds(db: Session):
     classifieds = db.query(models.Classified).filter(models.Classified.status == "ACTIVE").all()

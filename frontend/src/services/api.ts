@@ -130,6 +130,18 @@ export const updateClassified = (id: number, data: any) => {
   return api.put(`/classifieds/${id}`, data);
 };
 
+export const deleteClassifiedPhoto = (id: number, photoId: number) => {
+  return api.delete(`/classifieds/${id}/photos/${photoId}`);
+};
+
+export const addClassifiedPhotos = (id: number, formData: FormData) => {
+  return api.post(`/classifieds/${id}/photos/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
 export const uploadLodgeLogo = (lodgeId: number, formData: FormData) => {
   return api.post(`/lodges/${lodgeId}/logo`, formData, {
     headers: {

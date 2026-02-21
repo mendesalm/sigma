@@ -43,6 +43,7 @@ from routes import (  # noqa: E402
     notice_routes,
     report_routes,
     administration_routes,
+    library_routes,
 )
 
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
@@ -227,6 +228,7 @@ app.include_router(publication_routes.router)
 app.include_router(notice_routes.router)
 app.include_router(administration_routes.router)
 app.include_router(report_routes.router)
+app.include_router(library_routes.router)
 
 
 # Mount static files AFTER routers

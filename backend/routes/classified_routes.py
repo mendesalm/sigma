@@ -21,6 +21,7 @@ def create_classified(
     city: str = Form(None),
     state: str = Form(None),
     zip_code: str = Form(None),
+    category: str = Form(None),
     files: List[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload)
@@ -36,9 +37,29 @@ def create_classified(
         neighborhood=neighborhood,
         city=city,
         state=state,
-        zip_code=zip_code
+        zip_code=zip_code,
+        category=category
     )
     return classified_service.create_classified(db, classified_data, files, current_user_payload)
+
+@router.delete("/{classified_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_classified_photo(
+    classified_id: int,
+    photo_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload)
+):
+    classified_service.delete_classified_photo(db, classified_id, photo_id, current_user_payload)
+    return None
+
+@router.post("/{classified_id}/photos/", response_model=classified_schema.ClassifiedOut)
+def add_classified_photos(
+    classified_id: int,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload)
+):
+    return classified_service.add_classified_photos(db, classified_id, files, current_user_payload)
 
 @router.get("/", response_model=List[classified_schema.ClassifiedOut])
 def list_classifieds(

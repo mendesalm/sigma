@@ -8,8 +8,11 @@ const Classificados: React.FC = () => {
   const [ads, setAds] = useState<any[]>([]);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedAd, setSelectedAd] = useState<any | null>(null);
   const [activeStep, setActiveStep] = useState(0);
+
+  const CATEGORIES = ['Todos', 'Veículos', 'Imóveis', 'Serviços', 'Vestuário', 'Eletrônicos', 'Outros'];
 
   useEffect(() => {
     loadAds();
@@ -24,10 +27,13 @@ const Classificados: React.FC = () => {
     }
   };
 
-  const filteredAds = ads.filter(ad => 
-    ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ad.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAds = ads.filter(ad => {
+    const matchesSearch = ad.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          ad.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const adCat = ad.category || 'Outros';
+    const matchesCat = selectedCategory === 'Todos' || adCat === selectedCategory;
+    return matchesSearch && matchesCat;
+  });
 
   const getDaysRemaining = (expiresAt: string) => {
     const now = new Date();
@@ -103,6 +109,30 @@ const Classificados: React.FC = () => {
             }
           }}
         />
+      </Box>
+
+      {/* Categories Filter */}
+      <Box sx={{ mb: 4, display: 'flex', gap: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 6 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 3 } }}>
+        {CATEGORIES.map(cat => (
+          <Chip
+            key={cat}
+            label={cat}
+            clickable
+            onClick={() => setSelectedCategory(cat)}
+            sx={{ 
+                bgcolor: selectedCategory === cat ? theme.palette.primary.main : 'rgba(255,255,255,0.05)',
+                color: selectedCategory === cat ? '#fff' : 'rgba(255,255,255,0.7)',
+                fontWeight: selectedCategory === cat ? 700 : 400,
+                border: selectedCategory === cat ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(4px)',
+                px: 1,
+                transition: 'all 0.2s',
+                '&:hover': {
+                    bgcolor: selectedCategory === cat ? theme.palette.primary.dark : 'rgba(255,255,255,0.1)'
+                }
+            }}
+          />
+        ))}
       </Box>
 
       <Grid container spacing={4}>
@@ -225,6 +255,15 @@ const Classificados: React.FC = () => {
                       bgcolor: 'rgba(255,152,0,0.15)', 
                       color: '#ffb74d',
                       border: '1px solid rgba(255,152,0,0.3)'
+                    }}
+                   />
+                   <Chip 
+                    label={ad.category || 'Outros'}
+                    size="small" 
+                    sx={{ 
+                      bgcolor: 'rgba(33, 150, 243, 0.15)', 
+                      color: '#64b5f6',
+                      border: '1px solid rgba(33, 150, 243, 0.3)'
                     }}
                    />
                 </Box>
