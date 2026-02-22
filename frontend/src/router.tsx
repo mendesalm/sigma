@@ -50,12 +50,16 @@ import MinhasPublicacoes from './pages/Obreiro/MinhasPublicacoes';
 import MeusAnuncios from './pages/Obreiro/MeusAnuncios';
 import Classificados from './pages/Obreiro/Classificados';
 import MeusEmprestimos from './pages/Obreiro/MeusEmprestimos';
+import MeuExtrato from './pages/Obreiro/MeuExtrato';
 
 // Secretário Pages
 import SecretarioPresencas from './pages/Secretario/Presencas';
 import SecretarioPublicacoes from './pages/Secretario/Publicacoes';
 import QuadroObreiros from './pages/Secretario/Relatorios/QuadroObreiros';
 
+// Tesoureiro Pages
+import DashboardFinanceiro from './pages/Tesoureiro/DashboardFinanceiro';
+import LancamentosList from './pages/Tesoureiro/LancamentosList';
 
 // Chanceler Pages
 import ChancelerPresencas from './pages/Chanceler/Presencas';
@@ -139,6 +143,10 @@ const router = createBrowserRouter([
                 element: <MeusEmprestimos />,
               },
               {
+                path: 'obreiro/meu-extrato',
+                element: <MeuExtrato />,
+              },
+              {
                 path: 'obreiro/classificados',
                 element: <Classificados />,
               },
@@ -176,6 +184,15 @@ const router = createBrowserRouter([
                   { path: ':id', element: <SessionDetailsPage /> },
                   { path: ':sessionId/balaustre', element: <BalaustreEditor /> },
                 ]
+              },
+              // Tesoureiro Routes
+              {
+                path: 'tesoureiro/dashboard',
+                element: <DashboardFinanceiro />,
+              },
+              {
+                path: 'tesoureiro/lancamentos',
+                element: <LancamentosList />,
               },
               // Chanceler Routes
               {

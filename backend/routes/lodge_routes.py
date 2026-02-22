@@ -15,7 +15,13 @@ router = APIRouter(
 # Now using shared dependency
 
 
-@router.post("/", response_model=lodge_schema.LodgeResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=lodge_schema.LodgeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar Nova Loja",
+    description="Cria o registro de uma nova Loja Maçônica no sistema. Acesso restrito a Super Admins."
+)
 def create_lodge(
     lodge: lodge_schema.LodgeCreate,
     db: Session = Depends(database.get_db),
@@ -25,14 +31,24 @@ def create_lodge(
     return lodge_service.create_lodge(db=db, lodge=lodge)
 
 
-@router.get("/", response_model=list[lodge_schema.LodgeResponse])
+@router.get(
+    "/",
+    response_model=list[lodge_schema.LodgeResponse],
+    summary="Listar Todas as Lojas",
+    description="Retorna uma lista paginada de todas as lojas cadastradas no portal."
+)
 def read_lodges(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
     """Retrieve all lodges. Publicly accessible."""
     lodges = lodge_service.get_lodges(db, skip=skip, limit=limit)
     return lodges
 
 
-@router.get("/{lodge_id}", response_model=lodge_schema.LodgeResponse)
+@router.get(
+    "/{lodge_id}",
+    response_model=lodge_schema.LodgeResponse,
+    summary="Obter Detalhes da Loja",
+    description="Recupera as informações detalhadas de uma loja específica utilizando seu ID interno."
+)
 def read_lodge(lodge_id: int, db: Session = Depends(database.get_db)):
     """Retrieve a single lodge by ID. Publicly accessible."""
     db_lodge = lodge_service.get_lodge(db, lodge_id=lodge_id)
@@ -41,7 +57,12 @@ def read_lodge(lodge_id: int, db: Session = Depends(database.get_db)):
     return db_lodge
 
 
-@router.put("/{lodge_id}", response_model=lodge_schema.LodgeResponse)
+@router.put(
+    "/{lodge_id}",
+    response_model=lodge_schema.LodgeResponse,
+    summary="Atualizar Dados da Loja",
+    description="Atualiza as informações de uma loja (endereço, rito, contatos, etc). Apenas Webmasters da respectiva loja ou Super Admins têm permissão."
+)
 def update_lodge(
     lodge_id: int,
     lodge: lodge_schema.LodgeUpdate,
@@ -66,7 +87,12 @@ def update_lodge(
     return db_lodge
 
 
-@router.delete("/{lodge_id}", response_model=lodge_schema.LodgeResponse)
+@router.delete(
+    "/{lodge_id}",
+    response_model=lodge_schema.LodgeResponse,
+    summary="Excluir Loja",
+    description="Remove permanentemente uma loja do sistema. Acesso restrito estruturalmente para Super Admins."
+)
 def delete_lodge(
     lodge_id: int,
     db: Session = Depends(database.get_db),

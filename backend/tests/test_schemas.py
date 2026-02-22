@@ -269,7 +269,7 @@ class TestSessionSchema:
             status="AGENDADA"
         )
         
-        assert session.title == "Sessão Magna De Iniciação"  # Title case
+        assert session.title == "Sessão Magna de Iniciação"  # Smart Title case
         assert session.status == "AGENDADA"
     
     def test_invalid_status_rejected(self):

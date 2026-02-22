@@ -178,6 +178,9 @@ app = FastAPI(
 @app.on_event("startup")
 def startup_event():
     """Inicia o agendador de tarefas quando a aplicação é iniciada."""
+    if "pytest" in sys.modules:
+        print("Test environment detected. Skipping background scheduler.")
+        return
     initialize_scheduler()
 
 

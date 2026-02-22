@@ -883,34 +883,39 @@ class DocumentGenerationService:
              db.close()
 
     async def generate_balaustre_pdf_task(self, session_id: int, current_user_payload: dict, custom_content: dict = None, doc_type_key: str = 'balaustre'):
-         custom_text = custom_content.get('text') if custom_content else None
-         html, pdf, ctx = await self.generate_document(doc_type_key, session_id, current_user_payload, custom_text=custom_text)
-         
-         db = SessionLocal()
          try:
-             title = f"Balaústre Sessão {ctx.get('session_number', '')} - {ctx.get('DiaSessao', '')}"
-             filename = f"balaustre_sessao_{session_id}.pdf"
+             custom_text = custom_content.get('text') if custom_content else None
+             html, pdf, ctx = await self.generate_document(doc_type_key, session_id, current_user_payload, custom_text=custom_text)
              
-             new_doc = await document_service.create_document(
-                 db=db,
-                 title=title,
-                 current_user_payload=current_user_payload,
-                 file_content_bytes=pdf,
-                 filename=filename,
-                 content_type="application/pdf"
-             )
-             new_doc.document_type = "BALAUSTRE"
-             new_doc.session_id = session_id
-             
-             # Opcional: Atualizar status
-             session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
-             if session:
-                  session.status = "ATA_GERADA"
-                  
-             db.commit()
-             print(f"Balaústre gerado: {new_doc.id}")
-         finally:
-             db.close()
+             db = SessionLocal()
+             try:
+                 title = f"Balaústre Sessão {ctx.get('session_number', '')} - {ctx.get('DiaSessao', '')}"
+                 filename = f"balaustre_sessao_{session_id}.pdf"
+                 
+                 new_doc = await document_service.create_document(
+                     db=db,
+                     title=title,
+                     current_user_payload=current_user_payload,
+                     file_content_bytes=pdf,
+                     filename=filename,
+                     content_type="application/pdf"
+                 )
+                 new_doc.document_type = "BALAUSTRE"
+                 new_doc.session_id = session_id
+                 
+                 # Opcional: Atualizar status
+                 session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+                 if session:
+                      session.status = "ATA_GERADA"
+                      
+                 db.commit()
+                 print(f"Balaústre gerado: {new_doc.id}")
+             finally:
+                 db.close()
+         except Exception as e:
+             import traceback
+             print(f"Erro silencioso no background task de balaustre: {e}")
+             traceback.print_exc()
 
     async def generate_signed_balaustre_task(self, session_id: int, current_user_payload: dict, custom_content: dict = None):
         # Specific logic for signature hash injection... 
@@ -967,60 +972,70 @@ class DocumentGenerationService:
              db.close()
 
     async def generate_invitation_task(self, session_id: int, current_user_payload: dict, custom_message: str = None):
-         html, pdf, ctx = await self.generate_document('convite', session_id, current_user_payload, custom_message=custom_message)
-         
-         db = SessionLocal()
          try:
-             title = f"Convite - {ctx.get('event_title', 'Sessão')}"
-             filename = f"convite_{session_id}.pdf"
+             html, pdf, ctx = await self.generate_document('convite', session_id, current_user_payload, custom_message=custom_message)
              
-             new_doc = await document_service.create_document(
-                 db=db,
-                 title=title,
-                 current_user_payload=current_user_payload,
-                 file_content_bytes=pdf,
-                 filename=filename,
-                 content_type="application/pdf"
-             )
-             new_doc.document_type = "CONVITE"
-             new_doc.session_id = session_id
-             db.commit()
-             print(f"Convite gerado: {new_doc.id}")
-         finally:
-             db.close()
+             db = SessionLocal()
+             try:
+                 title = f"Convite - {ctx.get('event_title', 'Sessão')}"
+                 filename = f"convite_{session_id}.pdf"
+                 
+                 new_doc = await document_service.create_document(
+                     db=db,
+                     title=title,
+                     current_user_payload=current_user_payload,
+                     file_content_bytes=pdf,
+                     filename=filename,
+                     content_type="application/pdf"
+                 )
+                 new_doc.document_type = "CONVITE"
+                 new_doc.session_id = session_id
+                 db.commit()
+                 print(f"Convite gerado: {new_doc.id}")
+             finally:
+                 db.close()
+         except Exception as e:
+             import traceback
+             print(f"Erro no background task convite: {e}")
+             traceback.print_exc()
 
 
 
 
     async def generate_edital_pdf_task(self, session_id: int, current_user_payload: dict):
-        html, pdf, ctx = await self.generate_document('prancha', session_id, current_user_payload)
-         
-        db = SessionLocal()
         try:
-             # Title logic uses ctx which matches Strategy keys
-             title = f"Edital de Convocação - {ctx.get('DiaSessao', '')}" 
-             # Or use session_data logic if strategies vary. 
-             # PranchaStrategy should return 'session_title' etc?
-             # Let's hope context has keys. BaseStrategy ensures session title/date exists.
+            html, pdf, ctx = await self.generate_document('prancha', session_id, current_user_payload)
              
-             filename = f"edital_sessao_{session_id}.pdf"
-             
-             new_doc = await document_service.create_document(
-                 db=db, 
-                 title=title, 
-                 current_user_payload=current_user_payload, 
-                 file_content_bytes=pdf, 
-                 filename=filename, 
-                 content_type="application/pdf"
-             )
-             new_doc.document_type = "EDITAL"
-             new_doc.session_id = session_id
-             db.commit()
-             print(f"Edital gerado: {new_doc.id}")
+            db = SessionLocal()
+            try:
+                 # Title logic uses ctx which matches Strategy keys
+                 title = f"Edital de Convocação - {ctx.get('DiaSessao', '')}" 
+                 # Or use session_data logic if strategies vary. 
+                 # PranchaStrategy should return 'session_title' etc?
+                 # Let's hope context has keys. BaseStrategy ensures session title/date exists.
+                 
+                 filename = f"edital_sessao_{session_id}.pdf"
+                 
+                 new_doc = await document_service.create_document(
+                     db=db, 
+                     title=title, 
+                     current_user_payload=current_user_payload, 
+                     file_content_bytes=pdf, 
+                     filename=filename, 
+                     content_type="application/pdf"
+                 )
+                 new_doc.document_type = "EDITAL"
+                 new_doc.session_id = session_id
+                 db.commit()
+                 print(f"Edital gerado: {new_doc.id}")
+            except Exception as e:
+                 print(f"ERRO interno ao gerar edital: {e}")
+            finally:
+                 db.close()
         except Exception as e:
-             print(f"ERRO ao gerar edital: {e}")
-        finally:
-             db.close()
+             import traceback
+             print(f"Erro no background task edital: {e}")
+             traceback.print_exc()
 
 
 

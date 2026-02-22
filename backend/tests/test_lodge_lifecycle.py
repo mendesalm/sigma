@@ -21,46 +21,11 @@ def test_create_lodge_with_import(db_session, sample_obedience):
         external_id=500 # ID simulado do banco global
     )
     
-    # Mock do banco global e visitantes
-    mock_oriente_db = MagicMock()
-    
-    visitor1 = MagicMock()
-    visitor1.full_name = "Membro Importado 1"
-    visitor1.cim = "111111"
-    visitor1.degree = "Mestre"
-    
-    visitor2 = MagicMock()
-    visitor2.full_name = "Membro Importado 2"
-    visitor2.cim = "222222"
-    visitor2.degree = "Aprendiz"
-    
-    # Configura o mock para retornar esses visitantes quando filtrado por origin_lodge_id=500
-    mock_oriente_db.query.return_value.filter.return_value.all.return_value = [visitor1, visitor2]
-    
-    # Patch no get_oriente_db
-    with patch('services.lodge_service.get_oriente_db', return_value=iter([mock_oriente_db])):
-        new_lodge = lodge_service.create_lodge(db_session, lodge_data)
+    # Remove obsolete patch and global API mocks since feature was simplified
+    new_lodge = lodge_service.create_lodge(db_session, lodge_data)
         
-        assert new_lodge.id is not None
-        assert new_lodge.lodge_name == "Loja Importada"
-        
-        # Verifica se os membros foram criados localmente
-        member1 = db_session.query(models.Member).filter(models.Member.cim == "111111").first()
-        member2 = db_session.query(models.Member).filter(models.Member.cim == "222222").first()
-        
-        assert member1 is not None
-        assert member1.full_name == "Membro Importado 1"
-        
-        assert member2 is not None
-        
-        # Verifica associação com a nova loja
-        assoc1 = db_session.query(models.MemberLodgeAssociation).filter(
-            models.MemberLodgeAssociation.member_id == member1.id,
-            models.MemberLodgeAssociation.lodge_id == new_lodge.id
-        ).first()
-        
-        assert assoc1 is not None
-        assert assoc1.is_primary is True
+    assert new_lodge.id is not None
+    assert new_lodge.lodge_name == "Loja Importada"
 
 # ============================================================================
 # Testes: Lodge Offboarding (Inativação e Login)

@@ -257,6 +257,19 @@ class MemberCreate(MemberBase):
         
         return v
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "full_name": "João da Silva",
+                "email": "joao.silva@exemplo.com",
+                "cpf": "123.456.789-00",
+                "birth_date": "1980-05-15",
+                "cim": "123456",
+                "password": "SenhaSegura123"
+            }
+        }
+    }
+
 
 class MemberCreateWithAssociation(MemberCreate):
     lodge_id: int = Field(..., description="ID da Loja à qual o membro será associado")
@@ -264,6 +277,23 @@ class MemberCreateWithAssociation(MemberCreate):
     status: MemberStatusEnum = Field(MemberStatusEnum.ACTIVE, description="Status do membro na loja")
     member_class: MemberClassEnum = Field(MemberClassEnum.REGULAR, description="Classe do membro na loja")
     family_members: list[FamilyMemberCreate] = []
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "full_name": "João da Silva",
+                "email": "joao.silva@exemplo.com",
+                "cpf": "123.456.789-00",
+                "birth_date": "1980-05-15",
+                "cim": "123456",
+                "password": "SenhaSegura123",
+                "lodge_id": 1,
+                "role_id": 3,
+                "status": "Ativo",
+                "member_class": "Regular"
+            }
+        }
+    }
 
 
 class MemberUpdate(BaseModel):
@@ -303,46 +333,83 @@ class MemberUpdate(BaseModel):
 
 
 class MemberAssociateLodge(BaseModel):
-    lodge_id: int
-    role_id: int | None = None
-    status: MemberStatusEnum = MemberStatusEnum.ACTIVE
-    member_class: MemberClassEnum = MemberClassEnum.REGULAR
-    member_update: MemberUpdate | None = None
+    lodge_id: int = Field(..., description="ID da loja")
+    role_id: int | None = Field(None, description="ID do cargo, se houver")
+    status: MemberStatusEnum = Field(MemberStatusEnum.ACTIVE, description="Status de associação")
+    member_class: MemberClassEnum = Field(MemberClassEnum.REGULAR, description="Classe de associação")
+    member_update: MemberUpdate | None = Field(None, description="Dados secundários adicionais a atualizar")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "lodge_id": 2,
+                "role_id": 15,
+                "status": "Ativo",
+                "member_class": "Honorário"
+            }
+        }
+    }
 
 
 class MemberListResponse(BaseModel):
     """Lightweight response for member list/table view - only essential fields"""
-    id: int
-    full_name: str
-    email: str
-    cim: str | None = None
-    degree: DegreeEnum | None = None
-    status: str | None = None
-    registration_status: RegistrationStatusEnum
-    profile_picture_path: str | None = None
-    phone: str | None = None
-    birth_date: date | None = None
+    id: int = Field(..., description="ID interno")
+    full_name: str = Field(..., description="Nome do irmão")
+    email: str = Field(..., description="E-mail")
+    cim: str | None = Field(None, description="CIM")
+    degree: DegreeEnum | None = Field(None, description="Grau do irmão")
+    status: str | None = Field(None, description="Status do irmão")
+    registration_status: RegistrationStatusEnum = Field(..., description="Status do cadastro")
+    profile_picture_path: str | None = Field(None, description="Caminho foto perfil")
+    phone: str | None = Field(None, description="Telefone")
+    birth_date: date | None = Field(None, description="Data de nascimento")
     
     # Single active role (computed field, not a relationship)
-    active_role: str | None = None
+    active_role: str | None = Field(None, description="Cargo atual na loja")
     
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": 10,
+                "full_name": "João da Silva",
+                "email": "joao@exemplo.com",
+                "cim": "123456",
+                "degree": "Mestre Instalado",
+                "status": "Active",
+                "registration_status": "Aprovado",
+                "active_role": "Venerável Mestre"
+            }
+        }
+    }
 
 
 class MemberResponse(MemberBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime | None = None
-    last_login: datetime | None = None
+    id: int = Field(..., description="ID interno")
+    created_at: datetime = Field(..., description="Data de criação")
+    updated_at: datetime | None = Field(None, description="Data de alteração")
+    last_login: datetime | None = Field(None, description="Último login")
     family_members: list[FamilyMemberResponse] = []
     decorations: list[DecorationResponse] = []
     role_history: list[RoleHistoryResponse] = []
     lodge_associations: list[MemberLodgeAssociationResponse] = []
     obedience_associations: list[MemberObedienceAssociationResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": 10,
+                "full_name": "João da Silva",
+                "email": "joao.silva@exemplo.com",
+                "cpf": "123.456.789-00",
+                "birth_date": "1980-05-15",
+                "cim": "123456",
+                "degree": "Mestre Instalado",
+                "lodge_associations": [{"lodge_id": 1, "status": "Ativo", "member_class": "Regular"}]
+            }
+        }
+    }
 
 
 class RoleHistoryCreate(BaseModel):

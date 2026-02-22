@@ -21,7 +21,12 @@ class AssociationSelection(BaseModel):
     association_type: str
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Login de Usuários",
+    description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT."
+)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Fornece um token de acesso para um usuário válido.
@@ -98,7 +103,13 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/token/select-association", response_model=Token)
+@router.post(
+    "/token/select-association",
+    response_model=Token,
+    summary="Selecionar Associação (Loja/Obediência)",
+    description="Permite que Membros com múltiplas filiações (ex: mais de uma Loja) escolham qual associação "
+                "deve ficar ativa para a sessão atual, recebendo um novo token JWT atualizado com a escolha."
+)
 def select_association(
     association_data: AssociationSelection,
     payload: dict = Depends(get_current_user_payload),

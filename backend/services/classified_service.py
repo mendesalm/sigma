@@ -28,7 +28,7 @@ def create_classified(
             if size > MAX_FILE_SIZE:
                 raise HTTPException(status_code=400, detail=f"File {file.filename} exceeds 2MB limit.")
 
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     lodge_id = current_user_payload.get("lodge_id")
     
     if not lodge_id:
@@ -92,7 +92,7 @@ def add_classified_photos(
     files: List[UploadFile],
     current_user_payload: dict
 ):
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
     
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
@@ -140,7 +140,7 @@ def delete_classified_photo(
     photo_id: int,
     current_user_payload: dict
 ):
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
     
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
@@ -193,7 +193,7 @@ def get_classified_by_id(db: Session, classified_id: int):
     return classified
 
 def delete_classified(db: Session, classified_id: int, current_user_payload: dict):
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
     
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
@@ -212,7 +212,7 @@ def delete_classified(db: Session, classified_id: int, current_user_payload: dic
     db.commit()
 
 def reactivate_classified(db: Session, classified_id: int, current_user_payload: dict):
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
     
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
@@ -243,7 +243,7 @@ def update_classified(
     classified_update: classified_schema.ClassifiedUpdate, 
     current_user_payload: dict
 ):
-    member_id = current_user_payload.get("sub")
+    member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
     
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()

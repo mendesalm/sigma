@@ -151,6 +151,21 @@ class MasonicSessionCreate(MasonicSessionBase):
         
         return v
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Sessão Magna de Iniciação",
+                "session_date": "2024-05-15",
+                "start_time": "20:00:00",
+                "end_time": "22:30:00",
+                "type": "Magna",
+                "subtype": "Iniciação",
+                "agenda": "Iniciação do candidato João",
+                "status": "AGENDADA"
+            }
+        }
+    }
+
 
 class MasonicSessionUpdate(BaseModel):
     """Schema para atualização de sessão."""
@@ -224,6 +239,16 @@ class MasonicSessionUpdate(BaseModel):
         
         return self
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "title": "Sessão Magna de Iniciação (Remarcada)",
+                "session_date": "2024-05-22",
+                "status": "AGENDADA"
+            }
+        }
+    }
+
 
 class MasonicSessionResponse(MasonicSessionBase):
     id: int
@@ -232,7 +257,23 @@ class MasonicSessionResponse(MasonicSessionBase):
     attendances: list[SessionAttendanceResponse] = []
     documents: list[DocumentInDB] = []
 
-    model_config = SettingsConfigDict(from_attributes=True)
+    model_config = SettingsConfigDict(from_attributes=True, json_schema_extra={
+        "example": {
+            "id": 1,
+            "lodge_id": 10,
+            "title": "Sessão Magna de Iniciação",
+            "session_date": "2024-05-15",
+            "start_time": "20:00:00",
+            "end_time": "22:30:00",
+            "type": "Magna",
+            "subtype": "Iniciação",
+            "status": "REALIZADA",
+            "lodge": {
+                "id": 10,
+                "lodge_name": "Estrela do Oriente"
+            }
+        }
+    })
 
 
 class MemberAttendanceStat(BaseModel):
@@ -242,7 +283,37 @@ class MemberAttendanceStat(BaseModel):
     present_sessions: int
     attendance_rate: float
 
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "member_id": 42,
+                "member_name": "João da Silva",
+                "total_sessions": 10,
+                "present_sessions": 8,
+                "attendance_rate": 80.0
+            }
+        }
+    }
+
 class LodgeAttendanceStats(BaseModel):
     total_sessions: int
     average_attendance: float
     member_stats: list[MemberAttendanceStat]
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "total_sessions": 25,
+                "average_attendance": 75.5,
+                "member_stats": [
+                    {
+                        "member_id": 42,
+                        "member_name": "João da Silva",
+                        "total_sessions": 10,
+                        "present_sessions": 8,
+                        "attendance_rate": 80.0
+                    }
+                ]
+            }
+        }
+    }

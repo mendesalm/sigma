@@ -185,7 +185,38 @@ class LodgeBase(BaseModel):
 class LodgeCreate(LodgeBase):
     # O lodge_code é gerado automaticamente no serviço
     external_id: int | None = Field(None, description="ID da loja no banco global (oriente_data)")
-    pass
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "lodge_name": "Estrela do Oriente",
+                "lodge_title": "A∴R∴L∴S∴",
+                "lodge_number": "007",
+                "foundation_date": "1990-05-15",
+                "rite": "R.E.A.A.",
+                "obedience_id": 1,
+                "subobedience_id": 2,
+                "cnpj": "12.345.678/0001-90",
+                "email": "contato@estrela007.com",
+                "phone": "(11) 98765-4321",
+                "website": "https://estrela007.com",
+                "street_address": "Rua das Acassias",
+                "street_number": "100",
+                "address_complement": "Sala 2",
+                "neighborhood": "Centro",
+                "city": "São Paulo",
+                "state": "SP",
+                "zip_code": "01000-000",
+                "latitude": -23.550520,
+                "longitude": -46.633308,
+                "technical_contact_name": "Ir. João da Silva",
+                "technical_contact_email": "joao@exemplo.com",
+                "session_day": "Terça-feira",
+                "periodicity": "Semanal",
+                "session_time": "20:00:00"
+            }
+        }
+    }
 
 
 class LodgeUpdate(BaseModel):
@@ -219,11 +250,29 @@ class LodgeUpdate(BaseModel):
 
 
 class LodgeResponse(LodgeBase):
-    id: int
-    lodge_code: str
-    is_active: bool
+    id: int = Field(..., description="ID interno da Loja")
+    lodge_code: str = Field(..., description="Código único da loja gerado no cadastro")
+    is_active: bool = Field(..., description="Status de ativação da loja")
 
     formatted_affiliation: str | None = Field(None, description="Texto formatado das federações")
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": 1,
+                "lodge_code": "ESTRE-007",
+                "is_active": True,
+                "lodge_name": "Estrela do Oriente",
+                "lodge_title": "A∴R∴L∴S∴",
+                "lodge_number": "007",
+                "foundation_date": "1990-05-15",
+                "rite": "R.E.A.A.",
+                "obedience_id": 1,
+                "subobedience_id": 2,
+                "street_address": "Rua das Acassias",
+                "technical_contact_name": "Ir. João da Silva",
+                "technical_contact_email": "joao@exemplo.com"
+            }
+        }
+    }

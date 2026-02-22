@@ -652,23 +652,7 @@ class Event(BaseModel):
     )
 
 
-class FinancialTransaction(BaseModel):
-    __tablename__ = "financial_transactions"
-    id = Column(Integer, primary_key=True, index=True)
-    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    transaction_type = Column(String(50), nullable=False)  # e.g., "debit", "credit"
-    amount = Column(Float, nullable=False)
-    description = Column(Text, nullable=True)
-    transaction_date = Column(DateTime(timezone=True), server_default=func.now())
-    # Ensuring multitenancy by associating with a lodge
-    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
-    member = relationship("Member", backref="financial_transactions")
-    lodge = relationship("Lodge", backref="financial_transactions")
 
-    __table_args__ = (
-        CheckConstraint("amount > 0", name="chk_transaction_amount_positive"),
-        CheckConstraint("transaction_type IN ('debit', 'credit')", name="chk_transaction_type"),
-    )
 
 
 class Document(BaseModel):

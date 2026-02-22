@@ -7,10 +7,12 @@ Este arquivo é executado antes de todos os testes e define fixtures compartilha
 import pytest
 import sys
 from pathlib import Path
-from datetime import date, time
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
+from datetime import date, time, timedelta
+from typing import Generator
+from unittest.mock import patch
 
 # Adicionar backend ao path
 backend_dir = Path(__file__).parent.parent

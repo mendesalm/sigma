@@ -13,7 +13,12 @@ router = APIRouter(
 )
 
 
-@router.get("/check-cim/{cim}", response_model=member_schema.MemberResponse)
+@router.get(
+    "/check-cim/{cim}",
+    response_model=member_schema.MemberResponse,
+    summary="Verificar Existência de CIM",
+    description="Procura um maçom pelo seu Cadastro Individual Maçônico (CIM). Útil para validações de registro."
+)
 def check_cim(
     cim: str,
     db: Session = Depends(database.get_db),
@@ -27,7 +32,12 @@ def check_cim(
     return member
 
 
-@router.post("/{member_id}/associate", response_model=member_schema.MemberResponse)
+@router.post(
+    "/{member_id}/associate",
+    response_model=member_schema.MemberResponse,
+    summary="Associar Membro à Loja",
+    description="Vincula um membro existente a uma loja com um status e classe específicos."
+)
 def associate_member(
     member_id: int,
     association_data: member_schema.MemberAssociateLodge,
@@ -56,7 +66,13 @@ def associate_member(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/", response_model=member_schema.MemberResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=member_schema.MemberResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar Novo Membro",
+    description="Cadastra um novo membro no sistema e o associa automaticamente a uma loja (para Webmasters)."
+)
 def create_member(
     member: member_schema.MemberCreateWithAssociation,
     db: Session = Depends(database.get_db),
@@ -89,7 +105,12 @@ def create_member(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
 
-@router.get("/", response_model=list[member_schema.MemberListResponse])
+@router.get(
+    "/",
+    response_model=list[member_schema.MemberListResponse],
+    summary="Listar Membros",
+    description="Retorna uma lista paginada e simplificada de membros. Webmasters veem apenas os de sua loja."
+)
 def read_members(
     skip: int = 0,
     limit: int = 100,
@@ -159,7 +180,12 @@ def read_members(
     return result
 
 
-@router.get("/{member_id}", response_model=member_schema.MemberResponse)
+@router.get(
+    "/{member_id}",
+    response_model=member_schema.MemberResponse,
+    summary="Obter Detalhes do Membro",
+    description="Retorna o cadastro completo de um membro específico. Membros podem acessar os próprios dados."
+)
 def read_member(
     member_id: int,
     db: Session = Depends(database.get_db),
@@ -195,7 +221,12 @@ def read_member(
         raise HTTPException(status_code=403, detail="Not authorized")
 
 
-@router.put("/{member_id}", response_model=member_schema.MemberResponse)
+@router.put(
+    "/{member_id}",
+    response_model=member_schema.MemberResponse,
+    summary="Atualizar Dados do Membro",
+    description="Altera as informações cadastrais de um membro (perfil pessoal, maçônico, endereço)."
+)
 def update_member(
     member_id: int,
     member: member_schema.MemberUpdate,
@@ -265,7 +296,12 @@ def update_member(
         raise HTTPException(status_code=403, detail="Not authorized")
 
 
-@router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{member_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir ou Desassociar Membro",
+    description="Desvincula um membro da Loja (se for Webmaster) ou exclui fisicamente (se for SuperAdmin)."
+)
 def delete_member_association(
     member_id: int,
     db: Session = Depends(database.get_db),
@@ -296,7 +332,13 @@ def delete_member_association(
         raise HTTPException(status_code=403, detail="Not authorized")
 
 
-@router.post("/{member_id}/roles", response_model=member_schema.RoleHistoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{member_id}/roles",
+    response_model=member_schema.RoleHistoryResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Adicionar Cargo ao Histórico",
+    description="Registra a posse de um membro em um cargo (ex: Venerável Mestre, Orador) com suas datas."
+)
 def add_role_history(
     member_id: int,
     role_data: member_schema.RoleHistoryCreate,
@@ -338,7 +380,12 @@ def add_role_history(
         raise HTTPException(status_code=403, detail="Not authorized")
 
 
-@router.delete("/{member_id}/roles/{role_history_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{member_id}/roles/{role_history_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remover Histórico de Cargo",
+    description="Apaga um registro de histórico de cargo previamente associado a um membro."
+)
 def delete_role_history(
     member_id: int,
     role_history_id: int,
@@ -598,7 +645,12 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
-@router.post("/{member_id}/change-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/{member_id}/change-password",
+    status_code=status.HTTP_200_OK,
+    summary="Alterar Senha do Membro",
+    description="Permite que o membro atualize sua própria senha mediante fornecimento da senha atual."
+)
 def change_member_password(
     member_id: int,
     password_data: ChangePasswordRequest,
