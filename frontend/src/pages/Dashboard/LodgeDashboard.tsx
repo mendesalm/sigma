@@ -391,22 +391,25 @@ const LodgeDashboard: React.FC = () => {
       flexGrow: 1, 
       display: 'flex', 
       flexDirection: 'column', 
-      height: 'calc(100vh - 80px)', // Fit screen height minus header
+      height: { xs: 'auto', md: 'calc(100vh - 80px)' }, // Fit screen height minus header on desktop
+      minHeight: { xs: 'calc(100vh - 80px)', md: 'auto' },
       bgcolor: COLORS.background,
       color: COLORS.text,
       fontFamily: '"Inter", sans-serif',
       p: 2, // reduced padding
-      overflow: 'hidden' // prevent page scroll
+      overflow: { xs: 'visible', md: 'hidden' } // allow page scroll on mobile
     }}>
       
       {/* Main Grid: Left Side List, Center Calendar, Right Side Widgets */}
       <Grid container spacing={2} sx={{ flexGrow: 1, height: '100%' }}>
         
         {/* Left Column */}
-        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: { xs: 'auto', md: '100%' } }}>
             
             {/* Minha Loja Widget - ADDED HERE */}
-            <MinhaLojaWidget lodgeInfo={stats?.lodge_info} canManageLodge={canManageLodge} />
+            <Box sx={{ flexShrink: 0 }}>
+                <MinhaLojaWidget lodgeInfo={stats?.lodge_info} canManageLodge={canManageLodge} />
+            </Box>
 
             {/* Membros da Loja Widget */}
             <Card 
@@ -420,6 +423,7 @@ const LodgeDashboard: React.FC = () => {
                     position: 'relative',
                     overflow: 'hidden',
                     flexGrow: 0, // Should not grow
+                    flexShrink: 0, // MUST NOT SHRINK
                     '&:hover': {
                         transform: 'translateY(-2px)',
                         boxShadow: `0 8px 30px rgba(0,0,0,0.5)`,
@@ -471,7 +475,7 @@ const LodgeDashboard: React.FC = () => {
             </Card>
 
             {/* Aniversariantes e Datas List Widget */}
-            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: { xs: 300, md: 0 }, overflow: 'hidden' }}>
                 <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
@@ -645,8 +649,8 @@ const LodgeDashboard: React.FC = () => {
         </Grid>
 
         {/* Center Column - Calendar */}
-        <Grid item xs={12} md={6} sx={{ height: '100%' }}>
-             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Grid item xs={12} md={6} sx={{ height: { xs: 'auto', md: '100%' }, minHeight: 0 }}>
+             <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', height: { xs: 600, md: '100%' }, minHeight: { xs: 600, md: 0 }, width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                      {/* Calendar Toolbar matches image style */}
                      <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -720,10 +724,10 @@ const LodgeDashboard: React.FC = () => {
         </Grid>
 
         {/* Right Column */}
-        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
+        <Grid item xs={12} md={3} sx={{ display: 'flex', flexDirection: 'column', gap: 2, height: { xs: 'auto', md: '100%' } }}>
             
             {/* Mural de Avisos (Renamed to Mural da Loja) */}
-            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 2, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: { xs: 350, md: 0 }, overflow: 'hidden' }}>
                  <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -821,10 +825,13 @@ const LodgeDashboard: React.FC = () => {
 
             {/* Escala Ágape */}
             {/* Classificados Widget */}
-            <QuickAccessWidget 
-                onOpenClassifieds={handleOpenClassifiedsModal} 
-                onOpenDiningScale={() => alert("Modal da Escala do Ágape pronto para ser implementado.")}
-            />
+            {/* Classificados Widget */}
+            <Box sx={{ flexShrink: 0 }}>
+                <QuickAccessWidget 
+                    onOpenClassifieds={handleOpenClassifiedsModal} 
+                    onOpenDiningScale={() => alert("Modal da Escala do Ágape pronto para ser implementado.")}
+                />
+            </Box>
 
         </Grid>
 
