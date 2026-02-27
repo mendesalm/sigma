@@ -71,3 +71,7 @@ storage/
 # Temporary files
 temp_balaustre*
 test_weasy.pdf
+
+# Pytest and Coverage Cache
+.pytest_cache/
+htmlcov/
