@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  List, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  CssBaseline, 
+import {
+  Box,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  CssBaseline,
   Typography,
   Avatar,
   useTheme,
@@ -14,9 +14,10 @@ import {
   AppBar,
   Toolbar,
   ListSubheader,
-  Skeleton
+  Skeleton,
+  IconButton
 } from '@mui/material';
-import { 
+import {
   Logout,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
@@ -44,8 +45,8 @@ import SecretariaIcon from '../../assets/icons/Secretaria.png';
 import ChancelariaIcon from '../../assets/icons/Chancelaria.png';
 import WebmasterIcon from '../../assets/icons/Webmaster.png';
 
-const MAIN_SIDEBAR_WIDTH = 120;
-const SECONDARY_SIDEBAR_WIDTH = 250;
+const SIDEBAR_WIDTH_EXPANDED = 80;
+const SIDEBAR_WIDTH_COLLAPSED = 80;
 const HEADER_HEIGHT = 70; // Slightly taller for better logo fit
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -122,9 +123,9 @@ const MENU_CONFIG = [
     icon: <img src={WebmasterIcon} alt="Webmaster" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/webmaster',
     subItems: [
-        { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-        { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-        { text: 'Documentos', path: '/dashboard/lodge-dashboard/webmaster/documentos', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Documentos', path: '/dashboard/lodge-dashboard/webmaster/documentos', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
     ]
   },
 ];
@@ -137,18 +138,19 @@ const LodgeDashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext) || {};
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const isSidebarExpanded = false;
   const [lodgeData, setLodgeData] = useState<any>(null);
 
   useEffect(() => {
     const fetchLodgeData = async () => {
-        if (user?.lodge_id) {
-            try {
-                const response = await api.get(`/lodges/${user.lodge_id}`);
-                setLodgeData(response.data);
-            } catch (error) {
-                console.error("Failed to fetch lodge data:", error);
-            }
+      if (user?.lodge_id) {
+        try {
+          const response = await api.get(`/lodges/${user.lodge_id}`);
+          setLodgeData(response.data);
+        } catch (error) {
+          console.error("Failed to fetch lodge data:", error);
         }
+      }
     };
     fetchLodgeData();
   }, [user]);
@@ -162,13 +164,13 @@ const LodgeDashboardLayout: React.FC = () => {
 
   // Helper to generate logo URL
   const getLogoUrl = () => {
-      if (!lodgeData) return undefined;
-      // Replica a lógica do backend (lodge_service.py) para gerar o nome da pasta
-      const safeNumber = lodgeData.lodge_number
-          ? lodgeData.lodge_number.replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_')
-          : `id_${lodgeData.id}`;
-      
-      return `${API_URL}/storage/lodges/loja_${safeNumber}/assets/images/logo/logo_jpg.png`;
+    if (!lodgeData) return undefined;
+    // Replica a lógica do backend (lodge_service.py) para gerar o nome da pasta
+    const safeNumber = lodgeData.lodge_number
+      ? lodgeData.lodge_number.replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_')
+      : `id_${lodgeData.id}`;
+
+    return `${API_URL}/storage/lodges/loja_${safeNumber}/assets/images/logo/logo_jpg.png`;
   };
 
   const logoUrl = getLogoUrl();
@@ -176,11 +178,11 @@ const LodgeDashboardLayout: React.FC = () => {
   // Filter menu based on user role
   const filteredMenu = React.useMemo(() => {
     if (!user) return [];
-    
+
     return MENU_CONFIG.filter(item => {
       // Always show Home and Obreiro
       if (item.id === 'home' || item.id === 'obreiro') return true;
-      
+
       // Webmaster specific
       if (item.id === 'webmaster') {
         return user.user_type === 'webmaster' || user.user_type === 'super_admin';
@@ -188,14 +190,14 @@ const LodgeDashboardLayout: React.FC = () => {
 
       // Webmasters and SuperAdmins see everything else (except webmaster specific which is handled above, but here we can just let them pass if we want, OR explicitly filter)
       // Actually, let's refine:
-      
+
       // If user is super_admin, they see everything
       if (user.user_type === 'super_admin') return true;
 
       // If user is webmaster, they see everything EXCEPT maybe purely role-based stuff if they don't have the role? 
       // Typically Webmasters manage the system, so they see all admin menus.
       if (user.user_type === 'webmaster') return true;
-      
+
       // Check specific roles for members
       if (item.id === 'secretario') {
         return user.active_role_name === 'Secretário';
@@ -203,7 +205,7 @@ const LodgeDashboardLayout: React.FC = () => {
       if (item.id === 'chanceler') {
         return user.active_role_name === 'Chanceler';
       }
-      
+
       return false;
     });
   }, [user]);
@@ -211,7 +213,7 @@ const LodgeDashboardLayout: React.FC = () => {
   // Determine active category based on current path
   useEffect(() => {
     const currentPath = location.pathname;
-    
+
     // If exact match for dashboard home, no active category
     if (currentPath === '/dashboard/lodge-dashboard' || currentPath === '/dashboard/lodge-dashboard/') {
       setActiveCategory(null);
@@ -223,18 +225,18 @@ const LodgeDashboardLayout: React.FC = () => {
     for (const category of filteredMenu) {
       // Skip HOME menu (no subitems)
       if (category.subItems.length === 0) continue;
-      
+
       // Check if we're in any of the category's sub-routes
       // Example: /dashboard/lodge-dashboard/obreiro/meu-cadastro should match 'obreiro'
       const categoryBasePath = category.path;
-      
+
       if (currentPath.startsWith(categoryBasePath)) {
         setActiveCategory(category.id);
         found = true;
         break;
       }
     }
-    
+
     if (!found) {
       setActiveCategory(null);
     }
@@ -255,140 +257,141 @@ const LodgeDashboardLayout: React.FC = () => {
       setActiveCategory(category.id);
       navigate(firstNavigableItem.path);
     } else {
-        // Fallback: apenas ativa a categoria se não houver subitem navegável
-       setActiveCategory(category.id);
+      // Fallback: apenas ativa a categoria se não houver subitem navegável
+      setActiveCategory(category.id);
     }
   };
 
   const activeMenu = filteredMenu.find(c => c.id === activeCategory);
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#0f172a' }}>
-      <CssBaseline />
-      
-      {/* Custom Header */}
-      <AppBar position="static" square sx={{ height: HEADER_HEIGHT, bgcolor: '#1e293b', backgroundImage: 'none', boxShadow: 1, zIndex: 1300, borderRadius: 0 }}>
-        <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between' }}>
-          {/* Left: Lodge Info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar 
-              key={logoUrl} // Force re-render if URL changes
-              src={logoUrl}
-              sx={{ width: 50, height: 50, bgcolor: 'transparent' }}
-              imgProps={{ 
-                  style: { objectFit: 'contain' }, 
-                  onError: (e) => {
-                      e.currentTarget.style.display = 'none';
-                      // Optionally show fallback icon logic here if needed, but the Avatar children will show
-                  } 
-              }}
-              variant="square"
-            >
-              {lodgeData ? <DashboardIcon /> : <Skeleton variant="circular" width={40} height={40} />}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff' }}>
-                {lodgeData?.lodge_name || <Skeleton width={200} />}
+  const renderSidebarContent = () => {
+    if (activeMenu) {
+      return (
+        <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {isSidebarExpanded && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, px: 1 }}>
+              <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 700, flexGrow: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                {activeMenu.label}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block' }}>
-                {lodgeData?.lodge_number ? `Nº ${lodgeData.lodge_number}` : (lodgeData ? '' : <Skeleton width={100} />)}
-              </Typography>
+              <IconButton size="small" onClick={() => setActiveCategory(null)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                <PersonIcon fontSize="small" /> {/* Using an icon as fallback back button */}
+              </IconButton>
             </Box>
-          </Box>
+          )}
 
-          {/* Right: User Info & Sigma Logo Link */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            {/* User Info */}
-            {user && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-                  <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 600 }}>
-                    {user.name || user.sub || 'Usuário'}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>
-                    {user.active_role_name || (user.user_type === 'member' ? 'Obreiro' : user.role)}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  src={user.profile_picture_path ? `${API_URL}${user.profile_picture_path}` : undefined}
-                  alt={user.name}
-                  sx={{ width: 40, height: 40, bgcolor: theme.palette.primary.main }}
+          <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
+            {activeMenu.subItems.map((subItem: any, index: number) => {
+              if (subItem.type === 'header') {
+                return isSidebarExpanded ? (
+                  <ListSubheader
+                    key={index}
+                    disableSticky
+                    sx={{
+                      bgcolor: 'transparent',
+                      color: 'rgba(255,255,255,0.4)',
+                      textTransform: 'uppercase',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      lineHeight: '24px',
+                      mt: 2,
+                      mb: 0.5,
+                      px: 2
+                    }}
+                  >
+                    {subItem.text}
+                  </ListSubheader>
+                ) : (
+                  <Box key={index} sx={{ height: 20, mt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+                );
+              }
+
+              const isDisabled = subItem.disabled;
+              const isActive = location.pathname === subItem.path;
+
+              return (
+                <ListItemButton
+                  key={subItem.path || index}
+                  component={isDisabled ? 'div' : RouterLink}
+                  to={isDisabled ? undefined : subItem.path}
+                  disabled={isDisabled}
+                  sx={{
+                    mb: 0.5,
+                    borderRadius: 2,
+                    justifyContent: isSidebarExpanded ? 'initial' : 'center',
+                    px: isSidebarExpanded ? 2 : 0,
+                    backgroundColor: isActive && !isDisabled ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
+                    color: isActive && !isDisabled ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
+                    opacity: isDisabled ? 0.4 : 1,
+                    cursor: isDisabled ? 'default' : 'pointer',
+                    '&:hover': {
+                      backgroundColor: !isDisabled ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                      color: !isDisabled ? '#fff' : 'inherit'
+                    }
+                  }}
                 >
-                  {user.name ? user.name.charAt(0).toUpperCase() : <PersonIcon />}
-                </Avatar>
-              </Box>
-            )}
+                  {subItem.icon && (
+                    <ListItemIcon sx={{
+                      minWidth: isSidebarExpanded ? 40 : 'auto',
+                      color: isActive ? theme.palette.primary.main : 'inherit',
+                      justifyContent: 'center'
+                    }}>
+                      {subItem.icon}
+                    </ListItemIcon>
+                  )}
+                  {isSidebarExpanded && (
+                    <ListItemText
+                      primary={subItem.text}
+                      primaryTypographyProps={{
+                        fontSize: '0.85rem',
+                        fontWeight: isActive && !isDisabled ? 600 : 400
+                      }}
+                    />
+                  )}
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Box>
+      );
+    }
 
-            {/* Sigma Logo */}
-            <Box component={RouterLink} to="/" sx={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-              <img 
-                src={SigmaLogo} 
-                alt="Sigma" 
-                style={{ height: 40, objectFit: 'contain' }} 
-              />
-            </Box>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      
-      <Box sx={{ display: 'flex', flexGrow: 1, height: `calc(100vh - ${HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
-        {/* Main Sidebar (Fixed 120px) */}
-        <Box
-          sx={{
-            width: MAIN_SIDEBAR_WIDTH,
-            flexShrink: 0,
-            backgroundColor: '#0a101f',
-            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            py: 2,
-            zIndex: 1200,
-            overflowY: 'auto'
-          }}
-        >
-          {/* Main Icons */}
-          <List sx={{ width: '100%', flexGrow: 1, pt: 0 }}>
-            {filteredMenu.map((item) => (
+    return (
+      <Box sx={{ p: isSidebarExpanded ? 2 : 1, display: 'flex', flexDirection: 'column', height: '100%', pt: 4 }}>
+        <List sx={{ width: '100%', flexGrow: 1, pt: 0 }}>
+          {filteredMenu.map((item) => {
+            const isActive = activeCategory === item.id || (!activeCategory && location.pathname === item.path);
+
+            return (
               <ListItemButton
                 key={item.id}
                 onClick={() => handleMainIconClick(item)}
                 sx={{
-                  flexDirection: 'column',
+                  flexDirection: isSidebarExpanded ? 'row' : 'column',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  py: 1.5,
-                  mb: 0.5,
-                  position: 'relative',
-                  color: activeCategory === item.id ? theme.palette.primary.main : 'rgba(255,255,255,0.5)',
+                  justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
+                  py: isSidebarExpanded ? 1.5 : 2,
+                  px: isSidebarExpanded ? 2 : 1,
+                  mb: 1,
+                  borderRadius: 2,
+                  backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                  color: isActive ? theme.palette.primary.light : 'rgba(255,255,255,0.6)',
+                  borderLeft: isSidebarExpanded && isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
                   '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    color: theme.palette.primary.light,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                    color: '#fff',
                   },
-                  '&::before': activeCategory === item.id ? {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    height: '60%',
-                    width: '4px',
-                    backgroundColor: theme.palette.primary.main,
-                    borderTopRightRadius: '4px',
-                    borderBottomRightRadius: '4px'
-                  } : {}
                 }}
               >
-                <ListItemIcon 
-                  sx={{ 
-                    minWidth: 'auto', 
+                <ListItemIcon
+                  sx={{
+                    minWidth: isSidebarExpanded ? 48 : 'auto',
+                    mb: isSidebarExpanded ? 0 : 1,
                     color: 'inherit',
-                    mb: 0.5,
-                    '& svg': { fontSize: 28 },
+                    justifyContent: 'center',
                     '& img': {
                       transition: 'all 0.3s ease',
-                      filter: activeCategory === item.id 
-                        ? `drop-shadow(0 0 8px ${theme.palette.primary.main})` 
+                      filter: isActive
+                        ? `drop-shadow(0 0 8px ${alpha(theme.palette.primary.main, 0.5)}) grayscale(0%)`
                         : 'grayscale(100%) opacity(0.7)'
                     },
                     '&:hover img': {
@@ -398,133 +401,129 @@ const LodgeDashboardLayout: React.FC = () => {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 600, color: '#D4AF37' }}>
-                  {item.label}
-                </Typography>
-              </ListItemButton>
-            ))}
-          </List>
 
-          {/* Bottom Actions */}
-          <Box sx={{ mt: 'auto', width: '100%' }}>
-            <ListItemButton
-               onClick={handleLogout}
-               sx={{
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  py: 1.5,
-                  color: 'rgba(255,255,255,0.5)',
-                  '&:hover': { color: theme.palette.error.main, cursor: 'pointer' }
-               }}
-            >
-               <Logout />
-               <Typography variant="caption" sx={{ mt: 0.5 }}>Sair</Typography>
-            </ListItemButton>
+                {isSidebarExpanded ? (
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontSize: '0.9rem',
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: 0.5
+                    }}
+                  />
+                ) : (
+                  <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
+                    {item.label}
+                  </Typography>
+                )}
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Box>
+    );
+  };
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#090B10' }}>
+      <CssBaseline />
+
+      {/* Brutalist Sharp Header */}
+      <AppBar position="static" elevation={0} sx={{ height: HEADER_HEIGHT, bgcolor: '#0B0F19', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', backgroundImage: 'none', zIndex: 1300 }}>
+        <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
+
+          {/* Left: Lodge Info & Sidebar Logo */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img src={SigmaLogo} alt="Sigma" style={{ height: 32, objectFit: 'contain' }} />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, borderLeft: '1px solid rgba(255,255,255,0.1)', pl: 3 }}>
+              <Avatar
+                key={logoUrl}
+                src={logoUrl}
+                sx={{ width: 40, height: 40, bgcolor: 'transparent', borderRadius: 0 }}
+                imgProps={{ style: { objectFit: 'contain' } }}
+                variant="square"
+              >
+                {lodgeData ? <DashboardIcon /> : <Skeleton variant="circular" width={40} height={40} />}
+              </Avatar>
+              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff', fontFamily: '"Playfair Display", serif', letterSpacing: 1 }}>
+                  {lodgeData?.lodge_name || <Skeleton width={150} />}
+                </Typography>
+                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, letterSpacing: 1 }}>
+                  {lodgeData?.lodge_number ? `LOJA Nº ${lodgeData.lodge_number}` : (lodgeData ? '' : <Skeleton width={80} />)}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
+
+          {/* Right: User Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            {user && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
+                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                    {user.name || user.sub || 'Usuário'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
+                    {user.active_role_name || (user.user_type === 'member' ? 'Obreiro' : user.role)}
+                  </Typography>
+                </Box>
+                <Avatar
+                  src={user.profile_picture_path ? `${API_URL}${user.profile_picture_path}` : undefined}
+                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1 }}
+                  variant="rounded"
+                >
+                  {user.name ? user.name.charAt(0).toUpperCase() : <PersonIcon />}
+                </Avatar>
+              </Box>
+            )}
+            <IconButton onClick={handleLogout} sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: theme.palette.error.main } }}>
+              <Logout fontSize="small" />
+            </IconButton>
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ display: 'flex', flexGrow: 1, height: `calc(100vh - ${HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
+
+        {/* Single Collapsible Sidebar */}
+        <Box
+          sx={{
+            width: isSidebarExpanded ? SIDEBAR_WIDTH_EXPANDED : SIDEBAR_WIDTH_COLLAPSED,
+            flexShrink: 0,
+            backgroundColor: '#0B0F19',
+            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1200
+          }}
+        >
+          {renderSidebarContent()}
         </Box>
 
-        {/* Secondary Sidebar (250px) - Visible only when activeCategory is set */}
-        {activeMenu && (
-          <Box
-            sx={{
-              width: SECONDARY_SIDEBAR_WIDTH,
-              flexShrink: 0,
-              backgroundColor: '#0f172a', // Slightly lighter or same as main bg?
-              borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-              display: 'flex',
-              flexDirection: 'column',
-              transition: 'width 0.3s ease',
-              overflowY: 'auto'
-            }}
-          >
-            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
-                {activeMenu.label}
-              </Typography>
-            </Box>
-            
-            <List sx={{ p: 1 }}>
-              {activeMenu.subItems.map((subItem: any, index: number) => {
-                if (subItem.type === 'header') {
-                  return (
-                    <ListSubheader 
-                      key={index} 
-                      disableSticky
-                      sx={{ 
-                        bgcolor: 'transparent', 
-                        color: 'rgba(255,255,255,0.5)', 
-                        textTransform: 'uppercase', 
-                        fontSize: '0.7rem', 
-                        fontWeight: 700,
-                        lineHeight: '32px',
-                        mt: 2,
-                        mb: 0.5,
-                        pl: 2
-                      }}
-                    >
-                      {subItem.text}
-                    </ListSubheader>
-                  );
-                }
-
-                const isDisabled = subItem.disabled;
-
-                return (
-                  <ListItemButton
-                    key={subItem.path || index}
-                    component={isDisabled ? 'div' : RouterLink}
-                    to={isDisabled ? undefined : subItem.path}
-                    disabled={isDisabled}
-                    sx={{
-                      mb: 0.5,
-                      borderRadius: '8px',
-                      backgroundColor: (!isDisabled && location.pathname === subItem.path) ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                      color: (!isDisabled && location.pathname === subItem.path) ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
-                      opacity: isDisabled ? 0.5 : 1,
-                      cursor: isDisabled ? 'default' : 'pointer',
-                      '&:hover': {
-                        backgroundColor: !isDisabled ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
-                        color: !isDisabled ? '#fff' : 'inherit'
-                      }
-                    }}
-                  >
-                    {subItem.icon && (
-                      <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
-                        {subItem.icon}
-                      </ListItemIcon>
-                    )}
-                    <ListItemText 
-                      primary={subItem.text} 
-                      primaryTypographyProps={{ 
-                        fontSize: '0.85rem', 
-                        fontWeight: (!isDisabled && location.pathname === subItem.path) ? 600 : 400 
-                      }} 
-                    />
-                    {isDisabled && (
-                       <Typography variant="caption" sx={{ fontSize: '0.6rem', ml: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 1, px: 0.5 }}>
-                         Breve
-                       </Typography>
-                    )}
-                  </ListItemButton>
-                );
-              })}
-            </List>
-          </Box>
-        )}
-
-        {/* Main Content Area */}
+        {/* Main Content Area - Maximizing Space */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            p: 2,
-            backgroundColor: '#0f172a', // Dark background
-            backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.05) 0%, transparent 50%)', // Subtle gradient
+            backgroundColor: '#090B10', // Deepest black/navy
+            backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
             overflow: 'auto',
-            height: '100%'
+            height: '100%',
+            pt: { xs: 1, md: 1.5 },
+            px: { xs: 2, md: 4 },
+            pb: { xs: 2, md: 4 }
           }}
         >
-          <Outlet />
+          <Box sx={{ maxWidth: '100%', margin: '0 auto', height: '100%' }}>
+            <Outlet />
+          </Box>
         </Box>
       </Box>
     </Box>

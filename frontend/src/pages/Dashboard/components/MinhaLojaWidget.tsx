@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, Grid, Divider } from '@mui/material';
+import { Card, CardContent, Typography, Box, Grid } from '@mui/material';
 import { Storefront, Event, Business, ContactMail } from '@mui/icons-material';
 
 interface LodgeInfo {
@@ -25,9 +25,9 @@ interface MinhaLojaWidgetProps {
 }
 
 const COLORS = {
-  cardCheck: '#151B26', // slightly lighter card bg matching dashboard
-  gold: '#D4AF37', // Metallic Gold
-  textSecondary: 'rgba(255, 255, 255, 0.7)',
+    cardCheck: '#151B26', // slightly lighter card bg matching dashboard
+    gold: '#D4AF37', // Metallic Gold
+    textSecondary: 'rgba(255, 255, 255, 0.7)',
 };
 
 
@@ -37,18 +37,18 @@ const MinhaLojaWidget: React.FC<MinhaLojaWidgetProps> = ({ lodgeInfo, canManageL
 
     const handleClick = () => {
         if (canManageLodge && lodgeInfo.id) {
-            navigate(`/management/lodges/${lodgeInfo.id}`); 
+            navigate(`/management/lodges/${lodgeInfo.id}`);
         }
     };
 
     return (
-        <Card 
+        <Card
             onClick={handleClick}
-            sx={{ 
-                bgcolor: COLORS.cardCheck, 
-                color: '#fff', 
-                borderRadius: 2, 
-                border: '1px solid rgba(255,255,255,0.05)', 
+            sx={{
+                bgcolor: COLORS.cardCheck,
+                color: '#fff',
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.05)',
                 width: '100%',
                 position: 'relative',
                 overflow: 'hidden',
@@ -61,80 +61,75 @@ const MinhaLojaWidget: React.FC<MinhaLojaWidgetProps> = ({ lodgeInfo, canManageL
                 } : {}
             }}
         >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1 }}>
+            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1 }}>
                         Minha Loja
                     </Typography>
-                    <Storefront sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 20 }} />
+                    <Storefront sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 18 }} />
                 </Box>
 
-                <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+                <Box sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>
                         {lodgeInfo.name}, nº {lodgeInfo.number}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', mt: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
                         {lodgeInfo.rite}
                     </Typography>
                 </Box>
 
-                <Divider sx={{ my: 1.5, borderColor: 'rgba(255,255,255,0.05)' }} />
-
-                <Grid container spacing={1}>
-                    <Grid item xs={12}>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                            <Event sx={{ color: COLORS.gold, fontSize: 16, mt: 0.3, mr: 1 }} />
-                            <Box>
-                                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
-                                    Sessões às {lodgeInfo.session_day}, {lodgeInfo.session_time}
-                                </Typography>
-                            </Box>
+                <Grid container spacing={0.5}>
+                    <Grid size={12}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                            <Event sx={{ color: COLORS.gold, fontSize: 14, mr: 1 }} />
+                            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600 }}>
+                                Sessões às {lodgeInfo.session_day}, {lodgeInfo.session_time}
+                            </Typography>
                         </Box>
                     </Grid>
 
-                    <Grid item xs={12}>
-                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                            <Business sx={{ color: COLORS.gold, fontSize: 16, mt: 0.3, mr: 1 }} />
-                            <Box>
+                    <Grid size={12}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 0.5 }}>
+                            <Business sx={{ color: COLORS.gold, fontSize: 14, mt: 0.2, mr: 1 }} />
+                            <Box sx={{ lineHeight: 1.2 }}>
                                 {lodgeInfo.subpotencia ? (
                                     <>
-                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', fontSize: '0.7rem' }}>
                                             Federada ao {lodgeInfo.potencia}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', fontSize: '0.7rem' }}>
                                             Jurisdicionada ao {lodgeInfo.subpotencia}
                                         </Typography>
                                     </>
                                 ) : (
-                                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+                                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', fontSize: '0.7rem' }}>
                                         Confederada à {lodgeInfo.potencia}
                                     </Typography>
                                 )}
                             </Box>
                         </Box>
                     </Grid>
-                    
-                    <Grid item xs={12}>
-                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block' }}>
+
+                    <Grid size={12}>
+                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', fontSize: '0.7rem', lineHeight: 1.2 }}>
                             <strong>Fundação:</strong> {lodgeInfo.foundation_date}
                         </Typography>
-                         <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', mt: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', fontSize: '0.7rem', lineHeight: 1.2 }}>
                             <strong>Endereço:</strong> {lodgeInfo.address}
                         </Typography>
                     </Grid>
-                    
-                    <Grid item xs={12} sx={{ mt: 1 }}>
-                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <ContactMail sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, mr: 1 }} />
-                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', mr: 2 }}>
+
+                    <Grid size={12}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                            <ContactMail sx={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, mr: 1 }} />
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', mr: 2, fontSize: '0.65rem' }}>
                                 {lodgeInfo.email}
                             </Typography>
-                         </Box>
-                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'block', ml: 2.8 }}>
+                        </Box>
+                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', display: 'block', ml: 2.6, fontSize: '0.65rem' }}>
                             CNPJ: {lodgeInfo.cnpj}
                         </Typography>
                     </Grid>
-
                 </Grid>
             </CardContent>
         </Card>

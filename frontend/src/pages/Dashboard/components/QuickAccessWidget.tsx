@@ -1,15 +1,15 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, Grid, Button } from '@mui/material';
-import { 
-  Restaurant, 
-  Storefront, 
-  AccountBalanceWallet, 
-  EventAvailable,
-  Description,
-  CardTravel, // for Visitações
-  HowToReg,   // for Presenças
-  Assignment, // for Solicitações
-  LocalLibrary // for Biblioteca
+import {
+    Restaurant,
+    Storefront,
+    AccountBalanceWallet,
+    EventAvailable,
+    Description,
+    CardTravel, // for Visitações
+    HowToReg,   // for Presenças
+    Assignment, // for Solicitações
+    LocalLibrary // for Biblioteca
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,10 +19,10 @@ interface QuickAccessWidgetProps {
 }
 
 const COLORS = {
-  cardCheck: '#151B26',
-  gold: '#D4AF37',
-  textSecondary: 'rgba(255, 255, 255, 0.7)',
-  iconBg: 'rgba(212, 175, 55, 0.1)',
+    cardCheck: '#151B26',
+    gold: '#D4AF37',
+    textSecondary: 'rgba(255, 255, 255, 0.7)',
+    iconBg: 'rgba(212, 175, 55, 0.1)',
 };
 
 const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds, onOpenDiningScale }) => {
@@ -35,8 +35,8 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
             label: 'Check-in Sessão',
             color: '#22c55e', // Greenish for presence
             onClick: () => {
-                 // For now, this could open a modal saying "Use o APP" or we can implement the manual trigger
-                 alert("Funcionalidade estará disponível em breve no App Mobile Sigma para QRCode/Geolocalização.");
+                // For now, this could open a modal saying "Use o APP" or we can implement the manual trigger
+                alert("Funcionalidade estará disponível em breve no App Mobile Sigma para QRCode/Geolocalização.");
             }
         },
         {
@@ -90,18 +90,18 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
     ];
 
     return (
-        <Card 
-            sx={{ 
-                bgcolor: COLORS.cardCheck, 
-                color: '#fff', 
-                borderRadius: 2, 
-                border: '1px solid rgba(255,255,255,0.05)', 
+        <Card
+            sx={{
+                bgcolor: COLORS.cardCheck,
+                color: '#fff',
+                borderRadius: 0,
+                border: '1px solid rgba(255,255,255,0.05)',
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column'
             }}
         >
-            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }}}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1 }}>
                         Acesso Rápido
@@ -110,7 +110,7 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
 
                 <Grid container spacing={1.5}>
                     {actions.map((action, idx) => (
-                        <Grid item xs={6} sm={4} md={6} lg={4} key={idx}>
+                        <Grid size={{ xs: 6, sm: 4, md: 6, lg: 4 }} key={idx}>
                             <Button
                                 fullWidth
                                 variant="outlined"
@@ -127,7 +127,7 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
                                     bgcolor: 'transparent',
                                     textTransform: 'none',
                                     p: 1,
-                                    borderRadius: 2,
+                                    borderRadius: 0,
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         borderColor: action.color,
