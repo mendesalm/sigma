@@ -2,22 +2,19 @@ import React, { useState } from 'react';
 import { Outlet, Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
-  Drawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   CssBaseline,
   Typography,
   Avatar,
-  IconButton,
   Menu,
   MenuItem,
   Divider,
   useTheme,
-  Breadcrumbs,
-  Link
+  AppBar,
+  Toolbar
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -27,14 +24,11 @@ import {
   AdminPanelSettings as AdminIcon,
   Computer as WebmasterIcon,
   Event as EventIcon,
-  Notifications as NotificationsIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  ChevronRight as ChevronRightIcon,
   Description as DescriptionIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
-import logoSigma from "../../assets/images/SigmaLogo.png";
 
 const drawerWidth = 260;
 
@@ -76,164 +70,184 @@ const DashboardLayout: React.FC = () => {
     return currentItem ? currentItem.text : 'Dashboard';
   };
 
-  const filteredNavItems = navItems.filter(item => 
+  const filteredNavItems = navItems.filter(item =>
     user?.user_type && item.allowedTypes.includes(user.user_type)
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#090B10' }}>
       <CssBaseline />
-      
-      {/* App Bar */}
-      <Box
-        component="header"
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 64,
-          zIndex: theme.zIndex.drawer + 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 3,
-          backgroundColor: 'rgba(18, 18, 18, 0.8)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          borderRadius: 0,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', width: drawerWidth - 24 }}>
-           <img src={logoSigma} alt="Sigma" style={{ height: 40, marginRight: 16 }} />
-           <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold', letterSpacing: 1 }}>
-             SIGMA
-           </Typography>
-        </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, ml: 4 }}>
-           <Breadcrumbs separator={<ChevronRightIcon fontSize="small" />} aria-label="breadcrumb">
-             <Link underline="hover" color="inherit" href="/dashboard">
-               Sigma
-             </Link>
-             <Typography color="text.primary">{getPageTitle()}</Typography>
-           </Breadcrumbs>
-        </Box>
+      {/* Brutalist Sharp Header (Global Admin) */}
+      <AppBar position="static" elevation={0} sx={{ height: 70, bgcolor: '#0B0F19', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', backgroundImage: 'none', zIndex: 1300 }}>
+        <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton color="inherit">
-            <NotificationsIcon />
-          </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={handleMenu}>
-            <Typography variant="subtitle2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' } }}>
-              {user?.sub || 'Usuário'}
-            </Typography>
-            <Avatar sx={{ bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText }}>
-              {user?.sub?.[0]?.toUpperCase() || 'U'}
-            </Avatar>
+          {/* Left: Global Title */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 3 }}>
+              <Avatar
+                sx={{ width: 40, height: 40, bgcolor: 'transparent', borderRadius: 0 }}
+                variant="square"
+              >
+                <AdminIcon sx={{ color: theme.palette.primary.main, fontSize: 32 }} />
+              </Avatar>
+              <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff', fontFamily: '"Playfair Display", serif', letterSpacing: 1 }}>
+                  Sigma Global
+                </Typography>
+                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {getPageTitle()}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
-          <Menu
-            id="menu-appbar"
-            anchorEl={anchorEl}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            keepMounted
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-          >
-            <MenuItem onClick={handleClose}>
-              <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
-              Perfil
-            </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleLogout}>
-              <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-              Sair
-            </MenuItem>
-          </Menu>
-        </Box>
-      </Box>
 
-      {/* Drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { 
-            width: drawerWidth, 
-            boxSizing: 'border-box',
-            top: 64,
-            height: 'calc(100% - 64px)',
-            backgroundColor: theme.palette.background.paper,
-            borderRight: `1px solid ${theme.palette.divider}`,
-          },
-        }}
-      >
-        <Box sx={{ overflow: 'auto', py: 2 }}>
-          <Box sx={{ px: 2, mb: 2 }}>
-            <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-              Gerenciamento
-            </Typography>
-          </Box>
-          <List>
-            {filteredNavItems.map((item) => (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton 
-                  component={RouterLink} 
-                  to={item.path}
-                  selected={location.pathname === item.path}
-                  sx={{
-                    mx: 1,
-                    borderRadius: 2,
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(0, 176, 255, 0.12)', // Primary blue with opacity
-                      borderLeft: `4px solid ${theme.palette.primary.main}`,
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 176, 255, 0.2)',
-                      },
-                    },
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    },
-                  }}
+          {/* Right: User Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            {user && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }} onClick={handleMenu}>
+                <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
+                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                    {user.name || user.sub || 'Usuário'}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                    {user.user_type.replace('_', ' ')}
+                  </Typography>
+                </Box>
+                <Avatar
+                  src={user.profile_picture_path ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${user.profile_picture_path}` : undefined}
+                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1 }}
+                  variant="rounded"
                 >
-                  <ListItemIcon sx={{ color: location.pathname === item.path ? theme.palette.primary.main : 'inherit', minWidth: 40 }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
-                    primaryTypographyProps={{ 
-                      fontWeight: location.pathname === item.path ? 600 : 400,
-                      color: location.pathname === item.path ? theme.palette.primary.main : 'text.primary'
-                    }} 
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
+                  {user?.[0]?.toUpperCase() || <PersonIcon />}
+                </Avatar>
+              </Box>
+            )}
+            <Menu
+              id="menu-appbar"
+              anchorEl={anchorEl}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              keepMounted
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              open={Boolean(anchorEl)}
+              onClose={handleClose}
+              sx={{ '& .MuiPaper-root': { bgcolor: '#121826', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', mt: 1.5 } }}
+            >
+              <MenuItem onClick={handleClose} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
+                <ListItemIcon><PersonIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.7)' }} /></ListItemIcon>
+                Perfil
+              </MenuItem>
+              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+              <MenuItem onClick={handleLogout} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
+                <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: 'theme.palette.error.main' }} /></ListItemIcon>
+                Sair
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      {/* Main Content */}
-      <Box
-        component="main"
-        sx={{ 
-          flexGrow: 1, 
-          p: 4, 
-          mt: 8,
-          width: `calc(100% - ${drawerWidth}px)`,
-          minHeight: '100vh',
-          backgroundColor: theme.palette.background.default,
-        }}
-      >
-        <Outlet />
+      <Box sx={{ display: 'flex', flexGrow: 1, height: `calc(100vh - 70px)`, overflow: 'hidden' }}>
+
+        {/* Dark Sidebar matches LodgeDashboardLayout */}
+        <Box
+          sx={{
+            width: drawerWidth, // keep original admin width since titles are long
+            flexShrink: 0,
+            backgroundColor: '#0B0F19',
+            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1200
+          }}
+        >
+          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%', pt: 4 }}>
+            <Box sx={{ px: 1, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 700, flexGrow: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Gerenciamento
+              </Typography>
+            </Box>
+            <List sx={{ width: '100%', flexGrow: 1, pt: 0 }}>
+              {filteredNavItems.map((item) => {
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <ListItemButton
+                    key={item.text}
+                    component={RouterLink}
+                    to={item.path}
+                    selected={isActive}
+                    sx={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      py: 1.5,
+                      px: 2,
+                      mb: 1,
+                      borderRadius: 2,
+                      backgroundColor: isActive ? 'rgba(0, 176, 255, 0.1)' : 'transparent',
+                      color: isActive ? theme.palette.primary.light : 'rgba(255,255,255,0.6)',
+                      borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 176, 255, 0.05)',
+                        color: '#fff',
+                      },
+                      '&.Mui-selected:hover': {
+                        backgroundColor: 'rgba(0, 176, 255, 0.15)',
+                      }
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: 48,
+                        color: isActive ? theme.palette.primary.main : 'inherit',
+                        justifyContent: 'center',
+                        '& svg': {
+                          transition: 'all 0.3s ease',
+                          filter: isActive
+                            ? `drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))`
+                            : 'none'
+                        }
+                      }}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontSize: '0.9rem',
+                        fontWeight: isActive ? 700 : 500,
+                        letterSpacing: 0.5
+                      }}
+                    />
+                  </ListItemButton>
+                );
+              })}
+            </List>
+          </Box>
+        </Box>
+
+        {/* Main Content Area - Dark matched */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            backgroundColor: '#090B10',
+            backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
+            overflow: 'auto',
+            height: '100%',
+            pt: { xs: 2, md: 3 },
+            px: { xs: 2, md: 4 },
+            pb: { xs: 2, md: 4 }
+          }}
+        >
+          <Box sx={{ maxWidth: '100%', margin: '0 auto', height: '100%' }}>
+            <Outlet />
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

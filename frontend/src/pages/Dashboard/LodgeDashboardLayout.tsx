@@ -15,7 +15,9 @@ import {
   Toolbar,
   ListSubheader,
   Skeleton,
-  IconButton
+  IconButton,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import {
   Logout,
@@ -24,8 +26,7 @@ import {
 } from '@mui/icons-material';
 import { AuthContext } from '../../context/AuthContext';
 
-// Import Sigma Logo
-import SigmaLogo from '../../assets/images/SigmaLogo.png';
+// Import Sigma Logo removed
 import {
   SquareCompassIcon,
   AttendanceBookIcon,
@@ -138,6 +139,8 @@ const LodgeDashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AuthContext) || {};
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [hoveredMenuId, setHoveredMenuId] = useState<string | null>(null);
   const isSidebarExpanded = false;
   const [lodgeData, setLodgeData] = useState<any>(null);
 
@@ -242,119 +245,20 @@ const LodgeDashboardLayout: React.FC = () => {
     }
   }, [location.pathname, filteredMenu]);
 
-  const handleMainIconClick = (category: typeof MENU_CONFIG[0]) => {
-    // Se o menu não tem subitens (como HOME), navega diretamente e remove menu secundário
+  const handleMainIconClick = (event: React.MouseEvent<HTMLElement>, category: typeof MENU_CONFIG[0]) => {
     if (category.subItems.length === 0) {
       setActiveCategory(null);
+      setMenuAnchorEl(null);
+      setHoveredMenuId(null);
       navigate(category.path);
       return;
     }
 
-    // Para menus com subitens, encontrar o primeiro item navegável (ignora headers e disabled)
-    const firstNavigableItem = category.subItems.find((item: any) => item.path && !item.disabled && item.type !== 'header');
-
-    if (firstNavigableItem && firstNavigableItem.path) {
-      setActiveCategory(category.id);
-      navigate(firstNavigableItem.path);
-    } else {
-      // Fallback: apenas ativa a categoria se não houver subitem navegável
-      setActiveCategory(category.id);
-    }
+    setMenuAnchorEl(event.currentTarget);
+    setHoveredMenuId(category.id);
   };
 
-  const activeMenu = filteredMenu.find(c => c.id === activeCategory);
-
   const renderSidebarContent = () => {
-    if (activeMenu) {
-      return (
-        <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {isSidebarExpanded && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, px: 1 }}>
-              <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 700, flexGrow: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
-                {activeMenu.label}
-              </Typography>
-              <IconButton size="small" onClick={() => setActiveCategory(null)} sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                <PersonIcon fontSize="small" /> {/* Using an icon as fallback back button */}
-              </IconButton>
-            </Box>
-          )}
-
-          <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
-            {activeMenu.subItems.map((subItem: any, index: number) => {
-              if (subItem.type === 'header') {
-                return isSidebarExpanded ? (
-                  <ListSubheader
-                    key={index}
-                    disableSticky
-                    sx={{
-                      bgcolor: 'transparent',
-                      color: 'rgba(255,255,255,0.4)',
-                      textTransform: 'uppercase',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      lineHeight: '24px',
-                      mt: 2,
-                      mb: 0.5,
-                      px: 2
-                    }}
-                  >
-                    {subItem.text}
-                  </ListSubheader>
-                ) : (
-                  <Box key={index} sx={{ height: 20, mt: 1, borderTop: '1px solid rgba(255,255,255,0.05)' }} />
-                );
-              }
-
-              const isDisabled = subItem.disabled;
-              const isActive = location.pathname === subItem.path;
-
-              return (
-                <ListItemButton
-                  key={subItem.path || index}
-                  component={isDisabled ? 'div' : RouterLink}
-                  to={isDisabled ? undefined : subItem.path}
-                  disabled={isDisabled}
-                  sx={{
-                    mb: 0.5,
-                    borderRadius: 2,
-                    justifyContent: isSidebarExpanded ? 'initial' : 'center',
-                    px: isSidebarExpanded ? 2 : 0,
-                    backgroundColor: isActive && !isDisabled ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
-                    color: isActive && !isDisabled ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
-                    opacity: isDisabled ? 0.4 : 1,
-                    cursor: isDisabled ? 'default' : 'pointer',
-                    '&:hover': {
-                      backgroundColor: !isDisabled ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                      color: !isDisabled ? '#fff' : 'inherit'
-                    }
-                  }}
-                >
-                  {subItem.icon && (
-                    <ListItemIcon sx={{
-                      minWidth: isSidebarExpanded ? 40 : 'auto',
-                      color: isActive ? theme.palette.primary.main : 'inherit',
-                      justifyContent: 'center'
-                    }}>
-                      {subItem.icon}
-                    </ListItemIcon>
-                  )}
-                  {isSidebarExpanded && (
-                    <ListItemText
-                      primary={subItem.text}
-                      primaryTypographyProps={{
-                        fontSize: '0.85rem',
-                        fontWeight: isActive && !isDisabled ? 600 : 400
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              );
-            })}
-          </List>
-        </Box>
-      );
-    }
-
     return (
       <Box sx={{ p: isSidebarExpanded ? 2 : 1, display: 'flex', flexDirection: 'column', height: '100%', pt: 4 }}>
         <List sx={{ width: '100%', flexGrow: 1, pt: 0 }}>
@@ -362,61 +266,116 @@ const LodgeDashboardLayout: React.FC = () => {
             const isActive = activeCategory === item.id || (!activeCategory && location.pathname === item.path);
 
             return (
-              <ListItemButton
-                key={item.id}
-                onClick={() => handleMainIconClick(item)}
-                sx={{
-                  flexDirection: isSidebarExpanded ? 'row' : 'column',
-                  alignItems: 'center',
-                  justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
-                  py: isSidebarExpanded ? 1.5 : 2,
-                  px: isSidebarExpanded ? 2 : 1,
-                  mb: 1,
-                  borderRadius: 2,
-                  backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                  color: isActive ? theme.palette.primary.light : 'rgba(255,255,255,0.6)',
-                  borderLeft: isSidebarExpanded && isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                    color: '#fff',
-                  },
-                }}
-              >
-                <ListItemIcon
+              <React.Fragment key={item.id}>
+                <ListItemButton
+                  onClick={(e) => handleMainIconClick(e, item)}
                   sx={{
-                    minWidth: isSidebarExpanded ? 48 : 'auto',
-                    mb: isSidebarExpanded ? 0 : 1,
-                    color: 'inherit',
-                    justifyContent: 'center',
-                    '& img': {
-                      transition: 'all 0.3s ease',
-                      filter: isActive
-                        ? `drop-shadow(0 0 8px ${alpha(theme.palette.primary.main, 0.5)}) grayscale(0%)`
-                        : 'grayscale(100%) opacity(0.7)'
+                    flexDirection: isSidebarExpanded ? 'row' : 'column',
+                    alignItems: 'center',
+                    justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
+                    py: isSidebarExpanded ? 1.5 : 2,
+                    px: isSidebarExpanded ? 2 : 1,
+                    mb: 1,
+                    borderRadius: 2,
+                    backgroundColor: isActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                    color: isActive ? theme.palette.primary.light : 'rgba(255,255,255,0.6)',
+                    borderLeft: isSidebarExpanded && isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                      color: '#fff',
                     },
-                    '&:hover img': {
-                      filter: `drop-shadow(0 0 5px ${theme.palette.primary.main}) grayscale(0%) opacity(1)`
-                    }
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-
-                {isSidebarExpanded ? (
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{
-                      fontSize: '0.9rem',
-                      fontWeight: isActive ? 700 : 500,
-                      letterSpacing: 0.5
+                  <ListItemIcon
+                    sx={{
+                      minWidth: isSidebarExpanded ? 48 : 'auto',
+                      mb: isSidebarExpanded ? 0 : 1,
+                      color: 'inherit',
+                      justifyContent: 'center',
+                      '& img': {
+                        transition: 'all 0.3s ease',
+                        filter: isActive
+                          ? `drop-shadow(0 0 8px ${alpha(theme.palette.primary.main, 0.5)}) grayscale(0%)`
+                          : 'grayscale(100%) opacity(0.7)'
+                      },
+                      '&:hover img': {
+                        filter: `drop-shadow(0 0 5px ${theme.palette.primary.main}) grayscale(0%) opacity(1)`
+                      }
                     }}
-                  />
-                ) : (
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
-                    {item.label}
-                  </Typography>
-                )}
-              </ListItemButton>
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+
+                  {isSidebarExpanded ? (
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: isActive ? 700 : 500, letterSpacing: 0.5 }}
+                    />
+                  ) : (
+                    <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>
+                      {item.label}
+                    </Typography>
+                  )}
+                </ListItemButton>
+
+                {/* Sub-menu Flyout for collapsed mode */}
+                <Menu
+                  anchorEl={menuAnchorEl}
+                  open={Boolean(menuAnchorEl) && hoveredMenuId === item.id}
+                  onClose={() => { setMenuAnchorEl(null); setHoveredMenuId(null); }}
+                  anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+                  sx={{ '& .MuiPaper-root': { bgcolor: '#0B0F19', color: '#fff', border: `1px solid rgba(255,255,255,0.1)`, ml: 2, minWidth: 240, boxShadow: `0 8px 32px 0 rgba(0,0,0,0.6)` } }}
+                >
+                  <Box sx={{ px: 2, pt: 1, pb: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
+                      {item.label}
+                    </Typography>
+                  </Box>
+
+                  {item.subItems.map((sub: any, idx: number) => {
+                    if (sub.type === 'header') {
+                      return (
+                        <ListSubheader
+                          key={idx}
+                          disableSticky
+                          sx={{ bgcolor: 'transparent', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, lineHeight: '24px', mt: 1, mb: 0.5, px: 2 }}
+                        >
+                          {sub.text}
+                        </ListSubheader>
+                      );
+                    }
+
+                    const isDisabled = sub.disabled;
+                    const isActiveLink = location.pathname === sub.path;
+
+                    return (
+                      <MenuItem
+                        key={idx}
+                        disabled={isDisabled}
+                        onClick={() => {
+                          if (!isDisabled && sub.path) {
+                            navigate(sub.path);
+                            setActiveCategory(item.id);
+                            setMenuAnchorEl(null);
+                            setHoveredMenuId(null);
+                          }
+                        }}
+                        sx={{
+                          mb: 0.5, mx: 1, borderRadius: 1.5, py: 1,
+                          bgcolor: isActiveLink ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
+                          color: isActiveLink ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
+                          display: 'flex', gap: 1.5,
+                          '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: '#fff' }
+                        }}
+                      >
+                        {sub.icon && <Box sx={{ display: 'flex', color: 'inherit' }}>{sub.icon}</Box>}
+                        <ListItemText primary={sub.text} primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: isActiveLink ? 600 : 400 }} />
+                      </MenuItem>
+                    );
+                  })}
+                </Menu>
+              </React.Fragment>
             );
           })}
         </List>
@@ -428,17 +387,12 @@ const LodgeDashboardLayout: React.FC = () => {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#090B10' }}>
       <CssBaseline />
 
-      {/* Brutalist Sharp Header */}
       <AppBar position="static" elevation={0} sx={{ height: HEADER_HEIGHT, bgcolor: '#0B0F19', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', backgroundImage: 'none', zIndex: 1300 }}>
         <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
 
           {/* Left: Lodge Info & Sidebar Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <img src={SigmaLogo} alt="Sigma" style={{ height: 32, objectFit: 'contain' }} />
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, borderLeft: '1px solid rgba(255,255,255,0.1)', pl: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, pl: 3 }}>
               <Avatar
                 key={logoUrl}
                 src={logoUrl}

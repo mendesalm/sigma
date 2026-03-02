@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     Box,
     Grid,
@@ -18,6 +18,7 @@ import {
     DialogActions,
     IconButton,
     Avatar,
+    Divider,
 } from '@mui/material';
 import {
     Close as CloseIcon,
@@ -168,27 +169,27 @@ const LodgeDashboard: React.FC = () => {
         fetchEvents();
     }, [currentDate]);
 
-    const handlePrevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    };
+    const handlePrevMonth = useCallback(() => {
+        setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() - 1, 1));
+    }, []);
 
-    const handleNextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    };
+    const handleNextMonth = useCallback(() => {
+        setCurrentDate(prevDate => new Date(prevDate.getFullYear(), prevDate.getMonth() + 1, 1));
+    }, []);
 
-    const handleToday = () => {
+    const handleToday = useCallback(() => {
         setCurrentDate(new Date());
-    };
+    }, []);
 
-    const handleDayClick = (day: number) => {
+    const handleDayClick = useCallback((day: number) => {
         setSelectedDay(day);
         setModalOpen(true);
-    };
+    }, []);
 
-    const handleCloseModal = () => {
+    const handleCloseModal = useCallback(() => {
         setModalOpen(false);
         setSelectedDay(null);
-    };
+    }, []);
 
     const handleNoticeClick = (title: string, content: string) => {
         setSelectedNotice({ title, content });
@@ -288,11 +289,14 @@ const LodgeDashboard: React.FC = () => {
     };
 
 
-    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const { daysInMonth, firstDayOfMonth } = useMemo(() => {
+        const days = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+        return { daysInMonth: days, firstDayOfMonth: firstDay };
+    }, [currentDate]);
 
     // Filter events based on state
-    const getFilteredEvents = () => {
+    const filteredEvents = useMemo(() => {
         return calendarEvents.filter(event => {
             if (event.type === 'sessao') return filters.sessao;
             if (event.type === 'aniversario') return filters.aniversario;
@@ -302,11 +306,9 @@ const LodgeDashboard: React.FC = () => {
             if (event.type === 'evento') return true;
             return true;
         });
-    };
+    }, [calendarEvents, filters]);
 
-    const filteredEvents = getFilteredEvents();
-
-    const renderCalendarDays = () => {
+    const renderCalendarDays = useMemo(() => {
         const days = [];
         // Empty cells for previous month
         for (let i = 0; i < firstDayOfMonth; i++) {
@@ -379,10 +381,27 @@ const LodgeDashboard: React.FC = () => {
             );
         }
         return days;
-    };
+    }, [filteredEvents, currentDate, daysInMonth, firstDayOfMonth, handleDayClick]);
 
-    const selectedEvents = selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
-    const selectedDateObj = selectedDay ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay) : null;
+    const selectedEvents = useMemo(() => {
+        return selectedDay ? filteredEvents.filter(e => e.date === selectedDay) : [];
+    }, [filteredEvents, selectedDay]);
+
+    const selectedDateObj = useMemo(() => {
+        return selectedDay ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay) : null;
+    }, [currentDate, selectedDay]);
+
+    // Commemorative events filtered from current month's calendarEvents
+    const commemorativeEvents = useMemo(() => {
+        const commemorativeTypes = ['Aniversário', 'Elevação', 'Iniciação', 'Exaltação', 'Casamento', 'Instalação'];
+        return calendarEvents
+            .filter(event => commemorativeTypes.includes(normalizeEventType(event.type)))
+            .sort((a, b) => {
+                const dayA = parseInt(a.full_date.split('-')[2], 10);
+                const dayB = parseInt(b.full_date.split('-')[2], 10);
+                return dayA - dayB;
+            });
+    }, [calendarEvents]);
 
     if (loading && !stats) {
         return (
@@ -391,16 +410,6 @@ const LodgeDashboard: React.FC = () => {
             </Box>
         );
     }
-
-    // Commemorative events filtered from current month's calendarEvents
-    const commemorativeTypes = ['Aniversário', 'Elevação', 'Iniciação', 'Exaltação', 'Casamento', 'Instalação'];
-    const commemorativeEvents = calendarEvents
-        .filter(event => commemorativeTypes.includes(normalizeEventType(event.type)))
-        .sort((a, b) => {
-            const dayA = parseInt(a.full_date.split('-')[2], 10);
-            const dayB = parseInt(b.full_date.split('-')[2], 10);
-            return dayA - dayB;
-        });
 
     return (
         <Box sx={{
@@ -537,38 +546,47 @@ const LodgeDashboard: React.FC = () => {
                                             IconComponent = GavelIcon; // Malhete
                                         }
 
+                                        let personName = event.title;
+                                        if (displayType === 'Aniversário' || displayType === 'Casamento') {
+                                            const match = event.title.match(/\((.*?)\)/);
+                                            if (match) {
+                                                personName = match[1];
+                                            }
+                                        } else if (['Elevação', 'Iniciação', 'Exaltação', 'Instalação'].includes(displayType)) {
+                                            personName = event.title.replace(new RegExp(`^${displayType} de `, 'i'), '').trim();
+                                        }
+
                                         return (
-                                            <ListItem key={idx} disablePadding sx={{
-                                                alignItems: 'flex-start',
-                                                borderLeft: '4px solid',
-                                                borderLeftColor: typeColor,
-                                                pl: 1.5,
-                                                ...(isToday && {
-                                                    bgcolor: 'rgba(212, 175, 55, 0.1)',
-                                                    border: `1px solid ${COLORS.gold}`,
-                                                    borderLeft: `4px solid ${typeColor}`,
-                                                    borderRadius: '8px',
-                                                    p: 1.5,
-                                                    mb: 1
-                                                })
-                                            }}>
-                                                <Box>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ fontFamily: '"Inter", sans-serif', color: typeColor, fontWeight: 500, fontStyle: 'italic', bgcolor: 'rgba(255,255,255,0.05)', px: 0.5, borderRadius: 1, fontSize: '0.75rem' }}>
-                                                            {formattedDate}
-                                                        </Typography>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.7)' }}>
-                                                            <IconComponent sx={{ fontSize: 14, color: typeColor }} />
-                                                            <Typography variant="caption" sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 400, fontSize: '0.75rem' }}>
-                                                                {displayType} de
+                                            <Box key={idx} sx={{ width: '100%' }}>
+                                                <ListItem disablePadding sx={{
+                                                    alignItems: 'flex-start',
+                                                    px: 1,
+                                                    py: 1.5,
+                                                    ...(isToday && {
+                                                        bgcolor: 'rgba(212, 175, 55, 0.05)',
+                                                        borderRadius: '8px',
+                                                        mb: 1
+                                                    })
+                                                }}>
+                                                    <Box sx={{ width: '100%' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                                            <Typography variant="body2" sx={{ color: typeColor, fontWeight: 700, minWidth: '40px', letterSpacing: 0.5 }}>
+                                                                {formattedDate}
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20 }}>
+                                                                <IconComponent sx={{ fontSize: 18, color: typeColor }} />
+                                                            </Box>
+                                                            <Typography variant="body2" sx={{ color: typeColor, fontWeight: 600 }}>
+                                                                {displayType}
                                                             </Typography>
                                                         </Box>
+                                                        <Typography variant="body2" sx={{ fontFamily: '"Inter", sans-serif', color: 'rgba(255,255,255,0.85)', fontWeight: 400, fontSize: '0.9rem', lineHeight: 1.4, pl: 0 }}>
+                                                            {personName}
+                                                        </Typography>
                                                     </Box>
-                                                    <Typography variant="body2" sx={{ fontFamily: '"Inter", sans-serif', color: '#fff', fontWeight: 400, fontSize: '0.875rem', lineHeight: 1.2 }}>
-                                                        {event.title}
-                                                    </Typography>
-                                                </Box>
-                                            </ListItem>
+                                                </ListItem>
+                                                <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mx: 2 }} />
+                                            </Box>
                                         );
                                     })
                                 ) : (
@@ -659,7 +677,7 @@ const LodgeDashboard: React.FC = () => {
 
                             {/* Calendar Grid Body */}
                             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', flexGrow: 1, bgcolor: '#090B10' }}>
-                                {renderCalendarDays()}
+                                {renderCalendarDays}
                             </Box>
                         </CardContent>
                     </Card>
