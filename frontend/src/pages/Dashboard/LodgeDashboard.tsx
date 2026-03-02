@@ -27,7 +27,12 @@ import {
     ArrowForwardIos,
     Add as AddIcon,
     Edit as EditIcon,
-    Delete as DeleteIcon
+    Delete as DeleteIcon,
+    Cake as CakeIcon, // For birthdays
+    Gavel as GavelIcon, // For Apprentice/Iniciação/Instalação
+    Event as EventIcon,  // Fallback
+    AllInclusive as WeddingIcon, // For Casamento/Rings
+    Architecture as ArchitectureIcon // For Masonic degrees (Compass/Square)
 } from '@mui/icons-material';
 import { getDashboardStats, getCalendarEvents, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '../../services/dashboardService';
 import MinhaLojaWidget from './components/MinhaLojaWidget';
@@ -38,8 +43,11 @@ import { useNavigate } from 'react-router-dom';
 
 // Define Colors
 const COLORS = {
-    background: '#0B0E14', // Darker background
-    cardCheck: '#151B26', // slightly lighter card bg
+    background: '#0B0E14',
+    cardCheck: '#151B26', // Keep for fallback
+    glassBg: 'rgba(21, 27, 38, 0.4)',
+    glassBorderUrl: 'rgba(255, 255, 255, 0.08)',
+    glassBorderTop: 'rgba(255, 255, 255, 0.12)',
     gold: '#D4AF37', // Metallic Gold
     goldLight: '#F3E5AB',
     goldDark: '#AA8C2C',
@@ -63,6 +71,24 @@ const EVENT_COLORS: Record<string, string> = {
     evento: COLORS.orange,
     aniversario_familiar: COLORS.pink,
     casamento: COLORS.fuchsia,
+    instalacao: COLORS.orange,
+};
+
+// Helper function to normalize event types to properly accented Portuguese
+const normalizeEventType = (type: string): string => {
+    if (!type) return '';
+    const t = type.toLowerCase();
+
+    if (t.includes('eleva')) return 'Elevação';
+    if (t.includes('inicia')) return 'Iniciação';
+    if (t.includes('exalta')) return 'Exaltação';
+    if (t.includes('anivers') || t.includes('aniversario') || t.includes('aniversário')) return 'Aniversário';
+    if (t.includes('sess')) return 'Sessão';
+    if (t.includes('casamento')) return 'Casamento';
+    if (t.includes('instala')) return 'Instalação';
+
+    // Fallback capitalizing first letter
+    return type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ');
 };
 
 const LodgeDashboard: React.FC = () => {
@@ -325,7 +351,7 @@ const LodgeDashboard: React.FC = () => {
                         {events.map((event, idx) => (
                             <Chip
                                 key={idx}
-                                label={event.title}
+                                label={normalizeEventType(event.title || event.type)}
                                 size="small"
                                 sx={{
                                     height: 18,
@@ -366,6 +392,16 @@ const LodgeDashboard: React.FC = () => {
         );
     }
 
+    // Commemorative events filtered from current month's calendarEvents
+    const commemorativeTypes = ['Aniversário', 'Elevação', 'Iniciação', 'Exaltação', 'Casamento', 'Instalação'];
+    const commemorativeEvents = calendarEvents
+        .filter(event => commemorativeTypes.includes(normalizeEventType(event.type)))
+        .sort((a, b) => {
+            const dayA = parseInt(a.full_date.split('-')[2], 10);
+            const dayB = parseInt(b.full_date.split('-')[2], 10);
+            return dayA - dayB;
+        });
+
     return (
         <Box sx={{
             flexGrow: 1,
@@ -382,10 +418,10 @@ const LodgeDashboard: React.FC = () => {
 
             {/* Main Grid: Left Side List, Center Calendar, Right Side Widgets */}
             {/* Main Grid: Asymmetrical Layout (20% - 60% - 20%) */}
-            <Grid container spacing={3} columns={10} sx={{ flexGrow: 1, height: '100%' }}>
+            <Grid container spacing={1.5} columns={10} sx={{ flexGrow: 1, height: '100%' }}>
 
                 {/* Left Column - Minha Loja, Membros, Datas Comemorativas */}
-                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
+                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
                     {/* Minha Loja Widget */}
                     <Box sx={{ flexShrink: 0 }}>
                         <MinhaLojaWidget lodgeInfo={stats?.lodge_info} canManageLodge={canManageLodge} />
@@ -394,48 +430,53 @@ const LodgeDashboard: React.FC = () => {
                     {/* Membros da Loja Widget */}
                     <Card
                         sx={{
-                            bgcolor: COLORS.cardCheck,
+                            bgcolor: COLORS.glassBg,
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
                             color: '#fff',
-                            borderRadius: 0,
-                            border: '1px solid rgba(255,255,255,0.05)',
+                            borderRadius: '16px',
+                            border: `1px solid ${COLORS.glassBorderUrl}`,
+                            borderTop: `1px solid ${COLORS.glassBorderTop}`,
+                            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
                             cursor: 'pointer',
-                            transition: 'all 0.3s',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                             position: 'relative',
                             overflow: 'hidden',
                             flexGrow: 0,
                             flexShrink: 0,
                             '&:hover': {
-                                borderColor: COLORS.gold,
-                                boxShadow: `0 0 20px rgba(212, 175, 55, 0.1)`
+                                transform: 'translateY(-3px)',
+                                boxShadow: `0 12px 40px rgba(0,0,0,0.5)`,
+                                borderColor: 'rgba(212, 175, 55, 0.4)'
                             }
                         }}
                         onClick={() => setMembersModalOpen(true)}
                     >
                         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', flexDirection: 'column' }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 0.5, mb: 1 }}>
-                                <Typography variant="subtitle2" sx={{ color: COLORS.gold, fontFamily: '"Playfair Display", serif', fontWeight: 700 }}>
+                                <Typography variant="h6" sx={{ color: COLORS.gold, fontFamily: '"Playfair Display", serif', fontWeight: 600, fontSize: '1rem', lineHeight: 1 }}>
                                     Membros da Loja
                                 </Typography>
-                                <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: '#fff', lineHeight: 1 }}>
+                                <Typography variant="h4" sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 700, color: '#fff', lineHeight: 1 }}>
                                     {stats?.lodge_members_stats?.total || 0}
                                 </Typography>
                             </Box>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Mestres</Typography>
-                                    <Typography variant="body2" sx={{ color: COLORS.gold, fontWeight: 700 }}>
+                                    <Typography variant="body2" sx={{ color: COLORS.gold, fontStyle: 'italic', fontWeight: 500 }}>
                                         {stats?.lodge_members_stats?.masters || 0}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Companheiros</Typography>
-                                    <Typography variant="body2" sx={{ color: COLORS.blue, fontWeight: 700 }}>
+                                    <Typography variant="body2" sx={{ color: COLORS.blue, fontStyle: 'italic', fontWeight: 500 }}>
                                         {stats?.lodge_members_stats?.fellows || 0}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>Aprendizes</Typography>
-                                    <Typography variant="body2" sx={{ color: COLORS.green, fontWeight: 700 }}>
+                                    <Typography variant="body2" sx={{ color: COLORS.green, fontStyle: 'italic', fontWeight: 500 }}>
                                         {stats?.lodge_members_stats?.apprentices || 0}
                                     </Typography>
                                 </Box>
@@ -444,42 +485,87 @@ const LodgeDashboard: React.FC = () => {
                     </Card>
 
                     {/* Datas Comemorativas (restored to left column) */}
-                    <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 0, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <Card sx={{
+                        bgcolor: COLORS.glassBg,
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        color: '#fff',
+                        borderRadius: '16px',
+                        border: `1px solid ${COLORS.glassBorderUrl}`,
+                        borderTop: `1px solid ${COLORS.glassBorderTop}`,
+                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+                        flexGrow: 1,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0
+                    }}>
                         <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
-                            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', bgcolor: '#0B0F19' }}>
-                                <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 700, lineHeight: 1.2 }}>
-                                    Datas Comemorativas
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                                    do mês de {currentDate.toLocaleDateString('pt-BR', { month: 'long' })}
+                            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 600, fontSize: '1rem', lineHeight: 1.2 }}>
+                                    Datas Comemorativas de {currentDate.toLocaleDateString('pt-BR', { month: 'long' }).charAt(0).toUpperCase() + currentDate.toLocaleDateString('pt-BR', { month: 'long' }).slice(1)}
                                 </Typography>
                             </Box>
                             <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {stats?.upcoming_birthdays && stats.upcoming_birthdays.length > 0 ? (
-                                    stats.upcoming_birthdays.map((birthday, idx) => {
-                                        const dateParts = birthday.date.split('-'); // YYYY-MM-DD
+                                {commemorativeEvents && commemorativeEvents.length > 0 ? (
+                                    commemorativeEvents.map((event, idx) => {
+                                        const dateParts = event.full_date.split('-'); // YYYY-MM-DD
                                         const formattedDate = `${dateParts[2]}/${dateParts[1]}`;
 
-                                        // Simplified color logic based on type
-                                        let typeColor = COLORS.gold;
-                                        if (birthday.type.toLowerCase().includes('elevação')) typeColor = COLORS.blue;
-                                        else if (birthday.type.toLowerCase().includes('aniversário')) typeColor = COLORS.red;
-                                        else if (birthday.type.toLowerCase().includes('iniciação')) typeColor = COLORS.green;
-                                        else if (birthday.type.toLowerCase().includes('exaltação')) typeColor = COLORS.purple;
+                                        const today = new Date();
+                                        const isToday = parseInt(dateParts[1], 10) === (today.getMonth() + 1) && parseInt(dateParts[2], 10) === today.getDate();
+
+                                        const displayType = normalizeEventType(event.type);
+
+                                        let IconComponent = EventIcon;
+                                        let typeColor = EVENT_COLORS[event.type] || COLORS.gold;
+
+                                        if (['Elevação', 'Iniciação', 'Exaltação'].includes(displayType)) {
+                                            typeColor = displayType === 'Elevação' ? COLORS.blue : displayType === 'Iniciação' ? COLORS.green : COLORS.purple;
+                                            IconComponent = ArchitectureIcon; // Represents Square and Compass
+                                        }
+                                        else if (displayType === 'Aniversário') {
+                                            typeColor = COLORS.red;
+                                            IconComponent = CakeIcon; // Birthday cake
+                                        }
+                                        else if (displayType === 'Casamento') {
+                                            typeColor = COLORS.fuchsia;
+                                            IconComponent = WeddingIcon; // Wedding/Rings
+                                        }
+                                        else if (displayType === 'Instalação') {
+                                            typeColor = COLORS.orange;
+                                            IconComponent = GavelIcon; // Malhete
+                                        }
 
                                         return (
-                                            <ListItem key={idx} disablePadding sx={{ alignItems: 'flex-start', borderLeft: '4px solid', borderLeftColor: typeColor, pl: 1.5 }}>
+                                            <ListItem key={idx} disablePadding sx={{
+                                                alignItems: 'flex-start',
+                                                borderLeft: '4px solid',
+                                                borderLeftColor: typeColor,
+                                                pl: 1.5,
+                                                ...(isToday && {
+                                                    bgcolor: 'rgba(212, 175, 55, 0.1)',
+                                                    border: `1px solid ${COLORS.gold}`,
+                                                    borderLeft: `4px solid ${typeColor}`,
+                                                    borderRadius: '8px',
+                                                    p: 1.5,
+                                                    mb: 1
+                                                })
+                                            }}>
                                                 <Box>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ color: typeColor, fontWeight: 700, bgcolor: 'rgba(255,255,255,0.05)', px: 0.5, borderRadius: 1 }}>
+                                                        <Typography variant="caption" sx={{ fontFamily: '"Inter", sans-serif', color: typeColor, fontWeight: 500, fontStyle: 'italic', bgcolor: 'rgba(255,255,255,0.05)', px: 0.5, borderRadius: 1, fontSize: '0.75rem' }}>
                                                             {formattedDate}
                                                         </Typography>
-                                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                                                            {birthday.type} de
-                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(255,255,255,0.7)' }}>
+                                                            <IconComponent sx={{ fontSize: 14, color: typeColor }} />
+                                                            <Typography variant="caption" sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 400, fontSize: '0.75rem' }}>
+                                                                {displayType} de
+                                                            </Typography>
+                                                        </Box>
                                                     </Box>
-                                                    <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1.2 }}>
-                                                        {birthday.name}
+                                                    <Typography variant="body2" sx={{ fontFamily: '"Inter", sans-serif', color: '#fff', fontWeight: 400, fontSize: '0.875rem', lineHeight: 1.2 }}>
+                                                        {event.title}
                                                     </Typography>
                                                 </Box>
                                             </ListItem>
@@ -497,7 +583,20 @@ const LodgeDashboard: React.FC = () => {
 
                 {/* Core Column - Massive Calendar */}
                 <Grid size={{ xs: 10, lg: 6 }} sx={{ height: { xs: 'auto', lg: '100%' }, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 0, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}>
+                    <Card sx={{
+                        bgcolor: COLORS.glassBg,
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        color: '#fff',
+                        borderRadius: '16px',
+                        border: `1px solid ${COLORS.glassBorderUrl}`,
+                        borderTop: `1px solid ${COLORS.glassBorderTop}`,
+                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.4)',
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden'
+                    }}>
 
                         <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                             {/* Calendar Toolbar matching brutalist style */}
@@ -567,13 +666,27 @@ const LodgeDashboard: React.FC = () => {
                 </Grid>
 
                 {/* Right Column - Mural, QuickAccessWidget */}
-                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
+                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
 
                     {/* Mural de Avisos */}
-                    <Card sx={{ bgcolor: COLORS.cardCheck, color: '#fff', borderRadius: 0, border: '1px solid rgba(255,255,255,0.05)', flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: 300, overflow: 'hidden' }}>
+                    <Card sx={{
+                        bgcolor: COLORS.glassBg,
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        color: '#fff',
+                        borderRadius: '16px',
+                        border: `1px solid ${COLORS.glassBorderUrl}`,
+                        borderTop: `1px solid ${COLORS.glassBorderTop}`,
+                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 300,
+                        overflow: 'hidden'
+                    }}>
                         <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#0B0F19' }}>
-                                <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 700 }}>
+                            <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 600, fontSize: '1rem' }}>
                                     Mural de Avisos
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -618,10 +731,10 @@ const LodgeDashboard: React.FC = () => {
                                             primaryTypographyProps={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: 1, color: COLORS.gold }}
                                             secondary={
                                                 <>
-                                                    <Typography component="span" variant="body2" sx={{ color: '#fff', display: 'block', fontWeight: 600, mt: 0.5 }}>
+                                                    <Typography component="span" variant="body2" sx={{ color: '#fff', display: 'block', fontWeight: 400, mt: 0.5 }}>
                                                         {stats.next_session.title}
                                                     </Typography>
-                                                    <Typography component="span" variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.5, display: 'block' }}>
+                                                    <Typography component="span" variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', mt: 0.5, display: 'block', fontStyle: 'italic' }}>
                                                         {new Date(stats.next_session.session_date).toLocaleDateString('pt-BR')} às {stats.next_session.start_time}
                                                     </Typography>
                                                 </>
@@ -646,9 +759,9 @@ const LodgeDashboard: React.FC = () => {
                                             <Campaign sx={{ color: COLORS.blue, fontSize: 18, mt: 0.5, mr: 1.5 }} />
                                             <ListItemText
                                                 primary={notice.title}
-                                                primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}
+                                                primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500, color: '#fff' }}
                                                 secondary="Clique para ver detalhes."
-                                                secondaryTypographyProps={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', mt: 0.5 }}
+                                                secondaryTypographyProps={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', mt: 0.5, fontStyle: 'italic' }}
                                             />
                                         </ListItemButton>
                                     ))
@@ -694,25 +807,31 @@ const LodgeDashboard: React.FC = () => {
                 <DialogContent sx={{ mt: 2 }}>
                     {selectedEvents.length > 0 ? (
                         <List>
-                            {selectedEvents.map((event, idx) => (
-                                <ListItem key={idx} sx={{ px: 0, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <Box sx={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        bgcolor: EVENT_COLORS[event.type] || COLORS.blue,
-                                        mr: 2,
-                                        mt: 1,
-                                        alignSelf: 'flex-start'
-                                    }} />
-                                    <ListItemText
-                                        primary={event.title}
-                                        secondary={event.type.replace('_', ' ').toUpperCase()}
-                                        primaryTypographyProps={{ color: '#fff', fontWeight: 500 }}
-                                        secondaryTypographyProps={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}
-                                    />
-                                </ListItem>
-                            ))}
+                            {selectedEvents.map((event, idx) => {
+                                const normalizedType = normalizeEventType(event.type);
+                                let IconComponent = EventIcon;
+
+                                if (normalizedType === 'Elevação' || normalizedType === 'Iniciação' || normalizedType === 'Exaltação') {
+                                    IconComponent = ArchitectureIcon;
+                                }
+                                else if (normalizedType === 'Aniversário') IconComponent = CakeIcon;
+                                else if (normalizedType === 'Instalação') IconComponent = GavelIcon;
+                                else if (normalizedType === 'Casamento') IconComponent = WeddingIcon;
+
+                                const color = EVENT_COLORS[event.type] || COLORS.blue;
+
+                                return (
+                                    <ListItem key={idx} sx={{ px: 0, borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'flex-start' }}>
+                                        <IconComponent sx={{ color: color, fontSize: 18, mr: 1.5, mt: 0.5, flexShrink: 0 }} />
+                                        <ListItemText
+                                            primary={event.title}
+                                            secondary={normalizedType}
+                                            primaryTypographyProps={{ color: '#fff', fontWeight: 500 }}
+                                            secondaryTypographyProps={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', fontStyle: 'italic' }}
+                                        />
+                                    </ListItem>
+                                );
+                            })}
                         </List>
                     ) : (
                         <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>

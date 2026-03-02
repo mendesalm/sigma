@@ -19,7 +19,9 @@ interface QuickAccessWidgetProps {
 }
 
 const COLORS = {
-    cardCheck: '#151B26',
+    glassBg: 'rgba(21, 27, 38, 0.4)',
+    glassBorderUrl: 'rgba(255, 255, 255, 0.08)',
+    glassBorderTop: 'rgba(255, 255, 255, 0.12)',
     gold: '#D4AF37',
     textSecondary: 'rgba(255, 255, 255, 0.7)',
     iconBg: 'rgba(212, 175, 55, 0.1)',
@@ -92,18 +94,22 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
     return (
         <Card
             sx={{
-                bgcolor: COLORS.cardCheck,
+                bgcolor: COLORS.glassBg,
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 color: '#fff',
-                borderRadius: 0,
-                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '16px',
+                border: `1px solid ${COLORS.glassBorderUrl}`,
+                borderTop: `1px solid ${COLORS.glassBorderTop}`,
+                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column'
             }}
         >
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="subtitle1" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, lineHeight: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, pb: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 600, fontSize: '1rem', lineHeight: 1 }}>
                         Acesso Rápido
                     </Typography>
                 </Box>
@@ -121,30 +127,33 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: 1,
-                                    minHeight: '80px',
-                                    borderColor: 'rgba(255,255,255,0.1)',
-                                    color: 'rgba(255,255,255,0.8)',
-                                    bgcolor: 'transparent',
+                                    minHeight: '84px',
+                                    borderColor: 'rgba(255,255,255,0.05)',
+                                    color: 'rgba(255,255,255,0.85)',
+                                    bgcolor: 'rgba(255,255,255,0.02)',
                                     textTransform: 'none',
-                                    p: 1,
-                                    borderRadius: 0,
-                                    transition: 'all 0.2s ease',
+                                    p: 1.5,
+                                    borderRadius: '12px',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                     '&:hover': {
-                                        borderColor: action.color,
-                                        bgcolor: 'rgba(255,255,255,0.05)',
+                                        borderColor: 'transparent',
+                                        bgcolor: `${action.color}15`, // append low opacity hex to color
                                         color: '#fff',
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: `0 4px 12px ${action.color}33` // Subtle glow
+                                        transform: 'translateY(-2px)'
                                     },
                                     '& svg': {
                                         color: action.color,
-                                        fontSize: 28,
-                                        mb: 0.5
+                                        fontSize: 26,
+                                        mb: 0.5,
+                                        transition: 'transform 0.3s ease',
+                                    },
+                                    '&:hover svg': {
+                                        transform: 'scale(1.1)'
                                     }
                                 }}
                             >
                                 {action.icon}
-                                <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 600, lineHeight: 1.1, textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ fontFamily: '"Inter", sans-serif', fontSize: '0.75rem', fontWeight: 500, lineHeight: 1.2, textAlign: 'center' }}>
                                     {action.label}
                                 </Typography>
                             </Button>
