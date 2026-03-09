@@ -88,7 +88,6 @@ const LandingPage: React.FC = () => {
           </Typography>
         </Box>
       </Box>
-
       <Box sx={{ scrollSnapAlign: 'start', scrollSnapStop: 'always', width: '100%' }}>
         <Box
           id="features"
@@ -115,7 +114,13 @@ const LandingPage: React.FC = () => {
             </Typography>
             <Grid container spacing={4}>
               {features.map((feature) => (
-                <Grid item xs={12} sm={6} md={3} key={feature.title}>
+                <Grid
+                  key={feature.title}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 3
+                  }}>
                   <Paper
                     elevation={3}
                     sx={{ p: 4, textAlign: "center", height: "100%" }}

@@ -1,7 +1,6 @@
 import socket
-import sys
 
-ip = '69.62.89.211'
+ip = "69.62.89.211"
 port = 3306
 timeout = 5
 
@@ -10,7 +9,7 @@ try:
     sock = socket.create_connection((ip, port), timeout)
     print("Connection successful!", flush=True)
     sock.close()
-except socket.timeout:
+except TimeoutError:
     print("Connection timed out.", flush=True)
 except ConnectionRefusedError:
     print("Connection refused.", flush=True)

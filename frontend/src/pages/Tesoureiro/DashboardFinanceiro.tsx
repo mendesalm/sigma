@@ -11,10 +11,14 @@ const DashboardFinanceiro: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Dashboard Financeiro
       </Typography>
-
       <Grid container spacing={3}>
         {/* Resumo Cards */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ bgcolor: 'success.main', color: 'success.contrastText' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -26,7 +30,12 @@ const DashboardFinanceiro: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
            <Card sx={{ bgcolor: 'error.main', color: 'error.contrastText' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -38,7 +47,12 @@ const DashboardFinanceiro: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ bgcolor: 'info.main', color: 'info.contrastText' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -50,7 +64,12 @@ const DashboardFinanceiro: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 3
+          }}>
           <Card sx={{ bgcolor: 'warning.main', color: 'warning.contrastText' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -63,12 +82,20 @@ const DashboardFinanceiro: React.FC = () => {
         </Grid>
 
         {/* Gráficos Mockados */}
-        <Grid item xs={12} md={8}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 8
+          }}>
           <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
              <Typography color="textSecondary">Gráfico de Receitas vs Despesas (A Implementar)</Typography>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4
+          }}>
           <Paper sx={{ p: 2, height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
              <Typography color="textSecondary">Despesas por Categoria</Typography>
           </Paper>

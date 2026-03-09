@@ -193,18 +193,20 @@ const ChancelerPresencas: React.FC = () => {
           </Typography>
         </Box>
       </Box>
-
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
-
       {/* Seletor de Sessão */}
       <Card sx={{ mb: 3, bgcolor: '#1e293b', border: '1px solid rgba(255,255,255,0.05)' }}>
         <CardContent>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <FormControl fullWidth size="small">
                 <InputLabel id="session-select-label" sx={{ color: 'rgba(255,255,255,0.7)' }}>Selecione a Sessão</InputLabel>
                 <Select
@@ -231,7 +233,11 @@ const ChancelerPresencas: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
-             <Grid item xs={12} md={6}>
+             <Grid
+               size={{
+                 xs: 12,
+                 md: 6
+               }}>
                 {selectedSessionId && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
                          <Chip 
@@ -248,7 +254,6 @@ const ChancelerPresencas: React.FC = () => {
           </Grid>
         </CardContent>
       </Card>
-
       {/* Lista de Presença */}
       <Card sx={{ bgcolor: '#1e293b', borderRadius: 2 }}>
         <CardContent>

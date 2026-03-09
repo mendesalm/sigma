@@ -35,6 +35,9 @@ _reference/
 # SQL Dumps
 *.sql
 
+# Backups
+backups/
+
 # Audit and Temporary Scripts
 audit_*.py
 fix_*.py

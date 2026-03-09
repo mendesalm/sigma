@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
+
 from sqlalchemy.orm import Session
+
 from models import models
 from schemas.document_settings_schema import DocumentSettings
 
@@ -12,10 +14,10 @@ class DocumentStrategy(ABC):
     """
 
     def __init__(self, service):
-        self.service = service # Reference to the main service for helper methods (utils)
+        self.service = service  # Reference to the main service for helper methods (utils)
 
     @abstractmethod
-    async def collect_data(self, db: Session, main_entity_id: int, **kwargs) -> Dict[str, Any]:
+    async def collect_data(self, db: Session, main_entity_id: int, **kwargs) -> dict[str, Any]:
         """
         Collects all necessary data for the document type from the database.
         :param db: Database session
@@ -33,76 +35,72 @@ class DocumentStrategy(ABC):
     def get_document_type_key(self) -> str:
         """Returns the key used in DocumentSettings (e.g., 'balaustre', 'prancha')."""
         pass
-    
+
     def _parse_settings(self, lodge: models.Lodge) -> DocumentSettings:
         """
         Parses document settings with migration logic for legacy flat structures.
         """
         doc_settings_raw = lodge.document_settings or {}
-        
+
         # MIGRATION LOGIC FOR LEGACY FLAT SETTINGS
         # If the settings are flat (no 'balaustre' key but has fields usually found in DocumentSettings root in legacy),
         # we wrap or duplicate them for the current strategy key.
         # Ideally, we populate ALL keys to be safe.
-        
-        main_keys = {'balaustre', 'prancha', 'convite'}
+
+        main_keys = {"balaustre", "prancha", "convite"}
         has_main_keys = any(k in doc_settings_raw for k in main_keys)
-        
+
         if doc_settings_raw and not has_main_keys:
-             # It's a legacy flat dictionary. Convert to hierarchical.
-             # We apply the same settings to all types to be safe.
-             doc_settings_raw = {
-                 'balaustre': doc_settings_raw,
-                 'prancha': doc_settings_raw,
-                 'convite': doc_settings_raw
-             }
+            # It's a legacy flat dictionary. Convert to hierarchical.
+            # We apply the same settings to all types to be safe.
+            doc_settings_raw = {"balaustre": doc_settings_raw, "prancha": doc_settings_raw, "convite": doc_settings_raw}
 
         try:
-             settings = DocumentSettings(**doc_settings_raw)
+            settings = DocumentSettings(**doc_settings_raw)
         except:
-             settings = DocumentSettings()
-             
+            settings = DocumentSettings()
+
         # FALLBACK: Inject factory defaults if custom templates are missing
         doc_key = self.get_document_type_key()
         if hasattr(settings, doc_key):
-             type_settings = getattr(settings, doc_key)
-             # Check if content is empty (indicating no custom config)
-             if not type_settings.content_template:
-                 # Fetch defaults from backend file system
-                 defaults = self.service.get_default_templates(doc_key)
-                 if defaults:
-                     if not type_settings.content_template:
-                         type_settings.content_template = defaults.get('content_template', '')
-                     if hasattr(type_settings, 'signatures_template') and not type_settings.signatures_template:
-                         type_settings.signatures_template = defaults.get('signatures_template', '')
-                     if hasattr(type_settings, 'preamble_template') and not type_settings.preamble_template:
-                         type_settings.preamble_template = defaults.get('preamble_template', '')
-        
+            type_settings = getattr(settings, doc_key)
+            # Check if content is empty (indicating no custom config)
+            if not type_settings.content_template:
+                # Fetch defaults from backend file system
+                defaults = self.service.get_default_templates(doc_key)
+                if defaults:
+                    if not type_settings.content_template:
+                        type_settings.content_template = defaults.get("content_template", "")
+                    if hasattr(type_settings, "signatures_template") and not type_settings.signatures_template:
+                        type_settings.signatures_template = defaults.get("signatures_template", "")
+                    if hasattr(type_settings, "preamble_template") and not type_settings.preamble_template:
+                        type_settings.preamble_template = defaults.get("preamble_template", "")
+
         return settings
 
-    def _get_common_context(self, lodge: models.Lodge, doc_settings: DocumentSettings) -> Dict[str, Any]:
+    def _get_common_context(self, lodge: models.Lodge, doc_settings: DocumentSettings) -> dict[str, Any]:
         """
         Helper to extract common style/header data derived from DocumentSettings.
         """
         key = self.get_document_type_key()
-        type_settings = getattr(doc_settings, key, doc_settings.balaustre) # Default fallback
+        type_settings = getattr(doc_settings, key, doc_settings.balaustre)  # Default fallback
 
         # Styles
         styles = type_settings.styles.model_dump()
-        
+
         # Header
         header_map = {
-            'header_classico.html': 'partials/header_classico.html',
-            'header_moderno.html': 'partials/header_moderno.html',
-            'header_duplo.html': 'partials/header_duplo.html',
-            'header_grid.html': 'partials/header_grid.html',
-            'header_timbre.html': 'partials/header_timbre.html',
-            'header_invertido.html': 'partials/header_invertido.html',
+            "header_classico.html": "partials/header_classico.html",
+            "header_moderno.html": "partials/header_moderno.html",
+            "header_duplo.html": "partials/header_duplo.html",
+            "header_grid.html": "partials/header_grid.html",
+            "header_timbre.html": "partials/header_timbre.html",
+            "header_invertido.html": "partials/header_invertido.html",
         }
-        
+
         header_template = None
-        if type_settings.header and type_settings.header != 'no_header':
-             header_template = header_map.get(type_settings.header, 'partials/header_classico.html')
+        if type_settings.header and type_settings.header != "no_header":
+            header_template = header_map.get(type_settings.header, "partials/header_classico.html")
 
         return {
             "styles": styles,
@@ -111,11 +109,13 @@ class DocumentStrategy(ABC):
             "lodge_number": lodge.lodge_number,
             "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",
             "lodge_obedience": lodge.obedience.name if lodge.obedience else "GOB",
-            "lodge_subobedience": lodge.subobedience.name if hasattr(lodge, 'subobedience') and lodge.subobedience else "GOB-Estadual",
+            "lodge_subobedience": lodge.subobedience.name
+            if hasattr(lodge, "subobedience") and lodge.subobedience
+            else "GOB-Estadual",
             # Common footer assets could go here
         }
 
-    def _apply_dynamic_styles(self, context: Dict[str, Any], styles_payload: Any):
+    def _apply_dynamic_styles(self, context: dict[str, Any], styles_payload: Any):
         """
         Helper to apply styles model and generate dynamic CSS block.
         Shared across all strategies.
@@ -125,20 +125,21 @@ class DocumentStrategy(ABC):
 
         try:
             from schemas.document_settings_schema import DocumentStyles
+
             # Validate and convert dict to Pydantic Model if needed
             if isinstance(styles_payload, dict):
-                 styles_model = DocumentStyles(**styles_payload)
+                styles_model = DocumentStyles(**styles_payload)
             else:
-                 styles_model = styles_payload
+                styles_model = styles_payload
 
-            context['styles'] = styles_model
+            context["styles"] = styles_model
 
             # Generate CSS string using styles_model
             css = f"""
             @page {{
                 size: {styles_model.page_size} {styles_model.orientation};
                 margin: {styles_model.page_margin};
-                
+
                 @bottom-center {{
                     content: "Página " counter(page);
                     font-size: 10pt;
@@ -154,7 +155,7 @@ class DocumentStrategy(ABC):
                 background-color: {styles_model.background_color};
                 margin: 0;
                 padding: 0;
-                {f"background-image: url('{styles_model.background_image}'); background-size: cover; background-repeat: no-repeat;" if styles_model.background_image and styles_model.background_image != 'none' else ''}
+                {f"background-image: url('{styles_model.background_image}'); background-size: cover; background-repeat: no-repeat;" if styles_model.background_image and styles_model.background_image != "none" else ""}
             }}
 
             .watermark {{
@@ -179,14 +180,14 @@ class DocumentStrategy(ABC):
                 border: {styles_model.border_width} {styles_model.border_style} {styles_model.border_color};
                 z-index: 2147483647;
                 pointer-events: none;
-                {'border: none;' if not styles_model.show_border else ''}
+                {"border: none;" if not styles_model.show_border else ""}
             }}
-            
+
             .page-content {{
                 position: relative;
                 width: 100%;
                 height: 100%;
-                padding: {styles_model.page_padding}; 
+                padding: {styles_model.page_padding};
                 box-sizing: border-box;
             }}
 
@@ -208,7 +209,7 @@ class DocumentStrategy(ABC):
                 font-size: {styles_model.header_config.font_size_title};
                 margin: 3px 0;
                 line-height: 1.2;
-                color: {styles_model.header_config.color or '#000'};
+                color: {styles_model.header_config.color or "#000"};
             }}
 
             /* Title Section Styles */
@@ -218,15 +219,15 @@ class DocumentStrategy(ABC):
                 margin-bottom: {styles_model.titles_config.margin_bottom};
                 font-family: {styles_model.titles_config.font_family or styles_model.font_family};
                 font-size: {styles_model.titles_config.font_size};
-                font-weight: {'bold' if styles_model.titles_config.bold else 'normal'};
+                font-weight: {"bold" if styles_model.titles_config.bold else "normal"};
                 color: {styles_model.titles_config.color or styles_model.primary_color};
-                text-transform: {'uppercase' if styles_model.titles_config.uppercase else 'none'};
+                text-transform: {"uppercase" if styles_model.titles_config.uppercase else "none"};
                 line-height: {styles_model.titles_config.line_height};
-                display: {'block' if styles_model.titles_config.show else 'none'};
+                display: {"block" if styles_model.titles_config.show else "none"};
                 padding: {styles_model.titles_config.padding};
-                
+
                 /* Background Support */
-                background-color: {styles_model.titles_config.background_color or 'transparent'};
+                background-color: {styles_model.titles_config.background_color or "transparent"};
                 opacity: {1.0}; /* Opacity is usually handled on partials or RGBA colors, assuming 1.0 here or user specific */
                 /* For background image in titles we might need more complex CSS or direct style injection in the div */
             }}
@@ -239,11 +240,11 @@ class DocumentStrategy(ABC):
                 font-size: {styles_model.content_config.font_size};
                 font-family: {styles_model.content_config.font_family or styles_model.font_family};
                 line-height: {styles_model.content_config.line_height};
-                color: {styles_model.content_config.color or '#000000'};
-                background-color: {styles_model.content_config.background_color or 'transparent'};
-                {f"background-image: url('{styles_model.content_config.background_image}'); background-size: cover;" if styles_model.content_config.background_image else ''}
+                color: {styles_model.content_config.color or "#000000"};
+                background-color: {styles_model.content_config.background_color or "transparent"};
+                {f"background-image: url('{styles_model.content_config.background_image}'); background-size: cover;" if styles_model.content_config.background_image else ""}
             }}
-            
+
             .content p, .content div, .content span {{
                 text-align: {styles_model.content_config.alignment};
                 margin-bottom: {styles_model.content_config.spacing};
@@ -253,7 +254,7 @@ class DocumentStrategy(ABC):
             .ql-align-right {{ text-align: right !important; }}
             .ql-align-justify {{ text-align: justify !important; }}
             .ql-align-left {{ text-align: left !important; }}
-            
+
             /* Quill Size Support */
             .ql-size-8pt {{ font-size: 8pt !important; }}
             .ql-size-10pt {{ font-size: 10pt !important; }}
@@ -263,7 +264,7 @@ class DocumentStrategy(ABC):
             .ql-size-18pt {{ font-size: 18pt !important; }}
             .ql-size-24pt {{ font-size: 24pt !important; }}
             .ql-size-36pt {{ font-size: 36pt !important; }}
-            
+
             /* Quill Font Family Support */
             .ql-font-arial {{ font-family: 'Arial', sans-serif !important; }}
             .ql-font-times-new-roman {{ font-family: 'Times New Roman', serif !important; }}
@@ -283,7 +284,7 @@ class DocumentStrategy(ABC):
             .ql-indent-7 {{ padding-left: 21em !important; }}
             .ql-indent-8 {{ padding-left: 24em !important; }}
             .ql-indent-9 {{ padding-left: 27em !important; }}
-            
+
             /* Explicitly support styles often found in Quill output just in case they are classes */
             .ql-direction-rtl {{ direction: rtl; text-align: inherit; }}
 
@@ -294,7 +295,7 @@ class DocumentStrategy(ABC):
                 page-break-inside: avoid;
                 font-size: {styles_model.footer_config.font_size};
                 font-family: {styles_model.font_family};
-                color: {styles_model.footer_config.color or '#000'};
+                color: {styles_model.footer_config.color or "#000"};
             }}
             .footer-date {{
                 text-align: right;
@@ -312,7 +313,7 @@ class DocumentStrategy(ABC):
                 padding: 0 10px;
             }}
             .signature-line {{
-                border-top: 1px solid {styles_model.footer_config.color or '#000'};
+                border-top: 1px solid {styles_model.footer_config.color or "#000"};
                 margin-bottom: 5px;
                 width: 90%;
                 margin-left: auto; margin-right: auto;
@@ -320,14 +321,14 @@ class DocumentStrategy(ABC):
             .signature-name {{
                 font-size: {styles_model.signatures_config.font_size};
                 font-family: {styles_model.signatures_config.font_family or styles_model.font_family};
-                color: {styles_model.signatures_config.color or styles_model.footer_config.color or '#000'};
+                color: {styles_model.signatures_config.color or styles_model.footer_config.color or "#000"};
                 margin-bottom: 2px;
                 font-weight: bold;
             }}
             .signature-role {{
                 font-size: {styles_model.signatures_config.font_size};
                 font-family: {styles_model.signatures_config.font_family or styles_model.font_family};
-                color: {styles_model.signatures_config.color or styles_model.footer_config.color or '#000'};
+                color: {styles_model.signatures_config.color or styles_model.footer_config.color or "#000"};
                 text-transform: uppercase;
             }}
             .page-number {{
@@ -347,8 +348,8 @@ class DocumentStrategy(ABC):
                 page-break-inside: avoid;
             }}
             """
-            context['dynamic_style_block'] = f"<style>{css}</style>"
-            
-        except Exception as e:
+            context["dynamic_style_block"] = f"<style>{css}</style>"
+
+        except Exception:
             # print(f"Error applying dynamic styles: {e}")
             pass

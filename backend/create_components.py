@@ -38,7 +38,7 @@ files = {
         }
         header { margin-bottom: 20px; }
         footer { margin-top: 30px; }
-        
+
         /* Utils */
         .text-center { text-align: center; }
         .bold { font-weight: bold; }
@@ -47,7 +47,7 @@ files = {
 </head>
 <body>
     <div class="page-border"></div>
-    
+
     <header>
         {% include 'components/headers/' + (config.header or 'header_classico.html') %}
     </header>
@@ -61,44 +61,41 @@ files = {
     </footer>
 </body>
 </html>""",
-
     r"headers\header_classico.html": """<div class="text-center">
     {% if header_image %}
     <img src="{{ header_image }}" style="max-height: 120px; margin-bottom: 10px;" alt="Logo da Loja">
     {% endif %}
-    
+
     <div style="font-size: 14pt;" class="bold uppercase">{{ lodge_title_formatted }}</div>
     <div style="font-size: 16pt; color: {{ config.styles.primary_color | default('#000000') }};" class="bold uppercase">{{ lodge_name }} Nº {{ lodge_number }}</div>
-    
+
     {% if affiliation_text_1 %}
     <div style="font-size: 10pt;">{{ affiliation_text_1 }}</div>
     {% endif %}
     {% if affiliation_text_2 %}
     <div style="font-size: 10pt;">{{ affiliation_text_2 }}</div>
     {% endif %}
-    
+
     <div style="margin-top: 10px; font-size: 10pt;">
         {{ lodge_address }}
     </div>
 </div>
 <hr style="border: 0; border-top: 2px solid {{ config.styles.border_color | default('#000000') }}; margin: 15px 0;">""",
-
     r"footers\footer_padrao.html": """<div class="text-center" style="margin-top: 20px;">
     {% if footer_image %}
     <img src="{{ footer_image }}" style="max-height: 60px; margin-bottom: 10px;" alt="Logo Rodapé">
     {% endif %}
-    
+
     <div style="font-size: 9pt;">
         Documento gerado eletronicamente pelo sistema SIGMA em {{ current_date_day }}/{{ current_date_month }}/{{ current_date_year }}.
     </div>
-    
+
     {% if hash_validation %}
     <div style="font-size: 8pt; margin-top: 5px; font-family: monospace;">
         HASH: {{ hash_validation }}
     </div>
     {% endif %}
 </div>""",
-
     r"bodies\balaustre_padrao.html": """<h1 class="text-center uppercase" style="font-size: 18pt; margin-bottom: 20px;">
     BALAÚSTRE DA SESSÃO {{ session_type | default('MAGNA') }} Nº {{ session_number }}
 </h1>
@@ -126,7 +123,7 @@ files = {
         <strong>{{ Secretario }}</strong><br>
         Secretário
     </div>
-</div>"""
+</div>""",
 }
 
 for path, content in files.items():

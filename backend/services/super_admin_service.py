@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 import models
 from schemas import super_admin_schema
 from utils import password_utils
+
 from . import email_service
 
 
@@ -78,7 +79,7 @@ def reset_password(db: Session, super_admin_id: int):
 
 def get_dashboard_stats(db: Session):
     total_obediences = db.query(models.Obedience).count()
-    total_lodges = db.query(models.Lodge).filter(models.Lodge.is_active == True).count()
+    total_lodges = db.query(models.Lodge).filter(models.Lodge.is_active).count()
     active_members = db.query(models.Member).filter(models.Member.status == "Active").count()
 
     return {"total_obediences": total_obediences, "total_lodges": total_lodges, "active_members": active_members}

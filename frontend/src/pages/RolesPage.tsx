@@ -27,6 +27,7 @@ import {
   Snackbar,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemIcon,
   Checkbox
@@ -52,9 +53,13 @@ const RolesPage: React.FC = () => {
     message: '',
     severity: 'success'
   });
-  
+
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  
+
+  const showSnackbar = React.useCallback((message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
   const fetchRoles = React.useCallback(async () => {
     try {
       const data = await roleService.getAll();
@@ -63,7 +68,7 @@ const RolesPage: React.FC = () => {
       console.error('Error fetching roles:', error);
       showSnackbar('Erro ao carregar cargos', 'error');
     }
-  }, []);
+  }, [showSnackbar]);
 
   const fetchPermissions = React.useCallback(async () => {
     try {
@@ -73,9 +78,10 @@ const RolesPage: React.FC = () => {
       console.error('Error fetching permissions:', error);
       showSnackbar('Erro ao carregar permissões', 'error');
     }
-  }, []);
+  }, [showSnackbar]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRoles();
     fetchPermissions();
   }, [fetchRoles, fetchPermissions]);
@@ -140,10 +146,6 @@ const RolesPage: React.FC = () => {
     }
   };
 
-  const showSnackbar = (message: string, severity: 'success' | 'error') => {
-    setSnackbar({ open: true, message, severity });
-  };
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -177,10 +179,10 @@ const RolesPage: React.FC = () => {
               <TableRow key={role.id}>
                 <TableCell>{role.name}</TableCell>
                 <TableCell>
-                  <Chip 
-                    label={role.role_type} 
-                    color={role.role_type === 'Loja' ? 'primary' : role.role_type === 'Obediência' ? 'secondary' : 'default'} 
-                    size="small" 
+                  <Chip
+                    label={role.role_type}
+                    color={role.role_type === 'Loja' ? 'primary' : role.role_type === 'Obediência' ? 'secondary' : 'default'}
+                    size="small"
                   />
                 </TableCell>
                 <TableCell>{role.level}</TableCell>
@@ -210,7 +212,7 @@ const RolesPage: React.FC = () => {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
-            
+
             <FormControl fullWidth>
               <InputLabel>Tipo (Escopo)</InputLabel>
               <Select
@@ -261,10 +263,10 @@ const RolesPage: React.FC = () => {
                 {formData.permission_ids.map((id) => {
                   const permission = permissions.find(p => p.id === id);
                   return (
-                    <Chip 
-                      key={id} 
-                      label={permission ? permission.action : id} 
-                      size="small" 
+                    <Chip
+                      key={id}
+                      label={permission ? permission.action : id}
+                      size="small"
                       onDelete={() => {
                         setFormData({
                           ...formData,
@@ -291,14 +293,14 @@ const RolesPage: React.FC = () => {
         <DialogTitle>
           Selecionar Permissões
           <Box mt={1} display="flex" gap={1}>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => setFormData({ ...formData, permission_ids: permissions.map(p => p.id) })}
             >
               Marcar Todas
             </Button>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => setFormData({ ...formData, permission_ids: [] })}
             >
               Desmarcar Todas
@@ -310,36 +312,39 @@ const RolesPage: React.FC = () => {
             {permissions.map((permission) => {
               const labelId = `checkbox-list-label-${permission.id}`;
               return (
-                <ListItem 
-                  key={permission.id} 
-                  button 
-                  onClick={() => {
-                    const currentIndex = formData.permission_ids.indexOf(permission.id);
-                    const newChecked = [...formData.permission_ids];
-
-                    if (currentIndex === -1) {
-                      newChecked.push(permission.id);
-                    } else {
-                      newChecked.splice(currentIndex, 1);
-                    }
-
-                    setFormData({ ...formData, permission_ids: newChecked });
-                  }}
+                <ListItem
+                  key={permission.id}
+                  disablePadding
                 >
-                  <ListItemIcon>
-                    <Checkbox
-                      edge="start"
-                      checked={formData.permission_ids.indexOf(permission.id) !== -1}
-                      tabIndex={-1}
-                      disableRipple
-                      inputProps={{ 'aria-labelledby': labelId }}
+                  <ListItemButton
+                    onClick={() => {
+                      const currentIndex = formData.permission_ids.indexOf(permission.id);
+                      const newChecked = [...formData.permission_ids];
+
+                      if (currentIndex === -1) {
+                        newChecked.push(permission.id);
+                      } else {
+                        newChecked.splice(currentIndex, 1);
+                      }
+
+                      setFormData({ ...formData, permission_ids: newChecked });
+                    }}
+                  >
+                    <ListItemIcon>
+                      <Checkbox
+                        edge="start"
+                        checked={formData.permission_ids.indexOf(permission.id) !== -1}
+                        tabIndex={-1}
+                        disableRipple
+                        inputProps={{ 'aria-labelledby': labelId }}
+                      />
+                    </ListItemIcon>
+                    <ListItemText
+                      id={labelId}
+                      primary={permission.action}
+                      secondary={permission.description}
                     />
-                  </ListItemIcon>
-                  <ListItemText 
-                    id={labelId} 
-                    primary={permission.action} 
-                    secondary={permission.description} 
-                  />
+                  </ListItemButton>
                 </ListItem>
               );
             })}
@@ -361,7 +366,7 @@ const RolesPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Container >
   );
 };
 

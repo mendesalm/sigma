@@ -1,5 +1,5 @@
-import sys
 import asyncio
+import sys
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -8,44 +8,44 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
 
+import os
+
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
-import os
 
 # Add the current directory (backend) to sys.path to allow imports like 'from routes import ...'
 # when running from the project root (e.g., uvicorn backend.main:app)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from routes import (  # noqa: E402
-    admin_template_routes, # New
+    admin_template_routes,  # New
+    administration_routes,
     attendance_routes,
     auth_routes,
     check_in_routes,
+    classified_routes,
+    committee_routes,
     dashboard_routes,
     document_routes,
     event_routes,
+    external_lodge_routes,
     financial_routes,
+    library_routes,
     lodge_routes,
     member_role_routes,
     member_routes,
+    notice_routes,
     obedience_routes,
     permission_routes,
+    publication_routes,
+    report_routes,
     role_routes,
     session_routes,
     super_admin_routes,
-    webmaster_routes,
     template_routes,
-    classified_routes,
-    external_lodge_routes,
     visitor_routes,
-    committee_routes,
-    publication_routes,
-    notice_routes,
-    report_routes,
-    administration_routes,
-    library_routes,
+    webmaster_routes,
 )
-
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 
 # Metadata para documentação da API
@@ -217,10 +217,8 @@ app.include_router(webmaster_routes.router)
 app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
-app.include_router(template_routes.router) # Included template_routes
-app.include_router(admin_template_routes.router) # New
-
-
+app.include_router(template_routes.router)  # Included template_routes
+app.include_router(admin_template_routes.router)  # New
 
 
 app.include_router(classified_routes.router)
@@ -235,9 +233,10 @@ app.include_router(library_routes.router)
 
 
 # Mount static files AFTER routers
-from fastapi.staticfiles import StaticFiles
 import os
 from pathlib import Path
+
+from fastapi.staticfiles import StaticFiles
 
 # Get the project root directory (parent of backend)
 BACKEND_DIR = Path(__file__).parent
@@ -261,4 +260,3 @@ def read_root():
 
 # To run this application:
 # uvicorn main:app --reload
-

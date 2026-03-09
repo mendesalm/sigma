@@ -1,15 +1,13 @@
-from datetime import date, time, datetime, timedelta
-from typing import Optional
+from datetime import date, datetime, time, timedelta
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 
+from models.models import SessionSubtypeEnum, SessionTypeEnum
 from schemas.document_schema import DocumentInDB
-from schemas.session_attendance_schema import SessionAttendanceResponse
 from schemas.lodge_schema import LodgeResponse
+from schemas.session_attendance_schema import SessionAttendanceResponse
 
-
-from models.models import SessionTypeEnum, SessionSubtypeEnum
 
 class MasonicSessionBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=255, description="Título da sessão")
@@ -17,138 +15,135 @@ class MasonicSessionBase(BaseModel):
     session_date: date = Field(..., description="Data da sessão")
     start_time: time | None = Field(None, description="Horário de início")
     end_time: time | None = Field(None, description="Horário de término")
-    
+
     type: SessionTypeEnum | None = Field(None, description="Tipo da sessão (Ordinária, Magna, Extraordinária)")
     subtype: SessionSubtypeEnum | None = Field(None, description="Subtipo da sessão")
-    
-    status: str = Field(
-        "AGENDADA",
-        description="Status da sessão: AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA"
-    )
-    
+
+    status: str = Field("AGENDADA", description="Status da sessão: AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA")
+
     agenda: str | None = Field(None, description="Pauta(s) para Ordem do Dia")
     sent_expedients: str | None = Field(None, description="Expediente(s) Expedido(s)")
     received_expedients: str | None = Field(None, description="Expediente(s) Recebido(s)")
     study_director_id: int | None = Field(None, description="ID do Responsável pelo Tempo de Estudos")
 
-    @field_validator('title', mode='after', check_fields=False)
+    @field_validator("title", mode="after", check_fields=False)
     @classmethod
     def validate_title(cls, v):
         """Valida título da sessão."""
         if not v or not v.strip():
-            raise ValueError('Título da sessão é obrigatório')
-        
-        v = ' '.join(v.split())
-        
+            raise ValueError("Título da sessão é obrigatório")
+
+        v = " ".join(v.split())
+
         if len(v) < 3:
-            raise ValueError('Título deve ter pelo menos 3 caracteres')
-        
+            raise ValueError("Título deve ter pelo menos 3 caracteres")
+
         return v
 
-    @field_validator('status', mode='after', check_fields=False)
+    @field_validator("status", mode="after", check_fields=False)
     @classmethod
     def validate_status(cls, v):
         """Valida status da sessão."""
-        valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', 'ENCERRADA'}
-        
+        valid_statuses = {"AGENDADA", "EM_ANDAMENTO", "REALIZADA", "CANCELADA", "ENCERRADA"}
+
         v_upper = v.upper()
-        
+
         if v_upper not in valid_statuses:
-            raise ValueError(
-                f'Status inválido. Use: {", ".join(valid_statuses)}'
-            )
-        
+            raise ValueError(f"Status inválido. Use: {', '.join(valid_statuses)}")
+
         return v_upper
 
-    @field_validator('start_time', mode='after', check_fields=False)
+    @field_validator("start_time", mode="after", check_fields=False)
     @classmethod
     def validate_start_time(cls, v):
         """Valida horário de início."""
         if not v:
             return v
-        
+
         # Sessões geralmente são à noite (18h - 23h)
         if v.hour < 18 or v.hour > 23:
-            raise ValueError('Horário de início deve estar entre 18:00 e 23:00')
-        
+            raise ValueError("Horário de início deve estar entre 18:00 e 23:00")
+
         return v
 
-    @field_validator('end_time', mode='after', check_fields=False)
+    @field_validator("end_time", mode="after", check_fields=False)
     @classmethod
     def validate_end_time(cls, v):
         """Valida horário de término."""
         if not v:
             return v
-        
+
         # Horário de término razoável (até meia-noite)
         if v.hour > 23 or (v.hour == 23 and v.minute > 59):
-            raise ValueError('Horário de término deve ser até 23:59')
-        
+            raise ValueError("Horário de término deve ser até 23:59")
+
         return v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_times_consistency(self):
         """Valida consistência entre horários."""
         start_time = self.start_time
         end_time = self.end_time
-        
+
         if start_time and end_time:
             # Converter para datetime para comparação
             today = date.today()
             start_dt = datetime.combine(today, start_time)
             end_dt = datetime.combine(today, end_time)
-            
+
             if end_dt <= start_dt:
-                raise ValueError('Horário de término deve ser posterior ao horário de início')
-            
+                raise ValueError("Horário de término deve ser posterior ao horário de início")
+
             # Validar duração razoável (mínimo 30min, máximo 5h)
             duration = (end_dt - start_dt).total_seconds() / 60  # em minutos
-            
+
             if duration < 30:
-                raise ValueError('Sessão deve ter duração mínima de 30 minutos')
-            
+                raise ValueError("Sessão deve ter duração mínima de 30 minutos")
+
             if duration > 300:  # 5 horas
-                raise ValueError('Sessão não pode ultrapassar 5 horas de duração')
-        
+                raise ValueError("Sessão não pode ultrapassar 5 horas de duração")
+
         return self
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_type_subtype_consistency(self):
         """Valida se o subtipo pertence ao tipo selecionado."""
         from models.models import VALID_SESSION_SUBTYPES
-        
+
         if self.type and self.subtype:
             valid_subtypes = VALID_SESSION_SUBTYPES.get(self.type)
             if valid_subtypes and self.subtype not in valid_subtypes:
-                raise ValueError(f"O subtipo '{self.subtype.value}' não é válido para o tipo de sessão '{self.type.value}'.")
-        
+                raise ValueError(
+                    f"O subtipo '{self.subtype.value}' não é válido para o tipo de sessão '{self.type.value}'."
+                )
+
         return self
 
 
 class MasonicSessionCreate(MasonicSessionBase):
     """Schema para criação de sessão."""
-    
-    @field_validator('session_date', mode='after', check_fields=False)
+
+    @field_validator("session_date", mode="after", check_fields=False)
     @classmethod
     def validate_session_date_create(cls, v):
         """Valida data da sessão na criação."""
         if not v:
-            raise ValueError('Data da sessão é obrigatória')
-        
+            raise ValueError("Data da sessão é obrigatória")
+
         today = date.today()
-        
+
         # Não permitir criar sessões para datas muito antigas (mais de 1 semana no passado)
         one_week_ago = today - timedelta(days=7)
-        
+
         if v < one_week_ago:
-            raise ValueError('Não é possível criar sessões para datas muito antigas (mais de 1 semana no passado)')
-        
+            raise ValueError("Não é possível criar sessões para datas muito antigas (mais de 1 semana no passado)")
+
         # Avisar sobre datas muito distantes no futuro (mais de 1 ano)
         one_year_ahead = today + timedelta(days=365)
-        
+
         if v > one_year_ahead:
-            raise ValueError('Data da sessão está muito distante (mais de 1 ano no futuro)')
-        
+            raise ValueError("Data da sessão está muito distante (mais de 1 ano no futuro)")
+
         return v
 
     model_config = {
@@ -161,7 +156,7 @@ class MasonicSessionCreate(MasonicSessionBase):
                 "type": "Magna",
                 "subtype": "Iniciação",
                 "agenda": "Iniciação do candidato João",
-                "status": "AGENDADA"
+                "status": "AGENDADA",
             }
         }
     }
@@ -169,6 +164,7 @@ class MasonicSessionCreate(MasonicSessionBase):
 
 class MasonicSessionUpdate(BaseModel):
     """Schema para atualização de sessão."""
+
     title: str | None = Field(None, min_length=3, max_length=255)
     session_number: int | None = None
     session_date: date | None = None
@@ -182,61 +178,61 @@ class MasonicSessionUpdate(BaseModel):
     received_expedients: str | None = None
     study_director_id: int | None = None
 
-    @field_validator('title', mode='after', check_fields=False)
+    @field_validator("title", mode="after", check_fields=False)
     @classmethod
     def validate_title(cls, v):
         """Valida título se fornecido."""
         if v is not None:
-            v = ' '.join(v.split())
+            v = " ".join(v.split())
             if len(v) < 3:
-                raise ValueError('Título deve ter pelo menos 3 caracteres')
+                raise ValueError("Título deve ter pelo menos 3 caracteres")
             return v
         return v
 
-    @field_validator('status', mode='after', check_fields=False)
+    @field_validator("status", mode="after", check_fields=False)
     @classmethod
     def validate_status(cls, v):
         """Valida status se fornecido."""
         if v is not None:
-            valid_statuses = {'AGENDADA', 'EM_ANDAMENTO', 'REALIZADA', 'CANCELADA', 'ENCERRADA'}
+            valid_statuses = {"AGENDADA", "EM_ANDAMENTO", "REALIZADA", "CANCELADA", "ENCERRADA"}
             v_upper = v.upper()
             if v_upper not in valid_statuses:
-                raise ValueError(f'Status inválido. Use: {", ".join(valid_statuses)}')
+                raise ValueError(f"Status inválido. Use: {', '.join(valid_statuses)}")
             return v_upper
         return v
 
-    @field_validator('start_time', mode='after', check_fields=False)
+    @field_validator("start_time", mode="after", check_fields=False)
     @classmethod
     def validate_start_time(cls, v):
         """Valida horário de início se fornecido."""
         if v is not None:
             if v.hour < 18 or v.hour > 23:
-                raise ValueError('Horário de início deve estar entre 18:00 e 23:00')
+                raise ValueError("Horário de início deve estar entre 18:00 e 23:00")
         return v
 
-    @field_validator('end_time', mode='after', check_fields=False)
+    @field_validator("end_time", mode="after", check_fields=False)
     @classmethod
     def validate_end_time(cls, v):
         """Valida horário de término se fornecido."""
         if v is not None:
             if v.hour > 23 or (v.hour == 23 and v.minute > 59):
-                raise ValueError('Horário de término deve ser até 23:59')
+                raise ValueError("Horário de término deve ser até 23:59")
         return v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_times_consistency(self):
         """Valida consistência entre horários se ambos fornecidos."""
         start_time = self.start_time
         end_time = self.end_time
-        
+
         if start_time and end_time:
             today = date.today()
             start_dt = datetime.combine(today, start_time)
             end_dt = datetime.combine(today, end_time)
-            
+
             if end_dt <= start_dt:
-                raise ValueError('Horário de término deve ser posterior ao horário de início')
-        
+                raise ValueError("Horário de término deve ser posterior ao horário de início")
+
         return self
 
     model_config = {
@@ -244,7 +240,7 @@ class MasonicSessionUpdate(BaseModel):
             "example": {
                 "title": "Sessão Magna de Iniciação (Remarcada)",
                 "session_date": "2024-05-22",
-                "status": "AGENDADA"
+                "status": "AGENDADA",
             }
         }
     }
@@ -257,23 +253,23 @@ class MasonicSessionResponse(MasonicSessionBase):
     attendances: list[SessionAttendanceResponse] = []
     documents: list[DocumentInDB] = []
 
-    model_config = SettingsConfigDict(from_attributes=True, json_schema_extra={
-        "example": {
-            "id": 1,
-            "lodge_id": 10,
-            "title": "Sessão Magna de Iniciação",
-            "session_date": "2024-05-15",
-            "start_time": "20:00:00",
-            "end_time": "22:30:00",
-            "type": "Magna",
-            "subtype": "Iniciação",
-            "status": "REALIZADA",
-            "lodge": {
-                "id": 10,
-                "lodge_name": "Estrela do Oriente"
+    model_config = SettingsConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": 1,
+                "lodge_id": 10,
+                "title": "Sessão Magna de Iniciação",
+                "session_date": "2024-05-15",
+                "start_time": "20:00:00",
+                "end_time": "22:30:00",
+                "type": "Magna",
+                "subtype": "Iniciação",
+                "status": "REALIZADA",
+                "lodge": {"id": 10, "lodge_name": "Estrela do Oriente"},
             }
-        }
-    })
+        },
+    )
 
 
 class MemberAttendanceStat(BaseModel):
@@ -290,10 +286,11 @@ class MemberAttendanceStat(BaseModel):
                 "member_name": "João da Silva",
                 "total_sessions": 10,
                 "present_sessions": 8,
-                "attendance_rate": 80.0
+                "attendance_rate": 80.0,
             }
         }
     }
+
 
 class LodgeAttendanceStats(BaseModel):
     total_sessions: int
@@ -311,9 +308,9 @@ class LodgeAttendanceStats(BaseModel):
                         "member_name": "João da Silva",
                         "total_sessions": 10,
                         "present_sessions": 8,
-                        "attendance_rate": 80.0
+                        "attendance_rate": 80.0,
                     }
-                ]
+                ],
             }
         }
     }

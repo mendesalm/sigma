@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import dependencies, schemas
+import dependencies
+import schemas
 from database import get_db
 from services import webmaster_service
 

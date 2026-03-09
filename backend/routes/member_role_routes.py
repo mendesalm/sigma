@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-import database, dependencies
+import database
+import dependencies
 from models import models
 from schemas import member_role_schema
 

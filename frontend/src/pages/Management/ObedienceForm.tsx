@@ -208,41 +208,56 @@ const ObedienceForm = () => {
 
   return (
     <Container maxWidth="xl" sx={{ pb: 5 }}>
-        {/* Page Header */}
-       <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
-            {id ? 'Editar Obediência' : 'Nova Obediência'}
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-            {id ? 'Atualize os dados da obediência.' : 'Preencha os dados abaixo para cadastrar uma nova obediência.'}
-            </Typography>
-        </Box>
-        <Button 
-            variant="outlined" 
-            startIcon={<ArrowBackIcon />} 
-            onClick={() => navigate('/dashboard/management/obediences')}
-            sx={{ borderRadius: 2 }}
-        >
-            Voltar
-        </Button>
-      </Box>
-
+      {/* Page Header */}
+      <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+       <Box>
+           <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+           {id ? 'Editar Obediência' : 'Nova Obediência'}
+           </Typography>
+           <Typography variant="subtitle1" color="text.secondary">
+           {id ? 'Atualize os dados da obediência.' : 'Preencha os dados abaixo para cadastrar uma nova obediência.'}
+           </Typography>
+       </Box>
+       <Button 
+           variant="outlined" 
+           startIcon={<ArrowBackIcon />} 
+           onClick={() => navigate('/dashboard/management/obediences')}
+           sx={{ borderRadius: 2 }}
+       >
+           Voltar
+       </Button>
+     </Box>
       <form onSubmit={handleSubmit}>
          <Grid container spacing={3}>
              {/* Left Column */}
-            <Grid item xs={12} md={9}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 9
+              }}>
                 {/* 1. Dados Gerais */}
                 <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
                     <SectionHeader title="Dados Gerais" icon={<AccountBalanceIcon />} />
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
                         <TextField name="name" label="Nome da Obediência" value={formData.name} onChange={handleChange} fullWidth required variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
                         <TextField name="acronym" label="Sigla" value={formData.acronym} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
                         <TextField 
                             name="cnpj" 
                             label="CNPJ" 
@@ -255,7 +270,11 @@ const ObedienceForm = () => {
                         />
                         </Grid>
                         
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                         <TextField 
                             name="email" 
                             label="Email Principal" 
@@ -267,10 +286,18 @@ const ObedienceForm = () => {
                             variant="outlined"
                         />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                         <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                         <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
                     </Grid>
@@ -280,7 +307,11 @@ const ObedienceForm = () => {
                 <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
                     <SectionHeader title="Localização" icon={<LocationOnIcon />} color="info" />
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
                         <TextField 
                             name="zip_code" 
                             label="CEP" 
@@ -294,22 +325,46 @@ const ObedienceForm = () => {
                             }}
                         />
                         </Grid>
-                        <Grid item xs={12} md={7}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 7
+                          }}>
                         <TextField name="street_address" label="Logradouro" value={formData.street_address} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={2}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 2
+                          }}>
                         <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                         <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={4}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
                         <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
                         <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={1}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 1
+                          }}>
                         <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth variant="outlined" />
                         </Grid>
                     </Grid>
@@ -319,10 +374,18 @@ const ObedienceForm = () => {
                 <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
                     <SectionHeader title="Contato Técnico" icon={<ContactMailIcon />} color="secondary" />
                     <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
                         <TextField name="technical_contact_name" label="Nome do Responsável Técnico" value={formData.technical_contact_name} onChange={handleChange} fullWidth required variant="outlined" />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
                         <TextField 
                             name="technical_contact_email" 
                             label="Email do Responsável" 
@@ -340,7 +403,11 @@ const ObedienceForm = () => {
             </Grid>
 
             {/* Right Column (Sidebar) */}
-            <Grid item xs={12} md={3}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 3
+              }}>
                  <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
                     <SectionHeader title="Classificação" icon={<ClassIcon />} />
                     <Stack spacing={2}>
@@ -392,7 +459,6 @@ const ObedienceForm = () => {
             </Grid>
          </Grid>
       </form>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

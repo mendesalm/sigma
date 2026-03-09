@@ -21,20 +21,29 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
-  const [associations, setAssociations] = useState<Association[]>([]);
-  const [requiresSelection, setRequiresSelection] = useState(false);
-
-  useEffect(() => {
+  const [user, setUser] = useState<any>(() => {
+    const token = localStorage.getItem('token');
+    return token ? jwtDecode(token) : null;
+  });
+  const [associations, setAssociations] = useState<Association[]>(() => {
     const token = localStorage.getItem('token');
     if (token) {
       const decodedUser = jwtDecode(token) as any;
-      setUser(decodedUser);
-      if (decodedUser.requires_selection) {
-        setAssociations(decodedUser.associations);
-        setRequiresSelection(true);
-      }
+      return decodedUser.requires_selection ? decodedUser.associations : [];
     }
+    return [];
+  });
+  const [requiresSelection, setRequiresSelection] = useState(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decodedUser = jwtDecode(token) as any;
+      return !!decodedUser.requires_selection;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    // Initialized from state directly
   }, []);
 
   const login = async (email: string, pass: string) => {

@@ -1,22 +1,22 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { 
-    Box, 
+import {
+    Box,
 
-    Typography, 
-    Button, 
-    Dialog, 
-    DialogTitle, 
-    DialogContent, 
-    DialogActions, 
-    TextField, 
-    MenuItem, 
-    IconButton, 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableContainer, 
-    TableHead, 
-    TableRow, 
+    Typography,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    MenuItem,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     Paper,
     CircularProgress,
     Alert,
@@ -36,7 +36,7 @@ const SecretarioPublicacoes: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
     const [uploading, setUploading] = useState(false);
-    
+
     // Form State
     const [title, setTitle] = useState('');
     const [type, setType] = useState('Regulamentos');
@@ -64,6 +64,7 @@ const SecretarioPublicacoes: React.FC = () => {
         if (user) {
             fetchPublications();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,8 +75,8 @@ const SecretarioPublicacoes: React.FC = () => {
                 return;
             }
             if (selectedFile.size > 5 * 1024 * 1024) {
-               setError("O arquivo deve ter no máximo 5MB.");
-               return;
+                setError("O arquivo deve ter no máximo 5MB.");
+                return;
             }
             setError(null);
             setFile(selectedFile);
@@ -137,7 +138,7 @@ const SecretarioPublicacoes: React.FC = () => {
 
     return (
         <Box sx={{ p: 3 }}>
-             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <img src={IcTempoEstudos} alt="Publicações" style={{ width: 50, height: 50, objectFit: 'contain' }} />
                     <Box>
@@ -149,9 +150,9 @@ const SecretarioPublicacoes: React.FC = () => {
                         </Typography>
                     </Box>
                 </Box>
-                <Button 
-                    variant="contained" 
-                    startIcon={<Add />} 
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
                     onClick={() => setOpenDialog(true)}
                     sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
                 >
@@ -174,7 +175,7 @@ const SecretarioPublicacoes: React.FC = () => {
                     </TableHead>
                     <TableBody>
                         {loading ? (
-                             <TableRow>
+                            <TableRow>
                                 <TableCell colSpan={5} align="center" sx={{ py: 3 }}><CircularProgress /></TableCell>
                             </TableRow>
                         ) : publications.length === 0 ? (
@@ -188,11 +189,11 @@ const SecretarioPublicacoes: React.FC = () => {
                                 <TableRow key={pub.id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, borderColor: 'rgba(255,255,255,0.05)' }}>
                                     <TableCell sx={{ color: '#fff', fontWeight: 500 }}>{pub.title}</TableCell>
                                     <TableCell>
-                                        <Box sx={{ 
-                                            bgcolor: 'rgba(14, 165, 233, 0.1)', 
-                                            color: '#38bdf8', 
-                                            px: 1, py: 0.5, 
-                                            borderRadius: 1, 
+                                        <Box sx={{
+                                            bgcolor: 'rgba(14, 165, 233, 0.1)',
+                                            color: '#38bdf8',
+                                            px: 1, py: 0.5,
+                                            borderRadius: 1,
                                             display: 'inline-block',
                                             fontSize: '0.75rem',
                                             fontWeight: 600
@@ -235,7 +236,7 @@ const SecretarioPublicacoes: React.FC = () => {
                             fullWidth
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            sx={{ 
+                            sx={{
                                 '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' } },
                                 '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' }
                             }}
@@ -246,7 +247,7 @@ const SecretarioPublicacoes: React.FC = () => {
                             fullWidth
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            sx={{ 
+                            sx={{
                                 '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' } },
                                 '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
                                 '& .MuiSelect-icon': { color: '#fff' }
@@ -263,12 +264,12 @@ const SecretarioPublicacoes: React.FC = () => {
                             rows={3}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            sx={{ 
+                            sx={{
                                 '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' } },
                                 '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' }
                             }}
                         />
-                        
+
                         <Box sx={{ border: '1px dashed rgba(255,255,255,0.2)', p: 3, borderRadius: 2, textAlign: 'center' }}>
                             <Button
                                 component="label"
@@ -293,9 +294,9 @@ const SecretarioPublicacoes: React.FC = () => {
                 </DialogContent>
                 <DialogActions sx={{ p: 2 }}>
                     <Button onClick={() => setOpenDialog(false)} sx={{ color: 'rgba(255,255,255,0.7)' }}>Cancelar</Button>
-                    <Button 
-                        onClick={handleCreate} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleCreate}
+                        variant="contained"
                         disabled={uploading}
                         sx={{ bgcolor: '#0ea5e9' }}
                     >

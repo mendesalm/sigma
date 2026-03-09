@@ -1,18 +1,18 @@
-import sys
 import os
+import sys
 
 # Add parent directory to path to allow importing from backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy.orm import Session
 from database import SessionLocal
 from models.models import Obedience, ObedienceTypeEnum
+
 
 def ensure_gleg():
     db = SessionLocal()
     try:
         gleg = db.query(Obedience).filter(Obedience.acronym == "GLEG").first()
-        
+
         if gleg:
             print(f"Updating existing GLEG (ID: {gleg.id})...")
             gleg.name = "Grande Loja Maçônica do Estado de Goiás"
@@ -46,19 +46,20 @@ def ensure_gleg():
                 state="GO",
                 zip_code="74674-180",
                 technical_contact_name="Secretaria GLEG",
-                technical_contact_email="gleg@gleg.com.br"
+                technical_contact_email="gleg@gleg.com.br",
             )
             db.add(gleg)
-        
+
         db.commit()
         db.refresh(gleg)
         print(f"GLEG ensured successfully with ID: {gleg.id}")
-        
+
     except Exception as e:
         print(f"Error: {e}")
         db.rollback()
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     ensure_gleg()

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Outlet, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   List,
@@ -219,6 +219,7 @@ const LodgeDashboardLayout: React.FC = () => {
 
     // If exact match for dashboard home, no active category
     if (currentPath === '/dashboard/lodge-dashboard' || currentPath === '/dashboard/lodge-dashboard/') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveCategory(null);
       return;
     }

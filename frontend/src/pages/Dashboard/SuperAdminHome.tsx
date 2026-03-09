@@ -54,11 +54,16 @@ const SuperAdminHome: React.FC = () => {
           Visão geral do sistema e ações rápidas.
         </Typography>
       </Box>
-
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 6 }}>
         {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
+          <Grid
+            key={index}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
               <Box
                 sx={{
@@ -101,14 +106,19 @@ const SuperAdminHome: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Quick Actions */}
       <Typography variant="h5" gutterBottom sx={{ mb: 3, color: theme.palette.text.primary }}>
         Ações Rápidas
       </Typography>
       <Grid container spacing={3}>
         {quickActions.map((action, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
+          <Grid
+            key={index}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Button
               fullWidth
               variant="outlined"

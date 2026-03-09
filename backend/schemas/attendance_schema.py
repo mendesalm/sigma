@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class ManualAttendanceUpdate(BaseModel):
@@ -10,13 +10,13 @@ class VisitorCreate(BaseModel):
     full_name: str
     cim: str
     degree: str
-    
+
     # Loja de Origem
     origin_lodge_id: int | None = None
     manual_lodge_name: str | None = None
     manual_lodge_number: str | None = None
     manual_lodge_obedience: str | None = None
-    
+
     remarks: str | None = None
 
 

@@ -2,11 +2,10 @@ import os
 import sys
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from dotenv import load_dotenv
 
 # load env vars
 load_dotenv()
@@ -16,7 +15,6 @@ sys.path.append(os.getcwd())
 
 # Import the Base and models
 from database import Base
-import models.models # This registers the models to Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -70,7 +68,7 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL")
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -78,9 +76,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

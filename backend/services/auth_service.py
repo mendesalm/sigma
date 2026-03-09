@@ -43,15 +43,15 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
         print(f"Found webmaster: {webmaster.username}")
         password_verified = password_utils.verify_password(password, webmaster.password_hash)
         print(f"Password verified: {password_verified}")
-        
+
         if password_verified:
             # Check if associated lodge is active
             if webmaster.lodge_id:
                 lodge = db.query(models.Lodge).filter(models.Lodge.id == webmaster.lodge_id).first()
                 if lodge and not lodge.is_active:
                     print(f"Login denied: Lodge {lodge.lodge_name} is inactive.")
-                    return None # Or raise specific exception if architecture allows
-            
+                    return None  # Or raise specific exception if architecture allows
+
             return webmaster, "webmaster"
 
     # 3. Check for Member (by email or CIM)
@@ -145,12 +145,11 @@ def calculate_member_credential(member: models.Member, entity_id: int, entity_ty
     if entity_type == "lodge":
         # Check for active role in RoleHistory for this lodge
         active_role_history = next(
-            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), 
-            None
+            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), None
         )
         if active_role_history:
             role = active_role_history.role
-            
+
     elif entity_type == "obedience":
         # Obedience associations still link directly to a role in the current model
         association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)
@@ -182,12 +181,11 @@ def get_active_role_name(member: models.Member, entity_id: int, entity_type: str
     if entity_type == "lodge":
         # Check for active role in RoleHistory for this lodge
         active_role_history = next(
-            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), 
-            None
+            (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), None
         )
         if active_role_history:
             return active_role_history.role.name
-            
+
     elif entity_type == "obedience":
         # Obedience associations still link directly to a role in the current model
         association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)

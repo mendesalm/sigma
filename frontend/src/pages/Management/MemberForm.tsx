@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
-  InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert, 
+import {
+  Button, Container, TextField, Typography, Select, MenuItem, FormControl,
+  InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert,
   Avatar, IconButton, CircularProgress,
   Tabs, Tab, Fade, Card, CardContent, useTheme, useMediaQuery, Chip
 } from '@mui/material';
-import { 
-  PhotoCamera, 
-  Add as AddIcon, 
-  Delete as DeleteIcon, 
+import {
+  PhotoCamera,
+  Add as AddIcon,
+  Delete as DeleteIcon,
   Search as SearchIcon,
   Person as PersonIcon,
   Home as HomeIcon,
@@ -33,7 +33,7 @@ import { useAuth } from '../../hooks/useAuth';
 // --- Theme Constants (Matching MeuCadastro) ---
 const COLORS = {
   background: '#0B0E14',
-  cardBg: '#151B26', 
+  cardBg: '#151B26',
   cardBorder: 'rgba(255,255,255,0.05)',
   gold: '#D4AF37',
   goldLight: '#F3E5AB',
@@ -100,12 +100,12 @@ const TabPanel = (props: TabPanelProps) => {
 };
 
 const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, borderBottom: `1px solid ${COLORS.cardBorder}`, pb: 1 }}>
-      <Icon sx={{ color: COLORS.gold, mr: 1.5, fontSize: 24 }} />
-      <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.text, fontWeight: 600 }}>
-        {title}
-      </Typography>
-    </Box>
+  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, borderBottom: `1px solid ${COLORS.cardBorder}`, pb: 1 }}>
+    <Icon sx={{ color: COLORS.gold, mr: 1.5, fontSize: 24 }} />
+    <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.text, fontWeight: 600 }}>
+      {title}
+    </Typography>
+  </Box>
 );
 
 const MemberForm: React.FC = () => {
@@ -155,7 +155,7 @@ const MemberForm: React.FC = () => {
     role_id: '',
     state: ''
   });
-  
+
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberLocal[]>([]);
   const [roleHistory, setRoleHistory] = useState<RoleHistoryResponse[]>([]);
   const [newRole, setNewRole] = useState({ role_id: '', start_date: '', end_date: '' });
@@ -163,7 +163,7 @@ const MemberForm: React.FC = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'success' });
-  
+
   const [isCimVerified, setIsCimVerified] = useState(false);
   const [cimCheckLoading, setCimCheckLoading] = useState(false);
   const [existingMemberId, setExistingMemberId] = useState<number | null>(null);
@@ -192,35 +192,35 @@ const MemberForm: React.FC = () => {
         try {
           const response = await api.get<MemberResponse>(`/members/${id}`);
           const memberData = response.data;
-          
+
           let targetLodgeId = memberData.lodge_associations?.[0]?.lodge_id;
           if (user?.user_type === 'webmaster' && user?.lodge_id) {
-             targetLodgeId = user.lodge_id;
+            targetLodgeId = user.lodge_id;
           }
 
           const association = memberData.lodge_associations?.find(a => a.lodge_id === targetLodgeId);
           const activeRole = memberData.role_history?.find(h => !h.end_date && h.lodge_id === targetLodgeId);
-          
+
           setFormState({
             ...memberData,
             lodge_id: targetLodgeId || '',
             role_id: activeRole?.role_id || '',
             status: association?.status || MemberStatusEnum.ACTIVE,
             member_class: association?.member_class || MemberClassEnum.REGULAR,
-            password: '', 
+            password: '',
             confirmPassword: ''
           });
 
           if (memberData.family_members) {
-             setFamilyMembers(memberData.family_members.map(fm => ({
-               id: fm.id,
-               full_name: fm.full_name,
-               relationship_type: fm.relationship_type,
-               birth_date: fm.birth_date || '',
-               phone: fm.phone || '',
-               email: fm.email || '',
-               is_deceased: fm.is_deceased
-             })));
+            setFamilyMembers(memberData.family_members.map(fm => ({
+              id: fm.id,
+              full_name: fm.full_name,
+              relationship_type: fm.relationship_type,
+              birth_date: fm.birth_date || '',
+              phone: fm.phone || '',
+              email: fm.email || '',
+              is_deceased: fm.is_deceased
+            })));
           }
 
           if (memberData.role_history) {
@@ -295,7 +295,7 @@ const MemberForm: React.FC = () => {
       setFormState((prev: any) => ({
         ...prev,
         ...memberData,
-        lodge_id: prev.lodge_id, 
+        lodge_id: prev.lodge_id,
         role_id: '',
         status: MemberStatusEnum.ACTIVE,
         member_class: MemberClassEnum.REGULAR,
@@ -311,7 +311,7 @@ const MemberForm: React.FC = () => {
           email: fm.email || '',
           is_deceased: fm.is_deceased
         })));
-     }
+      }
       setSnackbar({ open: true, message: 'Membro encontrado!', severity: 'success' });
       setIsCimVerified(true);
     } catch (error: any) {
@@ -365,7 +365,7 @@ const MemberForm: React.FC = () => {
         setRoleHistory([...roleHistory, response.data]);
         setNewRole({ role_id: '', start_date: '', end_date: '' });
         setSnackbar({ open: true, message: 'Cargo adicionado!', severity: 'success' });
-      } catch (error) {
+      } catch {
         setSnackbar({ open: true, message: 'Erro ao adicionar cargo.', severity: 'error' });
       }
     } else {
@@ -388,7 +388,7 @@ const MemberForm: React.FC = () => {
         await api.delete(`/members/${id}/roles/${roleHistoryId}`);
         setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
         setSnackbar({ open: true, message: 'Cargo removido!', severity: 'success' });
-      } catch (error) {
+      } catch {
         setSnackbar({ open: true, message: 'Erro ao remover cargo.', severity: 'error' });
       }
     } else {
@@ -398,7 +398,7 @@ const MemberForm: React.FC = () => {
 
   const handleSubmit = async (event?: React.FormEvent) => {
     if (event) event.preventDefault();
-    
+
     // Validations
     const newErrors: { [key: string]: string } = {};
     if (formState.cpf && !validateCPF(formState.cpf)) newErrors.cpf = 'CPF inválido';
@@ -422,11 +422,11 @@ const MemberForm: React.FC = () => {
       return acc;
     }, {} as any);
 
-    const memberData = { 
+    const memberData = {
       ...sanitizedFormState,
       role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
       lodge_id: Number(sanitizedFormState.lodge_id),
-      family_members: familyMembers 
+      family_members: familyMembers
     };
 
     try {
@@ -477,13 +477,13 @@ const MemberForm: React.FC = () => {
   if (!isCimVerified && !id) {
     return (
       <Container maxWidth="sm" sx={{ mt: 8 }}>
-        <Paper elevation={0} sx={{ 
-            p: 4, textAlign: 'center', borderRadius: 2, 
-            bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}` 
+        <Paper elevation={0} sx={{
+          p: 4, textAlign: 'center', borderRadius: 2,
+          bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`
         }}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
-                <SearchIcon sx={{ fontSize: 60, color: COLORS.gold }} />
-            </Box>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+            <SearchIcon sx={{ fontSize: 60, color: COLORS.gold }} />
+          </Box>
           <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: COLORS.text, fontFamily: '"Playfair Display", serif' }}>
             Cadastro de Novo Membro
           </Typography>
@@ -500,8 +500,8 @@ const MemberForm: React.FC = () => {
               placeholder="Ex: 12345"
               InputLabelProps={{ shrink: true }}
             />
-            <Button 
-              variant="contained" 
+            <Button
+              variant="contained"
               onClick={handleCheckCim}
               disabled={cimCheckLoading}
               sx={{ px: 4, bgcolor: COLORS.gold, color: '#000', fontWeight: 'bold' }}
@@ -524,85 +524,83 @@ const MemberForm: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1600, margin: '0 auto' }}>
-      
       {/* 1. HERO HEADER */}
-      <Paper elevation={0} sx={{ 
-        p: 0, mb: 3, borderRadius: 2, bgcolor: COLORS.cardBg, 
+      <Paper elevation={0} sx={{
+        p: 0, mb: 3, borderRadius: 2, bgcolor: COLORS.cardBg,
         border: `1px solid ${COLORS.cardBorder}`, overflow: 'hidden', position: 'relative'
       }}>
         <Box sx={{ height: 80, background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, position: 'relative' }}>
-            <Box sx={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+          <Box sx={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '24px 24px' }} />
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'flex-end', px: 4, pb: 4, mt: -6 }}>
           <Box sx={{ position: 'relative' }}>
             <Avatar
               variant="rounded"
-              sx={{ 
-                width: 150, height: 160, 
-                border: `4px solid ${COLORS.cardBg}`, borderRadius: 4, 
-                bgcolor: COLORS.background, color: COLORS.gold, fontSize: '3rem', 
+              sx={{
+                width: 150, height: 160,
+                border: `4px solid ${COLORS.cardBg}`, borderRadius: 4,
+                bgcolor: COLORS.background, color: COLORS.gold, fontSize: '3rem',
                 fontFamily: '"Playfair Display", serif', boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
               }}
               src={formState.profile_picture_path ? (formState.profile_picture_path.startsWith('blob:') ? formState.profile_picture_path : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${formState.profile_picture_path}`) : undefined}
             >
               {getInitials(formState.full_name || 'Novo Membro')}
             </Avatar>
-            <IconButton 
-                component="label" 
-                sx={{ position: 'absolute', bottom: 5, right: 5, bgcolor: COLORS.gold, color: '#000', '&:hover': { bgcolor: COLORS.goldDark } }}
+            <IconButton
+              component="label"
+              sx={{ position: 'absolute', bottom: 5, right: 5, bgcolor: COLORS.gold, color: '#000', '&:hover': { bgcolor: COLORS.goldDark } }}
             >
-                <PhotoCamera fontSize="small" />
-                <input hidden accept="image/*" type="file" onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                        const file = e.target.files[0];
-                        setSelectedFile(file);
-                        setFormState({ ...formState, profile_picture_path: URL.createObjectURL(file) });
-                    }
-                }} />
+              <PhotoCamera fontSize="small" />
+              <input hidden accept="image/*" type="file" onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  setSelectedFile(file);
+                  setFormState({ ...formState, profile_picture_path: URL.createObjectURL(file) });
+                }
+              }} />
             </IconButton>
           </Box>
-          
+
           <Box sx={{ ml: isMobile ? 0 : 3, mt: isMobile ? 2 : 0, textAlign: isMobile ? 'center' : 'left', flexGrow: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-                <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: COLORS.text }}>
+              <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: COLORS.text }}>
                 {formState.full_name || 'Novo Membro'}
-                </Typography>
-                <Chip label={formState.degree || 'Desconhecido'} size="small" sx={{ bgcolor: 'rgba(212, 175, 55, 0.15)', color: COLORS.gold, border: `1px solid ${COLORS.gold}`, fontWeight: 600 }} />
+              </Typography>
+              <Chip label={formState.degree || 'Desconhecido'} size="small" sx={{ bgcolor: 'rgba(212, 175, 55, 0.15)', color: COLORS.gold, border: `1px solid ${COLORS.gold}`, fontWeight: 600 }} />
             </Box>
             <Typography variant="body1" sx={{ color: COLORS.textSecondary }}>
-               CIM: {formState.cim} • {formState.email || 'Sem email'}
+              CIM: {formState.cim} • {formState.email || 'Sem email'}
             </Typography>
           </Box>
 
           <Box sx={{ mt: isMobile ? 3 : 0, display: 'flex', gap: 2 }}>
-             <Button
-                variant="outlined"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/dashboard/management/members')}
-                sx={{ color: COLORS.textSecondary, borderColor: 'rgba(255,255,255,0.2)' }}
-             >
-                Voltar
-             </Button>
-             <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={() => handleSubmit()}
-                sx={{ bgcolor: COLORS.gold, color: '#000', fontWeight: 700, px: 3, '&:hover': { bgcolor: COLORS.goldDark } }}
-             >
-                Salvar
-             </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/dashboard/management/members')}
+              sx={{ color: COLORS.textSecondary, borderColor: 'rgba(255,255,255,0.2)' }}
+            >
+              Voltar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={() => handleSubmit()}
+              sx={{ bgcolor: COLORS.gold, color: '#000', fontWeight: 700, px: 3, '&:hover': { bgcolor: COLORS.goldDark } }}
+            >
+              Salvar
+            </Button>
           </Box>
         </Box>
       </Paper>
-
       {/* 2. TABS */}
       <Box sx={{ borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)', mb: 2 }}>
-        <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange} 
-            variant={isMobile ? "scrollable" : "standard"}
-            sx={{ '& .MuiTab-root': { color: 'rgba(255,255,255,0.5)', '&.Mui-selected': { color: COLORS.gold } }, '& .MuiTabs-indicator': { backgroundColor: COLORS.gold } }}
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant={isMobile ? "scrollable" : "standard"}
+          sx={{ '& .MuiTab-root': { color: 'rgba(255,255,255,0.5)', '&.Mui-selected': { color: COLORS.gold } }, '& .MuiTabs-indicator': { backgroundColor: COLORS.gold } }}
         >
           <Tab icon={<PersonIcon fontSize="small" />} iconPosition="start" label="Dados Pessoais" />
           <Tab icon={<HomeIcon fontSize="small" />} iconPosition="start" label="Endereço" />
@@ -612,202 +610,320 @@ const MemberForm: React.FC = () => {
           <Tab icon={<LockIcon fontSize="small" />} iconPosition="start" label="Sistema" />
         </Tabs>
       </Box>
-
       {/* 3. PANELS */}
-      
       {/* PERSONAL */}
       <TabPanel value={tabValue} index={0}>
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Informações Pessoais" icon={PersonIcon} />
-                <Grid container spacing={2}>
-                    <Grid item xs={12}><TextField label="Nome Completo" name="full_name" value={formState.full_name} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="CPF" name="cpf" value={formState.cpf} onChange={handleChange} fullWidth error={!!errors.cpf} helperText={errors.cpf} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Email" name="email" value={formState.email} onChange={handleChange} fullWidth error={!!errors.email} helperText={errors.email} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="RG" name="identity_document" value={formState.identity_document} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Data de Nascimento" type="date" name="birth_date" value={formState.birth_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Data de Casamento" type="date" name="marriage_date" value={formState.marriage_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Celular" name="phone" value={formState.phone} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Naturalidade" name="place_of_birth" value={formState.place_of_birth} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Religião" name="religion" value={formState.religion} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                </Grid>
-            </CardContent>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Informações Pessoais" icon={PersonIcon} />
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12
+                }}><TextField label="Nome Completo" name="full_name" value={formState.full_name} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="CPF" name="cpf" value={formState.cpf} onChange={handleChange} fullWidth error={!!errors.cpf} helperText={errors.cpf} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Email" name="email" value={formState.email} onChange={handleChange} fullWidth error={!!errors.email} helperText={errors.email} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="RG" name="identity_document" value={formState.identity_document} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Data de Nascimento" type="date" name="birth_date" value={formState.birth_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Data de Casamento" type="date" name="marriage_date" value={formState.marriage_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Celular" name="phone" value={formState.phone} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Naturalidade" name="place_of_birth" value={formState.place_of_birth} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Religião" name="religion" value={formState.religion} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+            </Grid>
+          </CardContent>
         </Card>
       </TabPanel>
-
       {/* ADDRESS */}
       <TabPanel value={tabValue} index={1}>
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Endereço Residencial" icon={HomeIcon} />
-                <Grid container spacing={2}>
-                    <Grid item xs={12} md={3}><TextField label="CEP" name="zip_code" value={formState.zip_code} onChange={handleChange} onBlur={handleCepBlur} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={7}><TextField label="Logradouro" name="street_address" value={formState.street_address} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={2}><TextField label="Número" name="street_number" value={formState.street_number} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Bairro" name="neighborhood" value={formState.neighborhood} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={4}><TextField label="Cidade" name="city" value={formState.city} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={2}><TextField label="UF" name="state" value={formState.state} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                </Grid>
-            </CardContent>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Endereço Residencial" icon={HomeIcon} />
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}><TextField label="CEP" name="zip_code" value={formState.zip_code} onChange={handleChange} onBlur={handleCepBlur} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 7
+                }}><TextField label="Logradouro" name="street_address" value={formState.street_address} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 2
+                }}><TextField label="Número" name="street_number" value={formState.street_number} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Bairro" name="neighborhood" value={formState.neighborhood} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4
+                }}><TextField label="Cidade" name="city" value={formState.city} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 2
+                }}><TextField label="UF" name="state" value={formState.state} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+            </Grid>
+          </CardContent>
         </Card>
       </TabPanel>
-
       {/* MASONIC */}
       <TabPanel value={tabValue} index={2}>
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2, mb: 3 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Dados do Maçom" icon={BadgeIcon} />
-                <Grid container spacing={2}>
-                     <Grid item xs={12} md={3}><TextField label="CIM" name="cim" value={formState.cim} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} disabled={!!existingMemberId} /></Grid>
-                     <Grid item xs={12} md={3}>
-                        <FormControl fullWidth sx={customTextFieldStyle}>
-                            <InputLabel shrink>Grau</InputLabel>
-                            <Select name="degree" value={formState.degree} onChange={handleChange} sx={{color:'#fff','.MuiOutlinedInput-notchedOutline':{borderColor:'rgba(255,255,255,0.1)'}}}>
-                                <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
-                                <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
-                                <MenuItem value={DegreeEnum.MASTER}>Mestre</MenuItem>
-                                <MenuItem value={DegreeEnum.INSTALLED_MASTER}>Mestre Instalado</MenuItem>
-                            </Select>
-                        </FormControl>
-                     </Grid>
-                     <Grid item xs={12} md={3}>
-                        <FormControl fullWidth sx={customTextFieldStyle}>
-                            <InputLabel shrink>Status</InputLabel>
-                            <Select name="status" value={formState.status} onChange={handleChange} sx={{color:'#fff','.MuiOutlinedInput-notchedOutline':{borderColor:'rgba(255,255,255,0.1)'}}}>
-                                <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
-                                <MenuItem value={MemberStatusEnum.INACTIVE}>Inativo</MenuItem>
-                                <MenuItem value={MemberStatusEnum.DEMITTED}>Emérito</MenuItem>
-                            </Select>
-                        </FormControl>
-                     </Grid>
-                     <Grid item xs={12} md={3}>
-                         <TextField label="Data Filiação" type="date" name="affiliation_date" value={formState.affiliation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                     </Grid>
-                </Grid>
-                
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" sx={{ color: COLORS.gold, mb: 2 }}>Datas Históricas</Typography>
-                    <Grid container spacing={2}>
-                         <Grid item xs={12} md={3}><TextField label="Iniciação" type="date" name="initiation_date" value={formState.initiation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                         <Grid item xs={12} md={3}><TextField label="Elevação" type="date" name="elevation_date" value={formState.elevation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                         <Grid item xs={12} md={3}><TextField label="Exaltação" type="date" name="exaltation_date" value={formState.exaltation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                         <Grid item xs={12} md={3}><TextField label="Instalação" type="date" name="installation_date" value={formState.installation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    </Grid>
-                </Box>
-            </CardContent>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Dados do Maçom" icon={BadgeIcon} />
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}><TextField label="CIM" name="cim" value={formState.cim} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} disabled={!!existingMemberId} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}>
+                <FormControl fullWidth sx={customTextFieldStyle}>
+                  <InputLabel shrink>Grau</InputLabel>
+                  <Select name="degree" value={formState.degree} onChange={handleChange} sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                    <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
+                    <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
+                    <MenuItem value={DegreeEnum.MASTER}>Mestre</MenuItem>
+                    <MenuItem value={DegreeEnum.INSTALLED_MASTER}>Mestre Instalado</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}>
+                <FormControl fullWidth sx={customTextFieldStyle}>
+                  <InputLabel shrink>Status</InputLabel>
+                  <Select name="status" value={formState.status} onChange={handleChange} sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                    <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
+                    <MenuItem value={MemberStatusEnum.INACTIVE}>Inativo</MenuItem>
+                    <MenuItem value={MemberStatusEnum.DISABLED}>Desativado</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}>
+                <TextField label="Data Filiação" type="date" name="affiliation_date" value={formState.affiliation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: COLORS.gold, mb: 2 }}>Datas Históricas</Typography>
+              <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 3
+                  }}><TextField label="Iniciação" type="date" name="initiation_date" value={formState.initiation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 3
+                  }}><TextField label="Elevação" type="date" name="elevation_date" value={formState.elevation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 3
+                  }}><TextField label="Exaltação" type="date" name="exaltation_date" value={formState.exaltation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 3
+                  }}><TextField label="Instalação" type="date" name="installation_date" value={formState.installation_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              </Grid>
+            </Box>
+          </CardContent>
         </Card>
 
         {/* Roles History */}
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Histórico de Cargos" icon={HistoryIcon} />
-                
-                {/* Add Role Form */}
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1 }}>
-                    <FormControl fullWidth size="small" sx={customTextFieldStyle}>
-                        <InputLabel shrink>Cargo</InputLabel>
-                        <Select value={newRole.role_id} onChange={(e) => setNewRole({...newRole, role_id: e.target.value})} sx={{color:'#fff','.MuiOutlinedInput-notchedOutline':{borderColor:'rgba(255,255,255,0.1)'}}}>
-                            {roles.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
-                        </Select>
-                    </FormControl>
-                    <TextField label="Início" type="date" size="small" value={newRole.start_date} onChange={(e) => setNewRole({...newRole, start_date: e.target.value})} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                    <TextField label="Fim" type="date" size="small" value={newRole.end_date} onChange={(e) => setNewRole({...newRole, end_date: e.target.value})} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                    <Button variant="contained" onClick={handleAddRole} sx={{ height: 40, bgcolor: COLORS.gold, color: '#000', mt: '2px' }}>Adicionar</Button>
-                </Box>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Histórico de Cargos" icon={HistoryIcon} />
 
-                <Box>
-                    {roleHistory.map((role, i) => (
-                        <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                             <Box>
-                                 <Typography sx={{ color: '#fff', fontWeight: 600 }}>{roles.find(r => r.id === role.role_id)?.name || 'Cargo'}</Typography>
-                                 <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
-                                     {role.start_date ? new Date(role.start_date).toLocaleDateString() : ''} até {role.end_date ? new Date(role.end_date).toLocaleDateString() : 'Atual'}
-                                 </Typography>
-                             </Box>
-                             <IconButton size="small" color="error" onClick={() => handleDeleteRole(role.id)}><DeleteIcon /></IconButton>
-                        </Box>
-                    ))}
+            {/* Add Role Form */}
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 1 }}>
+              <FormControl fullWidth size="small" sx={customTextFieldStyle}>
+                <InputLabel shrink>Cargo</InputLabel>
+                <Select value={newRole.role_id} onChange={(e) => setNewRole({ ...newRole, role_id: e.target.value })} sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                  {roles.map(r => <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <TextField label="Início" type="date" size="small" value={newRole.start_date} onChange={(e) => setNewRole({ ...newRole, start_date: e.target.value })} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
+              <TextField label="Fim" type="date" size="small" value={newRole.end_date} onChange={(e) => setNewRole({ ...newRole, end_date: e.target.value })} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
+              <Button variant="contained" onClick={handleAddRole} sx={{ height: 40, bgcolor: COLORS.gold, color: '#000', mt: '2px' }}>Adicionar</Button>
+            </Box>
+
+            <Box>
+              {roleHistory.map((role, i) => (
+                <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <Box>
+                    <Typography sx={{ color: '#fff', fontWeight: 600 }}>{roles.find(r => r.id === role.role_id)?.name || 'Cargo'}</Typography>
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                      {role.start_date ? new Date(role.start_date).toLocaleDateString() : ''} até {role.end_date ? new Date(role.end_date).toLocaleDateString() : 'Atual'}
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" color="error" onClick={() => handleDeleteRole(role.id)}><DeleteIcon /></IconButton>
                 </Box>
-            </CardContent>
+              ))}
+            </Box>
+          </CardContent>
         </Card>
       </TabPanel>
-
       {/* FAMILY */}
       <TabPanel value={tabValue} index={3}>
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                    <SectionTitle title="Familiares" icon={FamilyIcon} />
-                    <Button variant="outlined" startIcon={<AddIcon />} onClick={addFamilyMember} sx={{ color: COLORS.gold, borderColor: COLORS.gold }}>Adicionar</Button>
-                </Box>
-                <Grid container spacing={2}>
-                    {familyMembers.map((member, index) => (
-                         <Grid item xs={12} xl={6} key={index}>
-                             <Paper sx={{ p: 2, bgcolor: COLORS.background, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ color: COLORS.gold }}>Familiar #{index+1}</Typography>
-                                    <IconButton size="small" color="error" onClick={() => removeFamilyMember(index)}><DeleteIcon fontSize="small" /></IconButton>
-                                </Box>
-                                <Grid container spacing={1}>
-                                    <Grid item xs={8}><TextField label="Nome" size="small" value={member.full_name} onChange={(e) => handleFamilyMemberChange(index, 'full_name', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                                    <Grid item xs={4}>
-                                        <FormControl fullWidth size="small" sx={customTextFieldStyle}>
-                                            <InputLabel shrink>Tipo</InputLabel>
-                                            <Select value={member.relationship_type} onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)} sx={{color:'#fff','.MuiOutlinedInput-notchedOutline':{borderColor:'rgba(255,255,255,0.1)'}}}>
-                                                <MenuItem value={RelationshipTypeEnum.SPOUSE}>Esposa</MenuItem>
-                                                <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
-                                                <MenuItem value={RelationshipTypeEnum.DAUGHTER}>Filha</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                    </Grid>
-                                    <Grid item xs={6}><TextField label="Nascimento" type="date" size="small" value={member.birth_date} onChange={(e) => handleFamilyMemberChange(index, 'birth_date', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                                    <Grid item xs={6}><TextField label="Telefone" size="small" value={member.phone} onChange={(e) => handleFamilyMemberChange(index, 'phone', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                                </Grid>
-                             </Paper>
-                         </Grid>
-                    ))}
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+              <SectionTitle title="Familiares" icon={FamilyIcon} />
+              <Button variant="outlined" startIcon={<AddIcon />} onClick={addFamilyMember} sx={{ color: COLORS.gold, borderColor: COLORS.gold }}>Adicionar</Button>
+            </Box>
+            <Grid container spacing={2}>
+              {familyMembers.map((member, index) => (
+                <Grid
+                  key={index}
+                  size={{
+                    xs: 12,
+                    xl: 6
+                  }}>
+                  <Paper sx={{ p: 2, bgcolor: COLORS.background, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="subtitle2" sx={{ color: COLORS.gold }}>Familiar #{index + 1}</Typography>
+                      <IconButton size="small" color="error" onClick={() => removeFamilyMember(index)}><DeleteIcon fontSize="small" /></IconButton>
+                    </Box>
+                    <Grid container spacing={1}>
+                      <Grid
+                        size={{
+                          xs: 8
+                        }}><TextField label="Nome" size="small" value={member.full_name} onChange={(e) => handleFamilyMemberChange(index, 'full_name', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                      <Grid
+                        size={{
+                          xs: 4
+                        }}>
+                        <FormControl fullWidth size="small" sx={customTextFieldStyle}>
+                          <InputLabel shrink>Tipo</InputLabel>
+                          <Select value={member.relationship_type} onChange={(e) => handleFamilyMemberChange(index, 'relationship_type', e.target.value)} sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
+                            <MenuItem value={RelationshipTypeEnum.SPOUSE}>Esposa</MenuItem>
+                            <MenuItem value={RelationshipTypeEnum.SON}>Filho</MenuItem>
+                            <MenuItem value={RelationshipTypeEnum.DAUGHTER}>Filha</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid
+                        size={{
+                          xs: 6
+                        }}><TextField label="Nascimento" type="date" size="small" value={member.birth_date} onChange={(e) => handleFamilyMemberChange(index, 'birth_date', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                      <Grid
+                        size={{
+                          xs: 6
+                        }}><TextField label="Telefone" size="small" value={member.phone} onChange={(e) => handleFamilyMemberChange(index, 'phone', e.target.value)} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                    </Grid>
+                  </Paper>
                 </Grid>
-            </CardContent>
+              ))}
+            </Grid>
+          </CardContent>
         </Card>
       </TabPanel>
-      
       {/* PROFESSIONAL */}
       <TabPanel value={tabValue} index={4}>
         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Dados Profissionais" icon={WorkIcon} />
-                <Grid container spacing={2}>
-                     <Grid item xs={12} md={6}><TextField label="Formação" name="education_level" value={formState.education_level} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                     <Grid item xs={12} md={6}><TextField label="Ocupação" name="occupation" value={formState.occupation} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                     <Grid item xs={12}><TextField label="Empresa / Local" name="workplace" value={formState.workplace} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                </Grid>
-            </CardContent>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Dados Profissionais" icon={WorkIcon} />
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Formação" name="education_level" value={formState.education_level} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Ocupação" name="occupation" value={formState.occupation} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12
+                }}><TextField label="Empresa / Local" name="workplace" value={formState.workplace} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+            </Grid>
+          </CardContent>
         </Card>
       </TabPanel>
-
       {/* SYSTEM / SECURITY */}
       <TabPanel value={tabValue} index={5}>
-         <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Credenciais de Acesso" icon={LockIcon} />
-                <Typography variant="body2" sx={{ color: COLORS.textSecondary, mb: 3 }}>
-                    Defina uma senha caso o membro ainda não possua acesso ou precise de redefinição.
-                </Typography>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}><TextField label="Nova Senha" type="password" name="password" value={formState.password} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid item xs={12} md={6}><TextField label="Confirmar Senha" type="password" name="confirmPassword" value={formState.confirmPassword} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
-                </Grid>
-            </CardContent>
-         </Card>
+        <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Credenciais de Acesso" icon={LockIcon} />
+            <Typography variant="body2" sx={{ color: COLORS.textSecondary, mb: 3 }}>
+              Defina uma senha caso o membro ainda não possua acesso ou precise de redefinição.
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Nova Senha" type="password" name="password" value={formState.password} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Confirmar Senha" type="password" name="confirmPassword" value={formState.confirmPassword} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+            </Grid>
+          </CardContent>
+        </Card>
       </TabPanel>
-
       {/* SNACKBAR */}
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
         <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })} variant="filled">
           {snackbar.message}
         </Alert>
       </Snackbar>
-
     </Box>
   );
 };

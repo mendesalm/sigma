@@ -17,7 +17,7 @@ class MemberInfo(BaseModel):
 class VisitorInfo(BaseModel):
     id: int
     full_name: str
-    degree: str | None = None # Added degree
+    degree: str | None = None  # Added degree
     manual_lodge_name: str | None = None
     manual_lodge_number: str | None = None
     manual_lodge_obedience: str | None = None
@@ -51,7 +51,7 @@ class SessionAttendanceResponse(SessionAttendanceBase):
 class SessionAttendanceWithMemberResponse(SessionAttendanceResponse):
     member: MemberInfo | None = None
     visitor: VisitorInfo | None = None
-    
+
 
 class CheckInRequest(BaseModel):
     qr_code_token: str

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class ExternalLodgeResponse(BaseModel):
     id: int
     name: str

@@ -1,30 +1,30 @@
 import { useState, useEffect, useContext, useRef } from 'react';
-import { 
-  Box, 
-  Grid, 
-  Paper, 
-  Typography, 
-  Button, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  TextField,
-  CircularProgress,
-  Snackbar,
-  Alert,
-  FormControlLabel,
-  Switch,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Slider,
-  Divider,
-  Tab, 
-  Tabs, 
-  ToggleButton, 
-  ToggleButtonGroup,
-  Chip
+import {
+    Box,
+    Grid,
+    Paper,
+    Typography,
+    Button,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    TextField,
+    CircularProgress,
+    Snackbar,
+    Alert,
+    FormControlLabel,
+    Switch,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Slider,
+    Divider,
+    Tab,
+    Tabs,
+    ToggleButton,
+    ToggleButtonGroup,
+    Chip
 } from '@mui/material';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -40,7 +40,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 
 // Components
 import VariablePalette from '../../components/DocumentBuilder/VariablePalette';
-import RichTextVariableEditor from '../../components/DocumentBuilder/RichTextVariableEditor';
+import TiptapEditor, { TiptapEditorRef } from '../../components/DocumentBuilder/TiptapEditor';
 
 
 
@@ -155,32 +155,32 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
     const [saving, setSaving] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
     const [lodgeData, setLodgeData] = useState<any>(null);
-    
+
     // State
     const [currentType, setCurrentType] = useState('balaustre');
     const [activeConfigTab, setActiveConfigTab] = useState(0); // 0: Layout/Timbre, 1: Conteúdo/Modelo
     const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
-    const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer' | 'preamble' | 'signatures' | 'date_place'>('content'); 
+    const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer' | 'preamble' | 'signatures' | 'date_place'>('content');
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>('page_section');
 
-    const editorRef = useRef<any>(null);
+    const editorRef = useRef<TiptapEditorRef>(null);
 
     const [allSettings, setAllSettings] = useState({
-        balaustre: { 
+        balaustre: {
             ...DEFAULT_SETTINGS,
             content_template: '',
             signatures_template: ''
         },
-        prancha: { 
-            ...DEFAULT_SETTINGS, 
+        prancha: {
+            ...DEFAULT_SETTINGS,
             preamble_template: '',
             signatures_template: '',
-            styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 } 
+            styles: { ...DEFAULT_SETTINGS.styles, line_height: 2.0 }
         },
-        edital: { 
-            ...DEFAULT_SETTINGS, 
+        edital: {
+            ...DEFAULT_SETTINGS,
             signatures_template: '',
-            styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true } 
+            styles: { ...DEFAULT_SETTINGS.styles, line_height: 1.5, show_border: true }
         },
         convite: { ...DEFAULT_SETTINGS, header: 'header_moderno.html', styles: { ...DEFAULT_SETTINGS.styles, font_family: "'Times New Roman', serif", show_border: true, border_style: 'double' } },
         certificado: { ...DEFAULT_SETTINGS, header: 'header_timbre.html', styles: { ...DEFAULT_SETTINGS.styles, orientation: 'landscape', show_border: true, border_style: 'solid', border_width: '5px' } }
@@ -190,16 +190,16 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
     // --- Effects & Data Loading ---
-    
+
     const loadDefaults = async (type: string) => {
-         try {
-             if (!['balaustre', 'prancha', 'edital'].includes(type) && mode === 'lodge') return;
-             
-             // In admin mode, we might want to load 'true' defaults or current master
-             const response = await api.get(`/documents/defaults/${type}`);
-             if (response.data) {
-                 const { content_template, signatures_template, preamble_template } = response.data;
-                 setAllSettings(prev => {
+        try {
+            if (!['balaustre', 'prancha', 'edital'].includes(type) && mode === 'lodge') return;
+
+            // In admin mode, we might want to load 'true' defaults or current master
+            const response = await api.get(`/documents/defaults/${type}`);
+            if (response.data) {
+                const { content_template, signatures_template, preamble_template } = response.data;
+                setAllSettings(prev => {
                     const current = prev[type as keyof typeof prev];
                     return {
                         ...prev,
@@ -210,20 +210,21 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             preamble_template: (!current.preamble_template && preamble_template) ? preamble_template : current.preamble_template
                         }
                     };
-                 });
-             }
-         } catch (error) {
-             console.error("Erro ao carregar defaults:", error);
-         }
+                });
+            }
+        } catch (error) {
+            console.error("Erro ao carregar defaults:", error);
+        }
     };
 
     useEffect(() => {
         const current = allSettings[currentType as keyof typeof allSettings];
         if (currentType === 'balaustre' || currentType === 'prancha' || currentType === 'edital') {
-             if (!current?.content_template && !current?.signatures_template) {
-                 loadDefaults(currentType);
-             }
+            if (!current?.content_template && !current?.signatures_template) {
+                loadDefaults(currentType);
+            }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentType]);
 
     useEffect(() => {
@@ -236,6 +237,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             // Maybe fetch from a demo lodge or generic endpoint?
             // For now, empty recent sessions
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode, effectiveLodgeId]);
 
     const [recentSessions, setRecentSessions] = useState<any[]>([]);
@@ -243,10 +245,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
     const fetchRecentSessions = async () => {
         try {
-             if (!effectiveLodgeId) return;
-             // We can filter sessions by lodge if needed, but endpoint implementation varies
-             const response = await api.get('/sessions', { params: { skip: 0, limit: 5 } });
-             setRecentSessions(response.data.slice(0, 5));
+            if (!effectiveLodgeId) return;
+            // We can filter sessions by lodge if needed, but endpoint implementation varies
+            const response = await api.get('/sessions', { params: { skip: 0, limit: 5 } });
+            setRecentSessions(response.data.slice(0, 5));
         } catch (error) {
             console.error("Failed to load sessions", error);
         }
@@ -269,15 +271,15 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             const response = await api.get(`/lodges/${effectiveLodgeId}`);
             setLodgeData(response.data);
             const data = response.data.document_settings;
-            
+
             if (data && Object.keys(data).length > 0) {
                 if (!data.balaustre && !data.prancha) {
                     // Estrutura antiga migration
                     setAllSettings(prev => ({
                         ...prev,
-                        balaustre: { 
-                            ...prev.balaustre, 
-                            ...data, 
+                        balaustre: {
+                            ...prev.balaustre,
+                            ...data,
                             styles: deepMergeStyles(prev.balaustre.styles, data.styles)
                         }
                     }));
@@ -301,40 +303,40 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
     const fetchAdminSettings = async () => {
         // Fetch GLOBAL Master settings
         try {
-             // We need a new endpoint GET /admin/templates/settings which returns the JSON for the master configs
-             // For now, we reuse the defaults endpoint or reading from global storage
-             // IF backend doesn't support reading JSON for master yet, we might start with DEFAULT_SETTINGS 
-             // and only fetch HTML content for the templates
-             
-             // Step 1: Get HTML Content (Universal)
-             const htmlResponse = await api.get(`/admin/templates/universal/${currentType}`);
-             // If successful, update the content_template of current settings
-             if (htmlResponse.data.content) {
-                 setAllSettings(prev => ({
-                     ...prev,
-                     [currentType]: {
-                         ...prev[currentType as keyof typeof prev],
-                         content_template: htmlResponse.data.content
-                     }
-                 }));
-             }
-             
-             // TODO: Fetch GLOBAL JSON settings (styles) if implemented
-             // const jsonResponse = await api.get('/admin/templates/settings');
+            // We need a new endpoint GET /admin/templates/settings which returns the JSON for the master configs
+            // For now, we reuse the defaults endpoint or reading from global storage
+            // IF backend doesn't support reading JSON for master yet, we might start with DEFAULT_SETTINGS 
+            // and only fetch HTML content for the templates
+
+            // Step 1: Get HTML Content (Universal)
+            const htmlResponse = await api.get(`/admin/templates/universal/${currentType}`);
+            // If successful, update the content_template of current settings
+            if (htmlResponse.data.content) {
+                setAllSettings(prev => ({
+                    ...prev,
+                    [currentType]: {
+                        ...prev[currentType as keyof typeof prev],
+                        content_template: htmlResponse.data.content
+                    }
+                }));
+            }
+
+            // TODO: Fetch GLOBAL JSON settings (styles) if implemented
+            // const jsonResponse = await api.get('/admin/templates/settings');
         } catch (error) {
             console.error('Erro ao buscar configurações globais', error);
         }
     };
 
     // --- Updates Logic ---
-    
+
     const updateCurrentSetting = (field: string, value: any, isStyle = false) => {
         setAllSettings(prev => {
             const typeSettings = prev[currentType as keyof typeof prev];
-            const newTypeSettings = isStyle 
+            const newTypeSettings = isStyle
                 ? { ...typeSettings, styles: { ...typeSettings.styles, [field]: value } }
                 : { ...typeSettings, [field]: value };
-            
+
             return { ...prev, [currentType]: newTypeSettings };
         });
     };
@@ -344,7 +346,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             const typeSettings = prev[currentType as keyof typeof prev];
             const currentStyles = typeSettings.styles;
             const currentSectionConfig = (currentStyles as any)[section] || {};
-            
+
             const newStyles = {
                 ...currentStyles,
                 [section]: {
@@ -369,7 +371,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             const fullUrl = `${API_URL}${response.data.url}`;
-            
+
             if (['header_config', 'content_config', 'footer_config'].includes(section)) {
                 updateNestedSetting(section, field, fullUrl);
             } else {
@@ -398,15 +400,15 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     setSaving(false);
                     return;
                 }
-                
+
                 // 1. Save HTML Content
                 await api.put(`/admin/templates/universal/${currentType}`, {
                     content: currentSettings.content_template
                 });
-                
+
                 // 2. Save JSON Settings (Styles) - Creating new endpoint if needed
                 // await api.put(`/admin/templates/settings`, { settings: allSettings });
-                
+
                 showSnackbar('Modelo Universal atualizado com sucesso!', 'success');
             }
         } catch (error) {
@@ -435,8 +437,8 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             if (viewMode === 'editor') return; // Don't fetch if editing
             setPreviewLoading(true);
             try {
-                const payload = { 
-                    settings: currentSettings, 
+                const payload = {
+                    settings: currentSettings,
                     lodge_id: effectiveLodgeId, // Use effective ID directly
                     session_id: previewSessionId || undefined
                 };
@@ -471,25 +473,29 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
     const renderColorControl = (label: string, section: string, field: string, currentValue: string | undefined) => {
         // Handle "transparent" specifically for the color input which expects hex
         const displayColor = currentValue === 'transparent' ? '#ffffff' : (currentValue || '#ffffff');
-        
+
         return (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TextField 
-                    label={label} 
-                    type="color" 
-                    size="small" 
-                    fullWidth 
+                <TextField
+                    label={label}
+                    type="color"
+                    size="small"
+                    fullWidth
                     value={displayColor}
-                    onChange={(e) => section === 'styles' ? updateCurrentSetting(field, e.target.value, true) : updateNestedSetting(section as any, field, e.target.value)} 
+                    onChange={(e) => section === 'styles' ? updateCurrentSetting(field, e.target.value, true) : updateNestedSetting(section as any, field, e.target.value)}
                     disabled={currentValue === 'transparent'}
                 />
-                <Button 
+                <Button
                     variant={currentValue === 'transparent' ? "contained" : "outlined"}
                     size="small"
                     color={currentValue === 'transparent' ? "success" : "primary"}
                     onClick={() => {
                         const newValue = currentValue === 'transparent' ? '#ffffff' : 'transparent';
-                        section === 'styles' ? updateCurrentSetting(field, newValue, true) : updateNestedSetting(section as any, field, newValue);
+                        if (section === 'styles') {
+                            updateCurrentSetting(field, newValue, true);
+                        } else {
+                            updateNestedSetting(section as any, field, newValue);
+                        }
                     }}
                     sx={{ minWidth: '40px', px: 1 }}
                     title="Alternar Transparência"
@@ -517,15 +523,15 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                     {opacityField && (
                         <Box sx={{ width: '100%', px: 1 }}>
-                             <Typography variant="caption">Opacidade: {Math.round((currentOpacity ?? 1) * 100)}%</Typography>
-                             <Slider 
-                                size="small" 
-                                value={currentOpacity ?? 1} 
-                                min={0} 
-                                max={1} 
-                                step={0.05} 
-                                onChange={(_, v) => section === 'styles' ? updateCurrentSetting(opacityField, v, true) : updateNestedSetting(section as any, opacityField, v)} 
-                             />
+                            <Typography variant="caption">Opacidade: {Math.round((currentOpacity ?? 1) * 100)}%</Typography>
+                            <Slider
+                                size="small"
+                                value={currentOpacity ?? 1}
+                                min={0}
+                                max={1}
+                                step={0.05}
+                                onChange={(_, v) => section === 'styles' ? updateCurrentSetting(opacityField, v, true) : updateNestedSetting(section as any, opacityField, v)}
+                            />
                         </Box>
                     )}
                 </Box>
@@ -552,7 +558,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 </AccordionSummary>
                 <AccordionDetails>
                     <Grid container spacing={2}>
-                         <Grid item xs={6}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Tamanho</InputLabel>
                                 <Select value={currentSettings.styles.page_size || 'A4'} label="Tamanho" onChange={(e) => updateCurrentSetting('page_size', e.target.value, true)}>
@@ -561,7 +570,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Orientação</InputLabel>
                                 <Select value={currentSettings.styles.orientation || 'portrait'} label="Orientação" onChange={(e) => updateCurrentSetting('orientation', e.target.value, true)}>
@@ -570,14 +582,23 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={6}>
-                             <TextField label="Margens" size="small" fullWidth value={currentSettings.styles.page_margin || '1cm'} onChange={(e) => updateCurrentSetting('page_margin', e.target.value, true)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Margens" size="small" fullWidth value={currentSettings.styles.page_margin || '1cm'} onChange={(e) => updateCurrentSetting('page_margin', e.target.value, true)} />
                         </Grid>
-                         <Grid item xs={6}>
-                             {renderColorControl("Cor Fundo", "styles", "background_color", currentSettings.styles.background_color)}
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            {renderColorControl("Cor Fundo", "styles", "background_color", currentSettings.styles.background_color)}
                         </Grid>
-                        <Grid item xs={12}>
-                             {renderFileUploadControl("Imagem de Fundo (Página)", "styles", "background_image", currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? currentSettings.styles.background_image : null, undefined, "image_opacity", currentSettings.styles.image_opacity)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Imagem de Fundo (Página)", "styles", "background_image", currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? currentSettings.styles.background_image : null, undefined, "image_opacity", currentSettings.styles.image_opacity)}
                         </Grid>
                     </Grid>
                 </AccordionDetails>
@@ -590,8 +611,8 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 <AccordionDetails>
 
                     <Box sx={{ mb: 3 }}>
-                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mb: 1, display: 'block' }}>LAYOUT</Typography>
-                         <ToggleButtonGroup
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mb: 1, display: 'block' }}>LAYOUT</Typography>
+                        <ToggleButtonGroup
                             value={currentSettings.styles.header_config?.layout_mode || 'classic'}
                             exclusive
                             onChange={(_, newVal) => {
@@ -606,7 +627,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             <ToggleButton value="double">Duplo</ToggleButton>
                         </ToggleButtonGroup>
                         <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
-                             <ToggleButtonGroup
+                            <ToggleButtonGroup
                                 value={currentSettings.styles.header_config?.layout_mode || 'classic'}
                                 exclusive
                                 onChange={(_, newVal) => {
@@ -618,18 +639,27 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             </ToggleButtonGroup>
                         </Box>
                     </Box>
-                    
+
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mt: 2, mb: 1, display: 'block' }}>LOGO</Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Tamanho (px ou %)" size="small" fullWidth value={currentSettings.styles.header_config?.logo_size || '80px'} onChange={(e) => updateNestedSetting('header_config', 'logo_size', e.target.value)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Tamanho (px ou %)" size="small" fullWidth value={currentSettings.styles.header_config?.logo_size || '80px'} onChange={(e) => updateNestedSetting('header_config', 'logo_size', e.target.value)} />
                         </Grid>
                     </Grid>
                     <Box sx={{ mt: 1 }}>
-                         {currentSettings.styles.header_config?.layout_mode === 'double' ? (
+                        {currentSettings.styles.header_config?.layout_mode === 'double' ? (
                             <Grid container spacing={2}>
-                                <Grid item xs={12}>{renderFileUploadControl("Logo Esq", "header_config", "logo_url", currentSettings.styles.header_config?.logo_url)}</Grid>
-                                <Grid item xs={12}>{renderFileUploadControl("Logo Dir (Secundário)", "header_config", "logo_obedience", currentSettings.styles.header_config?.logo_obedience)}</Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12
+                                    }}>{renderFileUploadControl("Logo Esq", "header_config", "logo_url", currentSettings.styles.header_config?.logo_url)}</Grid>
+                                <Grid
+                                    size={{
+                                        xs: 12
+                                    }}>{renderFileUploadControl("Logo Dir (Secundário)", "header_config", "logo_obedience", currentSettings.styles.header_config?.logo_obedience)}</Grid>
                             </Grid>
                         ) : (
                             renderFileUploadControl("Arquivo de Logo", "header_config", "logo_url", currentSettings.styles.header_config?.logo_url)
@@ -639,46 +669,79 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mt: 3, mb: 1, display: 'block' }}>NOME DA LOJA (TÍTULO)</Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Tamanho Fonte" size="small" fullWidth value={currentSettings.styles.header_config?.font_size_title || '16pt'} onChange={(e) => updateNestedSetting('header_config', 'font_size_title', e.target.value)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Tamanho Fonte" size="small" fullWidth value={currentSettings.styles.header_config?.font_size_title || '16pt'} onChange={(e) => updateNestedSetting('header_config', 'font_size_title', e.target.value)} />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
                             {renderColorControl("Cor Título", "header_config", "color_title", currentSettings.styles.header_config?.color_title)}
                         </Grid>
-                         <Grid item xs={12}>
-                             <TextField label="Margem (ex: 0 0 5px 0)" size="small" fullWidth value={currentSettings.styles.header_config?.margin_title || ''} onChange={(e) => updateNestedSetting('header_config', 'margin_title', e.target.value)} placeholder="Top Right Bottom Left" helperText="Espaçamento CSS (ex: 0px 0px 10px 0px)" />
-                         </Grid>
-                        <Grid item xs={12}>
-                             <TextField label="Texto Fixo (Opcional)" size="small" fullWidth value={currentSettings.styles.header_config?.custom_title_text || ''} onChange={(e) => updateNestedSetting('header_config', 'custom_title_text', e.target.value)} placeholder="Sobrescreve o nome da loja padrão" helperText="Deixe vazio para usar o automático" />
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <TextField label="Margem (ex: 0 0 5px 0)" size="small" fullWidth value={currentSettings.styles.header_config?.margin_title || ''} onChange={(e) => updateNestedSetting('header_config', 'margin_title', e.target.value)} placeholder="Top Right Bottom Left" helperText="Espaçamento CSS (ex: 0px 0px 10px 0px)" />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <TextField label="Texto Fixo (Opcional)" size="small" fullWidth value={currentSettings.styles.header_config?.custom_title_text || ''} onChange={(e) => updateNestedSetting('header_config', 'custom_title_text', e.target.value)} placeholder="Sobrescreve o nome da loja padrão" helperText="Deixe vazio para usar o automático" />
                         </Grid>
                     </Grid>
 
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mt: 3, mb: 1, display: 'block' }}>AFILIAÇÕES (SUBTÍTULO)</Typography>
                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Tamanho Fonte" size="small" fullWidth value={currentSettings.styles.header_config?.font_size_subtitle || '12pt'} onChange={(e) => updateNestedSetting('header_config', 'font_size_subtitle', e.target.value)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Tamanho Fonte" size="small" fullWidth value={currentSettings.styles.header_config?.font_size_subtitle || '12pt'} onChange={(e) => updateNestedSetting('header_config', 'font_size_subtitle', e.target.value)} />
                         </Grid>
-                         <Grid item xs={6}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
                             {renderColorControl("Cor Subtítulo", "header_config", "color_subtitle", currentSettings.styles.header_config?.color_subtitle)}
                         </Grid>
-                         <Grid item xs={12}>
-                             <TextField label="Margem" size="small" fullWidth value={currentSettings.styles.header_config?.margin_subtitle || ''} onChange={(e) => updateNestedSetting('header_config', 'margin_subtitle', e.target.value)} />
-                         </Grid>
-                        <Grid item xs={12}>
-                             <TextField label="Texto Fixo (Opcional)" size="small" fullWidth value={currentSettings.styles.header_config?.custom_subtitle_text || ''} onChange={(e) => updateNestedSetting('header_config', 'custom_subtitle_text', e.target.value)} placeholder="Sobrescreve as afiliações padrão" helperText="Deixe vazio para usar o automático" />
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <TextField label="Margem" size="small" fullWidth value={currentSettings.styles.header_config?.margin_subtitle || ''} onChange={(e) => updateNestedSetting('header_config', 'margin_subtitle', e.target.value)} />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <TextField label="Texto Fixo (Opcional)" size="small" fullWidth value={currentSettings.styles.header_config?.custom_subtitle_text || ''} onChange={(e) => updateNestedSetting('header_config', 'custom_subtitle_text', e.target.value)} placeholder="Sobrescreve as afiliações padrão" helperText="Deixe vazio para usar o automático" />
                         </Grid>
                     </Grid>
 
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'bold', mt: 3, mb: 1, display: 'block' }}>GERAL</Typography>
-                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Espaço Abaixo Cabeçalho" size="small" fullWidth value={currentSettings.styles.header_config?.spacing_bottom || '20px'} onChange={(e) => updateNestedSetting('header_config', 'spacing_bottom', e.target.value)} />
+                    <Grid container spacing={2}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Espaço Abaixo Cabeçalho" size="small" fullWidth value={currentSettings.styles.header_config?.spacing_bottom || '20px'} onChange={(e) => updateNestedSetting('header_config', 'spacing_bottom', e.target.value)} />
                         </Grid>
-                        <Grid item xs={12}>
-                              {renderColorControl("Fundo Cabeçalho", "header_config", "background_color", currentSettings.styles.header_config?.background_color)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderColorControl("Fundo Cabeçalho", "header_config", "background_color", currentSettings.styles.header_config?.background_color)}
                         </Grid>
-                        <Grid item xs={12}>
-                              {renderFileUploadControl("Imagem Fundo", "header_config", "background_image", currentSettings.styles.header_config?.background_image, undefined, "image_opacity", currentSettings.styles.header_config?.image_opacity)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Imagem Fundo", "header_config", "background_image", currentSettings.styles.header_config?.background_image, undefined, "image_opacity", currentSettings.styles.header_config?.image_opacity)}
                         </Grid>
                     </Grid>
 
@@ -691,27 +754,39 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Rodapé</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Espaço Acima" size="small" fullWidth value={currentSettings.styles.footer_config?.spacing_top || '40px'} onChange={(e) => updateNestedSetting('footer_config', 'spacing_top', e.target.value)} />
+                    <Grid container spacing={2}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Espaço Acima" size="small" fullWidth value={currentSettings.styles.footer_config?.spacing_top || '40px'} onChange={(e) => updateNestedSetting('footer_config', 'spacing_top', e.target.value)} />
                         </Grid>
-                         <Grid item xs={6}>
-                             <FormControlLabel control={<Switch size="small" checked={currentSettings.styles.show_page_numbers} onChange={(e) => updateCurrentSetting('show_page_numbers', e.target.checked, true)} />} label="Num. Pág." />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <FormControlLabel control={<Switch size="small" checked={currentSettings.styles.show_page_numbers} onChange={(e) => updateCurrentSetting('show_page_numbers', e.target.checked, true)} />} label="Num. Pág." />
                         </Grid>
-                        <Grid item xs={12}>
-                             {renderColorControl("Cor Fundo Rodapé", "footer_config", "background_color", currentSettings.styles.footer_config?.background_color)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderColorControl("Cor Fundo Rodapé", "footer_config", "background_color", currentSettings.styles.footer_config?.background_color)}
                         </Grid>
-                         <Grid item xs={12}>
-                             {renderFileUploadControl("Imagem Fundo Rodapé", "footer_config", "background_image", currentSettings.styles.footer_config?.background_image, undefined, "image_opacity", currentSettings.styles.footer_config?.image_opacity)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Imagem Fundo Rodapé", "footer_config", "background_image", currentSettings.styles.footer_config?.background_image, undefined, "image_opacity", currentSettings.styles.footer_config?.image_opacity)}
                         </Grid>
                     </Grid>
 
-                     <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Personalize o conteúdo do rodapé:</Typography>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             size="small"
                             onClick={() => {
                                 setContentEditMode('footer');
@@ -720,7 +795,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Rodapé
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
 
@@ -730,23 +805,29 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 </AccordionSummary>
                 <AccordionDetails>
                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Espaço Superior" size="small" fullWidth value={currentSettings.styles.signatures_config?.spacing_top || '2cm'} onChange={(e) => updateNestedSetting('signatures_config', 'spacing_top', e.target.value)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Espaço Superior" size="small" fullWidth value={currentSettings.styles.signatures_config?.spacing_top || '2cm'} onChange={(e) => updateNestedSetting('signatures_config', 'spacing_top', e.target.value)} />
                         </Grid>
                     </Grid>
                 </AccordionDetails>
             </Accordion>
-            
+
             <Accordion expanded={expandedAccordion === 'borders_section'} onChange={handleAccordionChange('borders_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Bordas e Marca d'Água</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                     <Grid container spacing={2}>
-                         <Grid item xs={12}>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Estilo Borda</InputLabel>
-                                <Select value={currentSettings.styles.show_border ? currentSettings.styles.border_style : 'none'} label="Estilo Borda" 
+                                <Select value={currentSettings.styles.show_border ? currentSettings.styles.border_style : 'none'} label="Estilo Borda"
                                     onChange={(e) => {
                                         if (e.target.value === 'none') updateCurrentSetting('show_border', false, true);
                                         else { updateCurrentSetting('show_border', true, true); updateCurrentSetting('border_style', e.target.value, true); }
@@ -759,12 +840,18 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
                             {renderFileUploadControl("Marca d'Água", "styles", "watermark_image", currentSettings.styles.watermark_image)}
                         </Grid>
-                        <Grid item xs={12}>
-                             <Typography variant="caption">Opacidade: {Math.round((currentSettings.styles.watermark_opacity || 0.1)*100)}%</Typography>
-                             <Slider size="small" value={currentSettings.styles.watermark_opacity || 0.1} min={0} max={1} step={0.05} onChange={(_, v) => updateCurrentSetting('watermark_opacity', v, true)} />
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <Typography variant="caption">Opacidade: {Math.round((currentSettings.styles.watermark_opacity || 0.1) * 100)}%</Typography>
+                            <Slider size="small" value={currentSettings.styles.watermark_opacity || 0.1} min={0} max={1} step={0.05} onChange={(_, v) => updateCurrentSetting('watermark_opacity', v, true)} />
                         </Grid>
                     </Grid>
                 </AccordionDetails>
@@ -781,32 +868,47 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Títulos do Documento</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                     <FormControlLabel sx={{ mb: 2 }} control={<Switch checked={currentSettings.styles.titles_config?.show !== false} onChange={(e) => updateNestedSetting('titles_config', 'show', e.target.checked)} />} label="Exibir Títulos" />
-                     
-                     <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                             <TextField label="Padding Superior" size="small" fullWidth value={currentSettings.styles.titles_config?.margin_top || '10px'} onChange={(e) => updateNestedSetting('titles_config', 'margin_top', e.target.value)} />
-                        </Grid>
-                        <Grid item xs={6}>
-                             <TextField label="Padding Inferior" size="small" fullWidth value={currentSettings.styles.titles_config?.margin_bottom || '20px'} onChange={(e) => updateNestedSetting('titles_config', 'margin_bottom', e.target.value)} />
-                        </Grid>
-                        <Grid item xs={12}>
-                             <TextField label="Fonte (Padrão)" size="small" fullWidth value={currentSettings.styles.titles_config?.font_size || '14pt'} onChange={(e) => updateNestedSetting('titles_config', 'font_size', e.target.value)} />
-                        </Grid>
-                         <Grid item xs={12}>
-                             {renderColorControl("Cor Fundo Títulos", "titles_config", "background_color", currentSettings.styles.titles_config?.background_color)}
-                        </Grid>
-                         <Grid item xs={12}>
-                             {renderFileUploadControl("Imagem Fundo Títulos", "titles_config", "background_image", currentSettings.styles.titles_config?.background_image, undefined, "image_opacity", currentSettings.styles.titles_config?.image_opacity)}
-                        </Grid>
-                     </Grid>
+                    <FormControlLabel sx={{ mb: 2 }} control={<Switch checked={currentSettings.styles.titles_config?.show !== false} onChange={(e) => updateNestedSetting('titles_config', 'show', e.target.checked)} />} label="Exibir Títulos" />
 
-                     <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Grid container spacing={2}>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Padding Superior" size="small" fullWidth value={currentSettings.styles.titles_config?.margin_top || '10px'} onChange={(e) => updateNestedSetting('titles_config', 'margin_top', e.target.value)} />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Padding Inferior" size="small" fullWidth value={currentSettings.styles.titles_config?.margin_bottom || '20px'} onChange={(e) => updateNestedSetting('titles_config', 'margin_bottom', e.target.value)} />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <TextField label="Fonte (Padrão)" size="small" fullWidth value={currentSettings.styles.titles_config?.font_size || '14pt'} onChange={(e) => updateNestedSetting('titles_config', 'font_size', e.target.value)} />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderColorControl("Cor Fundo Títulos", "titles_config", "background_color", currentSettings.styles.titles_config?.background_color)}
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Imagem Fundo Títulos", "titles_config", "background_image", currentSettings.styles.titles_config?.background_image, undefined, "image_opacity", currentSettings.styles.titles_config?.image_opacity)}
+                        </Grid>
+                    </Grid>
+
+                    <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Personalize o texto dos títulos:</Typography>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             size="small"
                             onClick={() => {
                                 setContentEditMode('titles');
@@ -815,7 +917,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Títulos
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
 
@@ -825,23 +927,32 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 </AccordionSummary>
                 <AccordionDetails>
                     <Grid container spacing={2}>
-                         <Grid item xs={6}>
-                             <TextField label="Padding Superior" size="small" fullWidth value={currentSettings.styles.content_config?.padding_top || '0px'} onChange={(e) => updateNestedSetting('content_config', 'padding_top', e.target.value)} />
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            <TextField label="Padding Superior" size="small" fullWidth value={currentSettings.styles.content_config?.padding_top || '0px'} onChange={(e) => updateNestedSetting('content_config', 'padding_top', e.target.value)} />
                         </Grid>
-                         <Grid item xs={6}>
-                             {renderColorControl("Cor Fundo Conteúdo", "content_config", "background_color", currentSettings.styles.content_config?.background_color)}
+                        <Grid
+                            size={{
+                                xs: 6
+                            }}>
+                            {renderColorControl("Cor Fundo Conteúdo", "content_config", "background_color", currentSettings.styles.content_config?.background_color)}
                         </Grid>
-                        <Grid item xs={12}>
-                             {renderFileUploadControl("Imagem Fundo Conteúdo", "content_config", "background_image", currentSettings.styles.content_config?.background_image, undefined, "image_opacity", currentSettings.styles.content_config?.image_opacity)}
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Imagem Fundo Conteúdo", "content_config", "background_image", currentSettings.styles.content_config?.background_image, undefined, "image_opacity", currentSettings.styles.content_config?.image_opacity)}
                         </Grid>
                     </Grid>
 
-                     <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Box sx={{ mt: 2, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite a estrutura do texto e variáveis:</Typography>
-                        <Button 
-                            variant="contained" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="contained"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             color="secondary"
                             onClick={() => {
                                 setContentEditMode('content');
@@ -850,7 +961,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Texto
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
 
@@ -859,12 +970,12 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Preâmbulo</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo do Preâmbulo:</Typography>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             size="small"
                             onClick={() => {
                                 setContentEditMode('preamble');
@@ -873,7 +984,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Preâmbulo
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
 
@@ -882,12 +993,12 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Assinaturas da Prancha</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo de Assinaturas:</Typography>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             size="small"
                             onClick={() => {
                                 setContentEditMode('signatures');
@@ -896,7 +1007,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Assinaturas
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
 
@@ -905,12 +1016,12 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Data e Local</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                     <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                    <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                         <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Edite o modelo de Data e Local:</Typography>
-                        <Button 
-                            variant="outlined" 
-                            startIcon={<EditIcon />} 
-                            fullWidth 
+                        <Button
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            fullWidth
                             size="small"
                             onClick={() => {
                                 setContentEditMode('date_place');
@@ -919,7 +1030,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         >
                             Editar Modelo de Data e Local
                         </Button>
-                     </Box>
+                    </Box>
                 </AccordionDetails>
             </Accordion>
         </Box>
@@ -956,10 +1067,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         <Typography variant="h6" component="h1" sx={{ lineHeight: 1.2 }}>
                             Construtor de Documentos
                         </Typography>
-                        <Chip 
-                            label={isCustom ? "Modelo Personalizado" : "Padrão Sigma"} 
-                            size="small" 
-                            color={isCustom ? "info" : "success"} 
+                        <Chip
+                            label={isCustom ? "Modelo Personalizado" : "Padrão Sigma"}
+                            size="small"
+                            color={isCustom ? "info" : "success"}
                             variant={isCustom ? "filled" : "outlined"}
                             sx={{ mt: 0.5, fontWeight: 'bold' }}
                         />
@@ -972,10 +1083,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </FormControl>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button 
-                        variant="outlined" 
-                        color="warning" 
-                        onClick={handleReset} 
+                    <Button
+                        variant="outlined"
+                        color="warning"
+                        onClick={handleReset}
                         disabled={saving}
                         sx={{ borderColor: '#f59e0b', color: '#f59e0b', '&:hover': { borderColor: '#d97706', bgcolor: 'rgba(245, 158, 11, 0.1)' } }}
                     >
@@ -986,15 +1097,20 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Button>
                 </Box>
             </Paper>
-
             <Grid container sx={{ flexGrow: 1, overflow: 'hidden' }}>
                 {/* LEFT SIDEBAR (Controls) */}
-                <Grid item xs={12} md={3} lg={3} sx={{ height: '100%', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
+                <Grid
+                    sx={{ height: '100%', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}
+                    size={{
+                        xs: 12,
+                        md: 3,
+                        lg: 3
+                    }}>
                     <Paper square sx={{ zIndex: 1 }}>
-                        <Tabs 
-                            value={activeConfigTab} 
-                            onChange={(_, v) => { setActiveConfigTab(v); if (v === 0) setViewMode('preview'); }} 
-                            variant="fullWidth" 
+                        <Tabs
+                            value={activeConfigTab}
+                            onChange={(_, v) => { setActiveConfigTab(v); if (v === 0) setViewMode('preview'); }}
+                            variant="fullWidth"
                             indicatorColor="primary"
                             textColor="primary"
                         >
@@ -1002,16 +1118,22 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             <Tab label="Conteúdo & Modelo" iconPosition="start" />
                         </Tabs>
                     </Paper>
-                    
+
                     {activeConfigTab === 0 ? renderLayoutControls() : renderContentControls()}
                 </Grid>
 
                 {/* RIGHT MAIN AREA (Preview / Editor) */}
-                <Grid item xs={12} md={9} lg={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#0a101f' }}>
-                    
+                <Grid
+                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#0a101f' }}
+                    size={{
+                        xs: 12,
+                        md: 9,
+                        lg: 9
+                    }}>
+
                     {/* View Switcher Toolbar (Visible in Content Tab OR when in Editor Mode) */}
                     {(activeConfigTab === 1 || viewMode === 'editor') && (
-                         <Box sx={{ p: 1, bgcolor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ p: 1, bgcolor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                             <ToggleButtonGroup
                                 value={viewMode}
                                 exclusive
@@ -1022,7 +1144,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                     <VisibilityIcon sx={{ mr: 1 }} /> Visualizar
                                 </ToggleButton>
                                 <ToggleButton value="editor">
-                                    <EditIcon sx={{ mr: 1 }} /> 
+                                    <EditIcon sx={{ mr: 1 }} />
                                     {contentEditMode === 'content' ? 'Editor de Texto' : 'Editor de Títulos'}
                                 </ToggleButton>
                             </ToggleButtonGroup>
@@ -1030,8 +1152,8 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             {/* Session Selector for Preview */}
                             {viewMode === 'preview' && (
                                 <FormControl size="small" sx={{ minWidth: 220 }}>
-                                    <Select 
-                                        value={previewSessionId} 
+                                    <Select
+                                        value={previewSessionId}
                                         onChange={(e) => setPreviewSessionId(e.target.value as number)}
                                         displayEmpty
                                         variant="outlined"
@@ -1053,20 +1175,20 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
                     {/* Content Area */}
                     <Box sx={{ flexGrow: 1, overflow: 'hidden', position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                        
+
                         {viewMode === 'preview' ? (
-                            <Box sx={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                overflow: 'auto', 
-                                display: 'flex', 
-                                justifyContent: 'center', 
+                            <Box sx={{
+                                width: '100%',
+                                height: '100%',
+                                overflow: 'auto',
+                                display: 'flex',
+                                justifyContent: 'center',
                                 alignItems: 'flex-start',
                                 p: 4,
                             }}>
                                 {/* Scale wrapper if needed, or just paper */}
-                                <Paper elevation={4} sx={{ 
-                                    width: paperDims.width, 
+                                <Paper elevation={4} sx={{
+                                    width: paperDims.width,
                                     minHeight: paperDims.height,
                                     padding: currentSettings.styles.page_padding || '0cm',
                                     // Margin is simulated by the Paper's padding if we treat Paper as the Page
@@ -1076,7 +1198,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                     paddingRight: currentSettings.styles.page_margin || '1cm',
                                     paddingTop: currentSettings.styles.page_margin || '1cm',
                                     paddingBottom: currentSettings.styles.page_margin || '1cm',
-                                    
+
                                     bgcolor: currentSettings.styles.background_color || '#fff',
                                     backgroundImage: currentSettings.styles.background_image && currentSettings.styles.background_image !== 'none' ? `url(${currentSettings.styles.background_image})` : undefined,
                                     backgroundSize: '100% 100%',
@@ -1090,15 +1212,15 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                     {currentSettings.styles.watermark_image && (
                                         <div style={{
                                             position: 'absolute',
-                                            top: 0, 
-                                            left: 0, 
-                                            right: 0, 
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
                                             bottom: 0,
                                             opacity: currentSettings.styles.watermark_opacity || 0.1,
                                             pointerEvents: 'none',
                                             zIndex: 0,
                                             backgroundImage: `url(${currentSettings.styles.watermark_image})`,
-                                            backgroundSize: '60%', 
+                                            backgroundSize: '60%',
                                             backgroundRepeat: 'no-repeat',
                                             backgroundPosition: 'center'
                                         }}></div>
@@ -1109,10 +1231,10 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                         <div style={{
                                             position: 'absolute',
                                             top: currentSettings.styles.page_margin || '1cm',
-                                            left: currentSettings.styles.page_margin || '1cm', 
-                                            right: currentSettings.styles.page_margin || '1cm', 
+                                            left: currentSettings.styles.page_margin || '1cm',
+                                            right: currentSettings.styles.page_margin || '1cm',
                                             bottom: currentSettings.styles.page_margin || '1cm',
-                                            border: currentSettings.styles.border_style === 'masonic_v1' 
+                                            border: currentSettings.styles.border_style === 'masonic_v1'
                                                 ? `${currentSettings.styles.border_width || '3px'} solid transparent`
                                                 : `${currentSettings.styles.border_width || '3px'} ${currentSettings.styles.border_style} ${currentSettings.styles.border_color || currentSettings.styles.primary_color}`,
                                             borderImage: currentSettings.styles.border_style === 'masonic_v1' ? `url(/borders/border_masonic_v1.png) 30 round` : 'none',
@@ -1138,7 +1260,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                             text-transform: uppercase;
                                         }
                                     `}</style>
-                                    
+
                                     {previewLoading ? (
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '800px' }}>
                                             <CircularProgress />
@@ -1150,54 +1272,56 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                             </Box>
                         ) : (
                             // EDITOR VIEW
-                            <Grid container sx={{ height: '100%' }}>
-                                <Grid item xs={3} sx={{ height: '100%', borderRight: '1px solid #334155', bgcolor: '#1e293b', overflowY: 'auto' }}>
+                            (<Grid container sx={{ height: '100%' }}>
+                                <Grid
+                                    sx={{ height: '100%', borderRight: '1px solid #334155', bgcolor: '#1e293b', overflowY: 'auto' }}
+                                    size={{
+                                        xs: 3
+                                    }}>
                                     <Box sx={{ p: 2 }}>
                                         <Typography variant="subtitle2" gutterBottom sx={{ color: '#e2e8f0' }}>Variáveis Dinâmicas</Typography>
-                                        <VariablePalette 
-                                            documentType={currentType} 
-                                            onInsertVariable={(key) => {
-                                                if(editorRef.current) {
-                                                    const quill = editorRef.current.getEditor();
-                                                    quill.focus();
-                                                    const range = quill.getSelection(true);
-                                                    // Insert the variable as a custom blot
-                                                    quill.insertEmbed(range.index, 'variable', key);
-                                                    // Insert a space after to ensure cursor moves out of the chip
-                                                    quill.insertText(range.index + 1, ' ');
-                                                    quill.setSelection(range.index + 2);
+                                        <VariablePalette
+                                            documentType={currentType}
+                                            onInsertVariable={(key, label) => {
+                                                if (editorRef.current) {
+                                                    editorRef.current.insertVariable(key, label);
                                                 }
-                                            }} 
+                                            }}
                                         />
                                     </Box>
                                 </Grid>
-                                <Grid item xs={9} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ p: 2, bgcolor: '#1e293b', borderBottom: '1px solid #334155' }}>
-                                         <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                                            Editando: <strong style={{ color: '#e2e8f0' }}>{
-                                                contentEditMode === 'content' ? 'Modelo do Corpo do Texto' : 
-                                                contentEditMode === 'titles' ? 'Modelo dos Títulos' :
-                                                contentEditMode === 'header' ? 'Modelo de Cabeçalho' : 
-                                                contentEditMode === 'preamble' ? 'Modelo de Preâmbulo' :
-                                                contentEditMode === 'signatures' ? 'Modelo de Assinaturas' :
-                                                contentEditMode === 'date_place' ? 'Modelo de Data e Local' :
-                                                'Modelo de Rodapé'
-                                            }</strong>
-                                         </Typography>
-                                    </Box>
-                                    <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, 
-                                        '& .ql-editor': contentEditMode === 'titles' ? { textTransform: 'uppercase' } : {} 
+                                <Grid
+                                    sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                                    size={{
+                                        xs: 9
                                     }}>
-                                        <RichTextVariableEditor 
+                                    <Box sx={{ p: 2, bgcolor: '#1e293b', borderBottom: '1px solid #334155' }}>
+                                        <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                                            Editando: <strong style={{ color: '#e2e8f0' }}>{
+                                                contentEditMode === 'content' ? 'Modelo do Corpo do Texto' :
+                                                    contentEditMode === 'titles' ? 'Modelo dos Títulos' :
+                                                        contentEditMode === 'header' ? 'Modelo de Cabeçalho' :
+                                                            contentEditMode === 'preamble' ? 'Modelo de Preâmbulo' :
+                                                                contentEditMode === 'signatures' ? 'Modelo de Assinaturas' :
+                                                                    contentEditMode === 'date_place' ? 'Modelo de Data e Local' :
+                                                                        'Modelo de Rodapé'
+                                            }</strong>
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{
+                                        flexGrow: 1, overflowY: 'auto', p: 2,
+                                        '& .ql-editor': contentEditMode === 'titles' ? { textTransform: 'uppercase' } : {}
+                                    }}>
+                                        <TiptapEditor
                                             ref={editorRef}
                                             value={
-                                                contentEditMode === 'content' ? (currentSettings.content_template || (DEFAULT_SETTINGS as any)[currentType]?.content_template || '') : 
-                                                contentEditMode === 'header' ? (currentSettings.header_template || (DEFAULT_SETTINGS as any)[currentType]?.header_template || '') :
-                                                contentEditMode === 'footer' ? (currentSettings.footer_template || (DEFAULT_SETTINGS as any)[currentType]?.footer_template || '') :
-                                                contentEditMode === 'preamble' ? (currentSettings.preamble_template || (DEFAULT_SETTINGS as any)[currentType]?.preamble_template || '') :
-                                                contentEditMode === 'signatures' ? (currentSettings.signatures_template || (DEFAULT_SETTINGS as any)[currentType]?.signatures_template || '') :
-                                                contentEditMode === 'date_place' ? (currentSettings.date_place_template || (DEFAULT_SETTINGS as any)[currentType]?.date_place_template || '') :
-                                                (currentSettings.titles_template || (DEFAULT_SETTINGS as any)[currentType]?.titles_template || '')
+                                                contentEditMode === 'content' ? (currentSettings.content_template || (DEFAULT_SETTINGS as any)[currentType]?.content_template || '') :
+                                                    contentEditMode === 'header' ? (currentSettings.header_template || (DEFAULT_SETTINGS as any)[currentType]?.header_template || '') :
+                                                        contentEditMode === 'footer' ? (currentSettings.footer_template || (DEFAULT_SETTINGS as any)[currentType]?.footer_template || '') :
+                                                            contentEditMode === 'preamble' ? (currentSettings.preamble_template || (DEFAULT_SETTINGS as any)[currentType]?.preamble_template || '') :
+                                                                contentEditMode === 'signatures' ? (currentSettings.signatures_template || (DEFAULT_SETTINGS as any)[currentType]?.signatures_template || '') :
+                                                                    contentEditMode === 'date_place' ? (currentSettings.date_place_template || (DEFAULT_SETTINGS as any)[currentType]?.date_place_template || '') :
+                                                                        (currentSettings.titles_template || (DEFAULT_SETTINGS as any)[currentType]?.titles_template || '')
                                             }
                                             onChange={(val) => {
                                                 if (contentEditMode === 'content') updateCurrentSetting('content_template', val);
@@ -1211,12 +1335,11 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                         />
                                     </Box>
                                 </Grid>
-                            </Grid>
+                            </Grid>)
                         )}
                     </Box>
                 </Grid>
             </Grid>
-            
             <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                 <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
             </Snackbar>

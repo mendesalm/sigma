@@ -133,7 +133,7 @@ def record_visitor_attendance(
     visitor = None
     # Verifica primeiro pelo CIM (identificador principal)
     visitor = db.query(models.Visitor).filter(models.Visitor.cim == visitor_data.cim).first()
-    
+
     if not visitor:
         visitor = models.Visitor(**visitor_data.model_dump())
         db.add(visitor)
@@ -239,7 +239,7 @@ def record_qr_code_attendance(
         # Busca visitante pelo CIM (agora obrigatório e único)
         # Busca visitante pelo CIM (agora obrigatório e único)
         visitor = db.query(models.Visitor).filter(models.Visitor.cim == user_as_member.cim).first()
-        
+
         if not visitor:
             # Cria novo registro de visitante local baseado no membro do Sigma
             visitor = models.Visitor(
@@ -248,8 +248,8 @@ def record_qr_code_attendance(
                 degree=user_as_member.degree,
                 email=user_as_member.email,
                 # cpf=user_as_member.cpf, # CPF removido do fluxo de visitante
-                manual_lodge_name="Membro Sigma de outra loja", # Identificador genérico
-                remarks=f"Membro Sigma ID: {user_as_member.id}"
+                manual_lodge_name="Membro Sigma de outra loja",  # Identificador genérico
+                remarks=f"Membro Sigma ID: {user_as_member.id}",
             )
             db.add(visitor)
             db.flush()

@@ -298,128 +298,137 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ pb: 5 }}>
-       {/* Page Header */}
-       <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
-            {id ? 'Editar Loja' : 'Nova Loja'}
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-            {id ? 'Atualize os dados da loja.' : 'Preencha os dados abaixo para cadastrar uma nova loja.'}
-            </Typography>
-        </Box>
-        <Button 
-            variant="outlined" 
-            startIcon={<ArrowBackIcon />} 
-            onClick={() => navigate('/dashboard/management/lodges')}
-            sx={{ borderRadius: 2 }}
-        >
-            Voltar
-        </Button>
-      </Box>
-
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-           {/* Main Column */}
-           <Grid item xs={12} md={9}>
-                {/* 0. External Search (Only on Create) */}
-                {!id && (
-                    <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.default }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                            <SearchIcon color="primary" sx={{ mr: 1, fontSize: 30 }} />
-                            <Box>
-                                <Typography variant="h6" color="primary">Importar do Cadastro Global</Typography>
-                                <Typography variant="caption" color="text.secondary">Busque sua loja para preenchimento automático</Typography>
+      <Container maxWidth="xl" sx={{ pb: 5 }}>
+          {/* Page Header */}
+          <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+           <Box>
+               <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+               {id ? 'Editar Loja' : 'Nova Loja'}
+               </Typography>
+               <Typography variant="subtitle1" color="text.secondary">
+               {id ? 'Atualize os dados da loja.' : 'Preencha os dados abaixo para cadastrar uma nova loja.'}
+               </Typography>
+           </Box>
+           <Button 
+               variant="outlined" 
+               startIcon={<ArrowBackIcon />} 
+               onClick={() => navigate('/dashboard/management/lodges')}
+               sx={{ borderRadius: 2 }}
+           >
+               Voltar
+           </Button>
+         </Box>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+               {/* Main Column */}
+               <Grid
+                   size={{
+                       xs: 12,
+                       md: 9
+                   }}>
+                    {/* 0. External Search (Only on Create) */}
+                    {!id && (
+                        <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.default }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <SearchIcon color="primary" sx={{ mr: 1, fontSize: 30 }} />
+                                <Box>
+                                    <Typography variant="h6" color="primary">Importar do Cadastro Global</Typography>
+                                    <Typography variant="caption" color="text.secondary">Busque sua loja para preenchimento automático</Typography>
+                                </Box>
                             </Box>
-                        </Box>
-                         <Autocomplete
-                            options={externalLodges}
-                            getOptionLabel={(option) => `${option.name} N. ${option.number} (${option.obedience})`}
-                            loading={searching}
-                            onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
-                            onChange={handleExternalLodgeSelect}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Buscar Loja (Nome ou Número)"
-                                    fullWidth
-                                    variant="outlined"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        endAdornment: (
-                                            <>
-                                                {searching ? <CircularProgress color="inherit" size={20} /> : null}
-                                                {params.InputProps.endAdornment}
-                                            </>
-                                        ),
-                                    }}
-                                />
-                            )}
-                            renderOption={(props, option) => (
-                                <li {...props}>
-                                    <Box>
-                                        <Typography variant="body1">{option.name} N. {option.number}</Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {option.obedience}{option.subobedience ? ` / ${option.subobedience}` : ''} - {option.city}/{option.state}
-                                        </Typography>
-                                    </Box>
-                                </li>
-                            )}
-                        />
-                    </Paper>
-                )}
+                             <Autocomplete
+                                options={externalLodges}
+                                getOptionLabel={(option) => `${option.name} N. ${option.number} (${option.obedience})`}
+                                loading={searching}
+                                onInputChange={(_, newInputValue) => setSearchQuery(newInputValue)}
+                                onChange={handleExternalLodgeSelect}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Buscar Loja (Nome ou Número)"
+                                        fullWidth
+                                        variant="outlined"
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            endAdornment: (
+                                                <>
+                                                    {searching ? <CircularProgress color="inherit" size={20} /> : null}
+                                                    {params.InputProps.endAdornment}
+                                                </>
+                                            ),
+                                        }}
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props}>
+                                        <Box>
+                                            <Typography variant="body1">{option.name} N. {option.number}</Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {option.obedience}{option.subobedience ? ` / ${option.subobedience}` : ''} - {option.city}/{option.state}
+                                            </Typography>
+                                        </Box>
+                                    </li>
+                                )}
+                            />
+                        </Paper>
+                    )}
 
-                {/* 1. Dados Gerais */}
-                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-                    <SectionHeader title="Dados Gerais" icon={<BusinessIcon />} />
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                        <TextField name="lodge_name" label="Nome da Loja" value={formData.lodge_name} onChange={handleChange} fullWidth required variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                        <TextField name="lodge_number" label="Número" value={formData.lodge_number} onChange={handleChange} fullWidth required variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                        <TextField name="foundation_date" label="Data de Fundação" type="date" value={formData.foundation_date} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} variant="outlined" />
-                        </Grid>
+                    {/* 1. Dados Gerais */}
+                    <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                        <SectionHeader title="Dados Gerais" icon={<BusinessIcon />} />
+                        <Grid container spacing={3}>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 6
+                                }}>
+                            <TextField name="lodge_name" label="Nome da Loja" value={formData.lodge_name} onChange={handleChange} fullWidth required variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField name="lodge_number" label="Número" value={formData.lodge_number} onChange={handleChange} fullWidth required variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField name="foundation_date" label="Data de Fundação" type="date" value={formData.foundation_date} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} variant="outlined" />
+                            </Grid>
 
-                        <Grid item xs={12} md={6}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel>Rito</InputLabel>
-                            <Select name="rite" value={formData.rite} label="Rito" onChange={handleChange}>
-                            <MenuItem value={RiteEnum.REAA}>Rito Escocês Antigo e Aceito</MenuItem>
-                            <MenuItem value={RiteEnum.YORK}>Rito York</MenuItem>
-                            <MenuItem value={RiteEnum.SCHRODER}>Rito Schroder</MenuItem>
-                            <MenuItem value={RiteEnum.BRAZILIAN}>Rito Brasileiro</MenuItem>
-                            <MenuItem value={RiteEnum.MODERN}>Rito Moderno</MenuItem>
-                            <MenuItem value={RiteEnum.ADONHIRAMITE}>Rito Adonhiramita</MenuItem>
-                            <MenuItem value={RiteEnum.RER}>Rito Escocês Retificado</MenuItem>
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel>Obediência</InputLabel>
-                            <Select name="obedience_id" value={formData.obedience_id} label="Obediência" onChange={(e) => {
-                                // Clear subobedience when obedience changes
-                                setFormData(prev => ({...prev, obedience_id: e.target.value as string, subobedience_id: ''}));
-                            }} required>
-                            {obediences.filter((ob: any) => !ob.parent_obedience_id).map((obedience: any) => (
-                                <MenuItem key={obedience.id} value={obedience.id}>
-                                {obedience.name}
-                                </MenuItem>
-                            ))}
-                            </Select>
-                        </FormControl>
-                        </Grid>
-                        {formData.obedience_id && obediences.some((ob: any) => ob.parent_obedience_id === formData.obedience_id) && (
-                            <Grid item xs={12} md={6}>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 6
+                                }}>
                             <FormControl fullWidth variant="outlined">
-                                <InputLabel>Subobediência</InputLabel>
-                                <Select name="subobedience_id" value={formData.subobedience_id || ''} label="Subobediência" onChange={handleChange}>
-                                <MenuItem value="">Nenhuma</MenuItem>
-                                {obediences.filter((ob: any) => ob.parent_obedience_id === formData.obedience_id).map((obedience: any) => (
+                                <InputLabel>Rito</InputLabel>
+                                <Select name="rite" value={formData.rite} label="Rito" onChange={handleChange}>
+                                <MenuItem value={RiteEnum.REAA}>Rito Escocês Antigo e Aceito</MenuItem>
+                                <MenuItem value={RiteEnum.YORK}>Rito York</MenuItem>
+                                <MenuItem value={RiteEnum.SCHRODER}>Rito Schroder</MenuItem>
+                                <MenuItem value={RiteEnum.BRAZILIAN}>Rito Brasileiro</MenuItem>
+                                <MenuItem value={RiteEnum.MODERN}>Rito Moderno</MenuItem>
+                                <MenuItem value={RiteEnum.ADONHIRAMITE}>Rito Adonhiramita</MenuItem>
+                                <MenuItem value={RiteEnum.RER}>Rito Escocês Retificado</MenuItem>
+                                </Select>
+                            </FormControl>
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 6
+                                }}>
+                            <FormControl fullWidth variant="outlined">
+                                <InputLabel>Obediência</InputLabel>
+                                <Select name="obedience_id" value={formData.obedience_id} label="Obediência" onChange={(e) => {
+                                    // Clear subobedience when obedience changes
+                                    setFormData(prev => ({...prev, obedience_id: e.target.value as string, subobedience_id: ''}));
+                                }} required>
+                                {obediences.filter((ob: any) => !ob.parent_obedience_id).map((obedience: any) => (
                                     <MenuItem key={obedience.id} value={obedience.id}>
                                     {obedience.name}
                                     </MenuItem>
@@ -427,231 +436,326 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                                 </Select>
                             </FormControl>
                             </Grid>
-                        )}
-                        <Grid item xs={12} md={4}>
-                        <TextField 
-                            name="cnpj" 
-                            label="CNPJ" 
-                            value={formData.cnpj} 
-                            onChange={handleChange} 
-                            fullWidth 
-                            error={!!errors.cnpj}
-                            helperText={errors.cnpj}
-                            variant="outlined"
-                        />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                        <TextField 
-                            name="email" 
-                            label="Email da Loja" 
-                            value={formData.email} 
-                            onChange={handleChange} 
-                            fullWidth 
-                            error={!!errors.email}
-                            helperText={errors.email}
-                            variant="outlined"
-                        />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                        <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12}>
-                             <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth placeholder="https://exemplo.com.br" variant="outlined" />
-                        </Grid>
-                    </Grid>
-                </Paper>
-
-                {/* 2. Endereço */}
-                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-                    <SectionHeader title="Localização" icon={<LocationOnIcon />} color="info" />
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={3}>
-                        <TextField 
-                            name="zip_code" 
-                            label="CEP" 
-                            value={formData.zip_code} 
-                            onChange={handleChange} 
-                            onBlur={handleCepBlur}
-                            fullWidth 
-                            variant="outlined"
-                            InputProps={{
-                            endAdornment: loadingCep ? <CircularProgress size={20} /> : <SearchIcon color="action" />
-                            }}
-                        />
-                        </Grid>
-                        <Grid item xs={12} md={7}>
-                        <TextField name="street_address" label="Logradouro" value={formData.street_address} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={2}>
-                        <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                        <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                        <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                        <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                        <Grid item xs={12} md={1}>
-                        <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth variant="outlined" />
-                        </Grid>
-                         {/* Lat/Long could be hidden or moved to advanced if not often used */}
-                        <Grid item xs={12} md={3}>
-                        <TextField name="latitude" label="Latitude" value={formData.latitude} onChange={handleChange} fullWidth size="small" variant="filled" />
-                        </Grid>
-                        <Grid item xs={12} md={3}>
-                        <TextField name="longitude" label="Longitude" value={formData.longitude} onChange={handleChange} fullWidth size="small" variant="filled" />
-                        </Grid>
-                    </Grid>
-                </Paper>
-                
-                 <Grid container spacing={3}>
-                     {/* 3. Sessões */}
-                     <Grid item xs={12} md={6}>
-                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
-                            <SectionHeader title="Sessões" icon={<EventIcon />} color="warning" />
-                            <Grid container spacing={2}>
-                                <Grid item xs={12}>
-                                    <FormControl fullWidth variant="outlined">
-                                        <InputLabel>Dia da Sessão</InputLabel>
-                                        <Select name="session_day" value={formData.session_day} label="Dia da Sessão" onChange={handleChange}>
-                                        <MenuItem value="Domingos">Domingos</MenuItem>
-                                        <MenuItem value="Segundas-feiras">Segundas-feiras</MenuItem>
-                                        <MenuItem value="Terças-feiras">Terças-feiras</MenuItem>
-                                        <MenuItem value="Quartas-feiras">Quartas-feiras</MenuItem>
-                                        <MenuItem value="Quintas-feiras">Quintas-feiras</MenuItem>
-                                        <MenuItem value="Sextas-feiras">Sextas-feiras</MenuItem>
-                                        <MenuItem value="Sábados">Sábados</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                            {formData.obedience_id && obediences.some((ob: any) => ob.parent_obedience_id === formData.obedience_id) && (
+                                <Grid
+                                    size={{
+                                        xs: 12,
+                                        md: 6
+                                    }}>
+                                <FormControl fullWidth variant="outlined">
+                                    <InputLabel>Subobediência</InputLabel>
+                                    <Select name="subobedience_id" value={formData.subobedience_id || ''} label="Subobediência" onChange={handleChange}>
+                                    <MenuItem value="">Nenhuma</MenuItem>
+                                    {obediences.filter((ob: any) => ob.parent_obedience_id === formData.obedience_id).map((obedience: any) => (
+                                        <MenuItem key={obedience.id} value={obedience.id}>
+                                        {obedience.name}
+                                        </MenuItem>
+                                    ))}
+                                    </Select>
+                                </FormControl>
                                 </Grid>
-                                <Grid item xs={12}>
-                                    <FormControl fullWidth variant="outlined">
-                                        <InputLabel>Periodicidade</InputLabel>
-                                        <Select name="periodicity" value={formData.periodicity} label="Periodicidade" onChange={handleChange}>
-                                        <MenuItem value="Semanal">Semanal</MenuItem>
-                                        <MenuItem value="Quinzenal">Quinzenal</MenuItem>
-                                        <MenuItem value="Mensal">Mensal</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField name="session_time" label="Horário" type="time" value={formData.session_time} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} variant="outlined" />
-                                </Grid>
+                            )}
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                            <TextField 
+                                name="cnpj" 
+                                label="CNPJ" 
+                                value={formData.cnpj} 
+                                onChange={handleChange} 
+                                fullWidth 
+                                error={!!errors.cnpj}
+                                helperText={errors.cnpj}
+                                variant="outlined"
+                            />
                             </Grid>
-                        </Paper>
-                     </Grid>
-
-                     {/* 4. Contato Técnico */}
-                     <Grid item xs={12} md={6}>
-                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
-                            <SectionHeader title="Contato Técnico" icon={<ContactMailIcon />} color="secondary" />
-                            <Grid container spacing={2}>
-                                <Grid item xs={12}>
-                                    <TextField name="technical_contact_name" label="Nome do Responsável" value={formData.technical_contact_name} onChange={handleChange} fullWidth required variant="outlined" />
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <TextField 
-                                        name="technical_contact_email" 
-                                        label="Email do Responsável" 
-                                        value={formData.technical_contact_email} 
-                                        onChange={handleChange} 
-                                        fullWidth 
-                                        required 
-                                        error={!!errors.technical_contact_email}
-                                        helperText={errors.technical_contact_email}
-                                        variant="outlined"
-                                    />
-                                </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                            <TextField 
+                                name="email" 
+                                label="Email da Loja" 
+                                value={formData.email} 
+                                onChange={handleChange} 
+                                fullWidth 
+                                error={!!errors.email}
+                                helperText={errors.email}
+                                variant="outlined"
+                            />
                             </Grid>
-                        </Paper>
-                     </Grid>
-                 </Grid>
-           </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                            <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12
+                                }}>
+                                 <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth placeholder="https://exemplo.com.br" variant="outlined" />
+                            </Grid>
+                        </Grid>
+                    </Paper>
 
-           {/* Sidebar */}
-           <Grid item xs={12} md={3}>
-                 <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-                    <SectionHeader title="Configurações" icon={<SettingsIcon />} />
+                    {/* 2. Endereço */}
+                    <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                        <SectionHeader title="Localização" icon={<LocationOnIcon />} color="info" />
+                        <Grid container spacing={3}>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField 
+                                name="zip_code" 
+                                label="CEP" 
+                                value={formData.zip_code} 
+                                onChange={handleChange} 
+                                onBlur={handleCepBlur}
+                                fullWidth 
+                                variant="outlined"
+                                InputProps={{
+                                endAdornment: loadingCep ? <CircularProgress size={20} /> : <SearchIcon color="action" />
+                                }}
+                            />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 7
+                                }}>
+                            <TextField name="street_address" label="Logradouro" value={formData.street_address} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 2
+                                }}>
+                            <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                            <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                            <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 1
+                                }}>
+                            <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth variant="outlined" />
+                            </Grid>
+                             {/* Lat/Long could be hidden or moved to advanced if not often used */}
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField name="latitude" label="Latitude" value={formData.latitude} onChange={handleChange} fullWidth size="small" variant="filled" />
+                            </Grid>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 3
+                                }}>
+                            <TextField name="longitude" label="Longitude" value={formData.longitude} onChange={handleChange} fullWidth size="small" variant="filled" />
+                            </Grid>
+                        </Grid>
+                    </Paper>
                     
-                    <Stack spacing={2}>
-                        <FormControl fullWidth variant="outlined" size="small">
-                            <InputLabel>Status</InputLabel>
-                            <Select name="status" value={formData.status} label="Status" onChange={handleChange}>
-                            <MenuItem value="">Nenhum</MenuItem>
-                            <MenuItem value="Ativa">Ativa</MenuItem>
-                            <MenuItem value="Inativa">Inativa</MenuItem>
-                            <MenuItem value="Em Instalação">Em Instalação</MenuItem>
-                            <MenuItem value="Suspensa">Suspensa</MenuItem>
-                            </Select>
-                        </FormControl>
+                     <Grid container spacing={3}>
+                         {/* 3. Sessões */}
+                         <Grid
+                             size={{
+                                 xs: 12,
+                                 md: 6
+                             }}>
+                            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
+                                <SectionHeader title="Sessões" icon={<EventIcon />} color="warning" />
+                                <Grid container spacing={2}>
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <FormControl fullWidth variant="outlined">
+                                            <InputLabel>Dia da Sessão</InputLabel>
+                                            <Select name="session_day" value={formData.session_day} label="Dia da Sessão" onChange={handleChange}>
+                                            <MenuItem value="Domingos">Domingos</MenuItem>
+                                            <MenuItem value="Segundas-feiras">Segundas-feiras</MenuItem>
+                                            <MenuItem value="Terças-feiras">Terças-feiras</MenuItem>
+                                            <MenuItem value="Quartas-feiras">Quartas-feiras</MenuItem>
+                                            <MenuItem value="Quintas-feiras">Quintas-feiras</MenuItem>
+                                            <MenuItem value="Sextas-feiras">Sextas-feiras</MenuItem>
+                                            <MenuItem value="Sábados">Sábados</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <FormControl fullWidth variant="outlined">
+                                            <InputLabel>Periodicidade</InputLabel>
+                                            <Select name="periodicity" value={formData.periodicity} label="Periodicidade" onChange={handleChange}>
+                                            <MenuItem value="Semanal">Semanal</MenuItem>
+                                            <MenuItem value="Quinzenal">Quinzenal</MenuItem>
+                                            <MenuItem value="Mensal">Mensal</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <TextField name="session_time" label="Horário" type="time" value={formData.session_time} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} variant="outlined" />
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+                         </Grid>
 
-                        <FormControl fullWidth variant="outlined" size="small">
-                            <InputLabel>Plano</InputLabel>
-                            <Select name="plan" value={formData.plan} label="Plano" onChange={handleChange}>
-                            <MenuItem value="">Nenhum</MenuItem>
-                            <MenuItem value="Básico">Básico</MenuItem>
-                            <MenuItem value="Padrão">Padrão</MenuItem>
-                            <MenuItem value="Premium">Premium</MenuItem>
-                            <MenuItem value="Enterprise">Enterprise</MenuItem>
-                            </Select>
-                        </FormControl>
+                         {/* 4. Contato Técnico */}
+                         <Grid
+                             size={{
+                                 xs: 12,
+                                 md: 6
+                             }}>
+                            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
+                                <SectionHeader title="Contato Técnico" icon={<ContactMailIcon />} color="secondary" />
+                                <Grid container spacing={2}>
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <TextField name="technical_contact_name" label="Nome do Responsável" value={formData.technical_contact_name} onChange={handleChange} fullWidth required variant="outlined" />
+                                    </Grid>
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <TextField 
+                                            name="technical_contact_email" 
+                                            label="Email do Responsável" 
+                                            value={formData.technical_contact_email} 
+                                            onChange={handleChange} 
+                                            fullWidth 
+                                            required 
+                                            error={!!errors.technical_contact_email}
+                                            helperText={errors.technical_contact_email}
+                                            variant="outlined"
+                                        />
+                                    </Grid>
+                                </Grid>
+                            </Paper>
+                         </Grid>
+                     </Grid>
+               </Grid>
 
-                        <TextField 
-                            name="user_limit" 
-                            label="Limite de Usuários" 
-                            type="number" 
-                            value={formData.user_limit} 
-                            onChange={handleChange} 
-                            fullWidth 
-                            size="small"
-                            variant="outlined"
-                        />
-                         <TextField 
-                            name="custom_domain" 
-                            label="Domínio Personalizado" 
-                            value={formData.custom_domain} 
-                            onChange={handleChange} 
-                            fullWidth 
-                            size="small"
-                            variant="outlined"
-                            InputProps={{
-                                startAdornment: <DomainIcon color="action" fontSize="small" sx={{ mr: 1 }} />
-                            }}
-                        />
-                    </Stack>
-                 </Paper>
+               {/* Sidebar */}
+               <Grid
+                   size={{
+                       xs: 12,
+                       md: 3
+                   }}>
+                     <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+                        <SectionHeader title="Configurações" icon={<SettingsIcon />} />
+                        
+                        <Stack spacing={2}>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>Status</InputLabel>
+                                <Select name="status" value={formData.status} label="Status" onChange={handleChange}>
+                                <MenuItem value="">Nenhum</MenuItem>
+                                <MenuItem value="Ativa">Ativa</MenuItem>
+                                <MenuItem value="Inativa">Inativa</MenuItem>
+                                <MenuItem value="Em Instalação">Em Instalação</MenuItem>
+                                <MenuItem value="Suspensa">Suspensa</MenuItem>
+                                </Select>
+                            </FormControl>
 
-                 <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
-                    <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
-                        Ações
-                    </Typography>
-                     <Stack spacing={2}>
-                        <Button type="submit" variant="contained" color="primary" size="large" fullWidth startIcon={<SaveIcon />} disabled={loading}>
-                            {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar Loja'}
-                        </Button>
-                        <Button variant="text" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/lodges')}>
-                            Cancelar
-                        </Button>
-                    </Stack>
-                 </Paper>
-           </Grid>
-        </Grid>
-      </form>
+                            <FormControl fullWidth variant="outlined" size="small">
+                                <InputLabel>Plano</InputLabel>
+                                <Select name="plan" value={formData.plan} label="Plano" onChange={handleChange}>
+                                <MenuItem value="">Nenhum</MenuItem>
+                                <MenuItem value="Básico">Básico</MenuItem>
+                                <MenuItem value="Padrão">Padrão</MenuItem>
+                                <MenuItem value="Premium">Premium</MenuItem>
+                                <MenuItem value="Enterprise">Enterprise</MenuItem>
+                                </Select>
+                            </FormControl>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Container>
+                            <TextField 
+                                name="user_limit" 
+                                label="Limite de Usuários" 
+                                type="number" 
+                                value={formData.user_limit} 
+                                onChange={handleChange} 
+                                fullWidth 
+                                size="small"
+                                variant="outlined"
+                            />
+                             <TextField 
+                                name="custom_domain" 
+                                label="Domínio Personalizado" 
+                                value={formData.custom_domain} 
+                                onChange={handleChange} 
+                                fullWidth 
+                                size="small"
+                                variant="outlined"
+                                InputProps={{
+                                    startAdornment: <DomainIcon color="action" fontSize="small" sx={{ mr: 1 }} />
+                                }}
+                            />
+                        </Stack>
+                     </Paper>
+
+                     <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
+                        <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+                            Ações
+                        </Typography>
+                         <Stack spacing={2}>
+                            <Button type="submit" variant="contained" color="primary" size="large" fullWidth startIcon={<SaveIcon />} disabled={loading}>
+                                {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar Loja'}
+                            </Button>
+                            <Button variant="text" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/lodges')}>
+                                Cancelar
+                            </Button>
+                        </Stack>
+                     </Paper>
+               </Grid>
+            </Grid>
+          </form>
+          <Snackbar
+            open={snackbar.open}
+            autoHideDuration={6000}
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
+      </Container>
   );
 };
 

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-import database, dependencies
+import database
+import dependencies
 from schemas import obedience_schema
 from services import obedience_service
 

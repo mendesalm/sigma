@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 
-import database, dependencies
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+import database
+import dependencies
 from schemas import book_schema, library_item_schema, loan_schema, waitlist_schema
 from services.book_service import BookService
 from services.library_item_service import LibraryItemService
@@ -13,15 +15,16 @@ router = APIRouter(
     tags=["Library"],
 )
 
+
 def require_librarian_or_admin(current_user: dict):
     user_type = current_user.get("user_type")
     if user_type in ("super_admin", "webmaster"):
         return True
-        
+
     active_role = current_user.get("active_role_name")
     if active_role in ("Bibliotecário", "Bibliotecário Adjunto", "Venerável Mestre"):
         return True
-        
+
     raise HTTPException(status_code=403, detail="Not authorized to manage library")
 
 
@@ -37,16 +40,18 @@ async def search_book_by_isbn(
         raise HTTPException(status_code=404, detail="Livro não encontrado no Google Books")
     return book_data
 
-@router.get("/books", response_model=List[book_schema.BookResponse])
+
+@router.get("/books", response_model=list[book_schema.BookResponse])
 def list_books(
     skip: int = 0,
     limit: int = 100,
-    search: Optional[str] = None,
+    search: str | None = None,
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
     """Lista catálogo global de livros."""
     return BookService.list_books(db, skip=skip, limit=limit, search=search)
+
 
 @router.post("/books", response_model=book_schema.BookResponse, status_code=status.HTTP_201_CREATED)
 def create_book(
@@ -61,9 +66,10 @@ def create_book(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/items", response_model=List[library_item_schema.LibraryItemResponse])
+
+@router.get("/items", response_model=list[library_item_schema.LibraryItemResponse])
 def list_library_items(
-    book_id: Optional[int] = None,
+    book_id: int | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(database.get_db),
@@ -73,8 +79,9 @@ def list_library_items(
     lodge_id = current_user.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada")
-        
+
     return LibraryItemService.list_items(db, lodge_id=lodge_id, book_id=book_id, skip=skip, limit=limit)
+
 
 @router.post("/items", response_model=library_item_schema.LibraryItemResponse, status_code=status.HTTP_201_CREATED)
 def create_library_item(
@@ -87,11 +94,12 @@ def create_library_item(
     lodge_id = current_user.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada")
-        
+
     try:
         return LibraryItemService.create_item(db, lodge_id, item_in)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.post("/loans", response_model=loan_schema.LoanResponse, status_code=status.HTTP_201_CREATED)
 def create_loan(
@@ -104,11 +112,12 @@ def create_loan(
     lodge_id = current_user.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada")
-        
+
     try:
         return LoanService.create_loan(db, lodge_id, loan_in)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @router.put("/loans/{loan_id}/return", response_model=loan_schema.LoanResponse)
 def return_loan(
@@ -121,13 +130,14 @@ def return_loan(
     lodge_id = current_user.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada")
-        
+
     try:
         return LoanService.return_loan(db, loan_id, lodge_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/loans/me", response_model=List[loan_schema.LoanResponse])
+
+@router.get("/loans/me", response_model=list[loan_schema.LoanResponse])
 def get_my_loans(
     skip: int = 0,
     limit: int = 100,
@@ -138,10 +148,11 @@ def get_my_loans(
     user_id = current_user.get("user_id")
     if not user_id:
         raise HTTPException(status_code=400, detail="User ID not found")
-        
+
     return LoanService.get_member_loans(db, user_id, skip=skip, limit=limit)
 
-@router.get("/loans/active", response_model=List[loan_schema.LoanResponse])
+
+@router.get("/loans/active", response_model=list[loan_schema.LoanResponse])
 def get_active_loans(
     skip: int = 0,
     limit: int = 100,
@@ -153,8 +164,9 @@ def get_active_loans(
     lodge_id = current_user.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada")
-        
+
     return LoanService.get_lodge_active_loans(db, lodge_id, skip=skip, limit=limit)
+
 
 @router.post("/waitlist", response_model=waitlist_schema.WaitlistResponse, status_code=status.HTTP_201_CREATED)
 def enter_waitlist(
@@ -167,13 +179,14 @@ def enter_waitlist(
     user_id = current_user.get("user_id")
     if not lodge_id or not user_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada ou ID inválido")
-        
+
     try:
         return WaitlistService.create_waitlist(db, lodge_id, user_id, waitlist_in)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/waitlist/me", response_model=List[waitlist_schema.WaitlistResponse])
+
+@router.get("/waitlist/me", response_model=list[waitlist_schema.WaitlistResponse])
 def get_my_waitlists(
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
@@ -183,5 +196,5 @@ def get_my_waitlists(
     user_id = current_user.get("user_id")
     if not lodge_id or not user_id:
         raise HTTPException(status_code=400, detail="Usuário sem loja vinculada/ID inválido")
-        
+
     return WaitlistService.get_user_active_waitlists(db, user_id, lodge_id)

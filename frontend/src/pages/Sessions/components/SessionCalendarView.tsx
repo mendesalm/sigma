@@ -69,7 +69,12 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
 
     // Empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<Grid item xs={1} key={`empty-${i}`} sx={{ height: 120, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }} />);
+      days.push(<Grid
+        key={`empty-${i}`}
+        sx={{ height: 120, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}
+        size={{
+          xs: 1
+        }} />);
     }
 
     // Days of the month
@@ -79,10 +84,8 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
       const isToday = new Date().toISOString().split('T')[0] === dateStr;
 
       days.push(
-        <Grid 
-          item 
-          xs={1} // Takes 1 column out of 7
-          key={day} 
+        <Grid
+          key={day}
           sx={{ 
             height: 120, 
             border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
@@ -94,7 +97,9 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
               backgroundColor: alpha(theme.palette.action.hover, 0.1)
             }
           }}
-        >
+          size={{
+            xs: 1
+          }}>
           <Typography 
             variant="body2" 
             sx={{ 
@@ -178,18 +183,21 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
           <ChevronRight />
         </IconButton>
       </Box>
-
       {/* Days Header */}
       <Grid container columns={7} sx={{ mb: 1 }}>
         {DAYS_OF_WEEK.map(day => (
-          <Grid item xs={1} key={day} sx={{ textAlign: 'center' }}>
+          <Grid
+            key={day}
+            sx={{ textAlign: 'center' }}
+            size={{
+              xs: 1
+            }}>
             <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
               {day}
             </Typography>
           </Grid>
         ))}
       </Grid>
-
       {/* Calendar Grid */}
       <Grid container columns={7}>
         {renderCalendarDays()}

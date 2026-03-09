@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline, Box, Toolbar, Typography, AppBar } from '@mui/material';
+import {
+  Drawer, List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText, CssBaseline, Box, Toolbar, Typography, AppBar
+} from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import GavelIcon from '@mui/icons-material/Gavel';
 import { useAuth } from '../hooks/useAuth';
@@ -54,17 +60,21 @@ const DashboardPage: React.FC = () => {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            <ListItem button component={Link} to="/dashboard/management/obediences">
-              <ListItemIcon>
-                <BusinessIcon />
-              </ListItemIcon>
-              <ListItemText primary="Obediências" />
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/dashboard/management/obediences">
+                <ListItemIcon>
+                  <BusinessIcon />
+                </ListItemIcon>
+                <ListItemText primary="Obediências" />
+              </ListItemButton>
             </ListItem>
-            <ListItem button component={Link} to="/dashboard/management/lodges">
-              <ListItemIcon>
-                <GavelIcon />
-              </ListItemIcon>
-              <ListItemText primary="Lojas" />
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/dashboard/management/lodges">
+                <ListItemIcon>
+                  <GavelIcon />
+                </ListItemIcon>
+                <ListItemText primary="Lojas" />
+              </ListItemButton>
             </ListItem>
           </List>
         </Box>

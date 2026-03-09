@@ -122,7 +122,10 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" sx={{ mt: 1 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="name"
                 label="Nome da Comissão"
@@ -132,7 +135,10 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="description"
                 label="Descrição"
@@ -143,7 +149,11 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <FormControl fullWidth>
                 <InputLabel>Tipo</InputLabel>
                 <Select
@@ -157,7 +167,11 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <TextField
                 name="start_date"
                 label="Data Início"
@@ -169,7 +183,11 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 4
+              }}>
               <TextField
                 name="end_date"
                 label="Data Fim"
@@ -182,7 +200,10 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
               />
             </Grid>
             
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <Autocomplete
                 options={eligibleMembers}
                 getOptionLabel={(option) => option.full_name}
@@ -194,7 +215,10 @@ const CommitteeForm: React.FC<CommitteeFormProps> = ({ open, onClose, onSave, co
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <Autocomplete
                 multiple
                 options={eligibleMembers.filter(m => m.id.toString() !== formData.president_id)}

@@ -25,7 +25,7 @@ class AssociationSelection(BaseModel):
     "/login",
     response_model=Token,
     summary="Login de Usuários",
-    description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT."
+    description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT.",
 )
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
@@ -53,7 +53,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     # Add name to payload for frontend display
     if user_type == "member":
         access_token_data["name"] = user.full_name
-        access_token_data["role"] = "Membro" # Default role name
+        access_token_data["role"] = "Membro"  # Default role name
         access_token_data["profile_picture_path"] = user.profile_picture_path
     elif user_type == "webmaster":
         access_token_data["name"] = user.username
@@ -108,7 +108,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     response_model=Token,
     summary="Selecionar Associação (Loja/Obediência)",
     description="Permite que Membros com múltiplas filiações (ex: mais de uma Loja) escolham qual associação "
-                "deve ficar ativa para a sessão atual, recebendo um novo token JWT atualizado com a escolha."
+    "deve ficar ativa para a sessão atual, recebendo um novo token JWT atualizado com a escolha.",
 )
 def select_association(
     association_data: AssociationSelection,
@@ -134,7 +134,7 @@ def select_association(
         "user_type": user_type,
         "name": user.full_name,
         "role": "Membro",
-        "profile_picture_path": user.profile_picture_path
+        "profile_picture_path": user.profile_picture_path,
     }
 
     if association_data.association_type == "lodge":

@@ -1,6 +1,6 @@
 import pytest
 from fastapi import status
-from datetime import date
+
 
 @pytest.mark.integration
 def test_create_lodge_success(client, super_admin_token, sample_obedience):
@@ -23,15 +23,16 @@ def test_create_lodge_success(client, super_admin_token, sample_obedience):
             "technical_contact_email": "admin@esperanca.com",
             "session_day": "Segunda-feira",
             "periodicity": "Semanal",
-            "session_time": "20:00:00"
+            "session_time": "20:00:00",
         },
-        headers={"Authorization": f"Bearer {super_admin_token}"}
+        headers={"Authorization": f"Bearer {super_admin_token}"},
     )
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["lodge_name"] == "Loja Nova Esperança"
     assert data["lodge_code"] is not None
     assert data["is_active"] is True
+
 
 @pytest.mark.integration
 def test_create_lodge_unauthorized(client, sample_obedience):
@@ -42,10 +43,11 @@ def test_create_lodge_unauthorized(client, sample_obedience):
             "lodge_name": "Loja Invasora",
             "obedience_id": sample_obedience.id,
             "technical_contact_name": "Hacker",
-            "technical_contact_email": "hacker@test.com"
-        }
+            "technical_contact_email": "hacker@test.com",
+        },
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
 
 @pytest.mark.integration
 def test_read_lodges(client, sample_lodge):
@@ -57,31 +59,27 @@ def test_read_lodges(client, sample_lodge):
     assert len(data) >= 1
     assert data[0]["lodge_name"] == sample_lodge.lodge_name.title()
 
+
 @pytest.mark.integration
 def test_update_lodge(client, super_admin_token, sample_lodge):
     """Testa atualização de loja."""
     response = client.put(
         f"/lodges/{sample_lodge.id}",
-        json={
-            "lodge_name": "Loja Atualizada",
-            "phone": "(11) 99999-8888"
-        },
-        headers={"Authorization": f"Bearer {super_admin_token}"}
+        json={"lodge_name": "Loja Atualizada", "phone": "(11) 99999-8888"},
+        headers={"Authorization": f"Bearer {super_admin_token}"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["lodge_name"] == "Loja Atualizada"
     assert data["phone"] == "(11) 99999-8888"
 
+
 @pytest.mark.integration
 def test_delete_lodge(client, super_admin_token, sample_lodge):
     """Testa exclusão de loja."""
-    response = client.delete(
-        f"/lodges/{sample_lodge.id}",
-        headers={"Authorization": f"Bearer {super_admin_token}"}
-    )
+    response = client.delete(f"/lodges/{sample_lodge.id}", headers={"Authorization": f"Bearer {super_admin_token}"})
     assert response.status_code == status.HTTP_200_OK
-    
+
     # Verificar se foi removida
     get_response = client.get(f"/lodges/{sample_lodge.id}")
     assert get_response.status_code == status.HTTP_404_NOT_FOUND

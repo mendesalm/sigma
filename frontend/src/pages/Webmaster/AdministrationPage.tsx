@@ -280,218 +280,257 @@ const AdministrationPage: React.FC = () => {
   });
 
   return (
-    <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
-            Gestão de Exercícios Maçônicos
-        </Typography>
-        <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-        >
-            Novo Exercício
-        </Button>
-      </Box>
-
-      {/* List of Administrations */}
-      <Grid container spacing={3}>
-        {administrations.map((admin) => (
-            <Grid item xs={12} key={admin.id}>
-                <Paper 
-                    sx={{ 
-                        p: 3, 
-                        borderLeft: admin.is_current ? '5px solid #0ea5e9' : '5px solid transparent',
-                        bgcolor: '#1e293b',
-                        color: '#fff'
-                    }}
-                >
-                    <Grid container alignItems="center" spacing={2}>
-                        <Grid item xs={12} md={4}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="h6">{admin.identifier}</Typography>
-                                {admin.is_current && <Chip label="Atual" color="primary" size="small" />}
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, color: 'text.secondary' }}>
-                                <DateRangeIcon fontSize="small" />
-                                <Typography variant="body2">
-                                    {new Date(admin.start_date).toLocaleDateString()} - {new Date(admin.end_date).toLocaleDateString()}
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        
-                        <Grid item xs={12} md={6}>
-                            {/* Mini Preview of key officers */}
-                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                                {admin.role_histories.slice(0, 3).map(rh => (
-                                    <Box key={rh.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Avatar sx={{ width: 24, height: 24 }} />
-                                        <Typography variant="caption">{rh.role?.name || 'Cargo'}: {rh.member?.full_name || 'Membro'}</Typography>
-                                    </Box>
-                                ))}
-                                {admin.role_histories.length > 3 && (
-                                    <Typography variant="caption" sx={{ alignSelf: 'center' }}>+ {admin.role_histories.length - 3} oficiais</Typography>
-                                )}
-                            </Box>
-                        </Grid>
-
-                        <Grid item xs={12} md={2} sx={{ textAlign: 'right' }}>
-                            <Button 
-                                variant="outlined" 
-                                startIcon={<EditIcon />} 
-                                onClick={() => handleEdit(admin)}
-                                size="small"
-                            >
-                                Editar / Diretoria
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Paper>
-            </Grid>
-        ))}
-        {!loading && administrations.length === 0 && (
-            <Grid item xs={12}>
-                <Alert severity="info">Nenhum exercício cadastrado.</Alert>
-            </Grid>
-        )}
-      </Grid>
-
-      {/* Dialog for Create/Edit */}
-      <Dialog 
-        open={openModal} 
-        onClose={(_, reason) => {
-            if (reason !== 'backdropClick') {
-                setOpenModal(false);
-            }
-        }}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{ sx: { bgcolor: '#0f172a', color: '#fff' } }} // Dark theme dialog
-      >
-        <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-            {editingAdmin ? 'Editar Exercício / Diretoria' : 'Novo Exercício Maçônico'}
-        </DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-            <form id="admin-form" onSubmit={handleSubmit(onSubmit)}>
-                <Grid container spacing={3}>
-                    {/* Basic Info */}
-                    <Grid item xs={12} md={6}>
-                        <Controller
-                            name="identifier"
-                            control={control}
-                            defaultValue=""
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    label="Identificação (Ex: Biênio 2025-2027)" 
-                                    fullWidth 
-                                    variant="outlined" 
-                                    sx={{ mb: 2 }}
-                                />
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <Controller
-                            name="start_date"
-                            control={control}
-                            defaultValue=""
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    label="Data Início" 
-                                    type="date" 
-                                    fullWidth 
-                                    InputLabelProps={{ shrink: true }} 
-                                />
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                        <Controller
-                            name="end_date"
-                            control={control}
-                            defaultValue=""
-                            rules={{ required: true }}
-                            render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    label="Data Fim" 
-                                    type="date" 
-                                    fullWidth 
-                                    InputLabelProps={{ shrink: true }} 
-                                />
-                            )}
-                        />
-                    </Grid>
-                    <Grid item xs={12}>
-                         <Controller
-                            name="is_current"
-                            control={control}
-                            defaultValue={false}
-                            render={({ field }) => (
-                                <FormControlLabel
-                                    control={<Switch checked={field.value} onChange={field.onChange} />}
-                                    label="Definir como Exercício Atual (Vigente)"
-                                />
-                            )}
-                        />
-                    </Grid>
-                </Grid>
-
-                <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
-                
-                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PersonIcon color="primary" /> Composição da Diretoria
-                </Typography>
-
-                <Grid container spacing={2}>
-                    {sortedRoles.map(role => {
-                        const currentOfficer = selectedOfficers.find(o => o.role_id === role.id);
-                        const currentMember = currentOfficer ? members.find(m => m.id === currentOfficer.member_id) : null;
-
-                        return (
-                            <Grid item xs={12} md={6} lg={4} key={role.id}>
-                                <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)' }}>
-                                    <CardContent sx={{ pb: '16px !important' }}>
-                                        <Typography variant="subtitle2" color="primary" gutterBottom>
-                                            {role.name}
-                                        </Typography>
-                                        <Autocomplete
-                                            options={members}
-                                            getOptionLabel={(option) => `${option.full_name} (CIM: ${option.cim})`}
-                                            value={currentMember}
-                                            isOptionEqualToValue={(option, value) => option.id === value.id}
-                                            onChange={(_, newValue) => handleOfficerChange(role.id, newValue ? newValue.id : null)}
-                                            renderInput={(params) => <TextField {...params} variant="standard" placeholder="Pesquisar membro..." />}
-                                            noOptionsText={members.length === 0 ? "A lista de membros está vazia" : "Nenhum membro encontrado"}
-                                            PaperComponent={({ children }) => (
-                                                <Paper sx={{ bgcolor: '#1e293b', color: '#fff' }}>{children}</Paper>
-                                            )}
-                                            sx={{
-                                                '& .MuiInputBase-root': { color: '#fff' },
-                                                '& .MuiSvgIcon-root': { color: '#fff' }
-                                            }}
-                                        />
-                                    </CardContent>
-                                </Card>
+      <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff' }}>
+              Gestão de Exercícios Maçônicos
+          </Typography>
+          <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleCreate}
+          >
+              Novo Exercício
+          </Button>
+        </Box>
+          {/* List of Administrations */}
+          <Grid container spacing={3}>
+            {administrations.map((admin) => (
+                <Grid
+                    key={admin.id}
+                    size={{
+                        xs: 12
+                    }}>
+                    <Paper 
+                        sx={{ 
+                            p: 3, 
+                            borderLeft: admin.is_current ? '5px solid #0ea5e9' : '5px solid transparent',
+                            bgcolor: '#1e293b',
+                            color: '#fff'
+                        }}
+                    >
+                        <Grid container alignItems="center" spacing={2}>
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 4
+                                }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="h6">{admin.identifier}</Typography>
+                                    {admin.is_current && <Chip label="Atual" color="primary" size="small" />}
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, color: 'text.secondary' }}>
+                                    <DateRangeIcon fontSize="small" />
+                                    <Typography variant="body2">
+                                        {new Date(admin.start_date).toLocaleDateString()} - {new Date(admin.end_date).toLocaleDateString()}
+                                    </Typography>
+                                </Box>
                             </Grid>
-                        );
-                    })}
+                            
+                            <Grid
+                                size={{
+                                    xs: 12,
+                                    md: 6
+                                }}>
+                                {/* Mini Preview of key officers */}
+                                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                    {admin.role_histories.slice(0, 3).map(rh => (
+                                        <Box key={rh.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Avatar sx={{ width: 24, height: 24 }} />
+                                            <Typography variant="caption">{rh.role?.name || 'Cargo'}: {rh.member?.full_name || 'Membro'}</Typography>
+                                        </Box>
+                                    ))}
+                                    {admin.role_histories.length > 3 && (
+                                        <Typography variant="caption" sx={{ alignSelf: 'center' }}>+ {admin.role_histories.length - 3} oficiais</Typography>
+                                    )}
+                                </Box>
+                            </Grid>
+
+                            <Grid
+                                sx={{ textAlign: 'right' }}
+                                size={{
+                                    xs: 12,
+                                    md: 2
+                                }}>
+                                <Button 
+                                    variant="outlined" 
+                                    startIcon={<EditIcon />} 
+                                    onClick={() => handleEdit(admin)}
+                                    size="small"
+                                >
+                                    Editar / Diretoria
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Paper>
                 </Grid>
-            </form>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <Button onClick={() => setOpenModal(false)} color="inherit">Cancelar</Button>
-            <Button onClick={handleSubmit(onSubmit)} variant="contained" startIcon={<SaveIcon />}>
-                Salvar Exercício
-            </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+            ))}
+            {!loading && administrations.length === 0 && (
+                <Grid
+                    size={{
+                        xs: 12
+                    }}>
+                    <Alert severity="info">Nenhum exercício cadastrado.</Alert>
+                </Grid>
+            )}
+          </Grid>
+          {/* Dialog for Create/Edit */}
+          <Dialog 
+            open={openModal} 
+            onClose={(_, reason) => {
+                if (reason !== 'backdropClick') {
+                    setOpenModal(false);
+                }
+            }}
+            maxWidth="lg"
+            fullWidth
+            PaperProps={{ sx: { bgcolor: '#0f172a', color: '#fff' } }} // Dark theme dialog
+          >
+            <DialogTitle sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                {editingAdmin ? 'Editar Exercício / Diretoria' : 'Novo Exercício Maçônico'}
+            </DialogTitle>
+            <DialogContent sx={{ mt: 2 }}>
+                <form id="admin-form" onSubmit={handleSubmit(onSubmit)}>
+                    <Grid container spacing={3}>
+                        {/* Basic Info */}
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 6
+                            }}>
+                            <Controller
+                                name="identifier"
+                                control={control}
+                                defaultValue=""
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <TextField 
+                                        {...field} 
+                                        label="Identificação (Ex: Biênio 2025-2027)" 
+                                        fullWidth 
+                                        variant="outlined" 
+                                        sx={{ mb: 2 }}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 3
+                            }}>
+                            <Controller
+                                name="start_date"
+                                control={control}
+                                defaultValue=""
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <TextField 
+                                        {...field} 
+                                        label="Data Início" 
+                                        type="date" 
+                                        fullWidth 
+                                        InputLabelProps={{ shrink: true }} 
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12,
+                                md: 3
+                            }}>
+                            <Controller
+                                name="end_date"
+                                control={control}
+                                defaultValue=""
+                                rules={{ required: true }}
+                                render={({ field }) => (
+                                    <TextField 
+                                        {...field} 
+                                        label="Data Fim" 
+                                        type="date" 
+                                        fullWidth 
+                                        InputLabelProps={{ shrink: true }} 
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                             <Controller
+                                name="is_current"
+                                control={control}
+                                defaultValue={false}
+                                render={({ field }) => (
+                                    <FormControlLabel
+                                        control={<Switch checked={field.value} onChange={field.onChange} />}
+                                        label="Definir como Exercício Atual (Vigente)"
+                                    />
+                                )}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
+                    
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PersonIcon color="primary" /> Composição da Diretoria
+                    </Typography>
+
+                    <Grid container spacing={2}>
+                        {sortedRoles.map(role => {
+                            const currentOfficer = selectedOfficers.find(o => o.role_id === role.id);
+                            const currentMember = currentOfficer ? members.find(m => m.id === currentOfficer.member_id) : null;
+
+                            return (
+                                <Grid
+                                    key={role.id}
+                                    size={{
+                                        xs: 12,
+                                        md: 6,
+                                        lg: 4
+                                    }}>
+                                    <Card variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.1)' }}>
+                                        <CardContent sx={{ pb: '16px !important' }}>
+                                            <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                {role.name}
+                                            </Typography>
+                                            <Autocomplete
+                                                options={members}
+                                                getOptionLabel={(option) => `${option.full_name} (CIM: ${option.cim})`}
+                                                value={currentMember}
+                                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                                onChange={(_, newValue) => handleOfficerChange(role.id, newValue ? newValue.id : null)}
+                                                renderInput={(params) => <TextField {...params} variant="standard" placeholder="Pesquisar membro..." />}
+                                                noOptionsText={members.length === 0 ? "A lista de membros está vazia" : "Nenhum membro encontrado"}
+                                                PaperComponent={({ children }) => (
+                                                    <Paper sx={{ bgcolor: '#1e293b', color: '#fff' }}>{children}</Paper>
+                                                )}
+                                                sx={{
+                                                    '& .MuiInputBase-root': { color: '#fff' },
+                                                    '& .MuiSvgIcon-root': { color: '#fff' }
+                                                }}
+                                            />
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            );
+                        })}
+                    </Grid>
+                </form>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <Button onClick={() => setOpenModal(false)} color="inherit">Cancelar</Button>
+                <Button onClick={handleSubmit(onSubmit)} variant="contained" startIcon={<SaveIcon />}>
+                    Salvar Exercício
+                </Button>
+            </DialogActions>
+          </Dialog>
+      </Box>
   );
 };
 

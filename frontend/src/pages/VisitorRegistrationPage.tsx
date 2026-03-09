@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Box, 
-    Container, 
-    Typography, 
-    TextField, 
-    Button, 
-    Paper, 
-    Autocomplete, 
-    CircularProgress, 
+import {
+    Box,
+    Container,
+    Typography,
+    TextField,
+    Button,
+    Paper,
+    Autocomplete,
+    CircularProgress,
     Alert,
     Stepper,
     Step,
@@ -35,14 +35,14 @@ const VisitorRegistrationPage: React.FC = () => {
     const [fullName, setFullName] = useState('');
     const [cim, setCim] = useState('');
     const [degree, setDegree] = useState('');
-    
+
     // Lodge Selection
     const [selectedLodge, setSelectedLodge] = useState<ExternalLodge | null>(null);
     const [manualLodge, setManualLodge] = useState(false);
     const [manualLodgeName, setManualLodgeName] = useState('');
     const [manualLodgeNumber, setManualLodgeNumber] = useState('');
     const [manualLodgeObedience, setManualLodgeObedience] = useState('');
-    
+
     // Search State
     const [lodgeOptions, setLodgeOptions] = useState<ExternalLodge[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -51,12 +51,12 @@ const VisitorRegistrationPage: React.FC = () => {
     // Result
     const [visitorToken, setVisitorToken] = useState<string | null>(null);
     const [visitorId, setVisitorId] = useState<string | null>(null);
-    
+
     // Check-in State
     const [locating, setLocating] = useState(false);
     const [nearestSession, setNearestSession] = useState<any>(null);
     const [checkInSuccess, setCheckInSuccess] = useState(false);
-    const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
 
     const degreeOptions = ['Aprendiz', 'Companheiro', 'Mestre', 'Mestre Instalado'];
 
@@ -121,22 +121,22 @@ const VisitorRegistrationPage: React.FC = () => {
 
             const vId = response.data.id;
             setVisitorId(vId);
-            
+
             // O Token agora contém o ID do visitante global
             const tokenData = {
                 type: 'VISITOR_CHECKIN',
                 id: vId,
-                full_name: fullName, 
+                full_name: fullName,
                 degree: degree,
                 lodge_name: manualLodge ? `${manualLodgeName} ${manualLodgeNumber}` : selectedLodge?.name
             };
 
             setVisitorToken(JSON.stringify(tokenData));
             setActiveStep(1);
-            
+
             // Inicia busca por sessão próxima
             findNearestSession();
-            
+
         } catch (err: any) {
             console.error(err);
             setError(err.response?.data?.detail || "Erro ao registrar visitante. Tente novamente.");
@@ -144,7 +144,7 @@ const VisitorRegistrationPage: React.FC = () => {
             setLoading(false);
         }
     };
-    
+
     const findNearestSession = () => {
         setLocating(true);
         if (!navigator.geolocation) {
@@ -152,16 +152,16 @@ const VisitorRegistrationPage: React.FC = () => {
             setLocating(false);
             return;
         }
-        
+
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
                 setUserLocation({ lat: latitude, lon: longitude });
-                
+
                 try {
                     const response = await api.get(`/masonic-sessions/nearest-active?latitude=${latitude}&longitude=${longitude}`);
                     setNearestSession(response.data);
-                } catch (err) {
+                } catch {
                     console.log("Nenhuma sessão próxima encontrada.");
                 } finally {
                     setLocating(false);
@@ -174,10 +174,10 @@ const VisitorRegistrationPage: React.FC = () => {
             }
         );
     };
-    
+
     const handleConfirmPresence = async () => {
         if (!nearestSession || !visitorId || !userLocation) return;
-        
+
         setLoading(true);
         try {
             await api.post(`/masonic-sessions/${nearestSession.id}/visitor-check-in`, {
@@ -199,7 +199,7 @@ const VisitorRegistrationPage: React.FC = () => {
                 <Typography variant="h4" gutterBottom align="center" color="primary">
                     Visitante
                 </Typography>
-                
+
                 <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
                     <Step>
                         <StepLabel>Seus Dados</StepLabel>
@@ -241,12 +241,12 @@ const VisitorRegistrationPage: React.FC = () => {
 
                         <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>
                             <Typography variant="subtitle1" gutterBottom>Sua Loja de Origem</Typography>
-                            
+
                             <Box sx={{ mb: 2 }}>
                                 <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                                    <input 
-                                        type="checkbox" 
-                                        checked={manualLodge} 
+                                    <input
+                                        type="checkbox"
+                                        checked={manualLodge}
                                         onChange={(e) => setManualLodge(e.target.checked)}
                                         style={{ marginRight: 8 }}
                                     />
@@ -317,9 +317,9 @@ const VisitorRegistrationPage: React.FC = () => {
 
                         {error && <Alert severity="error">{error}</Alert>}
 
-                        <Button 
-                            variant="contained" 
-                            size="large" 
+                        <Button
+                            variant="contained"
+                            size="large"
                             onClick={handleGenerateToken}
                             disabled={loading}
                         >
@@ -330,7 +330,7 @@ const VisitorRegistrationPage: React.FC = () => {
 
                 {activeStep === 1 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                        
+
                         {checkInSuccess ? (
                             <Alert severity="success" sx={{ width: '100%' }}>
                                 <Typography variant="h6">Presença Confirmada!</Typography>
@@ -344,7 +344,7 @@ const VisitorRegistrationPage: React.FC = () => {
                                 <Typography variant="h6" align="center">
                                     Confirmar Presença
                                 </Typography>
-                                
+
                                 {locating ? (
                                     <Box sx={{ textAlign: 'center' }}>
                                         <CircularProgress />
@@ -361,11 +361,11 @@ const VisitorRegistrationPage: React.FC = () => {
                                         <Typography variant="body2" color="text.secondary">
                                             Data: {new Date(nearestSession.session_date).toLocaleDateString()}
                                         </Typography>
-                                        
-                                        <Button 
-                                            variant="contained" 
-                                            color="success" 
-                                            size="large" 
+
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            size="large"
                                             sx={{ mt: 3 }}
                                             onClick={handleConfirmPresence}
                                             disabled={loading}
@@ -375,7 +375,7 @@ const VisitorRegistrationPage: React.FC = () => {
                                     </Box>
                                 ) : (
                                     <Alert severity="warning">
-                                        Nenhuma sessão ativa encontrada nas proximidades. 
+                                        Nenhuma sessão ativa encontrada nas proximidades.
                                         Certifique-se de estar na Loja e que a sessão já foi iniciada.
                                         <Button onClick={findNearestSession} sx={{ mt: 1, display: 'block' }}>Tentar Novamente</Button>
                                     </Alert>
@@ -397,9 +397,9 @@ const VisitorRegistrationPage: React.FC = () => {
                                 Voltar / Corrigir Dados
                             </Button>
                         )}
-                        
+
                         {checkInSuccess && (
-                             <Button variant="outlined" onClick={() => window.location.reload()}>
+                            <Button variant="outlined" onClick={() => window.location.reload()}>
                                 Novo Registro
                             </Button>
                         )}

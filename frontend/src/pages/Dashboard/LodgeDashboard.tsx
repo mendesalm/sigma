@@ -424,7 +424,6 @@ const LodgeDashboard: React.FC = () => {
             p: 2, // reduced padding
             overflow: { xs: 'visible', md: 'hidden' } // allow page scroll on mobile
         }}>
-
             {/* Main Grid: Left Side List, Center Calendar, Right Side Widgets */}
             {/* Main Grid: Asymmetrical Layout (20% - 60% - 20%) */}
             <Grid container spacing={1.5} columns={10} sx={{ flexGrow: 1, height: '100%' }}>
@@ -799,7 +798,6 @@ const LodgeDashboard: React.FC = () => {
                 </Grid>
 
             </Grid>
-
             {/* Event Details Modal - Dark Theme */}
             <Dialog
                 open={modalOpen}
@@ -858,7 +856,6 @@ const LodgeDashboard: React.FC = () => {
                     )}
                 </DialogContent>
             </Dialog>
-
             {/* Notice Detail Modal */}
             <Dialog
                 open={noticeModalOpen}
@@ -894,7 +891,6 @@ const LodgeDashboard: React.FC = () => {
                     <Button onClick={handleCloseNoticeModal} sx={{ color: COLORS.gold }}>Fechar</Button>
                 </DialogActions>
             </Dialog>
-
             {/* Members Network Modal */}
             <Dialog
                 open={membersModalOpen}
@@ -974,8 +970,6 @@ const LodgeDashboard: React.FC = () => {
                     </Grid>
                 </DialogContent>
             </Dialog>
-
-
             {/* Add Notice Modal */}
             <Dialog
                 open={addNoticeModalOpen}
@@ -1076,7 +1070,6 @@ const LodgeDashboard: React.FC = () => {
                     </Button>
                 </DialogActions>
             </Dialog>
-
             {/* All Notices Modal */}
             <Dialog
                 open={allNoticesModalOpen}
@@ -1163,7 +1156,6 @@ const LodgeDashboard: React.FC = () => {
                     </List>
                 </DialogContent>
             </Dialog>
-
         </Box >
     );
 };

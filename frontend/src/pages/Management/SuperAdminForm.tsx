@@ -92,12 +92,15 @@ const SuperAdminForm: React.FC = () => {
           Preencha os dados abaixo para cadastrar um novo Super Administrador.
         </Typography>
       </Box>
-
       <Paper sx={{ p: 4 }}>
         <form onSubmit={handleSubmit}>
           {renderSectionTitle('Dados da Conta')}
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <TextField
                 name="username"
                 label="Usuário"
@@ -107,7 +110,11 @@ const SuperAdminForm: React.FC = () => {
                 required
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <TextField
                 name="email"
                 label="Email"
@@ -120,7 +127,11 @@ const SuperAdminForm: React.FC = () => {
                 helperText={errors.email}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <TextField
                 name="password"
                 label="Senha"
@@ -131,7 +142,12 @@ const SuperAdminForm: React.FC = () => {
                 helperText={id ? 'Deixe em branco para manter a mesma senha' : ''}
               />
             </Grid>
-            <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Grid
+              sx={{ display: 'flex', alignItems: 'center' }}
+              size={{
+                xs: 12,
+                md: 6
+              }}>
               <FormControlLabel
                 control={<Switch name="is_active" checked={formState.is_active} onChange={handleChange} />} 
                 label="Ativo"

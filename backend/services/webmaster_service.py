@@ -3,8 +3,10 @@ import string
 
 from sqlalchemy.orm import Session
 
-import models, schemas
+import models
+import schemas
 from utils import password_utils
+
 from . import email_service
 
 

@@ -81,7 +81,6 @@ const MinhasPublicacoes: React.FC = () => {
                     </Typography>
                 </Box>
             </Box>
-
             <Tabs 
                 value={currentTab} 
                 onChange={handleTabChange}
@@ -99,9 +98,7 @@ const MinhasPublicacoes: React.FC = () => {
                     <Tab key={type} label={type} value={type} />
                 ))}
             </Tabs>
-
             {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
                     <CircularProgress />
@@ -109,7 +106,10 @@ const MinhasPublicacoes: React.FC = () => {
             ) : (
                 <Grid container spacing={3}>
                     {filteredPublications.length === 0 ? (
-                        <Grid item xs={12}>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
                             <Box sx={{ textAlign: 'center', py: 5, color: 'rgba(255,255,255,0.5)' }}>
                                 <Typography variant="h6">
                                     {currentTab === 'Todos' 
@@ -120,7 +120,13 @@ const MinhasPublicacoes: React.FC = () => {
                         </Grid>
                     ) : (
                         filteredPublications.map((pub) => (
-                            <Grid item xs={12} sm={6} md={4} key={pub.id}>
+                            <Grid
+                                key={pub.id}
+                                size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                }}>
                                 <Card 
                                     sx={{ 
                                         bgcolor: 'rgba(30, 41, 59, 0.7)', 

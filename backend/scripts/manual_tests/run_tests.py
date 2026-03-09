@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 import pytest
 
 # Adicionar o diretório atual ao PYTHONPATH

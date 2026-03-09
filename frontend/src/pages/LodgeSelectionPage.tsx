@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
+import { Container, Typography, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 
 const LodgeSelectionPage: React.FC = () => {
   const { associations, selectAssociation } = useAuth();
@@ -29,8 +29,10 @@ const LodgeSelectionPage: React.FC = () => {
       </Typography>
       <List>
         {associations.map((association) => (
-          <ListItem key={`${association.type}-${association.id}`} button onClick={() => handleSelectAssociation(association)}>
-            <ListItemText primary={association.name} secondary={association.type === 'lodge' ? 'Loja' : 'Obediência'} />
+          <ListItem key={`${association.type}-${association.id}`} disablePadding>
+            <ListItemButton onClick={() => handleSelectAssociation(association)}>
+              <ListItemText primary={association.name} secondary={association.type === 'lodge' ? 'Loja' : 'Obediência'} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

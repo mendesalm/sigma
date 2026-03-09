@@ -1,34 +1,34 @@
 import enum
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from schemas.decoration_schema import DecorationResponse
-from schemas.family_member_schema import FamilyMemberResponse, FamilyMemberCreate
+from schemas.family_member_schema import FamilyMemberCreate, FamilyMemberResponse
 from schemas.role_history_schema import RoleHistoryResponse
 
 
 # --- Enums ---
-class DegreeEnum(str, enum.Enum):
+class DegreeEnum(enum.StrEnum):
     APPRENTICE = "Aprendiz"
     FELLOW = "Companheiro"
     MASTER = "Mestre"
     INSTALLED_MASTER = "Mestre Instalado"
 
 
-class RegistrationStatusEnum(str, enum.Enum):
+class RegistrationStatusEnum(enum.StrEnum):
     PENDING = "Pendente"
     APPROVED = "Aprovado"
     REJECTED = "Rejeitado"
 
 
-class MemberStatusEnum(str, enum.Enum):
+class MemberStatusEnum(enum.StrEnum):
     ACTIVE = "Ativo"
     INACTIVE = "Inativo"
     DISABLED = "Desativado"
 
-class MemberClassEnum(str, enum.Enum):
+
+class MemberClassEnum(enum.StrEnum):
     REGULAR = "Regular"
     IRREGULAR = "Irregular"
     EMERITUS = "Emérito"
@@ -100,110 +100,110 @@ class MemberBase(BaseModel):
     # System Data
     registration_status: RegistrationStatusEnum = RegistrationStatusEnum.PENDING
 
-    @field_validator('full_name')
+    @field_validator("full_name")
     @classmethod
     def validate_full_name(cls, v):
         """Valida que o nome é completo (nome e sobrenome)."""
         if not v or not v.strip():
-            raise ValueError('Nome completo é obrigatório')
-        
+            raise ValueError("Nome completo é obrigatório")
+
         # Remove espaços extras
-        v = ' '.join(v.split())
-        
+        v = " ".join(v.split())
+
         # Verifica se tem pelo menos nome e sobrenome
         parts = v.split()
         if len(parts) < 2:
-            raise ValueError('Informe nome e sobrenome completos')
-        
+            raise ValueError("Informe nome e sobrenome completos")
+
         # Verifica se contém apenas letras e espaços (permite acentos)
-        if not all(part.replace('-', '').replace("'", '').isalpha() or part.isspace() for part in v):
-            raise ValueError('Nome deve conter apenas letras')
-        
+        if not all(part.replace("-", "").replace("'", "").isalpha() or part.isspace() for part in v):
+            raise ValueError("Nome deve conter apenas letras")
+
         return v.title()  # Capitaliza cada palavra
 
-    @field_validator('cpf')
+    @field_validator("cpf")
     @classmethod
     def validate_cpf_format(cls, v):
         """Valida formato e dígitos verificadores do CPF."""
         if not v:
             return v
-        
-        from utils.validators import validate_cpf, sanitize_cpf
-        
+
+        from utils.validators import sanitize_cpf, validate_cpf
+
         # Sanitiza o CPF primeiro
         cpf_clean = sanitize_cpf(v)
-        
+
         if not validate_cpf(cpf_clean):
-            raise ValueError('CPF inválido. Verifique os dígitos verificadores')
-        
+            raise ValueError("CPF inválido. Verifique os dígitos verificadores")
+
         return v
 
-    @field_validator('phone')
+    @field_validator("phone")
     @classmethod
     def validate_phone_format(cls, v):
         """Valida formato de telefone brasileiro."""
         if not v:
             return v
-        
+
         from utils.validators import validate_phone
-        
+
         if not validate_phone(v):
-            raise ValueError('Telefone inválido. Use formato: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX')
-        
+            raise ValueError("Telefone inválido. Use formato: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX")
+
         return v
 
-    @field_validator('zip_code')
+    @field_validator("zip_code")
     @classmethod
     def validate_zip_code_format(cls, v):
         """Valida formato de CEP."""
         if not v:
             return v
-        
+
         from utils.validators import validate_cep
-        
+
         if not validate_cep(v):
-            raise ValueError('CEP inválido. Use formato: XXXXX-XXX')
-        
+            raise ValueError("CEP inválido. Use formato: XXXXX-XXX")
+
         return v
 
-    @field_validator('cim')
+    @field_validator("cim")
     @classmethod
     def validate_cim_format(cls, v):
         """Valida formato de CIM."""
         if not v:
             return v
-        
+
         from utils.validators import validate_cim
-        
+
         if not validate_cim(v):
-            raise ValueError('CIM inválido. Deve ser numérico com 4-20 dígitos')
-        
+            raise ValueError("CIM inválido. Deve ser numérico com 4-20 dígitos")
+
         return v.strip()
 
-    @field_validator('birth_date')
+    @field_validator("birth_date")
     @classmethod
     def validate_birth_date(cls, v):
         """Valida que data de nascimento não está no futuro e é razoável."""
         if not v:
             return v
-        
+
         today = date.today()
-        
+
         if v > today:
-            raise ValueError('Data de nascimento não pode estar no futuro')
-        
+            raise ValueError("Data de nascimento não pode estar no futuro")
+
         # Validar idade mínima (18 anos) e máxima razoável (120 anos)
         age = (today - v).days // 365
-        
+
         if age < 18:
-            raise ValueError('Membro deve ter pelo menos 18 anos')
-        
+            raise ValueError("Membro deve ter pelo menos 18 anos")
+
         if age > 120:
-            raise ValueError('Data de nascimento inválida (idade superior a 120 anos)')
-        
+            raise ValueError("Data de nascimento inválida (idade superior a 120 anos)")
+
         return v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_dates_consistency(self):
         """Valida consistência entre datas."""
         birth_date = self.birth_date
@@ -211,50 +211,50 @@ class MemberBase(BaseModel):
         initiation_date = self.initiation_date
         elevation_date = self.elevation_date
         exaltation_date = self.exaltation_date
-        
+
         # Data de casamento deve ser posterior ao nascimento
         if birth_date and marriage_date:
             if marriage_date < birth_date:
-                raise ValueError('Data de casamento deve ser posterior à data de nascimento')
-        
+                raise ValueError("Data de casamento deve ser posterior à data de nascimento")
+
         # Data de iniciação deve ser posterior ao nascimento
         if birth_date and initiation_date:
             if initiation_date < birth_date:
-                raise ValueError('Data de iniciação deve ser posterior à data de nascimento')
-        
+                raise ValueError("Data de iniciação deve ser posterior à data de nascimento")
+
         # Progressão de graus: iniciação < elevação < exaltação
         if initiation_date and elevation_date:
             if elevation_date < initiation_date:
-                raise ValueError('Data de elevação deve ser posterior à data de iniciação')
-        
+                raise ValueError("Data de elevação deve ser posterior à data de iniciação")
+
         if elevation_date and exaltation_date:
             if exaltation_date < elevation_date:
-                raise ValueError('Data de exaltação deve ser posterior à data de elevação')
-        
+                raise ValueError("Data de exaltação deve ser posterior à data de elevação")
+
         if initiation_date and exaltation_date and not elevation_date:
             if exaltation_date < initiation_date:
-                raise ValueError('Data de exaltação deve ser posterior à data de iniciação')
-        
+                raise ValueError("Data de exaltação deve ser posterior à data de iniciação")
+
         return self
 
 
 class MemberCreate(MemberBase):
     password: str = Field(..., min_length=8, description="Senha para o primeiro acesso do membro")
-    
-    @field_validator('password')
+
+    @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v):
         """Valida força da senha."""
         if len(v) < 8:
-            raise ValueError('Senha deve ter pelo menos 8 caracteres')
-        
+            raise ValueError("Senha deve ter pelo menos 8 caracteres")
+
         # Verificar se tem pelo menos uma letra e um número
         has_letter = any(c.isalpha() for c in v)
         has_number = any(c.isdigit() for c in v)
-        
+
         if not has_letter or not has_number:
-            raise ValueError('Senha deve conter letras e números')
-        
+            raise ValueError("Senha deve conter letras e números")
+
         return v
 
     model_config = {
@@ -265,7 +265,7 @@ class MemberCreate(MemberBase):
                 "cpf": "123.456.789-00",
                 "birth_date": "1980-05-15",
                 "cim": "123456",
-                "password": "SenhaSegura123"
+                "password": "SenhaSegura123",
             }
         }
     }
@@ -290,7 +290,7 @@ class MemberCreateWithAssociation(MemberCreate):
                 "lodge_id": 1,
                 "role_id": 3,
                 "status": "Ativo",
-                "member_class": "Regular"
+                "member_class": "Regular",
             }
         }
     }
@@ -340,19 +340,13 @@ class MemberAssociateLodge(BaseModel):
     member_update: MemberUpdate | None = Field(None, description="Dados secundários adicionais a atualizar")
 
     model_config = {
-        "json_schema_extra": {
-            "example": {
-                "lodge_id": 2,
-                "role_id": 15,
-                "status": "Ativo",
-                "member_class": "Honorário"
-            }
-        }
+        "json_schema_extra": {"example": {"lodge_id": 2, "role_id": 15, "status": "Ativo", "member_class": "Honorário"}}
     }
 
 
 class MemberListResponse(BaseModel):
     """Lightweight response for member list/table view - only essential fields"""
+
     id: int = Field(..., description="ID interno")
     full_name: str = Field(..., description="Nome do irmão")
     email: str = Field(..., description="E-mail")
@@ -363,10 +357,10 @@ class MemberListResponse(BaseModel):
     profile_picture_path: str | None = Field(None, description="Caminho foto perfil")
     phone: str | None = Field(None, description="Telefone")
     birth_date: date | None = Field(None, description="Data de nascimento")
-    
+
     # Single active role (computed field, not a relationship)
     active_role: str | None = Field(None, description="Cargo atual na loja")
-    
+
     model_config = {
         "from_attributes": True,
         "json_schema_extra": {
@@ -378,9 +372,9 @@ class MemberListResponse(BaseModel):
                 "degree": "Mestre Instalado",
                 "status": "Active",
                 "registration_status": "Aprovado",
-                "active_role": "Venerável Mestre"
+                "active_role": "Venerável Mestre",
             }
-        }
+        },
     }
 
 
@@ -406,9 +400,9 @@ class MemberResponse(MemberBase):
                 "birth_date": "1980-05-15",
                 "cim": "123456",
                 "degree": "Mestre Instalado",
-                "lodge_associations": [{"lodge_id": 1, "status": "Ativo", "member_class": "Regular"}]
+                "lodge_associations": [{"lodge_id": 1, "status": "Ativo", "member_class": "Regular"}],
             }
-        }
+        },
     }
 
 

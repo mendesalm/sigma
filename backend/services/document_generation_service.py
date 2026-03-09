@@ -1,43 +1,39 @@
-import os
+import base64
+import hashlib
+import io
 import json
+import os
+import uuid
 from datetime import date
+from functools import lru_cache
 
-
-from fastapi import Depends, HTTPException, status
+import qrcode
+from fastapi import Depends
 from jinja2 import Environment, FileSystemLoader  # pip install Jinja2
+from sqlalchemy import Date, cast, func
 from sqlalchemy.orm import Session
 
 from database import SessionLocal, get_db
 from models import models
 from services import document_service
-from schemas.document_settings_schema import DocumentSettings
 from services.document_strategies.balaustre_strategy import BalaustreStrategy
-from services.document_strategies.prancha_strategy import PranchaStrategy
 from services.document_strategies.certificate_strategy import CertificateStrategy
-from services.document_strategies.invitation_strategy import InvitationStrategy
 from services.document_strategies.congratulation_strategy import CongratulationStrategy
 from services.document_strategies.electoral_balaustre_strategy import ElectoralBalaustreStrategy
+from services.document_strategies.invitation_strategy import InvitationStrategy
+from services.document_strategies.prancha_strategy import PranchaStrategy
 from services.pdf_service import PdfService
 
-from sqlalchemy import func, cast, Date
-import qrcode
-import io
-import hashlib
-import uuid
-
-import base64
-from functools import lru_cache
 
 @lru_cache(maxsize=64)
 def _read_file_base64_cached(full_path: str) -> str:
     if not os.path.exists(full_path):
         return ""
     with open(full_path, "rb") as image_file:
-         return base64.b64encode(image_file.read()).decode('utf-8')
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
 
 # (O código das funções auxiliares e dos templates permanece o mesmo)
-
 
 
 def get_attendees_for_session(db: Session, session_id: int) -> list[str]:
@@ -79,36 +75,35 @@ def get_attendees_for_session(db: Session, session_id: int) -> list[str]:
 
 from services import template_service
 
+
 class DocumentGenerationService:
     def __init__(self, db_session: Session | None = None):
         self.db = db_session
-        
+
         # Caminhos base
-        backend_dir = os.path.dirname(os.path.dirname(__file__)) # .../sigma/backend
-        project_root = os.path.dirname(backend_dir) # .../sigma
-        
+        backend_dir = os.path.dirname(os.path.dirname(__file__))  # .../sigma/backend
+        project_root = os.path.dirname(backend_dir)  # .../sigma
+
         # Configura o Loader para buscar em múltiplos locais
         template_paths = [
-            os.path.join(backend_dir, 'templates'), # Legacy/Fallback
-            os.path.join(project_root, 'storage', 'lodges', 'model', 'templates'), # New Modular Components
+            os.path.join(backend_dir, "templates"),  # Legacy/Fallback
+            os.path.join(project_root, "storage", "lodges", "model", "templates"),  # New Modular Components
         ]
-        
+
         self.env = Environment(loader=FileSystemLoader(template_paths))
-        
+
         # Strategy Registry
         self.strategies = {
-            'balaustre': BalaustreStrategy(self),
-            'prancha': PranchaStrategy(self),
-            'edital': PranchaStrategy(self), # Alias for prancha/edital
-            'certificado': CertificateStrategy(self),
-            'convite': InvitationStrategy(self),
-            'congratulacao': CongratulationStrategy(self),
-            'balaustre_eleitoral': ElectoralBalaustreStrategy(self),
+            "balaustre": BalaustreStrategy(self),
+            "prancha": PranchaStrategy(self),
+            "edital": PranchaStrategy(self),  # Alias for prancha/edital
+            "certificado": CertificateStrategy(self),
+            "convite": InvitationStrategy(self),
+            "congratulacao": CongratulationStrategy(self),
+            "balaustre_eleitoral": ElectoralBalaustreStrategy(self),
         }
-        
-        self.pdf_service = PdfService()
-        
 
+        self.pdf_service = PdfService()
 
     def render_partial(self, template_name: str, context: dict) -> str:
         """
@@ -117,44 +112,44 @@ class DocumentGenerationService:
         """
         try:
             # Handle Custom Templates from Frontend Editor
-            if template_name == 'header_custom' or template_name == 'custom':
-                 return context.get('header_template', '')
-            if template_name == 'footer_custom':
-                 return context.get('footer_template', '')
+            if template_name == "header_custom" or template_name == "custom":
+                return context.get("header_template", "")
+            if template_name == "footer_custom":
+                return context.get("footer_template", "")
 
             # Add partials/ prefix if not present, as usually requested
-            if not template_name.startswith('partials/') and not template_name.endswith('.html'):
-                 # Assuming full path logic or relative to templates root
-                 pass 
-            
+            if not template_name.startswith("partials/") and not template_name.endswith(".html"):
+                # Assuming full path logic or relative to templates root
+                pass
+
             # Since frontend sends 'header_classico.html', and it's in templates/partials/
             # We might need to adjust path if the loader is at templates/
-            
+
             # Best effort: try to load as is, or with partials/ prefix
             try:
                 template = self.env.get_template(f"partials/{template_name}")
             except:
                 template = self.env.get_template(template_name)
-                
+
             return template.render(**context)
         except Exception as e:
             print(f"Error rendering partial {template_name}: {e}")
             return f"<div style='color:red'>Error rendering template: {str(e)}</div>"
 
     def get_strategy(self, doc_type: str):
-         strategy = self.strategies.get(doc_type)
-         if not strategy:
-              # Fallback? Or strict? Strict for now.
-              raise ValueError(f"Tipo de documento não suportado: {doc_type}")
-         return strategy
+        strategy = self.strategies.get(doc_type)
+        if not strategy:
+            # Fallback? Or strict? Strict for now.
+            raise ValueError(f"Tipo de documento não suportado: {doc_type}")
+        return strategy
 
     def _get_base64_asset(self, asset_path: str) -> str:
 
-        base_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets')
+        base_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
         full_path = os.path.join(base_path, asset_path)
-        
+
         encoded_string = _read_file_base64_cached(full_path)
-        
+
         if not encoded_string:
             print(f"Asset não encontrado ou vazio: {full_path}")
             return ""
@@ -168,7 +163,7 @@ class DocumentGenerationService:
             mime_type = "image/svg+xml"
         elif asset_path.endswith(".ttf"):
             mime_type = "font/ttf"
-            
+
         return f"data:{mime_type};base64,{encoded_string}"
 
     def _get_lodge_logo(self, lodge_id: int) -> str:
@@ -178,81 +173,86 @@ class DocumentGenerationService:
         Nível 2: storage/lodges/model/assets/images/logo.png
         Nível 3: Default Hardcoded (logoJPJ_.png - legacy fallback)
         """
-        import base64
-        
-        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'storage', 'lodges')
+
+        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage", "lodges")
         logo_path = None
-        
+
         # --- Nível 1: Pasta da Loja ---
         if self.db:
             lodge = self.db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
             if lodge:
-                 folder_name = None
-                 if lodge.lodge_number:
-                     safe_number = "".join(c for c in str(lodge.lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
-                     folder_name = f"loja_{safe_number}"
-                 else:
-                     folder_name = f"loja_id_{lodge.id}"
-                 
-                 # Check new path
-                 for ext in ['.png', '.jpg', '.jpeg']:
-                     possible_path = os.path.join(base_storage, folder_name, 'assets', 'images', f'logo{ext}')
-                     if os.path.exists(possible_path):
-                         logo_path = possible_path
-                         break
-                 
-                 # Fallback to old path inside the new folder
-                 if not logo_path:
-                     for ext in ['.png', '.jpg', '.jpeg']:
-                         possible_path = os.path.join(base_storage, folder_name, f'logo{ext}')
-                         if os.path.exists(possible_path):
-                             logo_path = possible_path
-                             break
+                folder_name = None
+                if lodge.lodge_number:
+                    safe_number = (
+                        "".join(c for c in str(lodge.lodge_number) if c.isalnum() or c in (" ", "-", "_"))
+                        .strip()
+                        .replace(" ", "_")
+                    )
+                    folder_name = f"loja_{safe_number}"
+                else:
+                    folder_name = f"loja_id_{lodge.id}"
+
+                # Check new path
+                for ext in [".png", ".jpg", ".jpeg"]:
+                    possible_path = os.path.join(base_storage, folder_name, "assets", "images", f"logo{ext}")
+                    if os.path.exists(possible_path):
+                        logo_path = possible_path
+                        break
+
+                # Fallback to old path inside the new folder
+                if not logo_path:
+                    for ext in [".png", ".jpg", ".jpeg"]:
+                        possible_path = os.path.join(base_storage, folder_name, f"logo{ext}")
+                        if os.path.exists(possible_path):
+                            logo_path = possible_path
+                            break
 
         # Legacy ID folder check
         if not logo_path:
-             storage_base = os.path.join(base_storage, str(lodge_id))
-             for ext in ['.png', '.jpg', '.jpeg']:
-                path = os.path.join(storage_base, f'logo{ext}')
+            storage_base = os.path.join(base_storage, str(lodge_id))
+            for ext in [".png", ".jpg", ".jpeg"]:
+                path = os.path.join(storage_base, f"logo{ext}")
                 if os.path.exists(path):
                     logo_path = path
                     break
 
         # --- Nível 2: Pasta Model (Padrão) ---
         if not logo_path:
-            model_path_base = os.path.join(base_storage, 'model', 'assets', 'images', 'logo')
-            for ext in ['.png', '.jpg', '.jpeg']:
-                 possible_path = os.path.join(model_path_base, f'logo{ext}')
-                 if os.path.exists(possible_path):
-                     logo_path = possible_path
-                     break
+            model_path_base = os.path.join(base_storage, "model", "assets", "images", "logo")
+            for ext in [".png", ".jpg", ".jpeg"]:
+                possible_path = os.path.join(model_path_base, f"logo{ext}")
+                if os.path.exists(possible_path):
+                    logo_path = possible_path
+                    break
 
         # --- Leitura do Arquivo ---
         if logo_path:
-                try:
-                    encoded_string = _read_file_base64_cached(logo_path)
-                    
-                    if not encoded_string:
-                        return self._get_base64_asset("images/logoJPJ_.png")
-                    
-                    mime_type = "image/png"
-                    if logo_path.endswith('.jpg') or logo_path.endswith('.jpeg'):
-                        mime_type = "image/jpeg"
-                    return f"data:{mime_type};base64,{encoded_string}"
-                except Exception as e:
-                    print(f"Erro ao ler logo da loja {lodge_id}: {e}")
-        
+            try:
+                encoded_string = _read_file_base64_cached(logo_path)
+
+                if not encoded_string:
+                    return self._get_base64_asset("images/logoJPJ_.png")
+
+                mime_type = "image/png"
+                if logo_path.endswith(".jpg") or logo_path.endswith(".jpeg"):
+                    mime_type = "image/jpeg"
+                return f"data:{mime_type};base64,{encoded_string}"
+            except Exception as e:
+                print(f"Erro ao ler logo da loja {lodge_id}: {e}")
+
         # --- Nível 3: Fallback Hardcoded ---
         return self._get_base64_asset("images/logoJPJ_.png")
 
     # --- Helper Methods ---
-    def get_lodge_officers_at_date(self, db: Session, lodge_id: int, target_date: date, administration_id: int | None = None) -> dict[str, str]:
+    def get_lodge_officers_at_date(
+        self, db: Session, lodge_id: int, target_date: date, administration_id: int | None = None
+    ) -> dict[str, str]:
         """
         Busca TODOS os oficiais ativos da Loja para a data ou administração especificada.
         Retorna um dicionário { 'Nome do Cargo': 'Nome do Membro' }.
         """
         officer_roles = {}
-         
+
         # Query base: RoleHistory + Role + Member
         query = (
             db.query(models.RoleHistory, models.Role, models.Member)
@@ -268,7 +268,7 @@ class DocumentGenerationService:
         else:
             query = query.filter(
                 models.RoleHistory.start_date <= target_date,
-                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None))
+                (models.RoleHistory.end_date >= target_date) | (models.RoleHistory.end_date.is_(None)),
             )
 
         results = query.all()
@@ -280,17 +280,22 @@ class DocumentGenerationService:
 
     def _format_full_address(self, lodge: models.Lodge) -> str:
         parts = []
-        if lodge.street_address: parts.append(lodge.street_address)
-        if lodge.street_number: parts.append(f"nº {lodge.street_number}")
-        if lodge.neighborhood: parts.append(f"- {lodge.neighborhood}")
-        if lodge.city: parts.append(f"- {lodge.city}")
-        if lodge.state: parts.append(f"({lodge.state})")
+        if lodge.street_address:
+            parts.append(lodge.street_address)
+        if lodge.street_number:
+            parts.append(f"nº {lodge.street_number}")
+        if lodge.neighborhood:
+            parts.append(f"- {lodge.neighborhood}")
+        if lodge.city:
+            parts.append(f"- {lodge.city}")
+        if lodge.state:
+            parts.append(f"({lodge.state})")
         return " ".join(parts) if parts else "Endereço não cadastrado"
 
     def _generate_qr_code_base64(self, data: str) -> str:
         """Gera um QR Code em Base64 a partir de uma string."""
         import base64
-        
+
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -301,11 +306,11 @@ class DocumentGenerationService:
         qr.make(fit=True)
 
         img = qr.make_image(fill_color="black", back_color="white")
-        
+
         buffered = io.BytesIO()
         img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        
+
         return f"data:image/png;base64,{img_str}"
 
     def _render_template(self, template_name: str, data: dict) -> str:
@@ -315,11 +320,11 @@ class DocumentGenerationService:
         2. Pasta Model (Padrão do Sistema)
         3. Arquivos/DB (Legado/Fallback)
         """
-        lodge_id = data.get('lodge_id')
-        lodge_number = data.get('lodge_number')
-        
-        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'storage', 'lodges')
-        
+        lodge_id = data.get("lodge_id")
+        lodge_number = data.get("lodge_number")
+
+        base_storage = os.path.join(os.path.dirname(os.path.dirname(__file__)), "storage", "lodges")
+
         # Mapeamento de Caminhos
         subpath = None
         if template_name == "balaustre_template.html":
@@ -336,74 +341,79 @@ class DocumentGenerationService:
         # --- Nível 1: Busca na Pasta da Loja ---
         folder_name = None
         if lodge_number:
-            safe_lodge_number = "".join(c for c in str(lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+            safe_lodge_number = (
+                "".join(c for c in str(lodge_number) if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+            )
             folder_name = f"loja_{safe_lodge_number}"
         elif lodge_id:
-             folder_name = f"loja_id_{lodge_id}"
-             
+            folder_name = f"loja_id_{lodge_id}"
+
         if folder_name:
             template_path = os.path.join(base_storage, folder_name, subpath)
             if os.path.exists(template_path):
-                 try:
-                     with open(template_path, "r", encoding="utf-8") as f:
-                         return self.env.from_string(f.read()).render(data)
-                 except Exception as e:
-                     print(f"Erro ao ler template da loja ({template_path}): {e}")
+                try:
+                    with open(template_path, encoding="utf-8") as f:
+                        return self.env.from_string(f.read()).render(data)
+                except Exception as e:
+                    print(f"Erro ao ler template da loja ({template_path}): {e}")
 
             # Legacy flat folder check logic (preserved)
             template_path_flat = os.path.join(base_storage, folder_name, "templates", template_name)
             if os.path.exists(template_path_flat) and template_path_flat != template_path:
-                 try:
-                     with open(template_path_flat, "r", encoding="utf-8") as f:
-                         return self.env.from_string(f.read()).render(data)
-                 except Exception:
-                     pass
+                try:
+                    with open(template_path_flat, encoding="utf-8") as f:
+                        return self.env.from_string(f.read()).render(data)
+                except Exception:
+                    pass
 
         # --- Nível 2: Busca na Pasta Model ---
-        model_template_path = os.path.join(base_storage, 'model', subpath)
+        model_template_path = os.path.join(base_storage, "model", subpath)
         if os.path.exists(model_template_path):
             try:
-                with open(model_template_path, "r", encoding="utf-8") as f:
+                with open(model_template_path, encoding="utf-8") as f:
                     return self.env.from_string(f.read()).render(data)
             except Exception as e:
                 print(f"Erro ao ler template model ({model_template_path}): {e}")
 
         # Injeta logo dinâmico (Assets)
-        lodge_id = data.get('lodge_id')
-        
+        lodge_id = data.get("lodge_id")
+
         # Check for custom logo in styles
         custom_logo_url = None
-        styles = data.get('styles')
+        styles = data.get("styles")
         if styles:
             # Handle both dict and Pydantic object
             if isinstance(styles, dict):
-                header_config = styles.get('header_config', {})
+                header_config = styles.get("header_config", {})
                 if isinstance(header_config, dict):
-                    custom_logo_url = header_config.get('logo_url')
-                else: 
-                     custom_logo_url = getattr(header_config, 'logo_url', None)
-            else: 
-                 header_config = getattr(styles, 'header_config', None)
-                 if header_config:
-                     custom_logo_url = getattr(header_config, 'logo_url', None)
+                    custom_logo_url = header_config.get("logo_url")
+                else:
+                    custom_logo_url = getattr(header_config, "logo_url", None)
+            else:
+                header_config = getattr(styles, "header_config", None)
+                if header_config:
+                    custom_logo_url = getattr(header_config, "logo_url", None)
 
         if custom_logo_url:
-             data['header_image'] = custom_logo_url
+            data["header_image"] = custom_logo_url
         elif lodge_id:
-            data['header_image'] = self._get_lodge_logo(lodge_id)
+            data["header_image"] = self._get_lodge_logo(lodge_id)
         else:
-            data['header_image'] = self._get_base64_asset("images/logoJPJ_.png")
-            
-        data['footer_image'] = self._get_base64_asset("images/logoRB_.png")
-        
+            data["header_image"] = self._get_base64_asset("images/logoJPJ_.png")
+
+        data["footer_image"] = self._get_base64_asset("images/logoRB_.png")
+
         # --- Nível 3: Banco de Dados ou Arquivo Global ---
         template_type = "BALAUSTRE" if "balaustre" in template_name else "EDITAL"
-        
+
         if self.db:
-            db_template = template_service.get_template_by_type(self.db, template_type)
+            db_template = template_service.get_active_template(self.db, lodge_id, template_type)
             if db_template:
-                return self.env.from_string(db_template.content).render(data)
-        
+                # db_template works for both Global and Local as both can have an HTML string
+                html_source = getattr(db_template, "custom_html_content", getattr(db_template, "html_content", ""))
+                if html_source:
+                    return self.env.from_string(html_source).render(data)
+
         # Fallback Final
         template = self.env.get_template(template_name)
         return template.render(data)
@@ -412,7 +422,7 @@ class DocumentGenerationService:
         """
         Retorna o dicionário de variáveis disponíveis para construção de templates dinâmicos.
         """
-        if doc_type == 'balaustre':
+        if doc_type == "balaustre":
             variables = {
                 "groups": [
                     {
@@ -429,7 +439,7 @@ class DocumentGenerationService:
                             {"key": "NumIrmaosPresentes", "label": "Nº Irmãos do Quadro Presentes"},
                             {"key": "NumVisitantes", "label": "Nº Visitantes"},
                             {"key": "ValorTronco", "label": "Valor Arrecadado (Tronco)"},
-                        ]
+                        ],
                     },
                     {
                         "id": "lodge",
@@ -444,26 +454,26 @@ class DocumentGenerationService:
                             {"key": "affiliation_text_1", "label": "Texto Afiliação 1"},
                             {"key": "affiliation_text_2", "label": "Texto Afiliação 2"},
                             {"key": "header_image", "label": "Logo da Loja (URL)"},
-                        ]
+                        ],
                     },
-                     {
+                    {
                         "id": "blocks",
                         "label": "Blocos de Texto",
                         "variables": [
-                             {"key": "BalaustreAnterior", "label": "Balaústre Anterior", "type": "block"},
-                             {"key": "ExpedienteRecebido", "label": "Expediente Recebido", "type": "block"},
-                             {"key": "ExpedienteExpedido", "label": "Expediente Expedido", "type": "block"},
-                             {"key": "SacoProposta", "label": "Saco de Propostas", "type": "block"},
-                             {"key": "OrdemDia", "label": "Ordem do Dia", "type": "block"},
-                             {"key": "TempoInstrucao", "label": "Tempo de Instrução", "type": "block"},
-                             {"key": "Tronco", "label": "Tronco (Texto Completo)", "type": "block"},
-                             {"key": "Palavra", "label": "Palavra a Bem da Ordem", "type": "block"},
-                        ]
-                    }
+                            {"key": "BalaustreAnterior", "label": "Balaústre Anterior", "type": "block"},
+                            {"key": "ExpedienteRecebido", "label": "Expediente Recebido", "type": "block"},
+                            {"key": "ExpedienteExpedido", "label": "Expediente Expedido", "type": "block"},
+                            {"key": "SacoProposta", "label": "Saco de Propostas", "type": "block"},
+                            {"key": "OrdemDia", "label": "Ordem do Dia", "type": "block"},
+                            {"key": "TempoInstrucao", "label": "Tempo de Instrução", "type": "block"},
+                            {"key": "Tronco", "label": "Tronco (Texto Completo)", "type": "block"},
+                            {"key": "Palavra", "label": "Palavra a Bem da Ordem", "type": "block"},
+                        ],
+                    },
                 ]
             }
-        elif doc_type in ['prancha', 'edital']:
-             variables = {
+        elif doc_type in ["prancha", "edital"]:
+            variables = {
                 "groups": [
                     {
                         "id": "info",
@@ -473,8 +483,8 @@ class DocumentGenerationService:
                             {"key": "HoraInicioSessao", "label": "Hora Início"},
                             {"key": "session_title_formatted", "label": "Tipo de Sessão"},
                             {"key": "DataAssinatura", "label": "Data da Assinatura (Hojem)"},
-                             {"key": "ObrigatoriedadeTraje", "label": "Traje"},
-                        ]
+                            {"key": "ObrigatoriedadeTraje", "label": "Traje"},
+                        ],
                     },
                     {
                         "id": "lodge",
@@ -487,13 +497,13 @@ class DocumentGenerationService:
                             {"key": "EnderecoLoja", "label": "Endereço Completo"},
                             {"key": "NomeObediencia", "label": "Obediência"},
                             {"key": "header_image", "label": "Logo da Loja (URL)"},
-                        ]
+                        ],
                     },
                     # Officers can be shared below
                 ]
-             }
+            }
         else:
-             return {}
+            return {}
 
         # Officers (Shared Logic)
         officer_vars = []
@@ -506,30 +516,20 @@ class DocumentGenerationService:
             {"key": "Secretario", "label": "Secretário"},
             {"key": "Tesoureiro", "label": "Tesoureiro"},
             {"key": "Chanceler", "label": "Chanceler"},
-                {"key": "Hospitaleiro", "label": "Hospitaleiro"},
+            {"key": "Hospitaleiro", "label": "Hospitaleiro"},
         ]
-        
-        if self.db: 
+
+        if self.db:
             # Fetch all distinct role names
             all_roles = self.db.query(models.Role.name).distinct().order_by(models.Role.name).all()
             for (r_name,) in all_roles:
-                officer_vars.append({
-                    "key": f"officers['{r_name}']", 
-                    "label": r_name, 
-                    "type": "person"
-                })
-        
-        variables["groups"].append({
-            "id": "officers_dynamic",
-            "label": "Oficiais (Todos)",
-            "variables": officer_vars
-        })
-        variables["groups"].append({
-            "id": "officers_legacy",
-            "label": "Oficiais (Atalhos)",
-            "variables": legacy_officers
-        })
-        
+                officer_vars.append({"key": f"officers['{r_name}']", "label": r_name, "type": "person"})
+
+        variables["groups"].append({"id": "officers_dynamic", "label": "Oficiais (Todos)", "variables": officer_vars})
+        variables["groups"].append(
+            {"id": "officers_legacy", "label": "Oficiais (Atalhos)", "variables": legacy_officers}
+        )
+
         return variables
 
     def get_default_templates(self, doc_type: str) -> dict:
@@ -538,52 +538,50 @@ class DocumentGenerationService:
         """
         defaults = {}
         backend_dir = os.path.dirname(os.path.dirname(__file__))
-        defaults_dir = os.path.join(backend_dir, 'templates', 'defaults')
-        
+        defaults_dir = os.path.join(backend_dir, "templates", "defaults")
+
         # Helper to read file
         def read_default(name):
-             path = os.path.join(defaults_dir, f"{doc_type}_{name}.html")
-             if os.path.exists(path):
-                 with open(path, "r", encoding="utf-8") as f:
-                     return f.read()
-             return ""
-             
-        defaults['content_template'] = read_default('content')
-        defaults['signatures_template'] = read_default('signatures')
-        defaults['preamble_template'] = read_default('preamble')
-        
+            path = os.path.join(defaults_dir, f"{doc_type}_{name}.html")
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as f:
+                    return f.read()
+            return ""
+
+        defaults["content_template"] = read_default("content")
+        defaults["signatures_template"] = read_default("signatures")
+        defaults["preamble_template"] = read_default("preamble")
+
         return defaults
-
-
 
     def _format_full_address(self, lodge: models.Lodge) -> str:
         """Helper para formatar o endereço completo da loja."""
         parts = []
-        
+
         # Rua e Número
         street = (lodge.street_address or "").strip()
         number = (lodge.street_number or "").strip()
-        
+
         if street:
             address_part = f"{street}, {number}" if number else street
             parts.append(address_part)
         elif number:
-             parts.append(number)
+            parts.append(number)
 
         # Bairro
         if lodge.neighborhood:
             parts.append(lodge.neighborhood.strip())
-            
+
         # Oriente de Cidade - UF
         city = (lodge.city or "").strip()
         state = (lodge.state or "").strip()
-        
+
         if city:
             city_part = f"oriente de {city}"
             if state:
                 city_part += f" - {state}"
             parts.append(city_part)
-            
+
         return ", ".join(parts)
 
     def _calculate_tronco_text(self, db: Session, lodge_id: int, session_date: date) -> str:
@@ -594,7 +592,7 @@ class DocumentGenerationService:
                 models.FinancialTransaction.lodge_id == lodge_id,
                 cast(models.FinancialTransaction.transaction_date, Date) == session_date,
                 models.FinancialTransaction.transaction_type == "credit",
-                models.FinancialTransaction.description.ilike("%Tronco%")
+                models.FinancialTransaction.description.ilike("%Tronco%"),
             )
             .scalar()
         ) or 0.0
@@ -607,6 +605,7 @@ class DocumentGenerationService:
         if not start_date:
             # Se não houver sessão anterior, busca avisos dos últimos 30 dias
             from datetime import timedelta
+
             start_date = end_date - timedelta(days=30)
 
         notices = (
@@ -614,7 +613,7 @@ class DocumentGenerationService:
             .filter(
                 models.Notice.lodge_id == lodge_id,
                 cast(models.Notice.created_at, Date) > start_date,
-                cast(models.Notice.created_at, Date) <= end_date
+                cast(models.Notice.created_at, Date) <= end_date,
             )
             .all()
         )
@@ -625,15 +624,8 @@ class DocumentGenerationService:
         text_parts = ["Avisos e Circulares:"]
         for notice in notices:
             text_parts.append(f"- {notice.title}")
-        
+
         return "\n".join(text_parts)
-
-
-
-
-
-        
-
 
     def _get_draft_file_path(self, session_id: int) -> str:
         directory = os.path.join("storage", "sessions", str(session_id))
@@ -649,7 +641,7 @@ class DocumentGenerationService:
         file_path = self._get_draft_file_path(session_id)
         if os.path.exists(file_path):
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 print(f"Erro ao carregar rascunho: {e}")
@@ -658,23 +650,23 @@ class DocumentGenerationService:
     async def get_balaustre_draft_text(self, session_id: int) -> dict:
         # Tenta carregar rascunho salvo
         saved_draft = self.load_balaustre_draft(session_id)
-        
+
         db = SessionLocal()
         try:
-            strategy = self.get_strategy('balaustre')
+            strategy = self.get_strategy("balaustre")
             session_data = await strategy.collect_data(db, session_id)
-            
+
             # Se houver rascunho salvo, usa o texto e estilos dele
             if saved_draft:
-                text = saved_draft.get('text', '')
-                if 'styles' in saved_draft:
-                    session_data['styles'] = saved_draft['styles']
+                text = saved_draft.get("text", "")
+                if "styles" in saved_draft:
+                    session_data["styles"] = saved_draft["styles"]
                 return {"text": text, "data": session_data}
 
             # Se não houver rascunho, gera o texto padrão
             # PRIORIDADE 1: Verificar se a Strategy retornou um template personalizado (Webmaster)
-            if session_data.get('custom_text'):
-                return {"text": session_data['custom_text'], "data": session_data}
+            if session_data.get("custom_text"):
+                return {"text": session_data["custom_text"], "data": session_data}
 
             # PRIORIDADE 2: Geração Hardcoded (Legacy Fallback)
             officers = {
@@ -687,27 +679,27 @@ class DocumentGenerationService:
                 "Chanceler": session_data.get("Chanceler"),
                 "Hospitaleiro": session_data.get("Hospitaleiro"),
             }
-            
+
             present_officers = [f"{role}: {name}" for role, name in officers.items() if name and "___" not in name]
-            officers_text = ", ".join(present_officers)
-            
+            ", ".join(present_officers)
+
             attendees = session_data.get("attendees", [])
-            attendees_text = ", ".join(attendees) if attendees else "Nenhum registro de presença."
-            
+            ", ".join(attendees) if attendees else "Nenhum registro de presença."
+
             # Determine layout from styles (default standard)
             # Strategy collect_data now returns 'styles' key (Pydantic object or dict)
-            styles = session_data.get('styles', {})
+            styles = session_data.get("styles", {})
             # If styles is Pydantic model (DocumentStyles), convert to dict or access attr
-            if hasattr(styles, 'content_layout'):
-                 layout = styles.content_layout
+            if hasattr(styles, "content_layout"):
+                layout = styles.content_layout
             elif isinstance(styles, dict):
-                 layout = styles.get('content_layout', 'standard')
+                layout = styles.get("content_layout", "standard")
             else:
-                 layout = 'standard'
+                layout = "standard"
 
-            if layout == 'condensed':
-                 # Condensed: One single paragraph with running text
-                 text = (
+            if layout == "condensed":
+                # Condensed: One single paragraph with running text
+                text = (
                     f"<p>"
                     f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
                     f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
@@ -733,10 +725,10 @@ class DocumentGenerationService:
                     f"<strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
                     f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado. "
                     f"</p>"
-                 )
+                )
             else:
-                 # Standard: Multiple paragraphs
-                 text = (
+                # Standard: Multiple paragraphs
+                text = (
                     f"<p>"
                     f"<strong>ABERTURA:</strong> Precisamente às {session_data['HoraInicioSessao']} do dia {session_data['DiaSessao']} da E∴ V∴, "
                     f"a {session_data['lodge_title_formatted']} {session_data['lodge_name']} n° {session_data['lodge_number']}, "
@@ -762,9 +754,8 @@ class DocumentGenerationService:
                     f"<p><strong>PALAVRA A BEM GERAL DA ORDEM E DO QUADRO EM PARTICULAR:</strong> {session_data['Palavra']}</p>"
                     f"<p><strong>ENCERRAMENTO:</strong> o Ven∴ Mestre encerrou a sessão às {session_data['Encerramento']}, "
                     f"tendo eu, {session_data['SecretarioNome']}, Secretário, lavrado o presente balaústre, o qual, após lido, se considerado em tudo conforme, será assinado.</p>"
-                 )
-            
-            
+                )
+
             return {"text": text, "data": session_data}
         finally:
             db.close()
@@ -776,21 +767,19 @@ class DocumentGenerationService:
         com a linha de data do footer do template.
         """
         import re
-        
+
         # Pattern para encontrar parágrafos completos com "Oriente de"
         # Captura <p>...</p> ou <div>...</div> que contenha "Oriente de"
         patterns = [
-            r'<p[^>]*>.*?Oriente\s+de.*?</p>',
-            r'<div[^>]*>.*?Oriente\s+de.*?</div>',
+            r"<p[^>]*>.*?Oriente\s+de.*?</p>",
+            r"<div[^>]*>.*?Oriente\s+de.*?</div>",
         ]
-        
+
         cleaned_text = html_text
         for pattern in patterns:
-            cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE | re.DOTALL)
-        
+            cleaned_text = re.sub(pattern, "", cleaned_text, flags=re.IGNORECASE | re.DOTALL)
+
         return cleaned_text
-
-
 
     async def generate_document(self, doc_type: str, main_entity_id: int, current_user_payload: dict, **kwargs):
         """
@@ -806,35 +795,36 @@ class DocumentGenerationService:
 
             # 2. Render Template
             html_content = self._render_template(strategy.get_template_name(), context)
-            
+
             # DEBUG: Save HTML to file to inspect styles
             try:
                 debug_path = f"debug_document_{doc_type}_{main_entity_id}.html"
                 with open(debug_path, "w", encoding="utf-8") as f:
                     # Inject detailed style log at the top of the HTML file for easy debugging
-                    if 'styles' in context:
+                    if "styles" in context:
                         import json
+
                         # Attempt to dump styles to JSON for readability
                         try:
                             # If it's a Pydantic model, dump it
-                            styles_dict = context['styles'].model_dump()
+                            styles_dict = context["styles"].model_dump()
                             styles_json = json.dumps(styles_dict, indent=2, default=str)
                         except:
                             # Fallback if not pydantic or other error
-                            styles_json = str(context['styles'])
-                        
+                            styles_json = str(context["styles"])
+
                         f.write(f"<!-- \nDEBUG STYLE PARAMETERS:\n{styles_json}\n-->\n")
-                    
+
                     f.write(html_content)
                 print(f"saved debug html to {debug_path}")
             except Exception as e:
                 print(f"Could not write debug file: {e}")
-            
+
             # 3. Generate PDF
             pdf_bytes = await self.pdf_service.generate_pdf_from_html(html_content)
-            
+
             return html_content, pdf_bytes, context
-            
+
         finally:
             db.close()
 
@@ -842,9 +832,9 @@ class DocumentGenerationService:
         # Unpack custom_content to pass as top-level kwargs to strategy
         kwargs = {}
         if custom_content:
-             kwargs.update(custom_content)
-             
-        _, pdf_bytes, _ = await self.generate_document('balaustre', session_id, {}, **kwargs)
+            kwargs.update(custom_content)
+
+        _, pdf_bytes, _ = await self.generate_document("balaustre", session_id, {}, **kwargs)
         return pdf_bytes
 
     def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None, session_id: int = None) -> str:
@@ -855,220 +845,233 @@ class DocumentGenerationService:
         db = SessionLocal()
         try:
             strategy = self.get_strategy(doc_type)
-            
-            if hasattr(strategy, 'get_preview_context'):
+
+            if hasattr(strategy, "get_preview_context"):
                 # Pass session_id to context builder
                 context = strategy.get_preview_context(db, lodge_id, settings, session_id=session_id)
             else:
                 # Fallback for strategies without preview support
                 context = {"styles": settings.get("styles", {}), "mock_data": True}
-                
+
             return self._render_template(strategy.get_template_name(), context)
         finally:
             db.close()
-
 
     async def regenerate_balaustre_text(self, session_id: int, custom_data: dict) -> str:
         # This is for the frontend editor content, usually just HTML body.
         # We want ONLY the body text (custom_text), not the full PDF wrapper (header/footer).
         db = SessionLocal()
         try:
-             strategy = self.get_strategy('balaustre')
-             # Pass all custom_data as kwargs so collect_data can use them for overrides BEFORE rendering
-             context = await strategy.collect_data(db, session_id, **custom_data)
-             
-             # Return only the rendered content part
-             return context.get('custom_text', '')
+            strategy = self.get_strategy("balaustre")
+            # Pass all custom_data as kwargs so collect_data can use them for overrides BEFORE rendering
+            context = await strategy.collect_data(db, session_id, **custom_data)
+
+            # Return only the rendered content part
+            return context.get("custom_text", "")
         finally:
-             db.close()
+            db.close()
 
-    async def generate_balaustre_pdf_task(self, session_id: int, current_user_payload: dict, custom_content: dict = None, doc_type_key: str = 'balaustre'):
-         try:
-             custom_text = custom_content.get('text') if custom_content else None
-             html, pdf, ctx = await self.generate_document(doc_type_key, session_id, current_user_payload, custom_text=custom_text)
-             
-             db = SessionLocal()
-             try:
-                 title = f"Balaústre Sessão {ctx.get('session_number', '')} - {ctx.get('DiaSessao', '')}"
-                 filename = f"balaustre_sessao_{session_id}.pdf"
-                 
-                 new_doc = await document_service.create_document(
-                     db=db,
-                     title=title,
-                     current_user_payload=current_user_payload,
-                     file_content_bytes=pdf,
-                     filename=filename,
-                     content_type="application/pdf"
-                 )
-                 new_doc.document_type = "BALAUSTRE"
-                 new_doc.session_id = session_id
-                 
-                 # Opcional: Atualizar status
-                 session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
-                 if session:
-                      session.status = "ATA_GERADA"
-                      
-                 db.commit()
-                 print(f"Balaústre gerado: {new_doc.id}")
-             finally:
-                 db.close()
-         except Exception as e:
-             import traceback
-             print(f"Erro silencioso no background task de balaustre: {e}")
-             traceback.print_exc()
+    async def generate_balaustre_pdf_task(
+        self, session_id: int, current_user_payload: dict, custom_content: dict = None, doc_type_key: str = "balaustre"
+    ):
+        try:
+            custom_text = custom_content.get("text") if custom_content else None
+            html, pdf, ctx = await self.generate_document(
+                doc_type_key, session_id, current_user_payload, custom_text=custom_text
+            )
 
-    async def generate_signed_balaustre_task(self, session_id: int, current_user_payload: dict, custom_content: dict = None):
-        # Specific logic for signature hash injection... 
+            db = SessionLocal()
+            try:
+                title = f"Balaústre Sessão {ctx.get('session_number', '')} - {ctx.get('DiaSessao', '')}"
+                filename = f"balaustre_sessao_{session_id}.pdf"
+
+                new_doc = await document_service.create_document(
+                    db=db,
+                    title=title,
+                    current_user_payload=current_user_payload,
+                    file_content_bytes=pdf,
+                    filename=filename,
+                    content_type="application/pdf",
+                )
+                new_doc.document_type = "BALAUSTRE"
+                new_doc.session_id = session_id
+
+                # Opcional: Atualizar status
+                session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
+                if session:
+                    session.status = "ATA_GERADA"
+
+                db.commit()
+                print(f"Balaústre gerado: {new_doc.id}")
+            finally:
+                db.close()
+        except Exception as e:
+            import traceback
+
+            print(f"Erro silencioso no background task de balaustre: {e}")
+            traceback.print_exc()
+
+    async def generate_signed_balaustre_task(
+        self, session_id: int, current_user_payload: dict, custom_content: dict = None
+    ):
+        # Specific logic for signature hash injection...
         # Strategy needs to know about signature hash? Or we inject it into context?
         # Strategy context collection can receive kwargs.
-        
+
         # 1. Hash & QR
         unique_str = f"{session_id}-{uuid.uuid4()}-{date.today()}"
         signature_hash = hashlib.sha256(unique_str.encode()).hexdigest()
-        validation_url = f"http://localhost:5173/validate/{signature_hash}" 
+        validation_url = f"http://localhost:5173/validate/{signature_hash}"
         qr_code_base64 = self._generate_qr_code_base64(validation_url)
-        
+
         # 2. Generate with injected context
-        custom_text = custom_content.get('text') if custom_content else None
-        
-        # We pass hash/qr to kwargs so strategy can put them in context if it wants, 
+        custom_text = custom_content.get("text") if custom_content else None
+
+        # We pass hash/qr to kwargs so strategy can put them in context if it wants,
         # OR we just update the context returned by strategy?
         # Strategy.collect_data might not expect them. Pass as kwargs.
         # But Strategy.collect_data usually connects to DB.
         # Better: call generate_document but modify context BEFORE render?
         # My generate_document does render immediately.
-        # I need to separate render? 
+        # I need to separate render?
         # Let's manual inline for this special case or update generate_document to allow context modification?
         # I'll manually call strategy to expose context update step.
-        
+
         db = SessionLocal()
         try:
-             strategy = self.get_strategy('balaustre')
-             context = await strategy.collect_data(db, session_id, custom_text=custom_text)
-             
-             # Inject Signature
-             context['signature_hash'] = signature_hash
-             context['qr_code_path'] = qr_code_base64
-             
-             # Render
-             html = self._render_template(strategy.get_template_name(), context)
-             pdf = await self.pdf_service.generate_pdf_from_html(html)
-             
-             # Save
-             title = f"Balaústre OFICIAL - {context.get('session_number', '')}"
-             filename = f"balaustre_assinado_{session_id}.pdf"
-             
-             new_doc = await document_service.create_document(db=db, title=title, current_user_payload=current_user_payload, file_content_bytes=pdf, filename=filename, content_type="application/pdf")
-             new_doc.session_id = session_id
-             db.flush()
-             
-             # Sign Record
-             new_sig = models.DocumentSignature(document_id=new_doc.id, signature_hash=signature_hash, signed_by_id=current_user_payload.get('sub'))
-             db.add(new_sig)
-             db.commit()
-             print(f"Assinado gerado: {new_doc.id}")
-             
+            strategy = self.get_strategy("balaustre")
+            context = await strategy.collect_data(db, session_id, custom_text=custom_text)
+
+            # Inject Signature
+            context["signature_hash"] = signature_hash
+            context["qr_code_path"] = qr_code_base64
+
+            # Render
+            html = self._render_template(strategy.get_template_name(), context)
+            pdf = await self.pdf_service.generate_pdf_from_html(html)
+
+            # Save
+            title = f"Balaústre OFICIAL - {context.get('session_number', '')}"
+            filename = f"balaustre_assinado_{session_id}.pdf"
+
+            new_doc = await document_service.create_document(
+                db=db,
+                title=title,
+                current_user_payload=current_user_payload,
+                file_content_bytes=pdf,
+                filename=filename,
+                content_type="application/pdf",
+            )
+            new_doc.session_id = session_id
+            db.flush()
+
+            # Sign Record
+            new_sig = models.DocumentSignature(
+                document_id=new_doc.id, signature_hash=signature_hash, signed_by_id=current_user_payload.get("sub")
+            )
+            db.add(new_sig)
+            db.commit()
+            print(f"Assinado gerado: {new_doc.id}")
+
         finally:
-             db.close()
+            db.close()
 
     async def generate_invitation_task(self, session_id: int, current_user_payload: dict, custom_message: str = None):
-         try:
-             html, pdf, ctx = await self.generate_document('convite', session_id, current_user_payload, custom_message=custom_message)
-             
-             db = SessionLocal()
-             try:
-                 title = f"Convite - {ctx.get('event_title', 'Sessão')}"
-                 filename = f"convite_{session_id}.pdf"
-                 
-                 new_doc = await document_service.create_document(
-                     db=db,
-                     title=title,
-                     current_user_payload=current_user_payload,
-                     file_content_bytes=pdf,
-                     filename=filename,
-                     content_type="application/pdf"
-                 )
-                 new_doc.document_type = "CONVITE"
-                 new_doc.session_id = session_id
-                 db.commit()
-                 print(f"Convite gerado: {new_doc.id}")
-             finally:
-                 db.close()
-         except Exception as e:
-             import traceback
-             print(f"Erro no background task convite: {e}")
-             traceback.print_exc()
+        try:
+            html, pdf, ctx = await self.generate_document(
+                "convite", session_id, current_user_payload, custom_message=custom_message
+            )
 
+            db = SessionLocal()
+            try:
+                title = f"Convite - {ctx.get('event_title', 'Sessão')}"
+                filename = f"convite_{session_id}.pdf"
 
+                new_doc = await document_service.create_document(
+                    db=db,
+                    title=title,
+                    current_user_payload=current_user_payload,
+                    file_content_bytes=pdf,
+                    filename=filename,
+                    content_type="application/pdf",
+                )
+                new_doc.document_type = "CONVITE"
+                new_doc.session_id = session_id
+                db.commit()
+                print(f"Convite gerado: {new_doc.id}")
+            finally:
+                db.close()
+        except Exception as e:
+            import traceback
 
+            print(f"Erro no background task convite: {e}")
+            traceback.print_exc()
 
     async def generate_edital_pdf_task(self, session_id: int, current_user_payload: dict):
         try:
-            html, pdf, ctx = await self.generate_document('prancha', session_id, current_user_payload)
-             
+            html, pdf, ctx = await self.generate_document("prancha", session_id, current_user_payload)
+
             db = SessionLocal()
             try:
-                 # Title logic uses ctx which matches Strategy keys
-                 title = f"Edital de Convocação - {ctx.get('DiaSessao', '')}" 
-                 # Or use session_data logic if strategies vary. 
-                 # PranchaStrategy should return 'session_title' etc?
-                 # Let's hope context has keys. BaseStrategy ensures session title/date exists.
-                 
-                 filename = f"edital_sessao_{session_id}.pdf"
-                 
-                 new_doc = await document_service.create_document(
-                     db=db, 
-                     title=title, 
-                     current_user_payload=current_user_payload, 
-                     file_content_bytes=pdf, 
-                     filename=filename, 
-                     content_type="application/pdf"
-                 )
-                 new_doc.document_type = "EDITAL"
-                 new_doc.session_id = session_id
-                 db.commit()
-                 print(f"Edital gerado: {new_doc.id}")
+                # Title logic uses ctx which matches Strategy keys
+                title = f"Edital de Convocação - {ctx.get('DiaSessao', '')}"
+                # Or use session_data logic if strategies vary.
+                # PranchaStrategy should return 'session_title' etc?
+                # Let's hope context has keys. BaseStrategy ensures session title/date exists.
+
+                filename = f"edital_sessao_{session_id}.pdf"
+
+                new_doc = await document_service.create_document(
+                    db=db,
+                    title=title,
+                    current_user_payload=current_user_payload,
+                    file_content_bytes=pdf,
+                    filename=filename,
+                    content_type="application/pdf",
+                )
+                new_doc.document_type = "EDITAL"
+                new_doc.session_id = session_id
+                db.commit()
+                print(f"Edital gerado: {new_doc.id}")
             except Exception as e:
-                 print(f"ERRO interno ao gerar edital: {e}")
+                print(f"ERRO interno ao gerar edital: {e}")
             finally:
-                 db.close()
+                db.close()
         except Exception as e:
-             import traceback
-             print(f"Erro no background task edital: {e}")
-             traceback.print_exc()
+            import traceback
 
-
-
+            print(f"Erro no background task edital: {e}")
+            traceback.print_exc()
 
     async def generate_certificate_pdf_task(self, session_id: int, member_id: int, current_user_payload: dict):
         try:
             print(f"Iniciando geração de certificado para membro {member_id} na sessão {session_id}")
-            
+
             # 1. Gerar Hash Único
             unique_str = f"CERT-{session_id}-{member_id}-{uuid.uuid4()}"
             signature_hash = hashlib.sha256(unique_str.encode()).hexdigest()
-            
+
             # 2. Gerar QR Code
-            validation_url = f"http://localhost:5173/validate/{signature_hash}" 
+            validation_url = f"http://localhost:5173/validate/{signature_hash}"
             qr_code_base64 = self._generate_qr_code_base64(validation_url)
-            
+
             db = SessionLocal()
             try:
                 # 3. Coletar Dados via Strategy
-                strategy = self.get_strategy('certificado')
+                strategy = self.get_strategy("certificado")
                 # Note: 'certificado' strategy expects member_id in kwargs
                 cert_data = await strategy.collect_data(db, session_id, member_id=member_id)
-                
+
                 # Injetar dados de validação
-                cert_data['validation_code'] = signature_hash[:12].upper()
-                cert_data['qr_code_path'] = qr_code_base64
-                
+                cert_data["validation_code"] = signature_hash[:12].upper()
+                cert_data["qr_code_path"] = qr_code_base64
+
                 # 4. Renderizar HTML
                 html_content = self._render_template(strategy.get_template_name(), cert_data)
-                
+
                 # 5. Gerar PDF
                 pdf_bytes = await self.pdf_service.generate_pdf_from_html(html_content)
-                
+
                 # 6. Salvar Documento
                 title = f"Certificado de Presença - {cert_data['member_name']}"
                 filename = f"certificado_{session_id}_{member_id}_{date.today().strftime('%Y%m%d')}.pdf"
@@ -1083,25 +1086,26 @@ class DocumentGenerationService:
                 )
                 new_doc.document_type = "CERTIFICADO"
                 new_doc.session_id = session_id
-                
+
                 # 7. Salvar Assinatura/Validação
                 new_sig = models.DocumentSignature(
                     document_id=new_doc.id,
                     signature_hash=signature_hash,
-                    signed_by_id=current_user_payload.get('sub'),
+                    signed_by_id=current_user_payload.get("sub"),
                 )
                 db.add(new_sig)
-                
+
                 db.commit()
                 print(f"Certificado gerado e salvo com ID: {new_doc.id}")
                 return pdf_bytes
-                
+
             finally:
                 db.close()
-            
+
         except Exception as e:
             print(f"ERRO ao gerar certificado: {e}")
             import traceback
+
             traceback.print_exc()
 
 

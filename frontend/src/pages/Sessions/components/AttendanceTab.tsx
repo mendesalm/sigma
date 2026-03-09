@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, 
-  Select, MenuItem, FormControl, SelectChangeEvent, CircularProgress, Alert, Snackbar, 
+import {
+  Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  Select, MenuItem, FormControl, SelectChangeEvent, CircularProgress, Alert, Snackbar,
   Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Grid, Divider,
   IconButton, Tooltip
 } from '@mui/material';
@@ -40,7 +40,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
-  
+
   // Visitor Dialog State
   const [openVisitorDialog, setOpenVisitorDialog] = useState(false);
   const [visitorData, setVisitorData] = useState({
@@ -73,7 +73,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
     if (name === 'email' && value && !validateEmail(value)) {
       error = 'Email inválido';
     }
-    
+
     setErrors((prev) => ({ ...prev, [name]: error }));
     return error === '';
   };
@@ -97,6 +97,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
       setLoading(true); // Initial load only
       fetchAttendance();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   // Auto-refresh logic
@@ -108,6 +109,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
       }, 30000); // 30 seconds
     }
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefresh, sessionId]);
 
   const handleStatusChange = async (memberId: number, newStatus: string) => {
@@ -134,7 +136,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
     // However, strictly following "read-only for Secretary" regarding "adding members/visitors".
     // Let's assume Secretary can still generate certificates as it's an output, not a modification of the session data itself?
     // But the prompt says "read-only". I will disable it for consistency with "read-only".
-    if (!canEdit) return; 
+    if (!canEdit) return;
 
     try {
       await generateCertificate(sessionId, memberId);
@@ -202,14 +204,14 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
         <Typography variant="h6">
           Membros da Loja
         </Typography>
-        <Button 
-            startIcon={<Refresh />} 
-            onClick={fetchAttendance}
-            variant="outlined"
-            size="small"
-            sx={{ ml: 2 }}
+        <Button
+          startIcon={<Refresh />}
+          onClick={fetchAttendance}
+          variant="outlined"
+          size="small"
+          sx={{ ml: 2 }}
         >
-            Atualizar Lista
+          Atualizar Lista
         </Button>
       </Box>
       <TableContainer component={Paper} sx={{ mb: 4 }}>
@@ -240,7 +242,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 <TableCell align="center">
                   <Tooltip title={canEdit ? "Gerar Certificado de Presença" : "Apenas leitura"}>
                     <span>
-                      <IconButton 
+                      <IconButton
                         onClick={() => record.member_id && handleGenerateCertificate(record.member_id)}
                         disabled={!canEdit || record.attendance_status !== 'Presente'}
                         color="primary"
@@ -260,17 +262,15 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
           </TableBody>
         </Table>
       </TableContainer>
-
       <Divider sx={{ my: 4 }} />
-
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">
           Visitantes
         </Typography>
         {canEdit && (
-          <Button 
-            variant="contained" 
-            startIcon={<Add />} 
+          <Button
+            variant="contained"
+            startIcon={<Add />}
             onClick={() => setOpenVisitorDialog(true)}
           >
             Registrar Visitante
@@ -291,7 +291,7 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
               <TableRow key={record.id}>
                 <TableCell>{record.visitor?.full_name}</TableCell>
                 <TableCell>
-                  {record.visitor?.manual_lodge_name 
+                  {record.visitor?.manual_lodge_name
                     ? `${record.visitor.manual_lodge_name} N. ${record.visitor.manual_lodge_number} (${record.visitor.manual_lodge_obedience})`
                     : record.visitor?.origin_lodge_id ? 'Loja do Sistema' : '-'}
                 </TableCell>
@@ -306,13 +306,15 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
           </TableBody>
         </Table>
       </TableContainer>
-
       {/* Visitor Dialog */}
       <Dialog open={openVisitorDialog} onClose={() => setOpenVisitorDialog(false)}>
         <DialogTitle>Registrar Visitante</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="full_name"
                 label="Nome Completo"
@@ -322,7 +324,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 onChange={handleVisitorChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="manual_lodge_name"
                 label="Nome da Loja"
@@ -331,7 +336,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 onChange={handleVisitorChange}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid
+              size={{
+                xs: 6
+              }}>
               <TextField
                 name="manual_lodge_number"
                 label="Número"
@@ -340,7 +348,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 onChange={handleVisitorChange}
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid
+              size={{
+                xs: 6
+              }}>
               <TextField
                 name="manual_lodge_obedience"
                 label="Potência"
@@ -349,7 +360,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 onChange={handleVisitorChange}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="email"
                 label="Email (Opcional)"
@@ -361,7 +375,10 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
                 helperText={errors.email}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 name="cpf"
                 label="CPF (Opcional)"
@@ -376,16 +393,15 @@ const AttendanceTab: React.FC<AttendanceTabProps> = ({ sessionId }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenVisitorDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleRegisterVisitor} 
-            variant="contained" 
+          <Button
+            onClick={handleRegisterVisitor}
+            variant="contained"
             disabled={visitorLoading || !visitorData.full_name}
           >
             {visitorLoading ? <CircularProgress size={24} /> : 'Registrar'}
           </Button>
         </DialogActions>
       </Dialog>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

@@ -1,35 +1,39 @@
+from datetime import date, datetime
+
 from pydantic import BaseModel, ConfigDict
-from datetime import datetime, date
-from typing import Optional
-from enum import Enum
-from models.models import PublicationTypeEnum, PublicationStatusEnum
+
+from models.models import PublicationStatusEnum, PublicationTypeEnum
+
 
 class PublicationBase(BaseModel):
     title: str
-    content: Optional[str] = None
+    content: str | None = None
     type: PublicationTypeEnum
-    valid_until: Optional[date] = None
+    valid_until: date | None = None
+
 
 class PublicationCreate(PublicationBase):
-    pass # file is handled separately in upload
+    pass  # file is handled separately in upload
+
 
 class PublicationUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    type: Optional[PublicationTypeEnum] = None
-    valid_until: Optional[date] = None
-    status: Optional[PublicationStatusEnum] = None
+    title: str | None = None
+    content: str | None = None
+    type: PublicationTypeEnum | None = None
+    valid_until: date | None = None
+    status: PublicationStatusEnum | None = None
+
 
 class PublicationResponse(PublicationBase):
     id: int
     file_path: str
-    file_size: Optional[int] = None
+    file_size: int | None = None
     status: PublicationStatusEnum
     author_id: int
     lodge_id: int
-    published_at: Optional[datetime] = None
-    
+    published_at: datetime | None = None
+
     # We might want to include author name specially
-    author_name: Optional[str] = None
+    author_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -20,7 +20,9 @@ export const LibraryLoans: React.FC = () => {
   };
 
   useEffect(() => {
+     
     fetchLoans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleReturn = async (loanId: number) => {
@@ -36,7 +38,7 @@ export const LibraryLoans: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>Gestão de Empréstimos</Typography>
-      
+
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6">Registrar Empréstimo Manual</Typography>
@@ -69,8 +71,8 @@ export const LibraryLoans: React.FC = () => {
                 <TableCell>{new Date(loan.loan_date).toLocaleDateString()}</TableCell>
                 <TableCell>{new Date(loan.due_date).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <Chip 
-                    label={loan.status} 
+                  <Chip
+                    label={loan.status}
                     color={loan.status === 'Atrasado' ? 'error' : 'primary'}
                     size="small"
                   />

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Button, 
-  Container, 
-  Typography, 
-  CircularProgress, 
+import {
+  Box,
+  Button,
+  Container,
+  Typography,
+  CircularProgress,
   AppBar,
   Toolbar,
   IconButton,
@@ -16,18 +16,16 @@ import {
   DialogContent,
   DialogActions
 } from '@mui/material';
-import { 
-  ArrowBack, 
-  Save, 
+import {
+  ArrowBack,
+  Save,
   PictureAsPdf,
   Edit,
   VerifiedUser
 } from '@mui/icons-material';
 import api from '../../services/api';
 import BalaustreDocumentForm from './components/BalaustreDocumentForm';
-// @ts-ignore
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import TiptapEditor from '../../components/DocumentBuilder/TiptapEditor';
 
 // Estilos para simular folha A4
 const A4_WIDTH = '210mm';
@@ -47,7 +45,6 @@ const BalaustreEditor: React.FC = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const [styles, setStyles] = useState<any>({});
-  const [editorFocused, setEditorFocused] = useState(false);
 
   // Data Form State
   const [dataDialogOpen, setDataDialogOpen] = useState(false);
@@ -61,14 +58,14 @@ const BalaustreEditor: React.FC = () => {
         const response = await api.get(`/masonic-sessions/${sessionId}/balaustre-draft`);
         setSessionData(response.data.data);
         setDocumentContent({ text: response.data.text });
-        
+
         // Initialize form data with session data
         setFormData(response.data.data || {});
-        
+
         if (response.data.data.styles) {
-            setStyles(response.data.data.styles);
+          setStyles(response.data.data.styles);
         }
-        
+
       } catch (error) {
         console.error('Erro ao carregar dados da sessão:', error);
         setSnackbar({ open: true, message: 'Erro ao carregar dados.', severity: 'error' });
@@ -78,14 +75,14 @@ const BalaustreEditor: React.FC = () => {
     };
 
     const fetchMembers = async () => {
-        try {
-            const response = await api.get('/members?limit=1000');
-             // Handle potentially wrapped response
-             const membersList = Array.isArray(response.data) ? response.data : (response.data.data || []);
-             setMembers(membersList);
-        } catch (error) {
-            console.error('Erro ao buscar membros', error);
-        }
+      try {
+        const response = await api.get('/members?limit=1000');
+        // Handle potentially wrapped response
+        const membersList = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        setMembers(membersList);
+      } catch (error) {
+        console.error('Erro ao buscar membros', error);
+      }
     };
 
     if (sessionId) {
@@ -99,8 +96,7 @@ const BalaustreEditor: React.FC = () => {
     try {
       // Create payload excluding 'text' and 'custom_text' to force template regeneration
       // We must strip any existing text content to force the backend to use the stored template
-      // @ts-ignore
-      const { text, custom_text, html, content, ...payload } = formData;
+      const { text: _text, custom_text: _custom_text, html: _html, content: _content, ...payload } = formData;
       const response = await api.post(`/masonic-sessions/${sessionId}/regenerate-balaustre-text`, payload);
       setDocumentContent({ text: response.data.text });
       setSessionData({ ...sessionData, ...formData }); // Update local session data
@@ -116,11 +112,11 @@ const BalaustreEditor: React.FC = () => {
 
   const handleSignAndFinalize = async () => {
     if (!window.confirm("Atenção: Ao assinar, o documento será finalizado e não poderá mais ser editado. Deseja continuar?")) {
-        return;
+      return;
     }
     setSaving(true);
     try {
-      await api.post(`/masonic-sessions/${sessionId}/sign-balaustre`, { 
+      await api.post(`/masonic-sessions/${sessionId}/sign-balaustre`, {
         text: documentContent.text,
         styles: styles
       });
@@ -136,7 +132,7 @@ const BalaustreEditor: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.post(`/masonic-sessions/${sessionId}/generate-balaustre-custom`, { 
+      await api.post(`/masonic-sessions/${sessionId}/generate-balaustre-custom`, {
         text: documentContent.text,
         styles: styles
       });
@@ -152,13 +148,13 @@ const BalaustreEditor: React.FC = () => {
   const handleGeneratePDF = async () => {
     setSaving(true);
     try {
-      const response = await api.post(`/masonic-sessions/${sessionId}/preview-balaustre`, { 
+      const response = await api.post(`/masonic-sessions/${sessionId}/preview-balaustre`, {
         text: documentContent.text,
         styles: styles
       }, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -166,21 +162,21 @@ const BalaustreEditor: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       setSnackbar({ open: true, message: 'PDF gerado com sucesso!', severity: 'success' });
     } catch (error: any) {
       console.error('Erro ao gerar PDF:', error);
       let errorMessage = 'Erro ao gerar PDF.';
-      
+
       if (error.response && error.response.data) {
-          // Se o backend retornou uma mensagem de erro (string ou objeto)
-          if (typeof error.response.data === 'string') {
-             errorMessage = `Erro: ${error.response.data}`;
-          } else if (error.response.data.detail) {
-             errorMessage = `Erro: ${error.response.data.detail}`;
-          }
+        // Se o backend retornou uma mensagem de erro (string ou objeto)
+        if (typeof error.response.data === 'string') {
+          errorMessage = `Erro: ${error.response.data}`;
+        } else if (error.response.data.detail) {
+          errorMessage = `Erro: ${error.response.data.detail}`;
+        }
       }
-      
+
       setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     } finally {
       setSaving(false);
@@ -189,42 +185,22 @@ const BalaustreEditor: React.FC = () => {
 
 
 
-  const modules = {
-    toolbar: [
-      [{ 'font': [] }, { 'size': [] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }, { 'align': [] }],
-      ['link', 'clean']
-    ],
-  };
-
-  const formats = [
-    'font', 'size',
-    'header', 'bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block',
-    'list', 'bullet', 'indent',
-    'color', 'background',
-    'script', 'align', 'direction',
-    'link'
-  ];
+  // Tiptap handles its own nodes implicitly
 
   const handleRebuild = async () => {
     if (!window.confirm("Isso apagará todas as edições atuais e recarregará o documento a partir do Modelo Oficial configurado na Loja. Continuar?")) {
-        return;
+      return;
     }
     setSaving(true);
     try {
-        const response = await api.post(`/masonic-sessions/${sessionId}/rebuild-balaustre`);
-        setDocumentContent({ text: response.data.text });
-        setSnackbar({ open: true, message: 'Documento reiniciado a partir do padrão da Loja.', severity: 'success' });
+      const response = await api.post(`/masonic-sessions/${sessionId}/rebuild-balaustre`);
+      setDocumentContent({ text: response.data.text });
+      setSnackbar({ open: true, message: 'Documento reiniciado a partir do padrão da Loja.', severity: 'success' });
     } catch (error) {
-        console.error('Erro ao reconstruir:', error);
-        setSnackbar({ open: true, message: 'Erro ao reconstruir documento.', severity: 'error' });
+      console.error('Erro ao reconstruir:', error);
+      setSnackbar({ open: true, message: 'Erro ao reconstruir documento.', severity: 'error' });
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
   };
 
@@ -246,8 +222,8 @@ const BalaustreEditor: React.FC = () => {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Editor de Balaústre
           </Typography>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             color="warning"
             onClick={handleRebuild}
             sx={{ mr: 2 }}
@@ -255,8 +231,8 @@ const BalaustreEditor: React.FC = () => {
           >
             Resetar pelo Modelo
           </Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<Edit />}
             onClick={() => setDataDialogOpen(true)}
             sx={{ mr: 2 }}
@@ -264,28 +240,28 @@ const BalaustreEditor: React.FC = () => {
             Dados do Balaústre
           </Button>
 
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="secondary"
-            startIcon={<VerifiedUser />} 
+            startIcon={<VerifiedUser />}
             onClick={handleSignAndFinalize}
             disabled={saving}
             sx={{ mr: 2 }}
           >
             Assinar
           </Button>
-          <Button 
-            variant="contained" 
-            startIcon={<Save />} 
+          <Button
+            variant="contained"
+            startIcon={<Save />}
             onClick={handleSave}
             disabled={saving}
             sx={{ mr: 2 }}
           >
             Salvar
           </Button>
-          <Button 
-            variant="outlined" 
-            startIcon={<PictureAsPdf />} 
+          <Button
+            variant="outlined"
+            startIcon={<PictureAsPdf />}
             disabled={saving}
             onClick={handleGeneratePDF}
           >
@@ -298,286 +274,220 @@ const BalaustreEditor: React.FC = () => {
         {/* PAGE CONTAINER - mimics @page size */}
         <Box sx={{
           width: A4_WIDTH,
-          minHeight: A4_HEIGHT, 
+          minHeight: A4_HEIGHT,
           bgcolor: styles?.background_color || '#ffffff',
-          position: 'relative', 
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', 
+          position: 'relative',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           backgroundImage: styles?.background_image && styles.background_image !== 'none' ? `url(${styles.background_image})` : 'none',
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
-          overflow: 'hidden' 
+          overflow: 'hidden'
         }}>
 
-            {/* LAYER 1: BORDER (Fixed Position relative to Page) */}
-            {styles?.show_border !== false && (
+          {/* LAYER 1: BORDER (Fixed Position relative to Page) */}
+          {styles?.show_border !== false && (
+            <Box sx={{
+              position: 'absolute',
+              top: styles?.page_margin || '1cm',
+              left: styles?.page_margin || '1cm',
+              right: styles?.page_margin || '1cm',
+              bottom: styles?.page_margin || '1cm',
+              borderWidth: styles?.border_width || '1px',
+              borderStyle: styles?.border_style || 'solid',
+              borderColor: styles?.border_color || '#000',
+              zIndex: 1,
+              pointerEvents: 'none'
+            }} />
+          )}
+
+          {/* LAYER 2: CONTENT CONTAINER */}
+          <Box sx={{
+            position: 'absolute',
+            top: styles?.page_margin || '1cm',
+            left: styles?.page_margin || '1cm',
+            right: styles?.page_margin || '1cm',
+            bottom: styles?.page_margin || '1cm',
+            padding: styles?.page_padding || '0cm',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 2,
+            overflowY: 'auto'
+          }}>
+            {/* HEADER SECTION (Logic identical to before, omitted for brevity but preserved in replacement content via context usage if possible, or just copy paste) */}
+            {/* Since we can't use wildcards effectively here without full context, and I don't want to break the header logic, I will target the Button removal and Drawer removal separately if possible. But replace_file_content requires contiguous block. */}
+            {/* Actually, it's safer to just target the button and the drawer separately or in one large block? */}
+            {/* The Drawer is at the end. The Button is at the top. */}
+            {/* I will do two edits. One for Button, one for Drawer. */}
+            {/* WAIT. The instruction says "Remove conditional rendering...". */}
+            {/* I'll use multi_replace for BalaustreEditor.tsx to handle Button and Drawer separately. */}
+
+
+            {/* HEADER SECTION (Top of Content) */}
+            {(() => {
+              const headerTemplate = sessionData?.header_template || 'header_classico.html';
+
+              const logo = (
+                <Box sx={{ mb: 1 }}>
+                  {sessionData?.header_image ? (
+                    <img src={sessionData.header_image} alt="Logo" style={{ maxHeight: styles?.header_config?.logo_size || '80px', maxWidth: '100%' }} />
+                  ) : (
+                    <Box sx={{ width: 80, height: 80, bgcolor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logo</Box>
+                  )}
+                </Box>
+              );
+
+              // Note: Header Text is DIFFERENT from Title Section.
+              // Header text usually contains "À GL..." and Lodge Name.
+              // HEADER TEXT (Matches header_classico.html: Lodge Name + Obedience)
+              const headerText = (
                 <Box sx={{
-                    position: 'absolute',
-                    top: styles?.page_margin || '1cm',
-                    left: styles?.page_margin || '1cm',
-                    right: styles?.page_margin || '1cm',
-                    bottom: styles?.page_margin || '1cm',
-                    borderWidth: styles?.border_width || '1px',
-                    borderStyle: styles?.border_style || 'solid',
-                    borderColor: styles?.border_color || '#000',
-                    zIndex: 1, 
-                    pointerEvents: 'none'
-                }} />
+                  textAlign: styles?.header_config?.alignment_title || 'center',
+                  color: styles?.header_config?.color || '#000',
+                  flexGrow: 1
+                }}>
+                  <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: styles?.header_config?.font_size_title || '12pt', color: 'inherit', m: 0, lineHeight: 1.2 }}>
+                    {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number}
+                  </Typography>
+                  <Typography variant="body1" sx={{
+                    fontFamily: 'inherit',
+                    fontWeight: 'normal',
+                    fontSize: styles?.header_config?.font_size_subtitle || '12pt',
+                    color: 'inherit',
+                    mt: 0.5,
+                    lineHeight: 1.2,
+                    textAlign: styles?.header_config?.alignment_subtitle || 'center' // Explicit Subtitle Alignment
+                  }}>
+                    Federada ao {sessionData?.obedience_name || 'Grande Oriente do Brasil'} <br />
+                    Jurisdicionada ao {sessionData?.subobedience_name || 'GOB-SP'}
+                  </Typography>
+                </Box>
+              );
+
+              // CSS for Header Container needs to match header_classico wrapper logic
+              const headerContainerSx = {
+                mb: styles?.header_config?.spacing_bottom || '20px',
+                bgcolor: styles?.header_config?.background_color || 'transparent',
+                p: styles?.header_config?.padding || '0',
+                // Border Bottom Logic to match header_classico.html
+                borderBottomWidth: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_width || '1px') : 0,
+                borderBottomStyle: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_style || 'solid') : 'none',
+                borderBottomColor: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_color || styles?.primary_color || '#000') : 'transparent',
+              };
+
+              if (headerTemplate.includes('timbre')) {
+                return (
+                  <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {logo}
+                    {headerText}
+                  </Box>
+                );
+              } else if (headerTemplate.includes('invertido')) {
+                return (
+                  <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ flex: 1 }}>{headerText}</Box>
+                    <Box sx={{ ml: 2 }}>{logo}</Box>
+                  </Box>
+                );
+              } else if (headerTemplate.includes('duplo')) {
+                return (
+                  <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ mr: 2 }}>{logo}</Box>
+                    <Box sx={{ flex: 1 }}>{headerText}</Box>
+                    <Box sx={{ ml: 2, opacity: 0.5 }}>{logo}</Box>
+                  </Box>
+                );
+              } else {
+                return (
+                  <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: '20px' }}>
+                    <Box>{logo}</Box>
+                    <Box sx={{ flex: 1 }}>{headerText}</Box>
+                  </Box>
+                );
+              }
+            })()}
+
+            {/* TITLE SECTION (Document Title - Matches balaustre_template.html logic) */}
+            {styles?.titles_config?.show !== false && (
+              <Box sx={{
+                textAlign: styles?.titles_config?.alignment || 'center',
+                mt: styles?.titles_config?.margin_top || '10px',
+                mb: styles?.titles_config?.margin_bottom || '20px',
+                bgcolor: styles?.titles_config?.background_color || 'transparent',
+                p: styles?.titles_config?.padding || '0',
+                border: '1px solid transparent', // Prevent margin collapse
+                flexShrink: 0,
+                // Apply Font Styles from TitlesConfig
+                fontFamily: styles?.titles_config?.font_family || 'inherit',
+                color: styles?.titles_config?.color || '#000000',
+                lineHeight: styles?.titles_config?.line_height || 1.2
+              }}>
+                <Typography variant="body1" component="div" sx={{
+                  fontFamily: 'inherit',
+                  fontWeight: styles?.titles_config?.bold ? 'bold' : 'normal',
+                  textTransform: styles?.titles_config?.uppercase ? 'uppercase' : 'none',
+                  fontSize: styles?.titles_config?.font_size || '14pt',
+                  color: styles?.titles_config?.color || '#000000'
+                }}>
+                  À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴ <br />
+                  {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number} <br />
+                  BALAÚSTRE DA {sessionData?.session_number || '_______'}ª SESSÃO DO E∴ M∴ {sessionData?.exercicio_maconico || '_______'}
+                </Typography>
+              </Box>
             )}
 
-            {/* LAYER 2: CONTENT CONTAINER */}
+            {/* EDITOR CONTENT AREA */}
+            {/* This mimics .content { ...styles.content_config } */}
             <Box sx={{
-                position: 'absolute', 
-                top: styles?.page_margin || '1cm',
-                left: styles?.page_margin || '1cm',
-                right: styles?.page_margin || '1cm',
-                bottom: styles?.page_margin || '1cm',
-                padding: styles?.page_padding || '0cm',
-                display: 'flex',
-                flexDirection: 'column',
-                zIndex: 2,
-                overflowY: 'auto' 
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+
+              // Content Config Application
+              textAlign: styles?.content_config?.alignment || 'justify',
+              fontFamily: styles?.content_config?.font_family || styles?.font_family || 'inherit',
+              fontSize: styles?.content_config?.font_size || '12pt',
+              lineHeight: styles?.content_config?.line_height || 1.5,
+              color: styles?.content_config?.color || '#000',
+              paddingTop: styles?.content_config?.padding_top || '0px',
+              paddingLeft: '0.3cm',
+              paddingRight: '0.3cm',
+
+              // ReactQuill Internals Override removed since we use Tiptap
+
+              // Spacing Override for Paragraphs inside the component
+              '& p': {
+                marginBottom: styles?.content_config?.spacing || '10px',
+                marginTop: 0,
+                textIndent: 0 // Reset default indent
+              }
             }}>
-                {/* HEADER SECTION (Logic identical to before, omitted for brevity but preserved in replacement content via context usage if possible, or just copy paste) */}
-                {/* Since we can't use wildcards effectively here without full context, and I don't want to break the header logic, I will target the Button removal and Drawer removal separately if possible. But replace_file_content requires contiguous block. */}
-                {/* Actually, it's safer to just target the button and the drawer separately or in one large block? */}
-                {/* The Drawer is at the end. The Button is at the top. */}
-                {/* I will do two edits. One for Button, one for Drawer. */}
-                {/* WAIT. The instruction says "Remove conditional rendering...". */}
-                {/* I'll use multi_replace for BalaustreEditor.tsx to handle Button and Drawer separately. */}
+              <TiptapEditor
+                value={documentContent.text}
+                onChange={(value) => setDocumentContent({ ...documentContent, text: value })}
+              />
+            </Box>
 
+            {/* FOOTER SECTION: SIGNATURES MOCKUP */}
+            <Box sx={{ mt: 'auto', pt: 8, display: 'flex', justifyContent: 'space-between', textAlign: 'center', flexShrink: 0 }}>
+              <Box>
+                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                  Secretário
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                  Orador
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
+                  Venerável Mestre
+                </Typography>
+              </Box>
+            </Box>
 
-                {/* HEADER SECTION (Top of Content) */}
-                {(() => {
-                    const headerTemplate = sessionData?.header_template || 'header_classico.html';
-                    
-                    const logo = (
-                         <Box sx={{ mb: 1 }}>
-                            {sessionData?.header_image ? (
-                            <img src={sessionData.header_image} alt="Logo" style={{ maxHeight: styles?.header_config?.logo_size || '80px', maxWidth: '100%' }} />
-                            ) : (
-                            <Box sx={{ width: 80, height: 80, bgcolor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logo</Box>
-                            )}
-                        </Box>
-                    );
-
-                    // Note: Header Text is DIFFERENT from Title Section.
-                    // Header text usually contains "À GL..." and Lodge Name.
-                    // HEADER TEXT (Matches header_classico.html: Lodge Name + Obedience)
-                    const headerText = (
-                        <Box sx={{ 
-                            textAlign: styles?.header_config?.alignment_title || 'center',
-                            color: styles?.header_config?.color || '#000',
-                            flexGrow: 1
-                        }}>
-                             <Typography variant="body1" sx={{ fontFamily: 'inherit', fontWeight: 'bold', textTransform: 'uppercase', fontSize: styles?.header_config?.font_size_title || '12pt', color: 'inherit', m: 0, lineHeight: 1.2 }}>
-                                {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number}
-                            </Typography>
-                             <Typography variant="body1" sx={{ 
-                                 fontFamily: 'inherit', 
-                                 fontWeight: 'normal', 
-                                 fontSize: styles?.header_config?.font_size_subtitle || '12pt', 
-                                 color: 'inherit', 
-                                 mt: 0.5, 
-                                 lineHeight: 1.2,
-                                 textAlign: styles?.header_config?.alignment_subtitle || 'center' // Explicit Subtitle Alignment
-                             }}>
-                                Federada ao {sessionData?.obedience_name || 'Grande Oriente do Brasil'} <br/>
-                                Jurisdicionada ao {sessionData?.subobedience_name || 'GOB-SP'}
-                            </Typography>
-                        </Box>
-                    );
-
-                    // CSS for Header Container needs to match header_classico wrapper logic
-                    const headerContainerSx = {
-                        mb: styles?.header_config?.spacing_bottom || '20px', 
-                        bgcolor: styles?.header_config?.background_color || 'transparent',
-                        p: styles?.header_config?.padding || '0',
-                        // Border Bottom Logic to match header_classico.html
-                        borderBottomWidth: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_width || '1px') : 0,
-                        borderBottomStyle: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_style || 'solid') : 'none',
-                        borderBottomColor: styles?.header_config?.border_bottom_show ? (styles?.header_config?.border_bottom_color || styles?.primary_color || '#000') : 'transparent',
-                    };
-
-                    if (headerTemplate.includes('timbre')) {
-                        return (
-                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                {logo}
-                                {headerText}
-                            </Box>
-                        );
-                    } else if (headerTemplate.includes('invertido')) {
-                        return (
-                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box sx={{ flex: 1 }}>{headerText}</Box>
-                                <Box sx={{ ml: 2 }}>{logo}</Box>
-                            </Box>
-                        );
-                    } else if (headerTemplate.includes('duplo')) {
-                         return (
-                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box sx={{ mr: 2 }}>{logo}</Box>
-                                <Box sx={{ flex: 1 }}>{headerText}</Box>
-                                <Box sx={{ ml: 2, opacity: 0.5 }}>{logo}</Box> 
-                            </Box>
-                        );
-                    } else {
-                         return (
-                            <Box sx={{ ...headerContainerSx, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: '20px' }}>
-                                <Box>{logo}</Box>
-                                <Box sx={{ flex: 1 }}>{headerText}</Box>
-                            </Box>
-                        );
-                    }
-                })()}
-
-                {/* TITLE SECTION (Document Title - Matches balaustre_template.html logic) */}
-                {styles?.titles_config?.show !== false && (
-                <Box sx={{
-                    textAlign: styles?.titles_config?.alignment || 'center',
-                    mt: styles?.titles_config?.margin_top || '10px',
-                    mb: styles?.titles_config?.margin_bottom || '20px',
-                    bgcolor: styles?.titles_config?.background_color || 'transparent',
-                    p: styles?.titles_config?.padding || '0',
-                    border: '1px solid transparent', // Prevent margin collapse
-                    flexShrink: 0,
-                    // Apply Font Styles from TitlesConfig
-                    fontFamily: styles?.titles_config?.font_family || 'inherit', 
-                    color: styles?.titles_config?.color || '#000000',
-                    lineHeight: styles?.titles_config?.line_height || 1.2
-                }}>
-                     <Typography variant="body1" component="div" sx={{ 
-                        fontFamily: 'inherit',
-                        fontWeight: styles?.titles_config?.bold ? 'bold' : 'normal', 
-                        textTransform: styles?.titles_config?.uppercase ? 'uppercase' : 'none', 
-                        fontSize: styles?.titles_config?.font_size || '14pt', 
-                        color: styles?.titles_config?.color || '#000000'
-                    }}>
-                        À GL∴ DO SUPR∴ ARQ∴ DO UNIV∴ <br/>
-                        {sessionData?.lodge_title_formatted} {sessionData?.lodge_name || 'NOME DA LOJA'} Nº {sessionData?.lodge_number} <br/>
-                        BALAÚSTRE DA {sessionData?.session_number || '_______'}ª SESSÃO DO E∴ M∴ {sessionData?.exercicio_maconico || '_______'}
-                    </Typography>
-                </Box>
-                )}
-
-                {/* EDITOR CONTENT AREA */}
-                {/* This mimics .content { ...styles.content_config } */}
-                <Box sx={{ 
-                    flexGrow: 1, 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    position: 'relative',
-                    
-                    // Content Config Application
-                    textAlign: styles?.content_config?.alignment || 'justify',
-                    fontFamily: styles?.content_config?.font_family || styles?.font_family || 'inherit',
-                    fontSize: styles?.content_config?.font_size || '12pt',
-                    lineHeight: styles?.content_config?.line_height || 1.5,
-                    color: styles?.content_config?.color || '#000',
-                    paddingTop: styles?.content_config?.padding_top || '0px',
-                    paddingLeft: '0.3cm',
-                    paddingRight: '0.3cm',
-                    
-                    // ReactQuill Internals Override
-                    '& .ql-container': {
-                        flexGrow: 1,
-                        border: 'none',
-                        fontFamily: 'inherit',
-                        fontSize: 'inherit'
-                    },
-                    '& .ql-editor': {
-                        padding: 0,
-                        textAlign: 'inherit', // Inherit from parent Box
-                        fontFamily: 'inherit',
-                        fontSize: 'inherit',
-                        lineHeight: 'inherit'
-                    },
-                    
-                    // Spacing Override for Paragraphs
-                    '& p': {
-                        marginBottom: styles?.content_config?.spacing || '10px',
-                        marginTop: 0,
-                        textIndent: 0 // Reset default indent
-                    },
-
-                     /* Toolbar Flutuante Horizontal (Topo Centralizado) com Glassmorphism */
-                    '& .ql-toolbar': {
-                        position: 'fixed',
-                        left: '58%',
-                        top: '160px', /* Logo abaixo da AppBar */
-                        transform: 'translateX(-50%)',
-                        width: 'fit-content',
-                        maxWidth: '95vw',
-                        
-                        /* Glassmorphism */
-                        background: 'rgba(255, 255, 255, 0.85)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255, 255, 255, 0.5)',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
-                        borderRadius: '12px',
-                        
-                        padding: '8px 16px',
-                        zIndex: 1200,
-                        display: editorFocused ? 'flex' : 'none',
-                        opacity: editorFocused ? 1 : 0,
-                        visibility: editorFocused ? 'visible' : 'hidden',
-                        transition: 'all 0.3s ease-in-out',
-                        
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        
-                        maxHeight: 'none',
-                        overflow: 'visible'
-                    },
-                    // ... (keep previous ql-toolbar styles if possible, omitting for brevity in diff but assuming user wants them)
-                    '& .ql-toolbar .ql-formats': { marginRight: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', borderBottom: 'none', borderRight: '1px solid rgba(0,0,0,0.1)', paddingBottom: 0, paddingRight: '12px' },
-                    '& .ql-toolbar button': { width: '28px', height: '28px', padding: '4px', borderRadius: '4px', color: '#444' },
-                    '& .ql-toolbar button:hover': { background: 'rgba(0,0,0,0.05)', color: '#000' },
-                    '& .ql-toolbar button.ql-active': { background: 'rgba(25, 118, 210, 0.1)', color: '#1976d2' },
-                    '& .ql-toolbar .ql-picker-label': { padding: '0 4px', color: '#555', fontWeight: 500 },
-                    '& .ql-toolbar button svg': { width: '18px', height: '18px' },
-                    '& .ql-toolbar .ql-stroke': { strokeWidth: '1.5px !important' }
-
-                }}>
-                    <ReactQuill 
-                        theme="snow"
-                        value={documentContent.text}
-                        onChange={(value) => setDocumentContent({ ...documentContent, text: value })}
-                        modules={modules}
-                        formats={formats}
-                        onFocus={() => setEditorFocused(true)}
-                        onBlur={() => {
-                            setTimeout(() => {
-                                const toolbar = document.querySelector('.ql-toolbar');
-                                if (toolbar && toolbar.matches(':hover')) return;
-                                setEditorFocused(false);
-                            }, 200);
-                        }}
-                    />
-                </Box>
-
-                {/* FOOTER SECTION: SIGNATURES MOCKUP */}
-                 <Box sx={{ mt: 'auto', pt: 8, display: 'flex', justifyContent: 'space-between', textAlign: 'center', flexShrink: 0 }}>
-                  <Box>
-                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                      Secretário
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                      Orador
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography sx={{ fontFamily: 'inherit', borderTop: '1px solid black', pt: 1, width: 180, fontSize: '12pt', color: 'black' }}>
-                      Venerável Mestre
-                    </Typography>
-                  </Box>
-                </Box>
-
-            </Box> {/* End Layer 2 Content */}
+          </Box> {/* End Layer 2 Content */}
         </Box> {/* End Page Container */}
       </Container>
 
@@ -590,11 +500,11 @@ const BalaustreEditor: React.FC = () => {
             <Alert severity="warning" sx={{ mb: 2 }}>
               Atenção: Ao aplicar as alterações, o texto do editor será regenerado e quaisquer edições manuais diretas no texto serão perdidas.
             </Alert>
-            
-            <BalaustreDocumentForm 
-                formData={formData} 
-                onChange={setFormData} 
-                members={members}
+
+            <BalaustreDocumentForm
+              formData={formData}
+              onChange={setFormData}
+              members={members}
             />
           </Box>
         </DialogContent>

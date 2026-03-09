@@ -1,4 +1,5 @@
 from datetime import date
+
 from sqlalchemy.orm import Session, joinedload
 
 from models import models
@@ -12,9 +13,7 @@ def get_members_by_lodge(db: Session, lodge_id: int, skip: int = 0, limit: int =
         db.query(models.Member)
         .join(models.MemberLodgeAssociation)
         .filter(models.MemberLodgeAssociation.lodge_id == lodge_id)
-        .options(
-            joinedload(models.Member.role_history).joinedload(models.RoleHistory.role)
-        )
+        .options(joinedload(models.Member.role_history).joinedload(models.RoleHistory.role))
         .order_by(models.Member.full_name)
         .offset(skip)
         .limit(limit)
@@ -48,7 +47,9 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
     member_class = member_data.member_class
     family_members_data = member_data.family_members
 
-    member_dict = member_data.model_dump(exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class"})
+    member_dict = member_data.model_dump(
+        exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class"}
+    )
 
     # Create Member instance
     db_member = models.Member(**member_dict, password_hash=hash_password(password))
@@ -57,22 +58,14 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
 
     # Create Association (without role_id)
     association = models.MemberLodgeAssociation(
-        member_id=db_member.id, 
-        lodge_id=lodge_id,
-        status=status,
-        member_class=member_class,
-        start_date=date.today()
+        member_id=db_member.id, lodge_id=lodge_id, status=status, member_class=member_class, start_date=date.today()
     )
     db.add(association)
 
     # Create Initial Role History (only if role_id is provided)
     if role_id:
         role_history = models.RoleHistory(
-            member_id=db_member.id,
-            role_id=role_id,
-            lodge_id=lodge_id,
-            start_date=date.today(),
-            end_date=None
+            member_id=db_member.id, role_id=role_id, lodge_id=lodge_id, start_date=date.today(), end_date=None
         )
         db.add(role_history)
 
@@ -88,9 +81,7 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
 
 
 def associate_member_to_lodge(
-    db: Session, 
-    member_id: int, 
-    association_data: member_schema.MemberAssociateLodge
+    db: Session, member_id: int, association_data: member_schema.MemberAssociateLodge
 ) -> models.Member:
     """Associates an existing member with a lodge, updating their data if provided."""
     db_member = db.query(models.Member).filter(models.Member.id == member_id).first()
@@ -100,7 +91,10 @@ def associate_member_to_lodge(
     # Check if already associated
     existing_association = (
         db.query(models.MemberLodgeAssociation)
-        .filter(models.MemberLodgeAssociation.member_id == member_id, models.MemberLodgeAssociation.lodge_id == association_data.lodge_id)
+        .filter(
+            models.MemberLodgeAssociation.member_id == member_id,
+            models.MemberLodgeAssociation.lodge_id == association_data.lodge_id,
+        )
         .first()
     )
 
@@ -115,7 +109,7 @@ def associate_member_to_lodge(
             lodge_id=association_data.lodge_id,
             status=association_data.status,
             member_class=association_data.member_class,
-            start_date=date.today()
+            start_date=date.today(),
         )
         db.add(new_association)
 
@@ -123,10 +117,10 @@ def associate_member_to_lodge(
     if association_data.member_update:
         update_data = association_data.member_update.model_dump(exclude_unset=True)
         if "password" in update_data:
-             # Only update password if explicitly provided (and not None/Empty)
-             if update_data["password"]:
+            # Only update password if explicitly provided (and not None/Empty)
+            if update_data["password"]:
                 db_member.password_hash = hash_password(update_data.pop("password"))
-             else:
+            else:
                 update_data.pop("password")
 
         for key, value in update_data.items():
@@ -140,11 +134,11 @@ def associate_member_to_lodge(
             .filter(
                 models.RoleHistory.member_id == member_id,
                 models.RoleHistory.lodge_id == association_data.lodge_id,
-                models.RoleHistory.end_date.is_(None)
+                models.RoleHistory.end_date.is_(None),
             )
             .first()
         )
-        
+
         if active_role:
             if active_role.role_id != association_data.role_id:
                 # End current role
@@ -154,17 +148,17 @@ def associate_member_to_lodge(
                     member_id=member_id,
                     role_id=association_data.role_id,
                     lodge_id=association_data.lodge_id,
-                    start_date=date.today()
+                    start_date=date.today(),
                 )
                 db.add(new_role)
         else:
-             new_role = models.RoleHistory(
+            new_role = models.RoleHistory(
                 member_id=member_id,
                 role_id=association_data.role_id,
                 lodge_id=association_data.lodge_id,
-                start_date=date.today()
+                start_date=date.today(),
             )
-             db.add(new_role)
+            db.add(new_role)
 
     db.commit()
     db.refresh(db_member)
@@ -218,7 +212,7 @@ def add_role_to_member(
         lodge_id=lodge_id,
         role_id=role_data.role_id,
         start_date=role_data.start_date,
-        end_date=role_data.end_date
+        end_date=role_data.end_date,
     )
     db.add(role_history)
     db.commit()
@@ -233,7 +227,7 @@ def delete_role_history(db: Session, member_id: int, role_history_id: int, lodge
         .filter(
             models.RoleHistory.id == role_history_id,
             models.RoleHistory.member_id == member_id,
-            models.RoleHistory.lodge_id == lodge_id
+            models.RoleHistory.lodge_id == lodge_id,
         )
         .first()
     )

@@ -1,9 +1,10 @@
 import os
 import shutil
 from datetime import datetime, timedelta
-from typing import List
-from fastapi import UploadFile, HTTPException
+
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
+
 from models import models
 from schemas import classified_schema
 
@@ -11,11 +12,12 @@ UPLOAD_DIR = "uploads/classifieds"
 MAX_FILE_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_FILES = 5
 
+
 def create_classified(
     db: Session,
     classified_data: classified_schema.ClassifiedCreate,
-    files: List[UploadFile],
-    current_user_payload: dict
+    files: list[UploadFile],
+    current_user_payload: dict,
 ):
     # Validate files
     if files:
@@ -30,19 +32,22 @@ def create_classified(
 
     member_id = current_user_payload.get("user_id")
     lodge_id = current_user_payload.get("lodge_id")
-    
+
     if not lodge_id:
-        assoc = db.query(models.MemberLodgeAssociation).filter(
-            models.MemberLodgeAssociation.member_id == member_id,
-            models.MemberLodgeAssociation.status == 'ACTIVE'
-        ).first()
+        assoc = (
+            db.query(models.MemberLodgeAssociation)
+            .filter(
+                models.MemberLodgeAssociation.member_id == member_id, models.MemberLodgeAssociation.status == "ACTIVE"
+            )
+            .first()
+        )
         if assoc:
             lodge_id = assoc.lodge_id
         else:
-             raise HTTPException(status_code=400, detail="Member not associated with any active lodge")
+            raise HTTPException(status_code=400, detail="Member not associated with any active lodge")
 
     expires_at = datetime.now() + timedelta(days=21)
-    
+
     new_classified = models.Classified(
         title=classified_data.title,
         description=classified_data.description,
@@ -59,53 +64,48 @@ def create_classified(
         expires_at=expires_at,
         lodge_id=lodge_id,
         member_id=member_id,
-        category=classified_data.category
+        category=classified_data.category,
     )
     db.add(new_classified)
     db.commit()
     db.refresh(new_classified)
-    
+
     # Handle files
     if files:
         classified_dir = os.path.join(UPLOAD_DIR, str(new_classified.id))
         os.makedirs(classified_dir, exist_ok=True)
-        
+
         for file in files:
             file_path = os.path.join(classified_dir, file.filename)
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            
+
             relative_path = f"classifieds/{new_classified.id}/{file.filename}"
-            photo = models.ClassifiedPhoto(
-                classified_id=new_classified.id,
-                image_path=relative_path
-            )
+            photo = models.ClassifiedPhoto(classified_id=new_classified.id, image_path=relative_path)
             db.add(photo)
         db.commit()
         db.refresh(new_classified)
-        
+
     return new_classified
 
-def add_classified_photos(
-    db: Session,
-    classified_id: int,
-    files: List[UploadFile],
-    current_user_payload: dict
-):
+
+def add_classified_photos(db: Session, classified_id: int, files: list[UploadFile], current_user_payload: dict):
     member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
-    
+
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
-        
+
     if classified.member_id != member_id and user_type != "super_admin":
-         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
-         
+        raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+
     # Check max limit
     current_photos_count = len(classified.photos)
     if current_photos_count + len(files) > MAX_FILES:
-        raise HTTPException(status_code=400, detail=f"Maximum of {MAX_FILES} photos allowed. You currently have {current_photos_count}.")
+        raise HTTPException(
+            status_code=400, detail=f"Maximum of {MAX_FILES} photos allowed. You currently have {current_photos_count}."
+        )
 
     for file in files:
         file.file.seek(0, 2)
@@ -117,60 +117,55 @@ def add_classified_photos(
     if files:
         classified_dir = os.path.join(UPLOAD_DIR, str(classified.id))
         os.makedirs(classified_dir, exist_ok=True)
-        
+
         for file in files:
             file_path = os.path.join(classified_dir, file.filename)
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            
+
             relative_path = f"classifieds/{classified.id}/{file.filename}"
-            photo = models.ClassifiedPhoto(
-                classified_id=classified.id,
-                image_path=relative_path
-            )
+            photo = models.ClassifiedPhoto(classified_id=classified.id, image_path=relative_path)
             db.add(photo)
         db.commit()
         db.refresh(classified)
 
     return classified
 
-def delete_classified_photo(
-    db: Session,
-    classified_id: int,
-    photo_id: int,
-    current_user_payload: dict
-):
+
+def delete_classified_photo(db: Session, classified_id: int, photo_id: int, current_user_payload: dict):
     member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
-    
+
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
-        
+
     if classified.member_id != member_id and user_type != "super_admin":
-         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
-         
-    photo = db.query(models.ClassifiedPhoto).filter(
-        models.ClassifiedPhoto.id == photo_id,
-        models.ClassifiedPhoto.classified_id == classified_id
-    ).first()
-    
+        raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+
+    photo = (
+        db.query(models.ClassifiedPhoto)
+        .filter(models.ClassifiedPhoto.id == photo_id, models.ClassifiedPhoto.classified_id == classified_id)
+        .first()
+    )
+
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
     # Obter caminho base
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     full_path = os.path.join(base_dir, "uploads", photo.image_path)
-    
+
     # Apagar arq fisico se existir
     # Note que image_path = "classifieds/1/foo.jpg". UPLOAD_DIR = "uploads/classifieds"
     # full_path deve ser base_dir/uploads/classifieds/1/foo.jpg
     if os.path.exists(full_path):
         os.remove(full_path)
-    
+
     db.delete(photo)
     db.commit()
     return None
+
 
 def get_all_active_classifieds(db: Session):
     classifieds = db.query(models.Classified).filter(models.Classified.status == "ACTIVE").all()
@@ -179,6 +174,7 @@ def get_all_active_classifieds(db: Session):
             c.lodge_name = c.lodge.lodge_name
     return classifieds
 
+
 def get_member_classifieds(db: Session, member_id: int):
     classifieds = db.query(models.Classified).filter(models.Classified.member_id == member_id).all()
     for c in classifieds:
@@ -186,106 +182,110 @@ def get_member_classifieds(db: Session, member_id: int):
             c.lodge_name = c.lodge.lodge_name
     return classifieds
 
+
 def get_classified_by_id(db: Session, classified_id: int):
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if classified and classified.lodge:
         classified.lodge_name = classified.lodge.lodge_name
     return classified
 
+
 def delete_classified(db: Session, classified_id: int, current_user_payload: dict):
     member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
-    
+
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
-        
+
     # Allow if user is the owner OR is a super_admin
     if classified.member_id != member_id and user_type != "super_admin":
-         raise HTTPException(status_code=403, detail="Not authorized to delete this classified")
-         
+        raise HTTPException(status_code=403, detail="Not authorized to delete this classified")
+
     classified_dir = os.path.join(UPLOAD_DIR, str(classified.id))
     if os.path.exists(classified_dir):
         shutil.rmtree(classified_dir)
-        
+
     db.delete(classified)
     db.commit()
+
 
 def reactivate_classified(db: Session, classified_id: int, current_user_payload: dict):
     member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
-    
+
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
-        
+
     if classified.member_id != member_id and user_type != "super_admin":
-         raise HTTPException(status_code=403, detail="Not authorized to reactivate this classified")
-    
+        raise HTTPException(status_code=403, detail="Not authorized to reactivate this classified")
+
     if classified.status != "EXPIRED":
         raise HTTPException(status_code=400, detail="Only expired classifieds can be reactivated")
 
     now = datetime.now()
     grace_period_end = classified.expires_at + timedelta(days=14)
-    
+
     if now > grace_period_end:
         raise HTTPException(status_code=400, detail="Grace period for reactivation has passed")
-        
+
     classified.status = "ACTIVE"
     classified.expires_at = now + timedelta(days=21)
     db.commit()
     db.refresh(classified)
     return classified
 
+
 def update_classified(
-    db: Session, 
-    classified_id: int, 
-    classified_update: classified_schema.ClassifiedUpdate, 
-    current_user_payload: dict
+    db: Session, classified_id: int, classified_update: classified_schema.ClassifiedUpdate, current_user_payload: dict
 ):
     member_id = current_user_payload.get("user_id")
     user_type = current_user_payload.get("user_type")
-    
+
     classified = db.query(models.Classified).filter(models.Classified.id == classified_id).first()
     if not classified:
         raise HTTPException(status_code=404, detail="Classified not found")
-        
+
     if classified.member_id != member_id and user_type != "super_admin":
-         raise HTTPException(status_code=403, detail="Not authorized to update this classified")
-         
+        raise HTTPException(status_code=403, detail="Not authorized to update this classified")
+
     # Update fields
     update_data = classified_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(classified, key, value)
-        
+
     db.commit()
     db.refresh(classified)
     return classified
 
+
 def cleanup_classifieds(db: Session):
     now = datetime.now()
-    
+
     # 1. Deactivate expired ads
-    expired_ads = db.query(models.Classified).filter(
-        models.Classified.status == "ACTIVE",
-        models.Classified.expires_at < now
-    ).all()
-    
+    expired_ads = (
+        db.query(models.Classified)
+        .filter(models.Classified.status == "ACTIVE", models.Classified.expires_at < now)
+        .all()
+    )
+
     if expired_ads:
         print(f"[{now}] Deactivating {len(expired_ads)} expired classifieds...")
         for ad in expired_ads:
             ad.status = "EXPIRED"
         db.commit()
-    
+
     # 2. Delete ads expired for more than 14 days
     # We need to check based on expires_at. If expires_at was 15 days ago, it's gone.
     cutoff_date = now - timedelta(days=14)
-    
-    ads_to_delete = db.query(models.Classified).filter(
-        models.Classified.status == "EXPIRED",
-        models.Classified.expires_at < cutoff_date
-    ).all()
-    
+
+    ads_to_delete = (
+        db.query(models.Classified)
+        .filter(models.Classified.status == "EXPIRED", models.Classified.expires_at < cutoff_date)
+        .all()
+    )
+
     if ads_to_delete:
         print(f"[{now}] Deleting {len(ads_to_delete)} old classifieds...")
         for ad in ads_to_delete:

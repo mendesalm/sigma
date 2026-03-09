@@ -14,22 +14,23 @@ const Classificados: React.FC = () => {
 
   const CATEGORIES = ['Todos', 'Veículos', 'Imóveis', 'Serviços', 'Vestuário', 'Eletrônicos', 'Outros'];
 
-  useEffect(() => {
-    loadAds();
-  }, []);
-
-  const loadAds = async () => {
+  const loadAds = React.useCallback(async () => {
     try {
       const response = await getClassifieds();
       setAds(response.data);
     } catch (error) {
       console.error("Error loading classifieds", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAds();
+  }, [loadAds]);
 
   const filteredAds = ads.filter(ad => {
-    const matchesSearch = ad.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          ad.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ad.description.toLowerCase().includes(searchTerm.toLowerCase());
     const adCat = ad.category || 'Outros';
     const matchesCat = selectedCategory === 'Todos' || adCat === selectedCategory;
     return matchesSearch && matchesCat;
@@ -39,7 +40,7 @@ const Classificados: React.FC = () => {
     const now = new Date();
     const expiration = new Date(expiresAt);
     const diffTime = expiration.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
 
@@ -52,29 +53,30 @@ const Classificados: React.FC = () => {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedAd) setActiveStep(0);
   }, [selectedAd]);
 
   return (
     <Box sx={{ p: 3 }}>
       {/* Header with Glassmorphism */}
-      <Box sx={{ 
-        mb: 5, 
-        p: 4, 
+      <Box sx={{
+        mb: 5,
+        p: 4,
         borderRadius: 4,
         background: 'rgba(30, 41, 59, 0.4)',
         backdropFilter: 'blur(12px)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
-        display: 'flex', 
-        justifyContent: 'space-between', 
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: 2
       }}>
         <Box>
-          <Typography variant="h3" sx={{ 
-            fontWeight: 800, 
+          <Typography variant="h3" sx={{
+            fontWeight: 800,
             background: 'linear-gradient(45deg, #90caf9 30%, #ce93d8 90%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
@@ -110,7 +112,6 @@ const Classificados: React.FC = () => {
           }}
         />
       </Box>
-
       {/* Categories Filter */}
       <Box sx={{ mb: 4, display: 'flex', gap: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 6 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 3 } }}>
         {CATEGORIES.map(cat => (
@@ -119,31 +120,35 @@ const Classificados: React.FC = () => {
             label={cat}
             clickable
             onClick={() => setSelectedCategory(cat)}
-            sx={{ 
-                bgcolor: selectedCategory === cat ? theme.palette.primary.main : 'rgba(255,255,255,0.05)',
-                color: selectedCategory === cat ? '#fff' : 'rgba(255,255,255,0.7)',
-                fontWeight: selectedCategory === cat ? 700 : 400,
-                border: selectedCategory === cat ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(4px)',
-                px: 1,
-                transition: 'all 0.2s',
-                '&:hover': {
-                    bgcolor: selectedCategory === cat ? theme.palette.primary.dark : 'rgba(255,255,255,0.1)'
-                }
+            sx={{
+              bgcolor: selectedCategory === cat ? theme.palette.primary.main : 'rgba(255,255,255,0.05)',
+              color: selectedCategory === cat ? '#fff' : 'rgba(255,255,255,0.7)',
+              fontWeight: selectedCategory === cat ? 700 : 400,
+              border: selectedCategory === cat ? 'none' : '1px solid rgba(255,255,255,0.1)',
+              backdropFilter: 'blur(4px)',
+              px: 1,
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: selectedCategory === cat ? theme.palette.primary.dark : 'rgba(255,255,255,0.1)'
+              }
             }}
           />
         ))}
       </Box>
-
       <Grid container spacing={4}>
         {filteredAds.map((ad) => (
-          <Grid item xs={12} md={6} key={ad.id}>
-            <Card 
-              sx={{ 
-                height: 600, 
+          <Grid
+            key={ad.id}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
+            <Card
+              sx={{
+                height: 600,
                 maxWidth: 800,
                 mx: 'auto',
-                display: 'flex', 
+                display: 'flex',
                 flexDirection: 'column',
                 // Premium Glassmorphism
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -156,7 +161,7 @@ const Classificados: React.FC = () => {
                 cursor: 'pointer',
                 overflow: 'visible',
                 position: 'relative',
-                '&:hover': { 
+                '&:hover': {
                   transform: 'translateY(-8px) scale(1.01)',
                   // Glow Effect
                   boxShadow: `0 0 30px ${theme.palette.primary.main}40, 0 10px 40px rgba(0,0,0,0.5)`,
@@ -168,11 +173,11 @@ const Classificados: React.FC = () => {
               }}
               onClick={() => setSelectedAd(ad)}
             >
-              <Box sx={{ 
-                position: 'relative', 
-                height: 380, 
-                m: 2, 
-                borderRadius: '16px', 
+              <Box sx={{
+                position: 'relative',
+                height: 380,
+                m: 2,
+                borderRadius: '16px',
                 overflow: 'hidden',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
               }}>
@@ -182,7 +187,7 @@ const Classificados: React.FC = () => {
                     height="100%"
                     image={`${import.meta.env.VITE_API_URL}/storage/${ad.photos[0].image_path}`}
                     alt={ad.title}
-                    sx={{ 
+                    sx={{
                       objectFit: 'cover',
                       transition: 'transform 0.6s ease'
                     }}
@@ -192,7 +197,7 @@ const Classificados: React.FC = () => {
                     <Typography color="text.secondary">Sem Imagem</Typography>
                   </Box>
                 )}
-                
+
                 {/* Price Tag */}
                 <Box sx={{
                   position: 'absolute',
@@ -216,60 +221,60 @@ const Classificados: React.FC = () => {
 
                 {/* Photo Count */}
                 {ad.photos && ad.photos.length > 1 && (
-                   <Box sx={{ 
-                     position: 'absolute', 
-                     bottom: 16, 
-                     right: 16, 
-                     bgcolor: 'rgba(0,0,0,0.6)', 
-                     backdropFilter: 'blur(4px)',
-                     px: 1.5, 
-                     py: 0.5, 
-                     borderRadius: '8px',
-                     border: '1px solid rgba(255,255,255,0.1)'
-                   }}>
-                      <Typography variant="caption" color="white" fontWeight="bold">
-                        +{ad.photos.length - 1} fotos
-                      </Typography>
-                   </Box>
+                  <Box sx={{
+                    position: 'absolute',
+                    bottom: 16,
+                    right: 16,
+                    bgcolor: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    <Typography variant="caption" color="white" fontWeight="bold">
+                      +{ad.photos.length - 1} fotos
+                    </Typography>
+                  </Box>
                 )}
               </Box>
-              
+
               <CardContent sx={{ flexGrow: 1, px: 3, pb: 3, pt: 0 }}>
                 <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                   <Chip 
-                    label={ad.lodge_name || 'Loja Externa'} 
-                    size="small" 
+                  <Chip
+                    label={ad.lodge_name || 'Loja Externa'}
+                    size="small"
                     icon={<LocationOn sx={{ fontSize: 14 }} />}
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.08)', 
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.08)',
                       color: '#fff',
                       border: '1px solid rgba(255,255,255,0.05)',
                       backdropFilter: 'blur(4px)'
-                    }} 
-                   />
-                   <Chip 
-                    label={`${getDaysRemaining(ad.expires_at)} dias restantes`} 
-                    size="small" 
+                    }}
+                  />
+                  <Chip
+                    label={`${getDaysRemaining(ad.expires_at)} dias restantes`}
+                    size="small"
                     icon={<AccessTime sx={{ fontSize: 14 }} />}
-                    sx={{ 
-                      bgcolor: 'rgba(255,152,0,0.15)', 
+                    sx={{
+                      bgcolor: 'rgba(255,152,0,0.15)',
                       color: '#ffb74d',
                       border: '1px solid rgba(255,152,0,0.3)'
                     }}
-                   />
-                   <Chip 
+                  />
+                  <Chip
                     label={ad.category || 'Outros'}
-                    size="small" 
-                    sx={{ 
-                      bgcolor: 'rgba(33, 150, 243, 0.15)', 
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(33, 150, 243, 0.15)',
                       color: '#64b5f6',
                       border: '1px solid rgba(33, 150, 243, 0.3)'
                     }}
-                   />
+                  />
                 </Box>
-                
-                <Typography variant="h5" gutterBottom sx={{ 
-                  color: '#fff', 
+
+                <Typography variant="h5" gutterBottom sx={{
+                  color: '#fff',
                   fontWeight: 700,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -277,19 +282,19 @@ const Classificados: React.FC = () => {
                 }}>
                   {ad.title}
                 </Typography>
-                
-                <Typography variant="body1" sx={{ 
-                  color: 'rgba(255,255,255,0.6)', 
-                  mb: 2, 
-                  display: '-webkit-box', 
-                  WebkitLineClamp: 2, 
-                  WebkitBoxOrient: 'vertical', 
+
+                <Typography variant="body1" sx={{
+                  color: 'rgba(255,255,255,0.6)',
+                  mb: 2,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                   lineHeight: 1.6
                 }}>
                   {ad.description}
                 </Typography>
-                
+
                 <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <LocationOn sx={{ fontSize: 14 }} />
@@ -301,10 +306,9 @@ const Classificados: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-
       {/* Detail Dialog with Glassmorphism */}
-      <Dialog 
-        open={!!selectedAd} 
+      <Dialog
+        open={!!selectedAd}
         onClose={() => setSelectedAd(null)}
         maxWidth="md"
         fullWidth
@@ -327,19 +331,23 @@ const Classificados: React.FC = () => {
             </DialogTitle>
             <DialogContent sx={{ mt: 2 }}>
               <Grid container spacing={4}>
-                <Grid item xs={12} md={7}>
-                  <Box sx={{ 
-                    mb: 2, 
-                    bgcolor: '#000', 
-                    borderRadius: 3, 
-                    overflow: 'hidden', 
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 7
+                  }}>
+                  <Box sx={{
+                    mb: 2,
+                    bgcolor: '#000',
+                    borderRadius: 3,
+                    overflow: 'hidden',
                     position: 'relative',
                     border: '1px solid rgba(255,255,255,0.1)'
                   }}>
                     {selectedAd.photos && selectedAd.photos.length > 0 ? (
                       <>
-                        <img 
-                          src={`${import.meta.env.VITE_API_URL}/storage/${selectedAd.photos[activeStep].image_path}`} 
+                        <img
+                          src={`${import.meta.env.VITE_API_URL}/storage/${selectedAd.photos[activeStep].image_path}`}
                           alt={selectedAd.title}
                           style={{ width: '100%', height: 450, objectFit: 'contain', display: 'block' }}
                         />
@@ -348,7 +356,7 @@ const Classificados: React.FC = () => {
                             steps={selectedAd.photos.length}
                             position="static"
                             activeStep={activeStep}
-                            sx={{ 
+                            sx={{
                               bgcolor: 'transparent',
                               position: 'absolute',
                               bottom: 0,
@@ -382,18 +390,22 @@ const Classificados: React.FC = () => {
                     )}
                   </Box>
                 </Grid>
-                <Grid item xs={12} md={5}>
-                  <Box sx={{ 
-                    p: 3, 
-                    borderRadius: 3, 
-                    bgcolor: 'rgba(255,255,255,0.03)', 
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 5
+                  }}>
+                  <Box sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.05)',
                     height: '100%'
                   }}>
                     <Typography variant="h3" color="primary" sx={{ mb: 3, fontWeight: 800 }}>
                       {selectedAd.price ? `R$ ${selectedAd.price.toFixed(2)}` : 'A Combinar'}
                     </Typography>
-                    
+
                     <Box sx={{ mb: 4 }}>
                       <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}>Descrição</Typography>
                       <Typography variant="body1" color="text.primary" sx={{ lineHeight: 1.7 }}>{selectedAd.description}</Typography>
@@ -402,9 +414,9 @@ const Classificados: React.FC = () => {
                     <Box sx={{ mb: 4 }}>
                       <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}>Localização</Typography>
                       <Typography variant="body1" color="text.primary">
-                        {selectedAd.street}, {selectedAd.number}<br/>
-                        {selectedAd.neighborhood}<br/>
-                        {selectedAd.city} - {selectedAd.state}<br/>
+                        {selectedAd.street}, {selectedAd.number}<br />
+                        {selectedAd.neighborhood}<br />
+                        {selectedAd.city} - {selectedAd.state}<br />
                         CEP: {selectedAd.zip_code}
                       </Typography>
                     </Box>

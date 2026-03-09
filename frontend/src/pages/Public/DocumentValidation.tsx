@@ -15,7 +15,7 @@ const DocumentValidation: React.FC = () => {
       try {
         const response = await api.get(`/documents/validate/${hash}`);
         setResult(response.data);
-      } catch (err: any) {
+      } catch {
         setError("Documento não encontrado ou assinatura inválida.");
       } finally {
         setLoading(false);

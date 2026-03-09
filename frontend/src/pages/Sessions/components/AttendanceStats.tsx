@@ -63,9 +63,12 @@ const AttendanceStats: React.FC = () => {
       <Typography variant="h5" gutterBottom>
         Estatísticas de Presença (Últimos 12 Meses)
       </Typography>
-
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
               <EventAvailable fontSize="large" color="primary" sx={{ mr: 2 }} />
@@ -80,7 +83,11 @@ const AttendanceStats: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 6
+          }}>
           <Card>
             <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
               <People fontSize="large" color="secondary" sx={{ mr: 2 }} />
@@ -96,7 +103,6 @@ const AttendanceStats: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
-
       <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
         Frequência por Membro
       </Typography>

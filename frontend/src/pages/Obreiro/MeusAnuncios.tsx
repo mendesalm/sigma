@@ -257,10 +257,15 @@ const MeusAnuncios: React.FC = () => {
           Novo Anúncio
         </Button>
       </Box>
-
       <Grid container spacing={3}>
         {ads.map((ad) => (
-          <Grid item xs={12} sm={6} md={4} key={ad.id}>
+          <Grid
+            key={ad.id}
+            size={{
+              xs: 12,
+              sm: 6,
+              md: 4
+            }}>
             <Card sx={{ bgcolor: '#1e293b', color: '#fff' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
@@ -298,7 +303,6 @@ const MeusAnuncios: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>{editingAd ? 'Editar Anúncio' : 'Novo Anúncio'}</DialogTitle>
         <DialogContent>
@@ -309,7 +313,10 @@ const MeusAnuncios: React.FC = () => {
               </Alert>
             )}
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid
+                size={{
+                  xs: 12
+                }}>
                 <TextField
                   label="Título"
                   fullWidth
@@ -318,7 +325,11 @@ const MeusAnuncios: React.FC = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <FormControl fullWidth>
                   <InputLabel>Categoria</InputLabel>
                   <Select
@@ -332,7 +343,11 @@ const MeusAnuncios: React.FC = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={8}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 8
+                }}>
                 <TextField
                   label="Descrição"
                   fullWidth
@@ -343,7 +358,11 @@ const MeusAnuncios: React.FC = () => {
                   required
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <TextField
                   label="Preço (R$)"
                   fullWidth
@@ -352,7 +371,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setPrice(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <TextField
                   label="Telefone"
                   fullWidth
@@ -363,7 +386,11 @@ const MeusAnuncios: React.FC = () => {
                   helperText={!editingAd && contactInfo ? "Preenchido do seu perfil. Pode editar se necessário." : ""}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 4
+                }}>
                 <TextField
                   label="Email"
                   fullWidth
@@ -375,10 +402,17 @@ const MeusAnuncios: React.FC = () => {
                 />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid
+                size={{
+                  xs: 12
+                }}>
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>Endereço</Typography>
               </Grid>
-              <Grid item xs={12} sm={9}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 9
+                }}>
                 <TextField
                   label="Rua"
                   fullWidth
@@ -386,7 +420,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setStreet(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 3
+                }}>
                 <TextField
                   label="Número"
                   fullWidth
@@ -394,7 +432,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setNumber(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <TextField
                   label="Bairro"
                   fullWidth
@@ -402,7 +444,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setNeighborhood(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 6
+                }}>
                 <TextField
                   label="CEP"
                   fullWidth
@@ -410,7 +456,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setZipCode(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={9}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 9
+                }}>
                 <TextField
                   label="Cidade"
                   fullWidth
@@ -418,7 +468,11 @@ const MeusAnuncios: React.FC = () => {
                   onChange={(e) => setCity(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid
+                size={{
+                  xs: 12,
+                  sm: 3
+                }}>
                 <TextField
                   label="UF"
                   fullWidth
@@ -434,7 +488,7 @@ const MeusAnuncios: React.FC = () => {
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>Fotos Atuais</Typography>
                     <Grid container spacing={1}>
                         {editingAd.photos.map((photo: any) => (
-                            <Grid item key={photo.id}>
+                            <Grid key={photo.id}>
                                 <Box sx={{ position: 'relative', width: 100, height: 100, border: '1px solid #ccc', borderRadius: 1, overflow: 'hidden' }}>
                                     <img src={`${import.meta.env.VITE_API_URL}/storage/${photo.image_path}`} alt="Ad" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     <IconButton 
@@ -493,7 +547,6 @@ const MeusAnuncios: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

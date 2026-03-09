@@ -1,7 +1,7 @@
 from .prancha_strategy import PranchaStrategy
 
+
 class EditalStrategy(PranchaStrategy):
-    
     def get_document_type_key(self) -> str:
         return "edital"
 

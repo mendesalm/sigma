@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
@@ -18,12 +18,7 @@ if not DATABASE_URL:
     DATABASE_URL = "sqlite:///./sigma.db"
 
 # Engine principal (Sigma)
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    connect_args={"connect_timeout": 60}
-)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300, connect_args={"connect_timeout": 60})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Engine secundária (Oriente Data - Read Only)
@@ -52,9 +47,8 @@ def get_oriente_db():
         db = SessionLocal()
     else:
         db = OrienteSessionLocal()
-        
+
     try:
         yield db
     finally:
         db.close()
-

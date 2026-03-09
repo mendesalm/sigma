@@ -1,9 +1,10 @@
 from datetime import date
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
+
 from database import get_db
 from dependencies import get_current_user_payload
 from schemas import masonic_session_schema, session_attendance_schema, visitor_checkin_schema
@@ -14,18 +15,13 @@ router = APIRouter(
 )
 
 
-
 @router.get(
     "/nearest-active",
     response_model=masonic_session_schema.MasonicSessionResponse,
     summary="Buscar Sessão Ativa Próxima",
     description="Busca a sessão ativa mais próxima baseada na geolocalização (sem autenticação).",
 )
-def find_nearest_active_session_endpoint(
-    latitude: float,
-    longitude: float,
-    db: Session = Depends(get_db)
-):
+def find_nearest_active_session_endpoint(latitude: float, longitude: float, db: Session = Depends(get_db)):
     session = session_service.find_nearest_active_session(db, latitude, longitude)
     if not session:
         raise HTTPException(status_code=404, detail="Nenhuma sessão ativa encontrada nas proximidades.")
@@ -39,16 +35,14 @@ def find_nearest_active_session_endpoint(
     description="Realiza o check-in de um visitante global na sessão (sem autenticação de usuário).",
 )
 def perform_visitor_check_in_endpoint(
-    session_id: int,
-    check_in_data: visitor_checkin_schema.VisitorCheckInRequest,
-    db: Session = Depends(get_db)
+    session_id: int, check_in_data: visitor_checkin_schema.VisitorCheckInRequest, db: Session = Depends(get_db)
 ):
     return session_service.perform_visitor_check_in(
         db=db,
         session_id=session_id,
         visitor_id=check_in_data.visitor_id,
         latitude=check_in_data.latitude,
-        longitude=check_in_data.longitude
+        longitude=check_in_data.longitude,
     )
 
 
@@ -66,10 +60,7 @@ def create_new_masonic_session(
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
     return session_service.create_session(
-        db=db, 
-        session_data=session_data, 
-        current_user_payload=current_user_payload, 
-        background_tasks=background_tasks
+        db=db, session_data=session_data, current_user_payload=current_user_payload, background_tasks=background_tasks
     )
 
 
@@ -262,7 +253,9 @@ async def get_balaustre_draft(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
-    return await session_service.get_balaustre_draft(db=db, session_id=session_id, current_user_payload=current_user_payload)
+    return await session_service.get_balaustre_draft(
+        db=db, session_id=session_id, current_user_payload=current_user_payload
+    )
 
 
 @router.post(
@@ -272,7 +265,7 @@ async def get_balaustre_draft(
 )
 async def generate_custom_balaustre(
     session_id: int,
-    content: dict, # Espera {"text": "..."}
+    content: dict,  # Espera {"text": "..."}
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
@@ -322,11 +315,12 @@ async def preview_balaustre(
 ):
     try:
         print(f"DEBUG: preview_balaustre received content: {content}")
-        
+
         # --- DEBUG CAPTURE ---
         try:
             import json
             import os
+
             # Save payload to file for analysis
             capture_file = "frontend_payload_capture.json"
             with open(capture_file, "w", encoding="utf-8") as f:
@@ -337,23 +331,17 @@ async def preview_balaustre(
         # ---------------------
 
         pdf_bytes = await session_service.preview_balaustre(
-            db=db,
-            session_id=session_id,
-            custom_content=content,
-            current_user_payload=current_user_payload
+            db=db, session_id=session_id, custom_content=content, current_user_payload=current_user_payload
         )
-        return Response(
-            content=pdf_bytes, 
-            media_type="application/pdf",
-            headers={"Access-Control-Allow-Origin": "*"}
-        )
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return JSONResponse(
             status_code=500,
             content={"detail": f"Erro interno ao gerar PDF: {str(e)}"},
-            headers={"Access-Control-Allow-Origin": "*"}
+            headers={"Access-Control-Allow-Origin": "*"},
         )
 
 
@@ -376,15 +364,21 @@ async def regenerate_balaustre_text_endpoint(
     # Update session data with form input
     # Process potential officer overrides and save to session.temporary_role_assignments
     role_fields = [
-        'Veneravel', 'PrimeiroVigilante', 'SegundoVigilante', 
-        'Orador', 'Secretario', 'Chanceler', 'Tesoureiro', 'Hospitaleiro'
+        "Veneravel",
+        "PrimeiroVigilante",
+        "SegundoVigilante",
+        "Orador",
+        "Secretario",
+        "Chanceler",
+        "Tesoureiro",
+        "Hospitaleiro",
     ]
-    
+
     current_overrides = session.temporary_role_assignments or {}
     # Create a copy to track changes effectively (and handle None case)
     current_overrides = dict(current_overrides)
     overrides_updated = False
-    
+
     for field in role_fields:
         if field in data:
             val = data[field]
@@ -392,18 +386,15 @@ async def regenerate_balaustre_text_endpoint(
             if val != current_overrides.get(field):
                 current_overrides[field] = val
                 overrides_updated = True
-    
+
     if overrides_updated:
         session.temporary_role_assignments = current_overrides
-        flag_modified(session, "temporary_role_assignments") # Ensure SQLAlchemy tracks JSON change
+        flag_modified(session, "temporary_role_assignments")  # Ensure SQLAlchemy tracks JSON change
         db.add(session)
         db.commit()
 
     html_content = await session_service.regenerate_balaustre_text(
-        db=db,
-        session_id=session_id,
-        custom_data=data,
-        current_user_payload=current_user_payload
+        db=db, session_id=session_id, custom_data=data, current_user_payload=current_user_payload
     )
     return {"text": html_content}
 
@@ -448,75 +439,71 @@ async def debug_balaustre_generation(
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
     log = []
+
     def logger(msg):
         log.append(str(msg))
-    
+
     try:
         logger(f"Debugging Session: {session_id}")
-        
+
         # 1. Fetch Session & Lodge
         session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
         if not session:
             return {"error": "Session not found", "log": log}
-            
+
         lodge = db.query(models.Lodge).filter(models.Lodge.id == session.lodge_id).first()
         logger(f"Lodge: {lodge.lodge_name} (ID: {lodge.id})")
-        
+
         # 2. Check Settings
         settings = lodge.document_settings or {}
         # Convert Pydantic if needed
-        if hasattr(settings, 'model_dump'):
+        if hasattr(settings, "model_dump"):
             settings = settings.model_dump()
-            
+
         logger(f"Settings Keys: {settings.keys()}")
-        
-        balaustre_config = settings.get('balaustre')
+
+        balaustre_config = settings.get("balaustre")
         if not balaustre_config:
-             logger("CRITICAL: 'balaustre' key missing in document_settings")
+            logger("CRITICAL: 'balaustre' key missing in document_settings")
         else:
-             content_tmpl = balaustre_config.get('content_template')
-             logger(f"Custom Content Template Length: {len(content_tmpl) if content_tmpl else 0}")
-             if content_tmpl:
-                 logger(f"Template Preview: {content_tmpl[:100]}...")
-        
+            content_tmpl = balaustre_config.get("content_template")
+            logger(f"Custom Content Template Length: {len(content_tmpl) if content_tmpl else 0}")
+            if content_tmpl:
+                logger(f"Template Preview: {content_tmpl[:100]}...")
+
         # 3. Simulate Strategy Execution
         from services.document_generation_service import DocumentGenerationService
+
         service = DocumentGenerationService(db)
-        strategy = service.get_strategy('balaustre')
-        
+        strategy = service.get_strategy("balaustre")
+
         # Run Collect Data
         logger("Running strategy.collect_data()...")
-        context = await strategy.collect_data(db, session_id) # No overrides first
-        
+        context = await strategy.collect_data(db, session_id)  # No overrides first
+
         logger("Context Keys created: " + str(list(context.keys())))
-        
-        if 'custom_text' in context:
+
+        if "custom_text" in context:
             logger(f"Generated 'custom_text' Length: {len(context['custom_text'])}")
             logger(f"Snippet: {context['custom_text'][:200]}...")
-            if "{{ Veneravel }}" in context['custom_text']:
+            if "{{ Veneravel }}" in context["custom_text"]:
                 logger("FAIL: Placeholders still present in output!")
             else:
-                 logger("SUCCESS: Placeholders processed (or absent).")
+                logger("SUCCESS: Placeholders processed (or absent).")
         else:
             logger("CRITICAL: 'custom_text' NOT found in context!")
-            
-        # 4. Check for 'has_manual_edit' trigger logic
-        if 'text' in context:
-             logger("WARNING: 'text' key found in context (Manual Edit Flag might be on)")
 
-        return {
-            "status": "Debug Complete",
-            "log": log,
-            "final_output_preview": context.get('custom_text', '')[:500]
-        }
-        
+        # 4. Check for 'has_manual_edit' trigger logic
+        if "text" in context:
+            logger("WARNING: 'text' key found in context (Manual Edit Flag might be on)")
+
+        return {"status": "Debug Complete", "log": log, "final_output_preview": context.get("custom_text", "")[:500]}
+
     except Exception as e:
         import traceback
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "log": log
-        }
+
+        return {"error": str(e), "traceback": traceback.format_exc(), "log": log}
+
 
 @router.post(
     "/{session_id}/rebuild-balaustre",
@@ -529,23 +516,21 @@ async def rebuild_balaustre(
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
     from services.document_generation_service import DocumentGenerationService
-    
+
     # Security Check
     session_service.get_session_by_id(db, session_id, current_user_payload)
-    
+
     service = DocumentGenerationService(db)
-    strategy = service.get_strategy('balaustre')
-    
+    strategy = service.get_strategy("balaustre")
+
     # Collect Data STRICTLY from DB (No overrides)
     context = await strategy.collect_data(db, session_id)
-    
+
     # Get the rendered text
-    new_text = context.get('custom_text', '')
-    
-    return {
-        "text": new_text, 
-        "message": "Balaústre recriado com sucesso baseando-se no modelo oficial."
-    }
+    new_text = context.get("custom_text", "")
+
+    return {"text": new_text, "message": "Balaústre recriado com sucesso baseando-se no modelo oficial."}
+
 
 @router.post(
     "/{session_id}/reopen",
@@ -558,12 +543,11 @@ def reopen_session_endpoint(
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
-    return session_service.reopen_session(
-        db=db, session_id=session_id, current_user_payload=current_user_payload
-    )
+    return session_service.reopen_session(db=db, session_id=session_id, current_user_payload=current_user_payload)
 
 
 # --- Rotas de Presença ---
+
 
 @router.get(
     "/{session_id}/attendance",
@@ -574,7 +558,9 @@ def reopen_session_endpoint(
 def get_session_attendance_list(
     session_id: int, db: Session = Depends(get_db), current_user_payload: dict = Depends(get_current_user_payload)
 ):
-    return session_service.get_session_attendance(db=db, session_id=session_id, current_user_payload=current_user_payload)
+    return session_service.get_session_attendance(
+        db=db, session_id=session_id, current_user_payload=current_user_payload
+    )
 
 
 @router.post(
@@ -585,16 +571,16 @@ def get_session_attendance_list(
 )
 def update_manual_attendance_status(
     session_id: int,
-    attendance_data: dict, # Expects member_id and attendance_status
+    attendance_data: dict,  # Expects member_id and attendance_status
     db: Session = Depends(get_db),
-    current_user_payload: dict = Depends(get_current_user_payload)
+    current_user_payload: dict = Depends(get_current_user_payload),
 ):
     return session_service.update_manual_attendance(
         db=db,
         session_id=session_id,
         member_id=attendance_data["member_id"],
         status=attendance_data["attendance_status"],
-        current_user_payload=current_user_payload
+        current_user_payload=current_user_payload,
     )
 
 
@@ -608,13 +594,10 @@ def register_visitor_attendance_record(
     session_id: int,
     visitor_data: dict,
     db: Session = Depends(get_db),
-    current_user_payload: dict = Depends(get_current_user_payload)
+    current_user_payload: dict = Depends(get_current_user_payload),
 ):
     return session_service.register_visitor_attendance(
-        db=db,
-        session_id=session_id,
-        visitor_data=visitor_data,
-        current_user_payload=current_user_payload
+        db=db, session_id=session_id, visitor_data=visitor_data, current_user_payload=current_user_payload
     )
 
 
@@ -637,7 +620,7 @@ def perform_check_in_app(
         qr_code_token=check_in_data.qr_code_token,
         latitude=check_in_data.latitude,
         longitude=check_in_data.longitude,
-        current_user_payload=current_user_payload
+        current_user_payload=current_user_payload,
     )
 
 
@@ -655,12 +638,8 @@ def get_lodge_attendance_stats_endpoint(
     lodge_id = current_user_payload.get("lodge_id")
     if not lodge_id:
         raise HTTPException(status_code=403, detail="Usuário não associado a uma loja.")
-        
-    return session_service.get_lodge_attendance_stats(
-        db=db,
-        lodge_id=lodge_id,
-        period_months=period_months
-    )
+
+    return session_service.get_lodge_attendance_stats(db=db, lodge_id=lodge_id, period_months=period_months)
 
 
 @router.post(
@@ -681,6 +660,5 @@ async def generate_certificate_for_member(
         document_type="CERTIFICADO",
         current_user_payload=current_user_payload,
         background_tasks=background_tasks,
-        extra_data={"member_id": member_id}
+        extra_data={"member_id": member_id},
     )
-

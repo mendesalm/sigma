@@ -75,21 +75,19 @@ const QuadroObreiros: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-        <Snackbar 
-            open={!!error} 
-            autoHideDuration={6000} 
-            onClose={() => setError(null)}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-            <Alert severity="error" onClose={() => setError(null)}>
-                {error}
-            </Alert>
-        </Snackbar>
-
+      <Snackbar 
+          open={!!error} 
+          autoHideDuration={6000} 
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+          <Alert severity="error" onClose={() => setError(null)}>
+              {error}
+          </Alert>
+      </Snackbar>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold', color: '#fff' }}>
         Relatórios do Quadro
       </Typography>
-
       <Paper sx={{ p: 4, maxWidth: 600, mx: 'auto', bgcolor: '#1e293b', color: '#fff' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <PdfIcon sx={{ fontSize: 40, mr: 2, color: '#e53935' }} />
@@ -105,7 +103,11 @@ const QuadroObreiros: React.FC = () => {
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControlLabel
               control={
                 <Checkbox 
@@ -117,7 +119,11 @@ const QuadroObreiros: React.FC = () => {
               label="Incluir E-mail"
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid
+            size={{
+              xs: 12,
+              sm: 6
+            }}>
             <FormControlLabel
               control={
                 <Checkbox 

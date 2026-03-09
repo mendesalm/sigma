@@ -2,6 +2,7 @@ import enum
 import uuid
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     CheckConstraint,
     Column,
@@ -10,7 +11,6 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Table,
     Text,
@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import backref, relationship
+
 from database import Base
 
 
@@ -30,12 +31,12 @@ class BaseModel(Base):
 
 
 # --- ENUMS ---
-class ObedienceTypeEnum(str, enum.Enum):
+class ObedienceTypeEnum(enum.StrEnum):
     FEDERAL = "Federal"
     STATE = "Estadual"
 
 
-class RiteEnum(str, enum.Enum):
+class RiteEnum(enum.StrEnum):
     REAA = "Rito Escocês Antigo e Aceito"
     YORK = "Rito York"
     SCHRODER = "Rito Schroder"
@@ -45,12 +46,13 @@ class RiteEnum(str, enum.Enum):
     RER = "Rito Escocês Retificado"
 
 
-class RoleTypeEnum(str, enum.Enum):
+class RoleTypeEnum(enum.StrEnum):
     LODGE = "Loja"
     OBEDIENCE = "Obediência"
     SUBOBEDIENCE = "Subobediência"
 
-class RelationshipTypeEnum(str, enum.Enum):
+
+class RelationshipTypeEnum(enum.StrEnum):
     SPOUSE = "Esposa"
     SON = "Filho"
     DAUGHTER = "Filha"
@@ -58,31 +60,31 @@ class RelationshipTypeEnum(str, enum.Enum):
     MOTHER = "Mãe"
 
 
-class DegreeEnum(str, enum.Enum):
+class DegreeEnum(enum.StrEnum):
     APPRENTICE = "Aprendiz"
     FELLOW = "Companheiro"
     MASTER = "Mestre"
     INSTALLED_MASTER = "Mestre Instalado"
 
 
-class RegistrationStatusEnum(str, enum.Enum):
+class RegistrationStatusEnum(enum.StrEnum):
     PENDING = "Pendente"
     APPROVED = "Aprovado"
     REJECTED = "Rejeitado"
 
 
-class ExceptionTypeEnum(str, enum.Enum):
+class ExceptionTypeEnum(enum.StrEnum):
     GRANT = "Concedida"
     REVOKE = "Revogada"
 
 
-class MemberStatusEnum(str, enum.Enum):
+class MemberStatusEnum(enum.StrEnum):
     ACTIVE = "Ativo"
     INACTIVE = "Inativo"
     DISABLED = "Desativado"  # Falecido
 
 
-class MemberClassEnum(str, enum.Enum):
+class MemberClassEnum(enum.StrEnum):
     REGULAR = "Regular"
     IRREGULAR = "Irregular"
     EMERITUS = "Emérito"
@@ -150,7 +152,9 @@ class Lodge(BaseModel):
     lodge_code = Column(String(36), unique=True, index=True, nullable=False)
     lodge_number = Column(String(255))
     foundation_date = Column(Date, nullable=True)
-    rite = Column(SQLAlchemyEnum(RiteEnum, values_callable=lambda x: [e.value for e in x]), nullable=True, default=RiteEnum.REAA)
+    rite = Column(
+        SQLAlchemyEnum(RiteEnum, values_callable=lambda x: [e.value for e in x]), nullable=True, default=RiteEnum.REAA
+    )
     obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=False)
     subobedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
     cnpj = Column(String(18), unique=True, nullable=True)
@@ -215,7 +219,9 @@ class Role(BaseModel):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, nullable=False)
-    role_type = Column(SQLAlchemyEnum(RoleTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)  # Acts as 'scope'
+    role_type = Column(
+        SQLAlchemyEnum(RoleTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False
+    )  # Acts as 'scope'
     level = Column(Integer, nullable=False, default=1)  # 1-9 hierarchy
     base_credential = Column(Integer, nullable=False, default=10)  # Base value for calculation
     applicable_rites = Column(String(255), nullable=True)
@@ -223,9 +229,7 @@ class Role(BaseModel):
     permissions = relationship("Permission", secondary=roles_permissions, back_populates="roles")
     webmasters = relationship("Webmaster", secondary=webmasters_roles, back_populates="roles")
 
-    __table_args__ = (
-        CheckConstraint("level >= 1 AND level <= 9", name="chk_role_level"),
-    )
+    __table_args__ = (CheckConstraint("level >= 1 AND level <= 9", name="chk_role_level"),)
 
 
 class Permission(BaseModel):
@@ -284,7 +288,7 @@ class Member(BaseModel):
     street_number = Column(String(50), nullable=True)
     neighborhood = Column(String(100), nullable=True)
     city = Column(String(100), nullable=True)
-    state = Column(String(2), nullable=True) # Added state column
+    state = Column(String(2), nullable=True)  # Added state column
     zip_code = Column(String(9), nullable=True)
     phone = Column(String(20), nullable=True)
     place_of_birth = Column(String(100), nullable=True)
@@ -297,7 +301,9 @@ class Member(BaseModel):
     profile_picture_path = Column(String(255), nullable=True)
     cim = Column(String(50), unique=True, nullable=True, index=True)
     status = Column(String(50), nullable=True, default="Active")
-    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=True)
+    degree = Column(
+        SQLAlchemyEnum(DegreeEnum, name="degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=True
+    )
     initiation_date = Column(Date, nullable=True)
     elevation_date = Column(Date, nullable=True)
     exaltation_date = Column(Date, nullable=True)
@@ -306,10 +312,14 @@ class Member(BaseModel):
     regularization_date = Column(Date, nullable=True)
     philosophical_degree = Column(String(100), nullable=True)
     registration_status = Column(
-        SQLAlchemyEnum(RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=RegistrationStatusEnum.PENDING
+        SQLAlchemyEnum(
+            RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]
+        ),
+        nullable=False,
+        default=RegistrationStatusEnum.PENDING,
     )
     last_login = Column(DateTime(timezone=True), nullable=True)
-    
+
     # Relationships
     lodge_associations = relationship("MemberLodgeAssociation", back_populates="member", cascade="all, delete-orphan")
     obedience_associations = relationship(
@@ -328,11 +338,19 @@ class MemberLodgeAssociation(BaseModel):
 
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
-    status = Column(SQLAlchemyEnum(MemberStatusEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MemberStatusEnum.ACTIVE)
-    member_class = Column(SQLAlchemyEnum(MemberClassEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=MemberClassEnum.REGULAR)
+    status = Column(
+        SQLAlchemyEnum(MemberStatusEnum, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=MemberStatusEnum.ACTIVE,
+    )
+    member_class = Column(
+        SQLAlchemyEnum(MemberClassEnum, values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=MemberClassEnum.REGULAR,
+    )
     member = relationship("Member", back_populates="lodge_associations")
     lodge = relationship("Lodge", back_populates="associations")
-    
+
     __table_args__ = (
         UniqueConstraint("member_id", "lodge_id", name="_member_lodge_uc"),
         CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_lodge_assoc_dates"),
@@ -350,7 +368,7 @@ class MemberObedienceAssociation(BaseModel):
     member = relationship("Member", back_populates="obedience_associations")
     obedience = relationship("Obedience", back_populates="member_associations")
     role = relationship("Role")
-    
+
     __table_args__ = (
         UniqueConstraint("member_id", "obedience_id", name="_member_obedience_uc"),
         CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_obedience_assoc_dates"),
@@ -364,7 +382,9 @@ class MemberPermissionException(BaseModel):
     permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
     obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
-    exception_type = Column(SQLAlchemyEnum(ExceptionTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    exception_type = Column(
+        SQLAlchemyEnum(ExceptionTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False
+    )
 
     member = relationship("Member", backref="permission_exceptions")
     permission = relationship("Permission")
@@ -406,7 +426,12 @@ class FamilyMember(BaseModel):
     __tablename__ = "family_members"
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String(255), nullable=False)
-    relationship_type = Column(SQLAlchemyEnum(RelationshipTypeEnum, name="relationship_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
+    relationship_type = Column(
+        SQLAlchemyEnum(
+            RelationshipTypeEnum, name="relationship_type_enum", values_callable=lambda x: [e.value for e in x]
+        ),
+        nullable=False,
+    )
     birth_date = Column(Date, nullable=True)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
@@ -423,26 +448,25 @@ class RoleHistory(BaseModel):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
-    administration_id = Column(Integer, ForeignKey("administrations.id"), nullable=True) # Optional link to Administration
-    
+    administration_id = Column(
+        Integer, ForeignKey("administrations.id"), nullable=True
+    )  # Optional link to Administration
+
     member = relationship("Member", back_populates="role_history")
     role = relationship("Role")
     lodge = relationship("Lodge")
     administration = relationship("Administration", backref="role_histories")
 
-    __table_args__ = (
-        CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_role_history_dates"),
-    )
+    __table_args__ = (CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_role_history_dates"),)
 
 
-
-class SessionTypeEnum(str, enum.Enum):
+class SessionTypeEnum(enum.StrEnum):
     ORDINARY = "Ordinária"
     MAGNA = "Magna"
     EXTRAORDINARY = "Extraordinária"
 
 
-class SessionSubtypeEnum(str, enum.Enum):
+class SessionSubtypeEnum(enum.StrEnum):
     # Ordinárias
     REGULAR = "Regular"
     ADMINISTRATIVE = "Administrativa"
@@ -450,7 +474,7 @@ class SessionSubtypeEnum(str, enum.Enum):
     AFFILIATION_REGULARIZATION = "Filiação e Regularização"
     ELECTORAL = "Eleitoral"
     RITUALISTIC_BANQUET = "Banquete Ritualístico"
-    
+
     # Magnas
     INITIATION = "Iniciação"
     ELEVATION = "Elevação"
@@ -467,7 +491,7 @@ class SessionSubtypeEnum(str, enum.Enum):
     LECTURE = "Palestra"
     FESTIVE = "Festiva"
     CIVIC_CULTURAL = "Cívico-cultural"
-    
+
     # Extraordinárias
     GENERAL_GM_ELECTION = "Eleições de Grão-Mestre Geral e Adjuntos"
     STATE_GM_ELECTION = "Eleição de Grão-Mestre Estadual e Adjuntos"
@@ -526,11 +550,11 @@ VALID_SESSION_SUBTYPES = {
 class Administration(Base):
     __tablename__ = "administrations"
     id = Column(Integer, primary_key=True, index=True)
-    identifier = Column(String(255), nullable=False) # Ex: "Exercício Maçônico 2025-2027"
+    identifier = Column(String(255), nullable=False)  # Ex: "Exercício Maçônico 2025-2027"
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
     is_current = Column(Boolean, default=True)
-    
+
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     lodge = relationship("Lodge", backref="administrations")
 
@@ -539,30 +563,32 @@ class MasonicSession(BaseModel):
     __tablename__ = "masonic_sessions"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    session_number = Column(Integer, nullable=True) # Número sequencial no exercício
+    session_number = Column(Integer, nullable=True)  # Número sequencial no exercício
     session_date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=True)
     end_time = Column(Time, nullable=True)
-    
+
     type = Column(SQLAlchemyEnum(SessionTypeEnum, name="session_type_enum"), nullable=True)
     subtype = Column(SQLAlchemyEnum(SessionSubtypeEnum, name="session_subtype_enum"), nullable=True)
-    
+
     status = Column(
-        SQLAlchemyEnum("AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA","CANCELADA", name="session_status_enum"),
+        SQLAlchemyEnum("AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA", "CANCELADA", name="session_status_enum"),
         nullable=False,
         default="AGENDADA",
     )
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     lodge = relationship("Lodge", backref="masonic_sessions")
-    
+
     administration_id = Column(Integer, ForeignKey("administrations.id"), nullable=True)
     administration = relationship("Administration", backref="sessions")
-    
+
     administration = relationship("Administration", backref="sessions")
-    
+
     # Novos campos
-    temporary_role_assignments = Column(JSON, nullable=True) # Stores overriding roles for this session { "Venerável Mestre": "Nome do Irmão", ... }
-    
+    temporary_role_assignments = Column(
+        JSON, nullable=True
+    )  # Stores overriding roles for this session { "Venerável Mestre": "Nome do Irmão", ... }
+
     agenda = Column(Text, nullable=True)
     sent_expedients = Column(Text, nullable=True)
     received_expedients = Column(Text, nullable=True)
@@ -573,8 +599,7 @@ class MasonicSession(BaseModel):
     documents = relationship("Document", back_populates="session")  # Relacionamento com Documentos
 
 
-
-class CheckInMethodEnum(str, enum.Enum):
+class CheckInMethodEnum(enum.StrEnum):
     MANUAL = "MANUAL"
     QR_CODE = "QR_CODE"
     APP_VISITOR = "APP_VISITOR"
@@ -588,7 +613,10 @@ class SessionAttendance(BaseModel):
     visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
     attendance_status = Column(String(50), nullable=False)
     check_in_datetime = Column(DateTime(timezone=True), nullable=True)
-    check_in_method = Column(SQLAlchemyEnum(CheckInMethodEnum, name="check_in_method_enum", values_callable=lambda x: [e.value for e in x]), nullable=True)
+    check_in_method = Column(
+        SQLAlchemyEnum(CheckInMethodEnum, name="check_in_method_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=True,
+    )
     check_in_latitude = Column(Float, nullable=True)
     check_in_longitude = Column(Float, nullable=True)
     session = relationship("MasonicSession", back_populates="attendances")
@@ -599,26 +627,29 @@ class SessionAttendance(BaseModel):
 class Visitor(BaseModel):
     __tablename__ = "visitors"
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # Dados pessoais
     full_name = Column(String(255), nullable=False)
     cim = Column(String(50), unique=True, nullable=False, index=True)  # CIM é obrigatório
-    degree = Column(SQLAlchemyEnum(DegreeEnum, name="visitor_degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
-    
+    degree = Column(
+        SQLAlchemyEnum(DegreeEnum, name="visitor_degree_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+    )
+
     # Contato
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
     cpf = Column(String(14), unique=True, nullable=True)  # CPF é opcional
-    
+
     # Loja de Origem (estruturada ou manual)
     origin_lodge_id = Column(Integer, nullable=True)  # ID da loja se for do Sigma
     manual_lodge_name = Column(String(255), nullable=True)  # Nome manual se não for do Sigma
     manual_lodge_number = Column(String(50), nullable=True)
     manual_lodge_obedience = Column(String(100), nullable=True)
-    
+
     # ID global para sincronização (se vier do banco global)
     global_visitor_id = Column(String(36), nullable=True, index=True)
-    
+
     remarks = Column(Text, nullable=True)
 
 
@@ -647,12 +678,7 @@ class Event(BaseModel):
     calendar_id = Column(Integer, ForeignKey("calendars.id"), nullable=True)
     calendar = relationship("Calendar", backref="events")
 
-    __table_args__ = (
-        CheckConstraint("end_time > start_time", name="chk_event_dates"),
-    )
-
-
-
+    __table_args__ = (CheckConstraint("end_time > start_time", name="chk_event_dates"),)
 
 
 class Document(BaseModel):
@@ -691,8 +717,7 @@ class Visit(BaseModel):
     __table_args__ = (UniqueConstraint("member_id", "session_id", name="_member_session_visit_uc"),)
 
 
-
-class NoticeTypeEnum(str, enum.Enum):
+class NoticeTypeEnum(enum.StrEnum):
     AVISO = "Aviso"
     NOTICIA = "Notícia"
 
@@ -704,17 +729,21 @@ class Notice(BaseModel):
     content = Column(Text, nullable=False)
     expiration_date = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True)
-    
-    type = Column(SQLAlchemyEnum(NoticeTypeEnum, name="notice_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=NoticeTypeEnum.AVISO)
-    
+
+    type = Column(
+        SQLAlchemyEnum(NoticeTypeEnum, name="notice_type_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=NoticeTypeEnum.AVISO,
+    )
+
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     publication_id = Column(Integer, ForeignKey("publications.id"), nullable=True)
-    
+
     lodge = relationship("Lodge", backref="notices")
     publication = relationship("Publication", backref="linked_notices")
 
 
-class PublicationTypeEnum(str, enum.Enum):
+class PublicationTypeEnum(enum.StrEnum):
     REGULATIONS = "Regulamentos"
     ACTS = "Atos"
     DOCUMENTS = "Documentos"
@@ -722,7 +751,7 @@ class PublicationTypeEnum(str, enum.Enum):
     ARTICLE = "Artigo"
 
 
-class PublicationStatusEnum(str, enum.Enum):
+class PublicationStatusEnum(enum.StrEnum):
     DRAFT = "Rascunho"
     PENDING = "Pendente"
     PUBLISHED = "Publicado"
@@ -734,19 +763,30 @@ class Publication(BaseModel):
     __tablename__ = "publications"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    content = Column(Text, nullable=True) # Description/Observations
-    file_path = Column(String(512), nullable=False) # Path to PDF file
-    file_size = Column(Integer, nullable=True) # Size in bytes
-    
-    type = Column(SQLAlchemyEnum(PublicationTypeEnum, name="publication_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
-    status = Column(SQLAlchemyEnum(PublicationStatusEnum, name="publication_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=PublicationStatusEnum.PUBLISHED)
-    
+    content = Column(Text, nullable=True)  # Description/Observations
+    file_path = Column(String(512), nullable=False)  # Path to PDF file
+    file_size = Column(Integer, nullable=True)  # Size in bytes
+
+    type = Column(
+        SQLAlchemyEnum(
+            PublicationTypeEnum, name="publication_type_enum", values_callable=lambda x: [e.value for e in x]
+        ),
+        nullable=False,
+    )
+    status = Column(
+        SQLAlchemyEnum(
+            PublicationStatusEnum, name="publication_status_enum", values_callable=lambda x: [e.value for e in x]
+        ),
+        nullable=False,
+        default=PublicationStatusEnum.PUBLISHED,
+    )
+
     author_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
-    
+
     published_at = Column(DateTime(timezone=True), server_default=func.now())
     valid_until = Column(Date, nullable=True)
-    
+
     author = relationship("Member", backref="publications")
     lodge = relationship("Lodge", backref="publications")
 
@@ -759,7 +799,7 @@ class Classified(BaseModel):
     price = Column(Float, nullable=True)
     contact_info = Column(String(255), nullable=True)
     contact_email = Column(String(255), nullable=True)
-    
+
     # Endereço
     street = Column(String(255), nullable=True)
     number = Column(String(50), nullable=True)
@@ -768,13 +808,13 @@ class Classified(BaseModel):
     state = Column(String(2), nullable=True)
     zip_code = Column(String(9), nullable=True)
     category = Column(String(50), nullable=True)
-    
+
     status = Column(String(50), default="ACTIVE")  # ACTIVE, EXPIRED
     expires_at = Column(DateTime(timezone=True), nullable=False)
-    
+
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    
+
     lodge = relationship("Lodge", backref="classifieds")
     member = relationship("Member", backref="classifieds")
     photos = relationship("ClassifiedPhoto", back_populates="classified", cascade="all, delete-orphan")
@@ -793,35 +833,80 @@ class DiningScale(BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False)
     position = Column(String(50), nullable=False)  # e.g., "3º", "4º"
-    
+
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    
+
     lodge = relationship("Lodge", backref="dining_scales")
     member = relationship("Member", backref="dining_scales")
 
 
-class DocumentTemplate(BaseModel):
-    __tablename__ = "document_templates"
+class DocumentStatusEnum(enum.StrEnum):
+    DRAFT = "DRAFT"
+    PENDING_SIGNATURES = "PENDING_SIGNATURES"
+    FINALIZED = "FINALIZED"
+
+
+class GlobalDocumentTemplate(BaseModel):
+    __tablename__ = "global_document_templates"
     id = Column(Integer, primary_key=True, index=True)
-    type = Column(String(50), unique=True, nullable=False)  # 'BALAUSTRE', 'EDITAL'
-    content = Column(Text, nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    title = Column(String(255), nullable=False)
+    document_type = Column(String(50), unique=True, nullable=False)  # 'BALAUSTRE', 'EDITAL'
+    html_content = Column(Text, nullable=False)
+    header_html = Column(Text, nullable=True)
+    footer_html = Column(Text, nullable=True)
+    placeholders_schema = Column(JSON, nullable=True)  # Para popular os Badges da UI
+
+
+class LocalDocumentTemplate(BaseModel):
+    __tablename__ = "local_document_templates"
+    id = Column(Integer, primary_key=True, index=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    document_type = Column(String(50), nullable=False)
+    custom_html_content = Column(Text, nullable=True)
+    custom_header = Column(Text, nullable=True)
+    custom_footer = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    lodge = relationship("Lodge", backref="local_document_templates")
+
+    __table_args__ = (UniqueConstraint("lodge_id", "document_type", name="_lodge_document_type_uc"),)
+
+
+class DocumentInstance(BaseModel):
+    __tablename__ = "document_instances"
+    id = Column(Integer, primary_key=True, index=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=True, index=True)
+    document_type = Column(String(50), nullable=False)
+    status = Column(
+        SQLAlchemyEnum(DocumentStatusEnum, name="document_status_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=DocumentStatusEnum.DRAFT,
+    )
+    draft_html_content = Column(Text, nullable=True)
+    final_html_content = Column(Text, nullable=True)
+    created_by_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+
+    lodge = relationship("Lodge", backref="document_instances")
+    session = relationship("MasonicSession", backref="document_instances")
+    created_by = relationship("Member", backref="created_documents")
 
 
 class DocumentSignature(BaseModel):
     __tablename__ = "document_signatures"
     id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, unique=True)
-    signature_hash = Column(String(64), unique=True, nullable=False, index=True) # SHA256
+    document_instance_id = Column(Integer, ForeignKey("document_instances.id"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    role = Column(String(100), nullable=False)  # Cargo de quem assina
     signed_at = Column(DateTime(timezone=True), server_default=func.now())
-    signed_by_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    
-    document = relationship("Document", backref=backref("signature", uselist=False))
-    signed_by = relationship("Member")
+    digital_hash = Column(String(64), unique=True, nullable=False, index=True)  # SHA256
+
+    document_instance = relationship("DocumentInstance", backref="signatures")
+    member = relationship("Member", backref="document_signatures")
 
 
-class CommitteeTypeEnum(str, enum.Enum):
+class CommitteeTypeEnum(enum.StrEnum):
     PERMANENT = "Permanente"
     TEMPORARY = "Temporária"
 
@@ -837,7 +922,7 @@ class Committee(BaseModel):
     end_date = Column(Date, nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     president_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    
+
     # Relationships
     lodge = relationship("Lodge", backref="committees")
     president = relationship("Member", foreign_keys=[president_id])
@@ -850,7 +935,7 @@ class CommitteeMember(BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     committee_id = Column(Integer, ForeignKey("committees.id"), nullable=False)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
-    role = Column(String(50), default="Membro") # Presidente, Membro
+    role = Column(String(50), default="Membro")  # Presidente, Membro
 
     committee = relationship("Committee", back_populates="members")
     member = relationship("Member")
@@ -858,27 +943,28 @@ class CommitteeMember(BaseModel):
 
 # --- LIBRARY MODELS ---
 
-class BookConditionEnum(str, enum.Enum):
+
+class BookConditionEnum(enum.StrEnum):
     NEW = "Novo"
     GOOD = "Bom"
     FAIR = "Regular"
     POOR = "Ruim"
 
 
-class ItemStatusEnum(str, enum.Enum):
+class ItemStatusEnum(enum.StrEnum):
     AVAILABLE = "Disponível"
     LOANED = "Emprestado"
     RESERVED = "Reservado"
     LOST = "Extraviado"
 
 
-class LoanStatusEnum(str, enum.Enum):
+class LoanStatusEnum(enum.StrEnum):
     ACTIVE = "Ativo"
     RETURNED = "Devolvido"
     LATE = "Atrasado"
 
 
-class WaitlistStatusEnum(str, enum.Enum):
+class WaitlistStatusEnum(enum.StrEnum):
     WAITING = "Aguardando"
     NOTIFIED = "Notificado"
     FULFILLED = "Atendido"
@@ -910,8 +996,16 @@ class LibraryItem(BaseModel):
     book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     inventory_code = Column(String(100), nullable=True)
-    condition = Column(SQLAlchemyEnum(BookConditionEnum, name="book_condition_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=BookConditionEnum.GOOD)
-    status = Column(SQLAlchemyEnum(ItemStatusEnum, name="item_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=ItemStatusEnum.AVAILABLE)
+    condition = Column(
+        SQLAlchemyEnum(BookConditionEnum, name="book_condition_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=BookConditionEnum.GOOD,
+    )
+    status = Column(
+        SQLAlchemyEnum(ItemStatusEnum, name="item_status_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=ItemStatusEnum.AVAILABLE,
+    )
 
     book = relationship("Book", backref="items")
     lodge = relationship("Lodge", backref="library_items")
@@ -925,14 +1019,16 @@ class Loan(BaseModel):
     loan_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     due_date = Column(DateTime(timezone=True), nullable=False)
     return_date = Column(DateTime(timezone=True), nullable=True)
-    status = Column(SQLAlchemyEnum(LoanStatusEnum, name="loan_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=LoanStatusEnum.ACTIVE)
+    status = Column(
+        SQLAlchemyEnum(LoanStatusEnum, name="loan_status_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=LoanStatusEnum.ACTIVE,
+    )
 
     item = relationship("LibraryItem", backref="loans")
     member = relationship("Member", backref="loans")
 
-    __table_args__ = (
-        CheckConstraint("due_date > loan_date", name="chk_loan_dates"),
-    )
+    __table_args__ = (CheckConstraint("due_date > loan_date", name="chk_loan_dates"),)
 
 
 class Waitlist(BaseModel):
@@ -942,11 +1038,14 @@ class Waitlist(BaseModel):
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     request_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    status = Column(SQLAlchemyEnum(WaitlistStatusEnum, name="waitlist_status_enum", values_callable=lambda x: [e.value for e in x]), nullable=False, default=WaitlistStatusEnum.WAITING)
+    status = Column(
+        SQLAlchemyEnum(WaitlistStatusEnum, name="waitlist_status_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=WaitlistStatusEnum.WAITING,
+    )
     notification_date = Column(DateTime(timezone=True), nullable=True)
     expiration_date = Column(DateTime(timezone=True), nullable=True)
 
     book = relationship("Book", backref="waitlists")
     lodge = relationship("Lodge", backref="waitlists")
     member = relationship("Member", backref="waitlists")
-

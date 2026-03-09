@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-import database, dependencies
+import database
+import dependencies
 from schemas import role_schema
 from services import role_service
 
@@ -36,7 +37,7 @@ def create_role(
 def read_roles(
     skip: int = 0,
     limit: int = 100,
-    type: str = None, # Optional filter
+    type: str = None,  # Optional filter
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
@@ -46,7 +47,9 @@ def read_roles(
 
 @router.get("/{role_id}", response_model=role_schema.RoleResponse)
 def read_role(
-    role_id: int, db: Session = Depends(database.get_db), current_user: dict = Depends(dependencies.get_current_user_payload)
+    role_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
     db_role = role_service.get_role(db, role_id=role_id)
     if db_role is None:

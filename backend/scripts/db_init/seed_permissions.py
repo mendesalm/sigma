@@ -1,11 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.models import Permission, Base
+
 from database import DATABASE_URL
+from models.models import Permission
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 db = SessionLocal()
+
 
 def seed_permissions():
     permissions = [
@@ -14,17 +16,18 @@ def seed_permissions():
         {"action": "membro:editar", "min_credential": 50, "description": "Editar dados de membros"},
         {"action": "membro:visualizar", "min_credential": 10, "description": "Visualizar lista de membros"},
         {"action": "membro:excluir", "min_credential": 90, "description": "Excluir membros"},
-        
         # Gestão Financeira
         {"action": "financeiro:visualizar", "min_credential": 50, "description": "Visualizar dados financeiros"},
         {"action": "financeiro:criar_lancamento", "min_credential": 60, "description": "Criar lançamentos financeiros"},
-        {"action": "financeiro:editar_lancamento", "min_credential": 70, "description": "Editar lançamentos financeiros"},
-        
+        {
+            "action": "financeiro:editar_lancamento",
+            "min_credential": 70,
+            "description": "Editar lançamentos financeiros",
+        },
         # Gestão de Sessões/Atas
         {"action": "sessao:criar", "min_credential": 60, "description": "Criar novas sessões"},
         {"action": "ata:criar", "min_credential": 60, "description": "Criar e editar atas"},
         {"action": "ata:visualizar", "min_credential": 10, "description": "Visualizar atas"},
-        
         # Gestão de Cargos
         {"action": "cargo:atribuir", "min_credential": 80, "description": "Atribuir cargos a membros"},
     ]
@@ -38,9 +41,10 @@ def seed_permissions():
             print(f"Created permission: {perm_data['action']}")
         else:
             print(f"Permission already exists: {perm_data['action']}")
-    
+
     db.commit()
     print("Permissions seeded successfully.")
+
 
 if __name__ == "__main__":
     seed_permissions()

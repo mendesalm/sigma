@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
+import {
+  Box,
+  Typography,
+  CircularProgress,
   Chip,
   Accordion,
   AccordionSummary,
@@ -33,7 +33,7 @@ interface VariablesResponse {
 
 interface VariablePaletteProps {
   documentType: string;
-  onInsertVariable: (variableKey: string) => void;
+  onInsertVariable: (variableKey: string, variableLabel: string) => void;
 }
 
 const VariablePalette: React.FC<VariablePaletteProps> = ({ documentType, onInsertVariable }) => {
@@ -62,12 +62,14 @@ const VariablePalette: React.FC<VariablePaletteProps> = ({ documentType, onInser
   const handleDragStart = (e: React.DragEvent, variable: Variable) => {
     // Texto puro como fallback
     e.dataTransfer.setData("text/plain", `{{ ${variable.key} }}`);
-    
-    // HTML formatado para o Quill reconhecer como nosso Blot 'variable'
-    // O Quill usa class e data attributes para matching
-    const html = `<span class="masonic-variable-chip" data-value="${variable.key}">{{ ${variable.key} }}</span>`;
-    e.dataTransfer.setData("text/html", html);
-    
+
+    // Payload JSON específico para o Tiptap Editor NodeView
+    const payload = JSON.stringify({
+      variable: variable.key,
+      label: variable.label
+    });
+    e.dataTransfer.setData("application/x-sigma-variable", payload);
+
     e.dataTransfer.effectAllowed = "copy";
   };
 
@@ -75,12 +77,12 @@ const VariablePalette: React.FC<VariablePaletteProps> = ({ documentType, onInser
   if (error) return <Typography color="error" variant="caption">{error}</Typography>;
 
   return (
-    <Paper 
-      elevation={3} 
-      sx={{ 
-        width: '100%', 
-        height: '100%', 
-        overflowY: 'auto', 
+    <Paper
+      elevation={3}
+      sx={{
+        width: '100%',
+        height: '100%',
+        overflowY: 'auto',
         bgcolor: 'background.paper',
         borderLeft: 1,
         borderColor: 'divider'
@@ -106,20 +108,20 @@ const VariablePalette: React.FC<VariablePaletteProps> = ({ documentType, onInser
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {group.variables.map((v) => (
                 <Tooltip key={v.key} title={v.description || v.example || v.label} arrow placement="left">
-                    <Chip 
-                        label={v.label} 
-                        onClick={() => onInsertVariable(v.key)}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, v)}
-                        size="small"
-                        variant="outlined"
-                        sx={{ 
-                            cursor: 'grab', 
-                            fontSize: '0.75rem',
-                            maxWidth: '100%',
-                            '&:hover': { bgcolor: 'action.selected', borderColor: 'primary.main' }
-                        }} 
-                    />
+                  <Chip
+                    label={v.label}
+                    onClick={() => onInsertVariable(v.key, v.label)}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, v)}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      cursor: 'grab',
+                      fontSize: '0.75rem',
+                      maxWidth: '100%',
+                      '&:hover': { bgcolor: 'action.selected', borderColor: 'primary.main' }
+                    }}
+                  />
                 </Tooltip>
               ))}
             </Box>

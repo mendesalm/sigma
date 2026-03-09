@@ -62,7 +62,7 @@ function TabPanel(props: TabPanelProps) {
 const SessionDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const sessionId = parseInt(id || '0', 10);
-  
+
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +94,7 @@ const SessionDetailsPage: React.FC = () => {
     if (sessionId) {
       fetchSessionDetails();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -145,7 +146,7 @@ const SessionDetailsPage: React.FC = () => {
   if (loading) {
     return <CircularProgress />;
   }
-  
+
   if (error) {
     return <Alert severity="error">{error}</Alert>;
   }
@@ -163,9 +164,9 @@ const SessionDetailsPage: React.FC = () => {
             <Typography variant="h6" color="text.secondary" gutterBottom>Loja: {session.lodge?.lodge_name || 'Loja não identificada'}</Typography>
             <Stack direction="row" spacing={2} alignItems="center">
               <Typography variant="body1">Data: {new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</Typography>
-              <Chip 
-                label={session.status} 
-                color={session.status === 'EM_ANDAMENTO' ? 'success' : session.status === 'REALIZADA' ? 'primary' : session.status === 'ENCERRADA' ? 'default' : 'default'} 
+              <Chip
+                label={session.status}
+                color={session.status === 'EM_ANDAMENTO' ? 'success' : session.status === 'REALIZADA' ? 'primary' : session.status === 'ENCERRADA' ? 'default' : 'default'}
                 sx={session.status === 'ENCERRADA' ? { bgcolor: 'text.secondary', color: 'white' } : {}}
               />
             </Stack>
@@ -174,33 +175,33 @@ const SessionDetailsPage: React.FC = () => {
             <Stack direction="row" spacing={1}>
               {session.status === 'AGENDADA' && (
                 <>
-                  <Button 
-                    variant="contained" 
-                    color="success" 
+                  <Button
+                    variant="contained"
+                    color="success"
                     startIcon={<PlayArrow />}
                     onClick={() => handleAction(() => startSession(sessionId), 'Sessão iniciada!')}
                     disabled={actionLoading}
                   >
                     Iniciar
                   </Button>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     startIcon={<Description />}
                     onClick={() => handleAction(() => generateEdital(sessionId), 'Geração de Edital iniciada!')}
                     disabled={actionLoading}
                   >
                     Gerar Edital
                   </Button>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     startIcon={<Description />}
                     onClick={() => handleAction(() => generateInvitation(sessionId), 'Geração de Convite iniciada!')}
                     disabled={actionLoading}
                   >
                     Gerar Convite
                   </Button>
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="primary"
                     startIcon={<Description />}
                     component={Link}
@@ -213,26 +214,26 @@ const SessionDetailsPage: React.FC = () => {
               )}
               {session.status === 'EM_ANDAMENTO' && (
                 <>
-                  <Button 
-                    variant="contained" 
-                    color="secondary" 
+                  <Button
+                    variant="contained"
+                    color="secondary"
                     startIcon={<QrCodeScanner />}
                     onClick={() => setOpenCheckInDialog(true)}
                     sx={{ mr: 1 }}
                   >
                     Check-in
                   </Button>
-                  <Button 
-                    variant="contained" 
-                    color="warning" 
+                  <Button
+                    variant="contained"
+                    color="warning"
                     startIcon={<Stop />}
                     onClick={() => handleAction(() => endSession(sessionId), 'Sessão finalizada!')}
                     disabled={actionLoading}
                   >
                     Finalizar
                   </Button>
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="primary"
                     startIcon={<Description />}
                     component={Link}
@@ -245,16 +246,16 @@ const SessionDetailsPage: React.FC = () => {
               )}
               {session.status === 'REALIZADA' && (
                 <>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     startIcon={<Description />}
                     onClick={() => handleAction(() => generateBalaustre(sessionId), 'Geração de Balaústre iniciada!')}
                     disabled={actionLoading}
                   >
                     Gerar Balaústre (PDF Direto)
                   </Button>
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     color="secondary"
                     startIcon={<Description />}
                     onClick={() => handleAction(() => generateElectoralBalaustre(sessionId), 'Geração de Ata Eleitoral iniciada!')}
@@ -262,8 +263,8 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Balaústre Eleitoral
                   </Button>
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="primary"
                     startIcon={<Description />}
                     component={Link}
@@ -272,8 +273,8 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Editar Balaústre
                   </Button>
-                  <Button 
-                    variant="contained" 
+                  <Button
+                    variant="contained"
                     color="success"
                     startIcon={<CheckCircle />}
                     onClick={() => handleAction(() => approveSessionMinutes(sessionId), 'Ata aprovada e sessão encerrada!')}
@@ -286,8 +287,8 @@ const SessionDetailsPage: React.FC = () => {
               {session.status === 'ENCERRADA' && (
                 <>
                   <Chip label="Sessão Encerrada" color="default" variant="outlined" />
-                  <Button 
-                    variant="outlined" 
+                  <Button
+                    variant="outlined"
                     color="warning"
                     startIcon={<LockOpen />}
                     onClick={() => handleAction(() => reopenSession(sessionId), 'Sessão reaberta!')}
@@ -298,9 +299,9 @@ const SessionDetailsPage: React.FC = () => {
                 </>
               )}
               {session.status === 'CANCELADA' && (
-                <Button 
-                  variant="contained" 
-                  color="error" 
+                <Button
+                  variant="contained"
+                  color="error"
                   startIcon={<Cancel />}
                   onClick={async () => {
                     if (window.confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) {
@@ -324,27 +325,27 @@ const SessionDetailsPage: React.FC = () => {
               )}
               {session.status !== 'CANCELADA' && session.status !== 'REALIZADA' && (
                 <>
-                  <Button 
-                    variant="outlined" 
-                    color="primary" 
+                  <Button
+                    variant="outlined"
+                    color="primary"
                     component={Link}
                     to={`edit`}
                     disabled={actionLoading}
                   >
                     Editar
                   </Button>
-                  <Button 
-                    variant="outlined" 
-                    color="error" 
+                  <Button
+                    variant="outlined"
+                    color="error"
                     startIcon={<Cancel />}
                     onClick={() => handleAction(() => cancelSession(sessionId), 'Sessão cancelada!')}
                     disabled={actionLoading}
                   >
                     Cancelar
                   </Button>
-                  <Button 
-                    variant="contained" 
-                    color="error" 
+                  <Button
+                    variant="contained"
+                    color="error"
                     startIcon={<Cancel />}
                     onClick={async () => {
                       if (window.confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) {
@@ -371,7 +372,6 @@ const SessionDetailsPage: React.FC = () => {
           </Box>
         </Box>
       </Paper>
-      
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="session details tabs">
           <Tab label="Informações Gerais" />
@@ -379,34 +379,53 @@ const SessionDetailsPage: React.FC = () => {
           <Tab label="Documentos" />
         </Tabs>
       </Box>
-
       <TabPanel value={tabValue} index={0}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Tipo de Sessão</Typography>
               <Typography variant="body1">{session.type || 'Não definido'}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Subtipo</Typography>
               <Typography variant="body1">{session.subtype || 'Não definido'}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 4
+            }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Data</Typography>
               <Typography variant="body1">{new Date(session.session_date + 'T00:00:00').toLocaleDateString()}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 4
+            }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Horário de Início</Typography>
               <Typography variant="body1">{session.start_time || '-'}</Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid
+            size={{
+              xs: 12,
+              md: 4
+            }}>
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Typography variant="subtitle2" color="text.secondary">Horário de Término</Typography>
               <Typography variant="body1">{session.end_time || '-'}</Typography>
@@ -433,9 +452,9 @@ const SessionDetailsPage: React.FC = () => {
                     Tipo: {doc.document_type || 'Geral'} | Data: {new Date(doc.upload_date).toLocaleDateString()}
                   </Typography>
                 </Box>
-                <Button 
-                  variant="outlined" 
-                  size="small" 
+                <Button
+                  variant="outlined"
+                  size="small"
                   onClick={async () => {
                     try {
                       const response = await import('../../services/api').then(m => m.downloadDocument(doc.id));
@@ -461,13 +480,15 @@ const SessionDetailsPage: React.FC = () => {
           <Typography color="text.secondary">Nenhum documento gerado para esta sessão.</Typography>
         )}
       </TabPanel>
-
       {/* Upload Dialog */}
       <Dialog open={openUploadDialog} onClose={() => setOpenUploadDialog(false)}>
         <DialogTitle>Upload de Documento</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <TextField
                 label="Título do Documento"
                 fullWidth
@@ -475,7 +496,10 @@ const SessionDetailsPage: React.FC = () => {
                 onChange={(e) => setUploadTitle(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid
+              size={{
+                xs: 12
+              }}>
               <Button
                 variant="outlined"
                 component="label"
@@ -494,34 +518,32 @@ const SessionDetailsPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenUploadDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleUploadDocument} 
-            variant="contained" 
+          <Button
+            onClick={handleUploadDocument}
+            variant="contained"
             disabled={!uploadFile || !uploadTitle || actionLoading}
           >
             {actionLoading ? <CircularProgress size={24} /> : 'Enviar'}
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Check-in Dialog */}
       <Dialog open={openCheckInDialog} onClose={() => setOpenCheckInDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Check-in de Presença</DialogTitle>
         <DialogContent>
-          <SessionCheckIn 
-            sessionId={sessionId} 
+          <SessionCheckIn
+            sessionId={sessionId}
             onSuccess={() => {
               setOpenCheckInDialog(false);
               // Refresh attendance if needed, or just close
               // fetchSessionDetails(); 
-            }} 
+            }}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCheckInDialog(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
-
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

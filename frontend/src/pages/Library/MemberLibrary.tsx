@@ -33,10 +33,11 @@ export const MemberLibrary: React.FC = () => {
 
   useEffect(() => {
     fetchLibraryData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleWaitlist = async (bookId: number | undefined) => {
-    if(!bookId) return;
+    if (!bookId) return;
     try {
       await libraryService.enterWaitlist({ book_id: bookId });
       enqueueSnackbar('Você entrou na Fila de Espera!', { variant: 'success' });
@@ -54,10 +55,10 @@ export const MemberLibrary: React.FC = () => {
   const catalogMap = new Map<number, { book: any; items: LibraryItem[] }>();
   items.forEach(item => {
     if (item.book && item.book.id) {
-       if (!catalogMap.has(item.book.id)) {
-           catalogMap.set(item.book.id, { book: item.book, items: [] });
-       }
-       catalogMap.get(item.book.id)!.items.push(item);
+      if (!catalogMap.has(item.book.id)) {
+        catalogMap.set(item.book.id, { book: item.book, items: [] });
+      }
+      catalogMap.get(item.book.id)!.items.push(item);
     }
   });
 
@@ -66,7 +67,6 @@ export const MemberLibrary: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>Biblioteca da Loja</Typography>
-
       {/* Meus Empréstimos */}
       {myLoans.length > 0 && (
         <Box mb={4}>
@@ -90,8 +90,8 @@ export const MemberLibrary: React.FC = () => {
                     <TableCell>{new Date(loan.loan_date).toLocaleDateString()}</TableCell>
                     <TableCell>{new Date(loan.due_date).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={loan.status} 
+                      <Chip
+                        label={loan.status}
                         color={loan.status === 'Atrasado' ? 'error' : 'primary'}
                         size="small"
                       />
@@ -103,7 +103,6 @@ export const MemberLibrary: React.FC = () => {
           </TableContainer>
         </Box>
       )}
-
       {/* Minha Fila de Espera */}
       {myWaitlists.length > 0 && (
         <Box mb={4}>
@@ -127,8 +126,8 @@ export const MemberLibrary: React.FC = () => {
                     <TableCell>{w.notification_date ? new Date(w.notification_date).toLocaleDateString() : 'Ainda não'}</TableCell>
                     <TableCell>{w.expiration_date ? new Date(w.expiration_date).toLocaleDateString() : '-'}</TableCell>
                     <TableCell>
-                      <Chip 
-                        label={w.status} 
+                      <Chip
+                        label={w.status}
                         color={w.status === 'Avisado' ? 'warning' : 'default'}
                         size="small"
                       />
@@ -140,7 +139,6 @@ export const MemberLibrary: React.FC = () => {
           </TableContainer>
         </Box>
       )}
-
       {/* Catálogo de Livros */}
       <Typography variant="h6" gutterBottom>Catálogo ({catalog.length} Obras)</Typography>
       <Grid container spacing={3}>
@@ -148,9 +146,16 @@ export const MemberLibrary: React.FC = () => {
           const availableItems = entry.items.filter(i => i.status === 'Disponível');
           const hasAvailable = availableItems.length > 0;
           const grauLabel = entry.book.required_degree === 1 ? 'Aprendiz' : entry.book.required_degree === 2 ? 'Companheiro' : 'Mestre';
-          
+
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={entry.book.id}>
+            <Grid
+              key={entry.book.id}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4,
+                lg: 3
+              }}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardMedia
                   component="img"
@@ -166,14 +171,14 @@ export const MemberLibrary: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     {entry.book.author}
                   </Typography>
-                  
+
                   <Box mt={1} mb={2} display="flex" gap={1} flexWrap="wrap">
-                     <Chip label={`Grau: ${grauLabel}`} size="small" color="primary" />
-                     {hasAvailable ? (
-                        <Chip label={`${availableItems.length} Disponível(is)`} size="small" color="success" />
-                     ) : (
-                        <Chip label={`Esgotado`} size="small" color="error" />
-                     )}
+                    <Chip label={`Grau: ${grauLabel}`} size="small" color="primary" />
+                    {hasAvailable ? (
+                      <Chip label={`${availableItems.length} Disponível(is)`} size="small" color="success" />
+                    ) : (
+                      <Chip label={`Esgotado`} size="small" color="error" />
+                    )}
                   </Box>
 
                   <Box mt="auto">

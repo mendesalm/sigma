@@ -7,10 +7,7 @@ class Token(BaseModel):
 
     model_config = {
         "json_schema_extra": {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "token_type": "bearer"
-            }
+            "example": {"access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "token_type": "bearer"}
         }
     }
 
@@ -18,51 +15,26 @@ class Token(BaseModel):
 class EmailSchema(BaseModel):
     email: EmailStr = Field(..., description="Endereço de email válido.")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "email": "usuario@exemplo.com"
-            }
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"email": "usuario@exemplo.com"}}}
 
 
 class LodgeMemberLogin(BaseModel):
     email: EmailStr = Field(..., description="Email do membro.")
     password: str = Field(..., description="Senha do membro.")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "email": "membro@loja.com",
-                "password": "senha_segura123"
-            }
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"email": "membro@loja.com", "password": "senha_segura123"}}}
 
 
 class LodgeMemberSelectLodge(BaseModel):
     lodge_id: int = Field(..., description="ID da loja selecionada (caso o membro tenha múltiplas filiações).")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "lodge_id": 10
-            }
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"lodge_id": 10}}}
 
 
 class LodgeMemberForgotPassword(BaseModel):
     email: EmailStr = Field(..., description="Email do membro para recebimento do link de recuperação.")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "email": "membro@loja.com"
-            }
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"email": "membro@loja.com"}}}
 
 
 class LodgeMemberResetPassword(BaseModel):
@@ -70,12 +42,7 @@ class LodgeMemberResetPassword(BaseModel):
     new_password: str = Field(..., description="Nova senha a ser cadastrada.")
 
     model_config = {
-        "json_schema_extra": {
-            "example": {
-                "token": "a1b2c3d4e5f6g7h8",
-                "new_password": "nova_senha_segura456"
-            }
-        }
+        "json_schema_extra": {"example": {"token": "a1b2c3d4e5f6g7h8", "new_password": "nova_senha_segura456"}}
     }
 
 
@@ -103,7 +70,7 @@ class LodgeMemberAuthResponse(BaseModel):
                 "lodge_id": 1,
                 "lodge_name": "Loja Fraternidade",
                 "role_id": 3,
-                "role_name": "Venerável Mestre"
+                "role_name": "Venerável Mestre",
             }
         }
     }
@@ -113,14 +80,7 @@ class WebmasterLogin(BaseModel):
     email: EmailStr = Field(..., description="Email do Webmaster.")
     password: str = Field(..., description="Senha do Webmaster.")
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "email": "admin@sigma.com",
-                "password": "senha_admin"
-            }
-        }
-    }
+    model_config = {"json_schema_extra": {"example": {"email": "admin@sigma.com", "password": "senha_admin"}}}
 
 
 class WebmasterAuthResponse(BaseModel):
@@ -133,11 +93,7 @@ class WebmasterAuthResponse(BaseModel):
             "example": {
                 "access_token": "eyJhbG...",
                 "token_type": "bearer",
-                "user": {
-                    "id": 1,
-                    "name": "Webmaster Admin",
-                    "email": "admin@sigma.com"
-                }
+                "user": {"id": 1, "name": "Webmaster Admin", "email": "admin@sigma.com"},
             }
         }
     }

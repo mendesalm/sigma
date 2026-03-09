@@ -16,6 +16,7 @@ def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
 def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodge]:
     """Fetches all lodges with pagination."""
     from sqlalchemy.orm import joinedload
+
     return db.query(models.Lodge).options(joinedload(models.Lodge.obedience)).offset(skip).limit(limit).all()
 
 
@@ -28,7 +29,7 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
 
     try:
         db_lodge = models.Lodge(
-            **lodge.model_dump(exclude={'external_id'}),
+            **lodge.model_dump(exclude={"external_id"}),
             lodge_code=unique_code,
             is_active=True,  # Set default active status
         )
@@ -56,22 +57,22 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
 
         storage_path = os.path.join("storage", "lodges", folder_name)
         os.makedirs(storage_path, exist_ok=True)
-        
+
         # Create subdirectories using the checked storage_path
         # Structure based on existing standard (loja_2181):
         # assets/images/logo
         # publications
         # templates/balaustre (singular), templates/edital, templates/convite, templates/prancha
         # users/profile_pictures
-        
+
         os.makedirs(os.path.join(storage_path, "assets", "images"), exist_ok=True)
         os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
-        
+
         os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
         os.makedirs(os.path.join(storage_path, "templates", "edital"), exist_ok=True)
         os.makedirs(os.path.join(storage_path, "templates", "convite"), exist_ok=True)
         os.makedirs(os.path.join(storage_path, "templates", "prancha"), exist_ok=True)
-        
+
         os.makedirs(os.path.join(storage_path, "users", "profile_pictures"), exist_ok=True)
 
     except Exception as e:
@@ -81,7 +82,7 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     # --- Initial Assets Copying ---
     try:
         import shutil
-        
+
         # 1. Copy Generic Logo
         # Assuming 'storage/general_assets/logo_generico.png' exists
         generic_logo_path = os.path.join("storage", "general_assets", "logo_generico.png")
@@ -89,8 +90,7 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
             # Target: storage/lodges/{folder}/assets/images/logo.png (Matches DocumentGenerationService lookup)
             target_logo_path = os.path.join(storage_path, "assets", "images", "logo.png")
             shutil.copy2(generic_logo_path, target_logo_path)
-            
-            
+
     except Exception as copy_error:
         # Log error but don't fail the lodge creation just for assets
         print(f"Warning: Failed to copy initial assets for lodge {db_lodge.id}: {copy_error}")

@@ -4,11 +4,10 @@ from datetime import date
 from pydantic import BaseModel, EmailStr, Field
 
 
-class RelationshipTypeEnum(str, enum.Enum):
+class RelationshipTypeEnum(enum.StrEnum):
     SPOUSE = "Esposa"
     SON = "Filho"
     DAUGHTER = "Filha"
-
 
 
 # Base schema with common fields

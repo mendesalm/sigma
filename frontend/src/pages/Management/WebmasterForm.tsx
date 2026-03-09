@@ -17,11 +17,11 @@ import {
   Divider,
   useTheme
 } from '@mui/material';
-import { 
-    AdminPanelSettings as AdminPanelSettingsIcon, 
-    ArrowBack as ArrowBackIcon, 
-    Save as SaveIcon,
-    Security as SecurityIcon 
+import {
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  ArrowBack as ArrowBackIcon,
+  Save as SaveIcon,
+  Security as SecurityIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -39,16 +39,16 @@ interface Lodge {
 
 // Reuse SectionHeader pattern
 const SectionHeader = ({ title, icon, color = "primary" }: { title: string, icon?: React.ReactNode, color?: "primary" | "secondary" | "info" | "warning" | "success" }) => {
-    const theme = useTheme();
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
-            {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
-            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
-                {title}
-            </Typography>
-            <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
-        </Box>
-    );
+  const theme = useTheme();
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
+      {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
+      <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+        {title}
+      </Typography>
+      <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
+    </Box>
+  );
 };
 
 const WebmasterForm: React.FC = () => {
@@ -111,6 +111,7 @@ const WebmasterForm: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchObediences();
     fetchLodges();
     if (isEditMode) {
@@ -129,7 +130,7 @@ const WebmasterForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'email') {
       validateField(name, value);
     }
@@ -190,160 +191,191 @@ const WebmasterForm: React.FC = () => {
 
   return (
     <Container maxWidth="md" sx={{ pb: 5 }}>
-        {/* Page Header */}
-       <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Page Header */}
+      <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box>
-            <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
             {isEditMode ? 'Editar Webmaster' : 'Novo Webmaster'}
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-             {isEditMode ? 'Atualize as credenciais de acesso.' : 'Cadastre um novo administrador de sistema.'}
-            </Typography>
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {isEditMode ? 'Atualize as credenciais de acesso.' : 'Cadastre um novo administrador de sistema.'}
+          </Typography>
         </Box>
-        <Button 
-            variant="outlined" 
-            startIcon={<ArrowBackIcon />} 
-            onClick={() => navigate('/dashboard/management/webmasters')}
-            sx={{ borderRadius: 2 }}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/dashboard/management/webmasters')}
+          sx={{ borderRadius: 2 }}
         >
-            Voltar
+          Voltar
         </Button>
       </Box>
-
       {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
-      
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
-            {/* 1. Dados de Acesso */}
-            <Grid item xs={12}>
-                <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-                    <SectionHeader title="Credenciais de Acesso" icon={<SecurityIcon />} />
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                        <TextField
-                            fullWidth
-                            label="Nome de Usuário (Login)"
-                            name="username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            required
-                            variant="outlined"
-                        />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                        <TextField
-                            fullWidth
-                            label="Email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                            error={!!errors.email}
-                            helperText={errors.email}
-                            variant="outlined"
-                        />
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                        <TextField
-                            fullWidth
-                            label={isEditMode ? "Nova Senha (deixe vazio para manter)" : "Senha Inicial"}
-                            name="password"
-                            type="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required={!isEditMode}
-                            variant="outlined"
-                        />
-                        </Grid>
-                    </Grid>
-                </Paper>
-            </Grid>
+          {/* 1. Dados de Acesso */}
+          <Grid
+            size={{
+              xs: 12
+            }}>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Credenciais de Acesso" icon={<SecurityIcon />} />
+              <Grid container spacing={3}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
+                  <TextField
+                    fullWidth
+                    label="Nome de Usuário (Login)"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    error={!!errors.email}
+                    helperText={errors.email}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
+                  <TextField
+                    fullWidth
+                    label={isEditMode ? "Nova Senha (deixe vazio para manter)" : "Senha Inicial"}
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required={!isEditMode}
+                    variant="outlined"
+                  />
+                </Grid>
+              </Grid>
+            </Paper>
+          </Grid>
 
-            {/* 2. Associação (Permissões) */}
-             <Grid item xs={12}>
-                <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-                    <SectionHeader title="Nível de Acesso" icon={<AdminPanelSettingsIcon />} color="secondary" />
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel>Tipo de Vinculação</InputLabel>
-                            <Select
-                            name="type"
-                            value={formData.type}
-                            label="Tipo de Vinculação"
-                            onChange={handleSelectChange}
-                            >
-                            <MenuItem value="obedience">Obediência</MenuItem>
-                            <MenuItem value="lodge">Loja Específica</MenuItem>
-                            </Select>
-                        </FormControl>
-                        </Grid>
+          {/* 2. Associação (Permissões) */}
+          <Grid
+            size={{
+              xs: 12
+            }}>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <SectionHeader title="Nível de Acesso" icon={<AdminPanelSettingsIcon />} color="secondary" />
+              <Grid container spacing={3}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6
+                  }}>
+                  <FormControl fullWidth variant="outlined">
+                    <InputLabel>Tipo de Vinculação</InputLabel>
+                    <Select
+                      name="type"
+                      value={formData.type}
+                      label="Tipo de Vinculação"
+                      onChange={handleSelectChange}
+                    >
+                      <MenuItem value="obedience">Obediência</MenuItem>
+                      <MenuItem value="lodge">Loja Específica</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
 
-                        {formData.type === 'obedience' ? (
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined">
-                            <InputLabel>Obediência</InputLabel>
-                            <Select
-                                name="obedience_id"
-                                value={formData.obedience_id}
-                                label="Obediência"
-                                onChange={handleSelectChange}
-                            >
-                                {obediences.map((obedience) => (
-                                <MenuItem key={obedience.id} value={obedience.id}>
-                                    {obedience.name}
-                                </MenuItem>
-                                ))}
-                            </Select>
-                            </FormControl>
-                        </Grid>
-                        ) : (
-                        <Grid item xs={12} md={6}>
-                            <FormControl fullWidth variant="outlined">
-                            <InputLabel>Loja</InputLabel>
-                            <Select
-                                name="lodge_id"
-                                value={formData.lodge_id}
-                                label="Loja"
-                                onChange={handleSelectChange}
-                            >
-                                {lodges.map((lodge) => (
-                                <MenuItem key={lodge.id} value={lodge.id}>
-                                    {lodge.lodge_name}
-                                </MenuItem>
-                                ))}
-                            </Select>
-                            </FormControl>
-                        </Grid>
-                        )}
-                    </Grid>
-                </Paper>
-            </Grid>
-        
-            {/* Actions */}
-            <Grid item xs={12}>
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-                    <Button 
-                        size="large"
-                        onClick={() => navigate('/dashboard/management/webmasters')} 
-                        variant="outlined"
-                        sx={{ px: 4 }}
-                    >
-                    Cancelar
-                    </Button>
-                    <Button 
-                        type="submit" 
-                        variant="contained" 
-                        color="primary"
-                        size="large"
-                        startIcon={<SaveIcon />}
-                        sx={{ px: 4 }}
-                    >
-                    Salvar Webmaster
-                    </Button>
-                </Box>
-            </Grid>
+                {formData.type === 'obedience' ? (
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel>Obediência</InputLabel>
+                      <Select
+                        name="obedience_id"
+                        value={formData.obedience_id}
+                        label="Obediência"
+                        onChange={handleSelectChange}
+                      >
+                        {obediences.map((obedience) => (
+                          <MenuItem key={obedience.id} value={obedience.id}>
+                            {obedience.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                ) : (
+                  <Grid
+                    size={{
+                      xs: 12,
+                      md: 6
+                    }}>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel>Loja</InputLabel>
+                      <Select
+                        name="lodge_id"
+                        value={formData.lodge_id}
+                        label="Loja"
+                        onChange={handleSelectChange}
+                      >
+                        {lodges.map((lodge) => (
+                          <MenuItem key={lodge.id} value={lodge.id}>
+                            {lodge.lodge_name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
+              </Grid>
+            </Paper>
+          </Grid>
+
+          {/* Actions */}
+          <Grid
+            size={{
+              xs: 12
+            }}>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
+              <Button
+                size="large"
+                onClick={() => navigate('/dashboard/management/webmasters')}
+                variant="outlined"
+                sx={{ px: 4 }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                size="large"
+                startIcon={<SaveIcon />}
+                sx={{ px: 4 }}
+              >
+                Salvar Webmaster
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
       </form>
       <Snackbar

@@ -4,37 +4,33 @@ Configuração do pytest para o backend Sigma.
 Este arquivo é executado antes de todos os testes e define fixtures compartilhadas.
 """
 
-import pytest
 import sys
+from datetime import date
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import date, time, timedelta
-from typing import Generator
-from unittest.mock import patch
 
 # Adicionar backend ao path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from main import app
 from database import get_db
-from models.models import Base, SuperAdmin, Lodge, Member, Obedience
+from main import app
+from models.models import Base, Lodge, Member, Obedience, SuperAdmin
 from utils import password_utils
-
 
 # ============================================================================
 # Database Fixtures
 # ============================================================================
 
+
 @pytest.fixture(scope="session")
 def test_engine():
     """Cria engine de banco de dados de teste em memória."""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False}
-    )
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
     Base.metadata.create_all(bind=engine)
     yield engine
     Base.metadata.drop_all(bind=engine)
@@ -44,16 +40,16 @@ def test_engine():
 def db_session(test_engine):
     """
     Cria uma sessão de banco de dados para cada teste.
-    
+
     Rollback automático após cada teste para isolamento.
     """
     connection = test_engine.connect()
     transaction = connection.begin()
     SessionLocal = sessionmaker(bind=connection)
     session = SessionLocal()
-    
+
     yield session
-    
+
     session.close()
     transaction.rollback()
     connection.close()
@@ -63,28 +59,29 @@ def db_session(test_engine):
 # Client Fixtures
 # ============================================================================
 
+
 @pytest.fixture(scope="function")
 def client(db_session):
     """Cliente de teste da API FastAPI."""
-    
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
-    from database import get_db
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()
 
 
 # ============================================================================
 # Data Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_obedience(db_session):
@@ -95,7 +92,7 @@ def sample_obedience(db_session):
         type="Federal",
         email="contato@glmt.org.br",
         technical_contact_name="Admin Teste",
-        technical_contact_email="admin@glmt.org.br"
+        technical_contact_email="admin@glmt.org.br",
     )
     db_session.add(obedience)
     db_session.commit()
@@ -121,7 +118,7 @@ def sample_lodge(db_session, sample_obedience):
         zip_code="70000-000",
         technical_contact_name="João Silva",
         technical_contact_email="webmaster@teste.com",
-        is_active=True
+        is_active=True,
     )
     db_session.add(lodge)
     db_session.commit()
@@ -133,9 +130,7 @@ def sample_lodge(db_session, sample_obedience):
 def sample_super_admin(db_session):
     """Cria um super admin de teste."""
     admin = SuperAdmin(
-        username="admin_test",
-        email="admin@test.com",
-        password_hash=password_utils.hash_password("TestPassword123")
+        username="admin_test", email="admin@test.com", password_hash=password_utils.hash_password("TestPassword123")
     )
     db_session.add(admin)
     db_session.commit()
@@ -154,7 +149,7 @@ def sample_member(db_session, sample_lodge):
         cim="272875",
         birth_date=date(1990, 1, 1),
         degree="Mestre",
-        password_hash=password_utils.hash_password("TestPassword123")
+        password_hash=password_utils.hash_password("TestPassword123"),
     )
     db_session.add(member)
     db_session.commit()
@@ -162,14 +157,11 @@ def sample_member(db_session, sample_lodge):
 
     # Associar à loja
     from models.models import MemberLodgeAssociation
-    association = MemberLodgeAssociation(
-        member_id=member.id,
-        lodge_id=sample_lodge.id,
-        start_date=date.today()
-    )
+
+    association = MemberLodgeAssociation(member_id=member.id, lodge_id=sample_lodge.id, start_date=date.today())
     db_session.add(association)
     db_session.commit()
-    
+
     return member
 
 
@@ -177,11 +169,12 @@ def sample_member(db_session, sample_lodge):
 # Auth Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def super_admin_token(client, sample_super_admin):
     """
     Gera token de autenticação para super admin.
-    
+
     Usage:
         def test_something(client, super_admin_token):
             response = client.get(
@@ -189,13 +182,7 @@ def super_admin_token(client, sample_super_admin):
                 headers={"Authorization": f"Bearer {super_admin_token}"}
             )
     """
-    response = client.post(
-        "/auth/login",
-        data={
-            "username": "admin@test.com",
-            "password": "TestPassword123"
-        }
-    )
+    response = client.post("/auth/login", data={"username": "admin@test.com", "password": "TestPassword123"})
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -204,11 +191,8 @@ def super_admin_token(client, sample_super_admin):
 def sample_permission(db_session):
     """Cria uma permissão de teste."""
     from models.models import Permission
-    permission = Permission(
-        action="test:action",
-        description="Permissão de teste",
-        min_credential=10
-    )
+
+    permission = Permission(action="test:action", description="Permissão de teste", min_credential=10)
     db_session.add(permission)
     db_session.commit()
     db_session.refresh(permission)
@@ -219,12 +203,8 @@ def sample_permission(db_session):
 def sample_role(db_session):
     """Cria um cargo de teste."""
     from models.models import Role, RoleTypeEnum
-    role = Role(
-        name="Venerável Mestre de Teste",
-        role_type=RoleTypeEnum.LODGE,
-        level=1,
-        base_credential=100
-    )
+
+    role = Role(name="Venerável Mestre de Teste", role_type=RoleTypeEnum.LODGE, level=1, base_credential=100)
     db_session.add(role)
     db_session.commit()
     db_session.refresh(role)
@@ -235,11 +215,12 @@ def sample_role(db_session):
 def sample_webmaster(db_session, sample_lodge):
     """Cria um webmaster de teste."""
     from models.models import Webmaster
+
     webmaster = Webmaster(
         username="webmaster_test",
         email="webmaster@teste.com",
         password_hash=password_utils.hash_password("WebmasterPassword123"),
-        lodge_id=sample_lodge.id
+        lodge_id=sample_lodge.id,
     )
     db_session.add(webmaster)
     db_session.commit()
@@ -250,13 +231,7 @@ def sample_webmaster(db_session, sample_lodge):
 @pytest.fixture
 def webmaster_token(client, sample_webmaster):
     """Gera token de autenticação para webmaster."""
-    response = client.post(
-        "/auth/login",
-        data={
-            "username": "webmaster@teste.com",
-            "password": "WebmasterPassword123"
-        }
-    )
+    response = client.post("/auth/login", data={"username": "webmaster@teste.com", "password": "WebmasterPassword123"})
     assert response.status_code == 200
     return response.json()["access_token"]
 
@@ -265,14 +240,9 @@ def webmaster_token(client, sample_webmaster):
 # Markers
 # ============================================================================
 
+
 def pytest_configure(config):
     """Registra markers customizados."""
-    config.addinivalue_line(
-        "markers", "unit: Tests unitários (fast)"
-    )
-    config.addinivalue_line(
-        "markers", "integration: Tests de integração (slower)"
-    )
-    config.addinivalue_line(
-        "markers", "slow: Tests lentos"
-    )
+    config.addinivalue_line("markers", "unit: Tests unitários (fast)")
+    config.addinivalue_line("markers", "integration: Tests de integração (slower)")
+    config.addinivalue_line("markers", "slow: Tests lentos")

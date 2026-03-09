@@ -100,12 +100,16 @@ const CommitteesPage: React.FC = () => {
           Nova Comissão
         </Button>
       </Box>
-
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-
       <Grid container spacing={3}>
         {committees.map((committee) => (
-          <Grid item xs={12} md={6} lg={4} key={committee.id}>
+          <Grid
+            key={committee.id}
+            size={{
+              xs: 12,
+              md: 6,
+              lg: 4
+            }}>
             <Card 
               elevation={3}
               sx={{ 
@@ -197,7 +201,6 @@ const CommitteesPage: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-
       <CommitteeForm 
         open={isFormOpen} 
         onClose={() => setIsFormOpen(false)} 

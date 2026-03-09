@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from datetime import datetime
 
 from database import get_db
 from models.models import Visitor
@@ -11,18 +10,16 @@ router = APIRouter(
     tags=["Visitantes (Cadastro Único)"],
 )
 
+
 @router.post("/register", response_model=VisitorResponse, status_code=status.HTTP_201_CREATED)
-def register_visitor(
-    visitor_data: VisitorCreate,
-    db: Session = Depends(get_db)
-):
+def register_visitor(visitor_data: VisitorCreate, db: Session = Depends(get_db)):
     """
     Registra ou atualiza um visitante na base de dados principal.
     Retorna o registro com o ID para geração do QR Code.
     """
     # Verifica se já existe pelo CIM
     existing_visitor = db.query(Visitor).filter(Visitor.cim == visitor_data.cim).first()
-    
+
     if existing_visitor:
         # Atualiza dados existentes
         existing_visitor.full_name = visitor_data.full_name
@@ -31,10 +28,10 @@ def register_visitor(
         existing_visitor.manual_lodge_name = visitor_data.manual_lodge_name
         existing_visitor.manual_lodge_number = visitor_data.manual_lodge_number
         existing_visitor.manual_lodge_obedience = visitor_data.manual_lodge_obedience
-        
+
         db.commit()
         db.refresh(existing_visitor)
-        
+
         # Adaptação para resposta (converte ID int para str se necessário pelo schema)
         return existing_visitor
     else:
@@ -46,9 +43,9 @@ def register_visitor(
             origin_lodge_id=visitor_data.origin_lodge_id,
             manual_lodge_name=visitor_data.manual_lodge_name,
             manual_lodge_number=visitor_data.manual_lodge_number,
-            manual_lodge_obedience=visitor_data.manual_lodge_obedience
+            manual_lodge_obedience=visitor_data.manual_lodge_obedience,
         )
-        
+
         db.add(new_visitor)
         db.commit()
         db.refresh(new_visitor)
