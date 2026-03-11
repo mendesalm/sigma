@@ -257,7 +257,7 @@ class BalaustreStrategy(DocumentStrategy):
 
         return context
 
-    def get_preview_context(
+    async def get_preview_context(
         self, db: Session, lodge_id: int | None, settings: dict, session_id: int | None = None
     ) -> dict:
         """
@@ -272,9 +272,7 @@ class BalaustreStrategy(DocumentStrategy):
                 # Reuse the logic from collect_data to get full accurate context
                 # Note: collect_data calls _apply_dynamic_styles via _get_common_context -> but here we override styles from 'settings'
                 # so we might need a post-fix
-                real_context = self.service.service.loop.run_until_complete(
-                    self.collect_data(db, session_id, styles=settings.get("styles"))
-                )
+                real_context = await self.collect_data(db, session_id, styles=settings.get("styles"))
 
                 # Force settings' header/footer configs since collect_data might load stored settings
                 # But for PREVIEW, we want the "unsaved" settings from the frontend editor.

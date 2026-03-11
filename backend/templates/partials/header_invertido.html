@@ -1,33 +1,33 @@
 <div class="header-wrapper"
-    style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }}; text-align: right;">
+    style="position: relative; margin-bottom: {{ styles.get('header_config', {}).spacing_bottom }}; font-family: {{ styles.get('header_config', {}).font_family or 'inherit' }}; line-height: {{ styles.get('header_config', {}).line_height }}; text-align: right;">
 
     <!-- Background Layer -->
     <div class="header-bg" style="
         position: absolute; 
         top: 0; left: 0; right: 0; bottom: 0; 
-        background-color: {{ styles.header_config.background_color or 'transparent' }};
-        {% if styles.header_config.background_image %}
-        background-image: url('{{ styles.header_config.background_image }}');
+        background-color: {{ styles.get('header_config', {}).background_color or 'transparent' }};
+        {% if styles.get('header_config', {}).background_image %}
+        background-image: url('{{ styles.get('header_config', {}).background_image }}');
         background-size: cover;
         background-position: center;
         {% endif %}
-        opacity: {{ styles.header_config.background_opacity }};
+        opacity: {{ styles.get('header_config', {}).background_opacity }};
         z-index: 0;
     "></div>
 
     <!-- Content Layer -->
     <div class="header-content"
-        style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.3cm' }}; box-sizing: border-box; {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}">
+        style="position: relative; z-index: 1; padding: {{ styles.get('header_config', {}).padding or '0.3cm' }}; box-sizing: border-box; {% if styles.get('header_config', {}).border_bottom_show %}border-bottom: {{ styles.get('header_config', {}).border_bottom_width }} {{ styles.get('header_config', {}).border_bottom_style }} {{ styles.get('header_config', {}).border_bottom_color or styles.get('primary_color', {}) }};{% endif %}">
 
         <!-- Invertido Layout: Text Left (actually Right aligned usually), Logo Right -->
         <div style="display: flex; align-items: center; justify-content: flex-end;">
             <div style="flex-grow: 1; margin-right: 20px; text-align: right;">
                 <div
-                    style="font-size: {{ styles.header_config.font_size_title }}; color: {{ styles.header_config.color_title or styles.header_config.color or styles.primary_color }}; font-weight: bold; margin: {{ styles.header_config.margin_title or '0 0 5px 0' }}; text-transform: uppercase;">
+                    style="font-size: {{ styles.get('header_config', {}).font_size_title }}; color: {{ styles.get('header_config', {}).color_title or styles.get('header_config', {}).color or styles.get('primary_color', {}) }}; font-weight: bold; margin: {{ styles.get('header_config', {}).margin_title or '0 0 5px 0' }}; text-transform: uppercase;">
                     {{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}
                 </div>
                 <div
-                    style="font-size: {{ styles.header_config.font_size_subtitle }}; line-height: 1.2; color: {{ styles.header_config.color_subtitle or styles.header_config.color or styles.primary_color }}; margin: {{ styles.header_config.margin_subtitle or '0' }};">
+                    style="font-size: {{ styles.get('header_config', {}).font_size_subtitle }}; line-height: 1.2; color: {{ styles.get('header_config', {}).color_subtitle or styles.get('header_config', {}).color or styles.get('primary_color', {}) }}; margin: {{ styles.get('header_config', {}).margin_subtitle or '0' }};">
                     Federada ao {{ lodge_obedience or 'Grande Oriente do Brasil' }} <br>
                     Jurisdicionada ao {{ lodge_subobedience or 'GOB-SP' }}
                 </div>
@@ -36,7 +36,7 @@
             {% if header_image %}
             <div style="width: 120px; text-align: center;">
                 <img src="{{ header_image }}" alt="Logo"
-                    style="width: {{ styles.header_config.logo_size or '80px' }}; height: auto;">
+                    style="width: {{ styles.get('header_config', {}).logo_size or '80px' }}; height: auto;">
             </div>
             {% endif %}
         </div>

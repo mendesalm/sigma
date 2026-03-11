@@ -138,7 +138,7 @@ class PranchaStrategy(DocumentStrategy):
 
         return context
 
-    def get_preview_context(self, db: Session, lodge_id: int | None, settings: dict) -> dict:
+    async def get_preview_context(self, db: Session, lodge_id: int | None, settings: dict, session_id: int | None = None) -> dict:
         """
         Generates a context dictionary with mock data (or mixed with real lodge data)
         for prancha/edital preview purposes.

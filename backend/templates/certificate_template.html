@@ -8,13 +8,13 @@
         @page {
             size: {
                     {
-                    styles.page_size
+                    styles.get('page_size', {})
                 }
             }
 
                 {
                     {
-                    styles.orientation
+                    styles.get('orientation', {})
                 }
             }
 
@@ -22,7 +22,7 @@
 
             margin: {
                     {
-                    styles.page_margin
+                    styles.get('page_margin', {})
                 }
             }
 
@@ -32,7 +32,7 @@
         body {
             font-family: {
                     {
-                    styles.font_family
+                    styles.get('font_family', {})
                 }
             }
 
@@ -40,7 +40,7 @@
 
             color: {
                     {
-                    styles.primary_color
+                    styles.get('primary_color', {})
                 }
             }
 
@@ -58,18 +58,18 @@
             right: 0cm;
 
                 {
-                % if styles.show_border %
+                % if styles.get('show_border', {}) %
             }
 
             border: 5px {
                     {
-                    styles.border_style
+                    styles.get('border_style', {})
                 }
             }
 
                 {
                     {
-                    styles.primary_color
+                    styles.get('primary_color', {})
                 }
             }
 
@@ -124,7 +124,7 @@
 
             border-bottom: 1px solid {
                     {
-                    styles.primary_color
+                    styles.get('primary_color', {})
                 }
             }
 

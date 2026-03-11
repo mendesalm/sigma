@@ -1,27 +1,27 @@
 <div class="header-wrapper"
-    style="position: relative; margin-bottom: {{ styles.header_config.spacing_bottom }}; font-family: {{ styles.header_config.font_family or 'inherit' }}; line-height: {{ styles.header_config.line_height }}; text-align: center;">
+    style="position: relative; margin-bottom: {{ styles.get('header_config', {}).spacing_bottom }}; font-family: {{ styles.get('header_config', {}).font_family or 'inherit' }}; line-height: {{ styles.get('header_config', {}).line_height }}; text-align: center;">
 
     <!-- Background Layer -->
     <div class="header-bg" style="
         position: absolute; 
         top: 0; left: 0; right: 0; bottom: 0; 
-        background-color: {{ styles.header_config.background_color or 'transparent' }};
-        {% if styles.header_config.background_image %}
-        background-image: url('{{ styles.header_config.background_image }}');
+        background-color: {{ styles.get('header_config', {}).background_color or 'transparent' }};
+        {% if styles.get('header_config', {}).background_image %}
+        background-image: url('{{ styles.get('header_config', {}).background_image }}');
         background-size: cover;
         background-position: center;
         {% endif %}
-        opacity: {{ styles.header_config.background_opacity }};
+        opacity: {{ styles.get('header_config', {}).background_opacity }};
         z-index: 0;
     "></div>
 
     <!-- Content Layer -->
     <div class="header-content"
-        style="position: relative; z-index: 1; padding: {{ styles.header_config.padding or '0.3cm' }}; box-sizing: border-box; {% if styles.header_config.border_bottom_show %}border-bottom: {{ styles.header_config.border_bottom_width }} {{ styles.header_config.border_bottom_style }} {{ styles.header_config.border_bottom_color or styles.primary_color }};{% endif %}">
+        style="position: relative; z-index: 1; padding: {{ styles.get('header_config', {}).padding or '0.3cm' }}; box-sizing: border-box; {% if styles.get('header_config', {}).border_bottom_show %}border-bottom: {{ styles.get('header_config', {}).border_bottom_width }} {{ styles.get('header_config', {}).border_bottom_style }} {{ styles.get('header_config', {}).border_bottom_color or styles.get('primary_color', {}) }};{% endif %}">
 
         <!-- Timbre Layout: Just the Logo, Centered -->
         {% if header_image %}
-        <img src="{{ header_image }}" alt="Logo" style="max-height: {{ styles.header_config.logo_size }}; width: auto;">
+        <img src="{{ header_image }}" alt="Logo" style="max-height: {{ styles.get('header_config', {}).logo_size }}; width: auto;">
         {% endif %}
 
     </div>

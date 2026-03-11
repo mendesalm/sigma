@@ -56,7 +56,7 @@
 
 {# --- MAIN LAYOUT LOGIC --- #}
 
-{% set config = styles.header_config %}
+{% set config = styles.get('header_config', {}) %}
 {% set placeholders = {
 'lodge_title_formatted': lodge_title_formatted or 'A∴R∴L∴S∴',
 'lodge_name': lodge_name or 'Nome da Loja',

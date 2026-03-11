@@ -328,10 +328,6 @@ class DocumentGenerationService:
         # Mapeamento de Caminhos
         subpath = None
         if template_name == "balaustre_template.html":
-            # Force FILE usage during dev/debug to bypass stale DB
-            template = self.env.get_template(template_name)
-            return template.render(data)
-        elif template_name == "balaustre_template.html":
             subpath = os.path.join("templates", "balaustre", template_name)
         elif template_name == "edital_template.html":
             subpath = os.path.join("templates", "edital", template_name)
@@ -383,16 +379,19 @@ class DocumentGenerationService:
         styles = data.get("styles")
         if styles:
             # Handle both dict and Pydantic object
-            if isinstance(styles, dict):
-                header_config = styles.get("header_config", {})
-                if isinstance(header_config, dict):
-                    custom_logo_url = header_config.get("logo_url")
-                else:
-                    custom_logo_url = getattr(header_config, "logo_url", None)
+            if hasattr(styles, "model_dump"):
+                styles_dict = styles.model_dump()
+                data["styles"] = styles_dict # Ensure template gets a dict
+            elif isinstance(styles, dict):
+                styles_dict = styles
             else:
-                header_config = getattr(styles, "header_config", None)
-                if header_config:
-                    custom_logo_url = getattr(header_config, "logo_url", None)
+                styles_dict = dict(styles)
+                data["styles"] = styles_dict
+
+            header_config = styles_dict.get("header_config", {})
+            custom_logo_url = header_config.get("logo_url")
+        else:
+            data["styles"] = {} # Ensure it's never undefined in template
 
         if custom_logo_url:
             data["header_image"] = custom_logo_url
@@ -837,7 +836,7 @@ class DocumentGenerationService:
         _, pdf_bytes, _ = await self.generate_document("balaustre", session_id, {}, **kwargs)
         return pdf_bytes
 
-    def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None, session_id: int = None) -> str:
+    async def generate_preview_html(self, doc_type: str, settings: dict, lodge_id: int = None, session_id: int = None) -> str:
         """
         Generates the full HTML preview for a document type using the provided settings.
         Uses mock data if no lodge_id/session_id provided, or real data if session_id is present.
@@ -848,7 +847,7 @@ class DocumentGenerationService:
 
             if hasattr(strategy, "get_preview_context"):
                 # Pass session_id to context builder
-                context = strategy.get_preview_context(db, lodge_id, settings, session_id=session_id)
+                context = await strategy.get_preview_context(db, lodge_id, settings, session_id=session_id)
             else:
                 # Fallback for strategies without preview support
                 context = {"styles": settings.get("styles", {}), "mock_data": True}

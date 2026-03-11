@@ -180,7 +180,7 @@ def get_document_defaults(doc_type: str, db: Session = Depends(database.get_db))
 
 
 @router.post("/preview/{doc_type}")
-def get_full_document_preview(doc_type: str, payload: dict[str, Any], db: Session = Depends(database.get_db)):
+async def get_full_document_preview(doc_type: str, payload: dict[str, Any], db: Session = Depends(database.get_db)):
     """
     Renders the FULL document HTML preview (Header + Titles + Body + Footer) for a given type.
     Payload: { "settings": DocumentSettings, "lodge_id": Optional[int] }
@@ -195,7 +195,7 @@ def get_full_document_preview(doc_type: str, payload: dict[str, Any], db: Sessio
 
     print(f"DEBUG: Preview Settings Payload: {settings}, Session ID: {session_id}")
 
-    html = service.generate_preview_html(doc_type, settings, lodge_id, session_id=session_id)
+    html = await service.generate_preview_html(doc_type, settings, lodge_id, session_id=session_id)
 
     try:
         with open("debug_preview_output.html", "w", encoding="utf-8") as f:

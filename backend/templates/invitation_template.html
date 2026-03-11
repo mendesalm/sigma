@@ -26,7 +26,7 @@
             align-items: center;
             justify-content: center;
             border: 20px solid transparent;
-            border-image: url('data:image/png;base64,{{ styles.border_image_base64 }}') 30 stretch;
+            border-image: url('data:image/png;base64,{{ styles.get('border_image_base64', {}) }}') 30 stretch;
             box-sizing: border-box;
             background: radial-gradient(circle, #fffff0 0%, #fff 100%);
             padding: 40px;
