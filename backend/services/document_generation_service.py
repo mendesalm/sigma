@@ -82,12 +82,12 @@ class DocumentGenerationService:
 
         # Caminhos base
         backend_dir = os.path.dirname(os.path.dirname(__file__))  # .../sigma/backend
-        project_root = os.path.dirname(backend_dir)  # .../sigma
 
         # Configura o Loader para buscar em múltiplos locais
         template_paths = [
             os.path.join(backend_dir, "templates"),  # Legacy/Fallback
-            os.path.join(project_root, "storage", "lodges", "model", "templates"),  # New Modular Components
+            os.path.join(backend_dir, "templates", "partials"),  # Legacy Partials (header_master.html)
+            os.path.join(backend_dir, "storage", "lodges", "model", "templates"),  # New Modular Components
         ]
 
         self.env = Environment(loader=FileSystemLoader(template_paths))

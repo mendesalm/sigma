@@ -1245,28 +1245,24 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                                     )}
 
                                     {/* CSS Reset for Preview Content to match Editor */}
-                                    <style>{`
-                                        .preview-content p {
-                                            margin-bottom: 0;
-                                            margin-top: 0;
-                                            line-height: 1.15;
-                                            color: #000000;
-                                        }
-                                        .preview-content span, .preview-content div, .preview-content li {
-                                            color: #000000;
-                                        }
-                                        /* Helper to ensure titles are uppercase in preview */
-                                        .preview-title-section, .preview-content h1, .preview-content h2, .preview-content h3 {
-                                            text-transform: uppercase;
-                                        }
-                                    `}</style>
-
                                     {previewLoading ? (
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '800px' }}>
                                             <CircularProgress />
                                         </Box>
                                     ) : (
-                                        <div className="preview-content" style={{ position: 'relative', zIndex: 10, width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                                        <iframe
+                                            srcDoc={previewHtml}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                minHeight: '800px',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                position: 'relative',
+                                                zIndex: 10
+                                            }}
+                                            title="Pré-visualização do Documento"
+                                        />
                                     )}
                                 </Paper>
                             </Box>
