@@ -2,6 +2,21 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+class PageSettings(BaseModel):
+    format: str = Field(default="A4", description="Tamanho do papel")
+    orientation: Literal["portrait", "landscape"] = Field(default="portrait", description="Orientação da página")
+    margin_top: str = Field(default="1cm")
+    margin_bottom: str = Field(default="1cm")
+    margin_left: str = Field(default="1cm")
+    margin_right: str = Field(default="1cm")
+    background_color: str = Field(default="#ffffff", description="Cor de fundo da página")
+    background_image: str | None = Field(default=None, description="URL da imagem de fundo")
+    show_border: bool = Field(default=False)
+    border_style: str = Field(default="solid")
+    border_color: str = Field(default="#000000")
+    border_width: str = Field(default="1px")
+    watermark_image: str | None = Field(default=None)
+    watermark_opacity: float = Field(default=0.1)
 
 class SectionStyles(BaseModel):
     font_family: str | None = None
@@ -130,6 +145,25 @@ class DocumentStyles(BaseModel):
     footer_config: FooterConfig = Field(default_factory=FooterConfig)
 
 
+class ContentSettings(BaseModel):
+    header_template: str | None = None
+    body_template: str | None = None
+    footer_template: str | None = None
+    signatures_template: str | None = None
+    titles_template: str | None = None
+    preamble_template: str | None = None
+    date_place_template: str | None = None
+
+    header_config: HeaderConfig = Field(default_factory=HeaderConfig)
+    titles_config: TitlesConfig = Field(default_factory=TitlesConfig)
+    content_config: SectionStyles = Field(default_factory=SectionStyles)
+    signatures_config: SignaturesConfig = Field(default_factory=SignaturesConfig)
+    footer_config: FooterConfig = Field(default_factory=FooterConfig)
+
+    class Config:
+        extra = "allow"
+
+
 class DocumentTypeSettings(BaseModel):
     header: str = Field(default="header_classico.html", description="Template parcial do cabeçalho")
     body: str = Field(default="template_padrao.html", description="Template do corpo")
@@ -149,7 +183,14 @@ class DocumentTypeSettings(BaseModel):
     )
     header_template: str | None = Field(default=None, description="Template personalizado do cabeçalho (HTML/Jinja2)")
     footer_template: str | None = Field(default=None, description="Template personalizado do rodapé (HTML/Jinja2)")
-    styles: DocumentStyles = Field(default_factory=DocumentStyles)
+    styles: DocumentStyles | None = Field(default_factory=DocumentStyles)
+    
+    # NEW SCHEMA V2
+    page_settings: PageSettings | None = None
+    content_settings: ContentSettings | None = None
+
+    class Config:
+        extra = "allow"
 
 
 class DocumentSettings(BaseModel):

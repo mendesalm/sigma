@@ -1,8 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<meta charset="UTF-8">
-<title>Prancha</title>
+<!-- O estilo dinâmico interno do conteúdo e formatações de tabela/títulos -->
 {{ dynamic_style_block | safe }}
 <style>
     .preamble-section,
@@ -14,14 +10,8 @@
         padding-right: 0.3cm;
     }
 </style>
-</head>
 
-<body>
-
-    <div class="watermark"></div>
-    <div class="page-border"></div>
-
-    <div class="page-content">
+<div class="page-content">
 
         <!-- Modular Header -->
         {% if custom_header %}
@@ -115,7 +105,4 @@
             {% endif %}
         </div>
     </div>
-
-</body>
-
-</html>
+<!-- Fim da renderização do tipo de documento -->

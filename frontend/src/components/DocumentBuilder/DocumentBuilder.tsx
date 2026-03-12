@@ -20,11 +20,12 @@ import {
     AccordionDetails,
     Slider,
     Divider,
-    Tab,
-    Tabs,
     ToggleButton,
     ToggleButtonGroup,
-    Chip
+    Chip,
+    Stepper,
+    Step,
+    StepButton
 } from '@mui/material';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -158,7 +159,8 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
     // State
     const [currentType, setCurrentType] = useState('balaustre');
-    const [activeConfigTab, setActiveConfigTab] = useState(0); // 0: Layout/Timbre, 1: Conteúdo/Modelo
+    const [activeStep, setActiveStep] = useState(0);
+    const steps = ['Tipo de Documento', 'Papel e Bordas', 'Cabeçalho e Rodapé', 'Conteúdo e Estrutura'];
     const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
     const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer' | 'preamble' | 'signatures' | 'date_place'>('content');
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>('page_section');
@@ -386,12 +388,67 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
         }
     };
 
+    /**
+     * Transforms the flat allSettings into the V2 schema with page_settings and content_settings.
+     * Keeps the original `styles` for backwards compatibility.
+     */
+    const buildPayloadV2 = (settings: typeof allSettings) => {
+        const result: Record<string, any> = {};
+
+        for (const [docType, docSettings] of Object.entries(settings)) {
+            const s = docSettings.styles;
+
+            // Extract page-level fields into PageSettings
+            const page_settings = {
+                format: s.page_size || 'A4',
+                orientation: s.orientation || 'portrait',
+                margin_top: s.page_margin || '1cm',
+                margin_bottom: s.page_margin || '1cm',
+                margin_left: s.page_margin || '1cm',
+                margin_right: s.page_margin || '1cm',
+                background_color: s.background_color || '#ffffff',
+                background_image: (s.background_image && s.background_image !== 'none') ? s.background_image : null,
+                show_border: s.show_border ?? false,
+                border_style: s.border_style || 'solid',
+                border_color: s.border_color || '#000000',
+                border_width: s.border_width || '1px',
+                watermark_image: s.watermark_image || null,
+                watermark_opacity: s.watermark_opacity ?? 0.1,
+            };
+
+            // Extract content-level configs into ContentSettings
+            const content_settings = {
+                header_template: docSettings.header_template || null,
+                body_template: docSettings.content_template || null,
+                footer_template: docSettings.footer_template || null,
+                signatures_template: docSettings.signatures_template || null,
+                titles_template: docSettings.titles_template || null,
+                preamble_template: docSettings.preamble_template || null,
+                date_place_template: docSettings.date_place_template || null,
+                header_config: s.header_config || {},
+                titles_config: s.titles_config || {},
+                content_config: s.content_config || {},
+                signatures_config: s.signatures_config || {},
+                footer_config: s.footer_config || {},
+            };
+
+            result[docType] = {
+                ...docSettings,
+                page_settings,
+                content_settings,
+            };
+        }
+
+        return result;
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
             if (mode === 'lodge') {
                 if (!effectiveLodgeId) return;
-                const payload = { document_settings: allSettings };
+                const enrichedSettings = buildPayloadV2(allSettings);
+                const payload = { document_settings: enrichedSettings };
                 await api.put(`/lodges/${effectiveLodgeId}`, payload);
                 showSnackbar('Configurações salvas com sucesso!', 'success');
             } else {
@@ -548,11 +605,13 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
 
 
-    const renderLayoutControls = () => (
+    
+    const renderSidebarControls = () => (
         <Box sx={{ p: 2, overflowY: 'auto', height: '100%' }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>CONFIGURAÇÕES GERAIS (TIMBRE)</Typography>
-
-            <Accordion expanded={expandedAccordion === 'page_section'} onChange={handleAccordionChange('page_section')}>
+            {activeStep === 1 && (
+                <>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>CONFIGURAÇÕES DA PÁGINA</Typography>
+                    <Accordion expanded={expandedAccordion === 'page_section'} onChange={handleAccordionChange('page_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Página e Fundo</Typography>
                 </AccordionSummary>
@@ -603,8 +662,53 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Grid>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'header_section'} onChange={handleAccordionChange('header_section')}>
+                    <Accordion expanded={expandedAccordion === 'borders_section'} onChange={handleAccordionChange('borders_section')}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Bordas e Marca d'Água</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Grid container spacing={2}>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Estilo Borda</InputLabel>
+                                <Select value={currentSettings.styles.show_border ? currentSettings.styles.border_style : 'none'} label="Estilo Borda"
+                                    onChange={(e) => {
+                                        if (e.target.value === 'none') updateCurrentSetting('show_border', false, true);
+                                        else { updateCurrentSetting('show_border', true, true); updateCurrentSetting('border_style', e.target.value, true); }
+                                    }}>
+                                    <MenuItem value="none">Sem Borda</MenuItem>
+                                    <MenuItem value="solid">Linha Simples</MenuItem>
+                                    <MenuItem value="double">Linha Dupla</MenuItem>
+                                    <MenuItem value="masonic_v2">Borda Maçônica V2</MenuItem>
+                                    <MenuItem value="masonic_v1">Borda Maçônica</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            {renderFileUploadControl("Marca d'Água", "styles", "watermark_image", currentSettings.styles.watermark_image)}
+                        </Grid>
+                        <Grid
+                            size={{
+                                xs: 12
+                            }}>
+                            <Typography variant="caption">Opacidade: {Math.round((currentSettings.styles.watermark_opacity || 0.1) * 100)}%</Typography>
+                            <Slider size="small" value={currentSettings.styles.watermark_opacity || 0.1} min={0} max={1} step={0.05} onChange={(_, v) => updateCurrentSetting('watermark_opacity', v, true)} />
+                        </Grid>
+                    </Grid>
+                </AccordionDetails>
+            </Accordion>
+                </>
+            )}
+            {activeStep === 2 && (
+                <>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>CABEÇALHO E RODAPÉ</Typography>
+                    <Accordion expanded={expandedAccordion === 'header_section'} onChange={handleAccordionChange('header_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Cabeçalho</Typography>
                 </AccordionSummary>
@@ -748,8 +852,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'footer_section'} onChange={handleAccordionChange('footer_section')}>
+                    <Accordion expanded={expandedAccordion === 'footer_section'} onChange={handleAccordionChange('footer_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Rodapé</Typography>
                 </AccordionSummary>
@@ -798,8 +901,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'signatures_layout_section'} onChange={handleAccordionChange('signatures_layout_section')}>
+                    <Accordion expanded={expandedAccordion === 'signatures_layout_section'} onChange={handleAccordionChange('signatures_layout_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Assinaturas (Layout)</Typography>
                 </AccordionSummary>
@@ -814,56 +916,12 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Grid>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'borders_section'} onChange={handleAccordionChange('borders_section')}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Bordas e Marca d'Água</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <Grid container spacing={2}>
-                        <Grid
-                            size={{
-                                xs: 12
-                            }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Estilo Borda</InputLabel>
-                                <Select value={currentSettings.styles.show_border ? currentSettings.styles.border_style : 'none'} label="Estilo Borda"
-                                    onChange={(e) => {
-                                        if (e.target.value === 'none') updateCurrentSetting('show_border', false, true);
-                                        else { updateCurrentSetting('show_border', true, true); updateCurrentSetting('border_style', e.target.value, true); }
-                                    }}>
-                                    <MenuItem value="none">Sem Borda</MenuItem>
-                                    <MenuItem value="solid">Linha Simples</MenuItem>
-                                    <MenuItem value="double">Linha Dupla</MenuItem>
-                                    <MenuItem value="masonic_v2">Borda Maçônica V2</MenuItem>
-                                    <MenuItem value="masonic_v1">Borda Maçônica</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid
-                            size={{
-                                xs: 12
-                            }}>
-                            {renderFileUploadControl("Marca d'Água", "styles", "watermark_image", currentSettings.styles.watermark_image)}
-                        </Grid>
-                        <Grid
-                            size={{
-                                xs: 12
-                            }}>
-                            <Typography variant="caption">Opacidade: {Math.round((currentSettings.styles.watermark_opacity || 0.1) * 100)}%</Typography>
-                            <Slider size="small" value={currentSettings.styles.watermark_opacity || 0.1} min={0} max={1} step={0.05} onChange={(_, v) => updateCurrentSetting('watermark_opacity', v, true)} />
-                        </Grid>
-                    </Grid>
-                </AccordionDetails>
-            </Accordion>
-        </Box>
-    );
-
-    const renderContentControls = () => (
-        <Box sx={{ p: 2, overflowY: 'auto', height: '100%' }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>CONFIGURAÇÕES DE CONTEÚDO</Typography>
-
-            <Accordion expanded={expandedAccordion === 'titles_section'} onChange={handleAccordionChange('titles_section')}>
+                </>
+            )}
+            {activeStep === 3 && (
+                <>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>ESTRUTURA DE CONTEÚDO</Typography>
+                    <Accordion expanded={expandedAccordion === 'titles_section'} onChange={handleAccordionChange('titles_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Títulos do Documento</Typography>
                 </AccordionSummary>
@@ -920,8 +978,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'content_section'} onChange={handleAccordionChange('content_section')}>
+                    <Accordion expanded={expandedAccordion === 'content_section'} onChange={handleAccordionChange('content_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Corpo do Texto</Typography>
                 </AccordionSummary>
@@ -964,8 +1021,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'preamble_section'} onChange={handleAccordionChange('preamble_section')}>
+                    <Accordion expanded={expandedAccordion === 'preamble_section'} onChange={handleAccordionChange('preamble_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Preâmbulo</Typography>
                 </AccordionSummary>
@@ -987,8 +1043,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'signatures_section'} onChange={handleAccordionChange('signatures_section')}>
+                    <Accordion expanded={expandedAccordion === 'signatures_section'} onChange={handleAccordionChange('signatures_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Assinaturas da Prancha</Typography>
                 </AccordionSummary>
@@ -1010,8 +1065,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
-
-            <Accordion expanded={expandedAccordion === 'date_place_section'} onChange={handleAccordionChange('date_place_section')}>
+                    <Accordion expanded={expandedAccordion === 'date_place_section'} onChange={handleAccordionChange('date_place_section')}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Data e Local</Typography>
                 </AccordionSummary>
@@ -1033,6 +1087,40 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     </Box>
                 </AccordionDetails>
             </Accordion>
+                </>
+            )}
+        </Box>
+    );
+
+    const renderStep0DocumentType = () => (
+        <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', bgcolor: '#0f172a' }}>
+            <Typography variant="h5" color="white" gutterBottom>Selecione o Tipo de Documento</Typography>
+            <Typography variant="body1" sx={{ color: '#94a3b8', mb: 4 }}>Escolha qual documento deseja configurar ou personalizar.</Typography>
+            <Grid container spacing={{ xs: 2, md: 3 }} justifyContent="center" sx={{ maxWidth: '800px' }}>
+                {DOC_TYPES.map(t => (
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={t.key}>
+                        <Paper 
+                            sx={{ 
+                                p: 3, 
+                                textAlign: 'center', 
+                                cursor: 'pointer', 
+                                bgcolor: currentType === t.key ? '#3b82f6' : '#1e293b',
+                                color: 'white',
+                                transition: 'all 0.2s',
+                                '&:hover': { bgcolor: currentType === t.key ? '#2563eb' : '#334155' },
+                                border: currentType === t.key ? '2px solid #60a5fa' : '2px solid transparent'
+                            }}
+                            onClick={() => {
+                                setCurrentType(t.key);
+                                setTimeout(() => setActiveStep(1), 150); // Auto advance slightly delayed
+                            }}
+                        >
+                            <DescriptionIcon sx={{ fontSize: 48, mb: 1, opacity: currentType === t.key ? 1 : 0.7 }} />
+                            <Typography variant="h6">{t.label}</Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
         </Box>
     );
 
@@ -1057,70 +1145,78 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
 
     const isCustom = !!(lodgeData?.document_settings?.[currentType]);
 
+    
     return (
         <Box sx={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
-            {/* Header Toolbar */}
-            <Paper elevation={2} sx={{ p: 2, mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <DescriptionIcon color="primary" />
-                    <Box>
-                        <Typography variant="h6" component="h1" sx={{ lineHeight: 1.2 }}>
-                            Construtor de Documentos
-                        </Typography>
-                        <Chip
-                            label={isCustom ? "Modelo Personalizado" : "Padrão Sigma"}
-                            size="small"
-                            color={isCustom ? "info" : "success"}
-                            variant={isCustom ? "filled" : "outlined"}
-                            sx={{ mt: 0.5, fontWeight: 'bold' }}
-                        />
+            <Paper elevation={2} sx={{ p: 0, mb: 2, display: 'flex', flexDirection: 'column', borderRadius: 0 }}>
+                {/* Header Toolbar */}
+                <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <DescriptionIcon color="primary" />
+                        <Box>
+                            <Typography variant="h6" component="h1" sx={{ lineHeight: 1.2 }}>
+                                Construtor de Documentos
+                            </Typography>
+                            <Chip
+                                label={isCustom ? "Modelo Personalizado" : "Padrão Sigma"}
+                                size="small"
+                                color={isCustom ? "info" : "success"}
+                                variant={isCustom ? "filled" : "outlined"}
+                                sx={{ mt: 0.5, fontWeight: 'bold' }}
+                            />
+                        </Box>
+                        {activeStep > 0 && (
+                            <>
+                                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="body2" color="textSecondary">Editando:</Typography>
+                                    <Chip label={DOC_TYPES.find(d => d.key === currentType)?.label || currentType} color="primary" variant="outlined" size="small" />
+                                </Box>
+                            </>
+                        )}
                     </Box>
-                    <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                    <FormControl size="small" sx={{ minWidth: 200 }}>
-                        <Select value={currentType} onChange={(e) => setCurrentType(e.target.value)} displayEmpty>
-                            {DOC_TYPES.map(t => <MenuItem key={t.key} value={t.key}>{t.label}</MenuItem>)}
-                        </Select>
-                    </FormControl>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="outlined"
+                            color="warning"
+                            onClick={handleReset}
+                            disabled={saving}
+                            sx={{ borderColor: '#f59e0b', color: '#f59e0b', '&:hover': { borderColor: '#d97706', bgcolor: 'rgba(245, 158, 11, 0.1)' } }}
+                        >
+                            Restaurar Padrão Sigma
+                        </Button>
+                        <Button variant="contained" color="primary" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
+                            {saving ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                    </Box>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                        variant="outlined"
-                        color="warning"
-                        onClick={handleReset}
-                        disabled={saving}
-                        sx={{ borderColor: '#f59e0b', color: '#f59e0b', '&:hover': { borderColor: '#d97706', bgcolor: 'rgba(245, 158, 11, 0.1)' } }}
-                    >
-                        Restaurar Padrão Sigma
-                    </Button>
-                    <Button variant="contained" color="primary" startIcon={<SaveIcon />} onClick={handleSave} disabled={saving}>
-                        {saving ? 'Salvando...' : 'Salvar Alterações'}
-                    </Button>
+                {/* Stepper */}
+                <Box sx={{ width: '100%', py: 1.5, px: 4, bgcolor: '#f8fafc' }}>
+                    <Stepper nonLinear activeStep={activeStep}>
+                        {steps.map((label, index) => (
+                            <Step key={label} completed={activeStep > index}>
+                                <StepButton color="inherit" onClick={() => setActiveStep(index)}>
+                                    {label}
+                                </StepButton>
+                            </Step>
+                        ))}
+                    </Stepper>
                 </Box>
             </Paper>
-            <Grid container sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                {/* LEFT SIDEBAR (Controls) */}
-                <Grid
-                    sx={{ height: '100%', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}
-                    size={{
-                        xs: 12,
-                        md: 3,
-                        lg: 3
-                    }}>
-                    <Paper square sx={{ zIndex: 1 }}>
-                        <Tabs
-                            value={activeConfigTab}
-                            onChange={(_, v) => { setActiveConfigTab(v); if (v === 0) setViewMode('preview'); }}
-                            variant="fullWidth"
-                            indicatorColor="primary"
-                            textColor="primary"
-                        >
-                            <Tab label="Layout & Timbre" iconPosition="start" />
-                            <Tab label="Conteúdo & Modelo" iconPosition="start" />
-                        </Tabs>
-                    </Paper>
 
-                    {activeConfigTab === 0 ? renderLayoutControls() : renderContentControls()}
-                </Grid>
+            <Grid container sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                {activeStep === 0 ? (
+                    <Grid size={{ xs: 12 }}>
+                        {renderStep0DocumentType()}
+                    </Grid>
+                ) : (
+                    <>
+                        {/* LEFT SIDEBAR (Controls) */}
+                        <Grid
+                            sx={{ height: '100%', borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}
+                            size={{ xs: 12, md: 3, lg: 3 }}>
+                            {renderSidebarControls()}
+                        </Grid>
 
                 {/* RIGHT MAIN AREA (Preview / Editor) */}
                 <Grid
@@ -1132,7 +1228,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     }}>
 
                     {/* View Switcher Toolbar (Visible in Content Tab OR when in Editor Mode) */}
-                    {(activeConfigTab === 1 || viewMode === 'editor') && (
+                    {(activeStep === 3 || viewMode === 'editor') && (
                         <Box sx={{ p: 1, bgcolor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                             <ToggleButtonGroup
                                 value={viewMode}
@@ -1335,6 +1431,8 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                         )}
                     </Box>
                 </Grid>
+                    </>
+                )}
             </Grid>
             <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                 <Alert severity={snackbar.severity}>{snackbar.message}</Alert>

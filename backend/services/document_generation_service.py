@@ -792,9 +792,30 @@ class DocumentGenerationService:
             # 1. Collect Data
             context = await strategy.collect_data(db, main_entity_id, **kwargs)
 
-            # 2. Render Template
-            html_content = self._render_template(strategy.get_template_name(), context)
+            # 2. Render Inner Template
+            inner_content = self._render_template(strategy.get_template_name(), context)
 
+            # 3. Extract Page Settings
+            styles = context.get('styles', {})
+            if hasattr(styles, "model_dump"):
+                styles_dict = styles.model_dump()
+            elif isinstance(styles, dict):
+                styles_dict = styles
+            else:
+                try:
+                    styles_dict = dict(styles)
+                except:
+                    styles_dict = {}
+
+            page_settings = styles_dict.get('page_settings') or {}
+
+            # 4. Wrap with Base Paper Layout
+            paper_context = {
+                "page_settings": page_settings,
+                "app_url": os.getenv("APP_URL", "http://localhost:8000"),
+                "pdf_content": inner_content
+            }
+            html_content = self.env.get_template("base_paper.html").render(paper_context)
             # DEBUG: Save HTML to file to inspect styles
             try:
                 debug_path = f"debug_document_{doc_type}_{main_entity_id}.html"

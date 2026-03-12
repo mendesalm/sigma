@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title | default('Documento') }}</title>
+    <!-- CSS Isolado para a Folha de Papel (Phase 1 Refactoring) -->
+    <style>
+        @page {
+            size: {{ page_settings.get('format', 'A4') }} {{ page_settings.get('orientation', 'portrait') }};
+            margin-top: {{ page_settings.get('margin_top', '1cm') }};
+            margin-bottom: {{ page_settings.get('margin_bottom', '1cm') }};
+            margin-left: {{ page_settings.get('margin_left', '1cm') }};
+            margin-right: {{ page_settings.get('margin_right', '1cm') }};
+        }
+        body {
+            font-family: Arial, sans-serif; /* Fallback Typography */
+            background-color: {{ page_settings.get('background_color', '#ffffff') }};
+            {% if page_settings.get('background_image') %}
+            background-image: url('{{ page_settings.get('background_image') }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            {% endif %}
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+
+        {% if page_settings.get('show_border') %}
+        .page-border {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            {% if page_settings.get('border_style') == 'masonic_v1' %}
+            border: 3px solid transparent;
+            border-image: url('{{ app_url | default("") }}/static/borders/border_masonic_v1.png') 30 round;
+            {% else %}
+            border: {{ page_settings.get('border_width', '1px') }} {{ page_settings.get('border_style', 'solid') }} {{ page_settings.get('border_color', '#000000') }};
+            {% endif %}
+            pointer-events: none;
+            z-index: 50;
+        }
+        {% endif %}
+
+        {% if page_settings.get('watermark_image') %}
+        .watermark {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('{{ page_settings.get('watermark_image') }}');
+            background-size: 60%;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: {{ page_settings.get('watermark_opacity', 0.1) }};
+            pointer-events: none;
+            z-index: 0;
+        }
+        {% endif %}
+
+        /* Container que envolve o tipo específico de documento (Balaústre, Certificado) */
+        .document-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    {% if page_settings.get('watermark_image') %}
+    <div class="watermark"></div>
+    {% endif %}
+
+    {% if page_settings.get('show_border') %}
+    <div class="page-border"></div>
+    {% endif %}
+
+    <div class="document-wrapper">
+        <!-- O Miolo do documento compilado é injetado aqui -->
+        {{ pdf_content | safe }}
+    </div>
+</body>
+</html>
