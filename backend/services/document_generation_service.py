@@ -313,6 +313,216 @@ class DocumentGenerationService:
 
         return f"data:image/png;base64,{img_str}"
 
+    # =========================================================================
+    # V3 — Cascata Granular & Composição Estrutural
+    # =========================================================================
+
+    @staticmethod
+    def _merge_settings_granular(global_settings: dict, local_settings: dict) -> dict:
+        """
+        Merge granular campo-a-campo: Local sobrescreve Global para cada chave presente.
+        Dicts aninhados são merged recursivamente. Valores None em local NÃO sobrescrevem.
+
+        Níveis:
+          Global (Padronização) → fornece defaults
+          Instancial (Personalização) → sobrescreve seletivamente
+        """
+        merged = {}
+        all_keys = set(list(global_settings.keys()) + list(local_settings.keys()))
+
+        for key in all_keys:
+            global_val = global_settings.get(key)
+            local_val = local_settings.get(key)
+
+            if local_val is None:
+                merged[key] = global_val
+            elif isinstance(global_val, dict) and isinstance(local_val, dict):
+                merged[key] = DocumentGenerationService._merge_settings_granular(global_val, local_val)
+            else:
+                merged[key] = local_val
+
+        return merged
+
+    def _get_merged_document_settings(self, db: Session, doc_type: str, lodge_id: int | None) -> dict:
+        """
+        Resolve as configurações finais de um tipo de documento combinando
+        Global (Padronização) + Instancial (Personalização).
+
+        Retorna dict com: page_settings, structural_elements, element_configs
+        """
+        from schemas.document_settings_schema import DEFAULT_ELEMENTS_MAP
+
+        # 1. Buscar Padronização (Global)
+        global_tpl = (
+            db.query(models.GlobalDocumentTemplate)
+            .filter(models.GlobalDocumentTemplate.document_type == doc_type.upper())
+            .first()
+        )
+        global_page = (global_tpl.page_settings_json or {}) if global_tpl else {}
+        global_elements = (global_tpl.structural_elements_json or DEFAULT_ELEMENTS_MAP.get(doc_type, [])) if global_tpl else DEFAULT_ELEMENTS_MAP.get(doc_type, [])
+        global_configs = (global_tpl.element_configs_json or {}) if global_tpl else {}
+
+        # 2. Buscar Personalização (Instancial)
+        if lodge_id:
+            local_tpl = (
+                db.query(models.LocalDocumentTemplate)
+                .filter(
+                    models.LocalDocumentTemplate.lodge_id == lodge_id,
+                    models.LocalDocumentTemplate.document_type == doc_type.upper(),
+                    models.LocalDocumentTemplate.is_active.is_(True),
+                )
+                .first()
+            )
+        else:
+            local_tpl = None
+
+        local_page = (local_tpl.page_settings_json or {}) if local_tpl else {}
+        local_elements = (local_tpl.structural_elements_json or None) if local_tpl else None
+        local_configs = (local_tpl.element_configs_json or {}) if local_tpl else {}
+
+        # 3. Merge granular
+        merged_page = self._merge_settings_granular(global_page, local_page)
+        merged_elements = local_elements if local_elements is not None else global_elements
+        merged_configs = self._merge_settings_granular(global_configs, local_configs)
+
+        return {
+            "page_settings": merged_page,
+            "structural_elements": merged_elements,
+            "element_configs": merged_configs,
+        }
+
+    def _render_element_html(
+        self,
+        element_key: str,
+        element_config: dict,
+        context: dict,
+        text_override: str | None = None,
+    ) -> str:
+        """
+        Renderiza um único elemento estrutural.
+
+        Se text_override (adequação do secretário) for fornecido, usa-o no lugar
+        do template padrão para o conteúdo textual do elemento.
+        """
+        # Determinar o conteúdo textual
+        text_template = text_override or element_config.get("text_template", "")
+
+        # Mesclar config no contexto para usar em estilos inline
+        render_context = {**context, "element_config": element_config}
+
+        # Determinar estilo CSS a partir da config
+        style_parts = []
+        if element_config.get("font_family"):
+            style_parts.append(f"font-family: {element_config['font_family']}")
+        if element_config.get("font_size"):
+            style_parts.append(f"font-size: {element_config['font_size']}")
+        if element_config.get("color"):
+            style_parts.append(f"color: {element_config['color']}")
+        if element_config.get("bold"):
+            style_parts.append("font-weight: bold")
+        if element_config.get("italic"):
+            style_parts.append("font-style: italic")
+        if element_config.get("alignment"):
+            style_parts.append(f"text-align: {element_config['alignment']}")
+        if element_config.get("line_height"):
+            style_parts.append(f"line-height: {element_config['line_height']}")
+        if element_config.get("padding"):
+            style_parts.append(f"padding: {element_config['padding']}")
+        if element_config.get("background_color"):
+            style_parts.append(f"background-color: {element_config['background_color']}")
+        if element_config.get("uppercase"):
+            style_parts.append("text-transform: uppercase")
+
+        css_style = "; ".join(style_parts) if style_parts else ""
+
+        # Renderizar conteúdo com Jinja2 se contiver variáveis
+        rendered_content = text_template
+        if text_template and ("{{" in text_template or "{%" in text_template):
+            try:
+                rendered_content = self.env.from_string(text_template).render(render_context)
+            except Exception as e:
+                rendered_content = f"<!-- Erro ao renderizar {element_key}: {e} -->"
+
+        # Prefixo para assunto
+        prefix = ""
+        if element_key == "assunto" and element_config.get("prefix"):
+            prefix = f"<strong>{element_config['prefix']}</strong>"
+
+        return f'<div class="element-{element_key}" style="{css_style}">{prefix}{rendered_content}</div>'
+
+    def _compose_document_from_elements(
+        self,
+        structural_elements: list[dict],
+        element_configs: dict,
+        context: dict,
+        text_overrides: dict | None = None,
+    ) -> str:
+        """
+        Compõe o corpo do documento iterando sobre a lista de elementos
+        estruturais na ordem definida e mapeando para as configurações (legacy + v3).
+        """
+        text_overrides = text_overrides or {}
+        html_parts = []
+
+        sorted_elements = sorted(structural_elements, key=lambda el: el.get("order", 0) if isinstance(el, dict) else el.order)
+
+        # Mapeamento das chaves de structural_elements para os nomes dos atributos de config em DocumentStyles
+        key_to_config_map = {
+            "cabecalho_pagina": "header_config",
+            "titulos": "titles_config",
+            "identificacao": "identificacao_config",
+            "enderecamento": "enderecamento_config",
+            "assunto": "assunto_config",
+            "texto": "content_config",
+            "local_data": "local_data_config",
+            "assinatura": "signatures_config",
+            "rodape_pagina": "footer_config"
+        }
+
+        for el in sorted_elements:
+            key = el.get("key", "") if isinstance(el, dict) else el.key
+            enabled = el.get("enabled", True) if isinstance(el, dict) else el.enabled
+            if not enabled:
+                continue
+
+            config_key = key_to_config_map.get(key, f"{key}_config")
+            
+            # Se element_configs for pydantic, .dict(), se não .get()
+            if hasattr(element_configs, "model_dump"):
+                configs_dict = element_configs.model_dump()
+            elif isinstance(element_configs, dict):
+                configs_dict = element_configs
+            else:
+                try:
+                    configs_dict = dict(element_configs)
+                except:
+                    configs_dict = {}
+
+            config = configs_dict.get(config_key, {})
+            override = text_overrides.get(key)
+            
+            # Se for cabecalho, rodapé, ou os velhos, eles tem uma renderização especial no V2.
+            # O V3 tenta centralizar tudo, mas se o template V2 ainda estiver sendo usado (custom_header), a gente injeta.
+            if key == "cabecalho_pagina":
+                if context.get("custom_header"):
+                    override = context.get("custom_header")
+                elif context.get("header_template"):
+                    override = self.render_partial(context.get("header_template"), context)
+            if key == "rodape_pagina":
+                 if context.get("custom_footer"):
+                    override = context.get("custom_footer")
+                 elif context.get("footer_template"):
+                    override = self.render_partial(context.get("footer_template"), context)
+            if key == "texto" and not override:
+                override = context.get("custom_text")
+            if key == "titulos" and not override:
+                override = context.get("custom_titles")
+
+            # Agora renderizamos o elemento independentemente do tipo
+            html_parts.append(self._render_element_html(key, config, context, text_override=override))
+
+        return "\n".join(html_parts)
+
     def _render_template(self, template_name: str, data: dict) -> str:
         """
         Renderiza um template seguindo a estratégia de cascata:
@@ -789,27 +999,46 @@ class DocumentGenerationService:
             print(f"Iniciando document gen: {doc_type} ID: {main_entity_id}")
             strategy = self.get_strategy(doc_type)
 
-            # 1. Collect Data
+            # 1. Collect Data (This gives us the context variables)
             context = await strategy.collect_data(db, main_entity_id, **kwargs)
 
-            # 2. Render Inner Template
-            inner_content = self._render_template(strategy.get_template_name(), context)
-
-            # 3. Extract Page Settings
-            styles = context.get('styles', {})
-            if hasattr(styles, "model_dump"):
-                styles_dict = styles.model_dump()
-            elif isinstance(styles, dict):
-                styles_dict = styles
+            # --- V3 Schema Implementation ---
+            lodge_id = context.get("lodge_id")
+            
+            # Buscando as configurações no banco usando o merge granular (Global -> Instancial)
+            # Se for V3, a Loja terá settings ou cairá pros globais
+            merged_settings = self._get_merged_document_settings(db, doc_type, lodge_id)
+            
+            # Verifica se está no V3 ativamente (tem structural_elements configurados)
+            if merged_settings.get("structural_elements"):
+                print(f"[{doc_type}] Utilizando engine V3 (Componentização/Structural Elements).")
+                inner_content = self._compose_document_from_elements(
+                    structural_elements=merged_settings["structural_elements"],
+                    element_configs=merged_settings.get("element_configs", {}),
+                    context=context,
+                    text_overrides=kwargs.get("custom_text") or kwargs.get("text_overrides", {})
+                )
+                page_settings = merged_settings.get("page_settings", {})
             else:
-                try:
-                    styles_dict = dict(styles)
-                except:
-                    styles_dict = {}
+                # Fallback para V2 (Legacy)
+                print(f"[{doc_type}] Utilizando engine V2 (Template Legacy).")
+                inner_content = self._render_template(strategy.get_template_name(), context)
+                
+                # Extract Legacy Page Settings
+                styles = context.get('styles', {})
+                if hasattr(styles, "model_dump"):
+                    styles_dict = styles.model_dump()
+                elif isinstance(styles, dict):
+                    styles_dict = styles
+                else:
+                    try:
+                        styles_dict = dict(styles)
+                    except:
+                        styles_dict = {}
 
-            page_settings = styles_dict.get('page_settings') or {}
+                page_settings = styles_dict.get('page_settings') or {}
 
-            # 4. Wrap with Base Paper Layout
+            # 4. Wrap with Base Paper Layout (Válido tanto para V2 quanto V3)
             paper_context = {
                 "page_settings": page_settings,
                 "app_url": os.getenv("APP_URL", "http://localhost:8000"),
@@ -821,19 +1050,8 @@ class DocumentGenerationService:
                 debug_path = f"debug_document_{doc_type}_{main_entity_id}.html"
                 with open(debug_path, "w", encoding="utf-8") as f:
                     # Inject detailed style log at the top of the HTML file for easy debugging
-                    if "styles" in context:
-                        import json
-
-                        # Attempt to dump styles to JSON for readability
-                        try:
-                            # If it's a Pydantic model, dump it
-                            styles_dict = context["styles"].model_dump()
-                            styles_json = json.dumps(styles_dict, indent=2, default=str)
-                        except:
-                            # Fallback if not pydantic or other error
-                            styles_json = str(context["styles"])
-
-                        f.write(f"<!-- \nDEBUG STYLE PARAMETERS:\n{styles_json}\n-->\n")
+                    kwargs_str = str(kwargs)
+                    f.write(f"<!-- \nDEBUG FORMAT PARAMETERS:\n{kwargs_str}\n-->\n")
 
                     f.write(html_content)
                 print(f"saved debug html to {debug_path}")
@@ -873,7 +1091,31 @@ class DocumentGenerationService:
                 # Fallback for strategies without preview support
                 context = {"styles": settings.get("styles", {}), "mock_data": True}
 
-            return self._render_template(strategy.get_template_name(), context)
+            # V3 Evaluation for Preview
+            if "structural_elements" in settings and settings["structural_elements"]:
+                inner_content = self._compose_document_from_elements(
+                    structural_elements=settings.get("structural_elements", []),
+                    element_configs=settings.get("element_configs", {}),
+                    context=context
+                )
+                page_settings = settings.get("page_settings", {})
+            else:
+                # V2 Fallback
+                inner_content = self._render_template(strategy.get_template_name(), context)
+                styles = settings.get("styles", {})
+                if isinstance(styles, dict):
+                    page_settings = styles.get("page_settings", {})
+                else:
+                    page_settings = getattr(styles, "page_settings", {}) or {}
+
+            # O preview DEVE retornar o HTML completo envolto pelo base_paper.html 
+            # Desta forma o frontend carrega o documento ipsis litteris como será impresso (100% fieldelidade)
+            paper_context = {
+                "page_settings": page_settings,
+                "app_url": os.getenv("APP_URL", "http://localhost:8000"),
+                "pdf_content": inner_content
+            }
+            return self.env.get_template("base_paper.html").render(paper_context)
         finally:
             db.close()
 

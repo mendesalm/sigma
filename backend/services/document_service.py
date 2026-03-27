@@ -20,10 +20,11 @@ def create_or_update_document_instance(
     document_type: str,
     draft_html_content: str,
     current_user_payload: dict,
+    element_text_overrides: dict | None = None,
 ) -> models.DocumentInstance:
     """
     Cria ou atualiza um Rascunho de Documento (DocumentInstance).
-    Não gera PDF físico, apenas salva o HTML no banco.
+    Suporta o nível Operacional (element_text_overrides).
     """
     user_id = current_user_payload.get("sub")
 
@@ -42,6 +43,8 @@ def create_or_update_document_instance(
             raise HTTPException(status_code=400, detail="Este documento já está finalizado e não pode ser alterado.")
 
         instance.draft_html_content = draft_html_content
+        if element_text_overrides is not None:
+            instance.element_text_overrides = element_text_overrides
         db.commit()
         db.refresh(instance)
         return instance
@@ -52,6 +55,7 @@ def create_or_update_document_instance(
             document_type=document_type,
             status=DocumentStatusEnum.DRAFT,
             draft_html_content=draft_html_content,
+            element_text_overrides=element_text_overrides,
             created_by_id=user_id,
         )
         db.add(new_instance)

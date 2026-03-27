@@ -105,6 +105,7 @@ class DocumentStrategy(ABC):
         return {
             "styles": styles,
             "header_template": header_template,
+            "lodge_id": lodge.id,
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
             "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",

@@ -42,6 +42,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 // Components
 import VariablePalette from '../../components/DocumentBuilder/VariablePalette';
 import TiptapEditor, { TiptapEditorRef } from '../../components/DocumentBuilder/TiptapEditor';
+import ElementSelector from '../../components/DocumentBuilder/ElementSelector';
 
 
 
@@ -57,6 +58,17 @@ const DEFAULT_SETTINGS = {
     preamble_template: '',
     signatures_template: '',
     date_place_template: '',
+    structural_elements: [
+        { key: 'cabecalho_pagina', enabled: true, order: 0 },
+        { key: 'titulos', enabled: true, order: 1 },
+        { key: 'identificacao', enabled: false, order: 2 },
+        { key: 'enderecamento', enabled: false, order: 3 },
+        { key: 'assunto', enabled: false, order: 4 },
+        { key: 'texto', enabled: true, order: 5 },
+        { key: 'local_data', enabled: false, order: 6 },
+        { key: 'assinatura', enabled: true, order: 7 },
+        { key: 'rodape_pagina', enabled: true, order: 8 },
+    ],
     styles: {
         font_family: 'Arial, sans-serif',
         primary_color: '#000000',
@@ -160,7 +172,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
     // State
     const [currentType, setCurrentType] = useState('balaustre');
     const [activeStep, setActiveStep] = useState(0);
-    const steps = ['Tipo de Documento', 'Papel e Bordas', 'Cabeçalho e Rodapé', 'Conteúdo e Estrutura'];
+    const steps = ['Tipo de Documento', 'Papel e Bordas', 'Cabeçalho e Rodapé', 'Elementos Estruturais', 'Conteúdo e Estrutura'];
     const [viewMode, setViewMode] = useState<'preview' | 'editor'>('preview');
     const [contentEditMode, setContentEditMode] = useState<'content' | 'titles' | 'header' | 'footer' | 'preamble' | 'signatures' | 'date_place'>('content');
     const [expandedAccordion, setExpandedAccordion] = useState<string | false>('page_section');
@@ -425,6 +437,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                 titles_template: docSettings.titles_template || null,
                 preamble_template: docSettings.preamble_template || null,
                 date_place_template: docSettings.date_place_template || null,
+                structural_elements: docSettings.structural_elements || DEFAULT_SETTINGS.structural_elements,
                 header_config: s.header_config || {},
                 titles_config: s.titles_config || {},
                 content_config: s.content_config || {},
@@ -918,7 +931,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             </Accordion>
                 </>
             )}
-            {activeStep === 3 && (
+            {activeStep === 4 && (
                 <>
                     <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>ESTRUTURA DE CONTEÚDO</Typography>
                     <Accordion expanded={expandedAccordion === 'titles_section'} onChange={handleAccordionChange('titles_section')}>
@@ -1089,6 +1102,15 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
             </Accordion>
                 </>
             )}
+            {activeStep === 3 && (
+                <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'bold' }}>ELEMENTOS ESTRUTURAIS</Typography>
+                    <ElementSelector 
+                        elements={currentSettings.structural_elements} 
+                        onChange={(newElements) => updateCurrentSetting('structural_elements', newElements)} 
+                    />
+                </Box>
+            )}
         </Box>
     );
 
@@ -1228,7 +1250,7 @@ const DocumentBuilder: React.FC<DocumentBuilderProps> = ({ mode = 'lodge', lodge
                     }}>
 
                     {/* View Switcher Toolbar (Visible in Content Tab OR when in Editor Mode) */}
-                    {(activeStep === 3 || viewMode === 'editor') && (
+                    {(activeStep === 4 || viewMode === 'editor') && (
                         <Box sx={{ p: 1, bgcolor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                             <ToggleButtonGroup
                                 value={viewMode}

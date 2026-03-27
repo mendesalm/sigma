@@ -848,6 +848,8 @@ class DocumentStatusEnum(enum.StrEnum):
 
 
 class GlobalDocumentTemplate(BaseModel):
+    """Nível Global (Padronização) — configurações padrão do Super Admin."""
+
     __tablename__ = "global_document_templates"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
@@ -855,10 +857,17 @@ class GlobalDocumentTemplate(BaseModel):
     html_content = Column(Text, nullable=False)
     header_html = Column(Text, nullable=True)
     footer_html = Column(Text, nullable=True)
-    placeholders_schema = Column(JSON, nullable=True)  # Para popular os Badges da UI
+    placeholders_schema = Column(JSON, nullable=True)
+
+    # v3 — Composição estrutural (Padronização)
+    page_settings_json = Column(JSON, nullable=True)           # PageSettings serializado
+    structural_elements_json = Column(JSON, nullable=True)     # Lista ordenada de StructuralElement
+    element_configs_json = Column(JSON, nullable=True)          # Dict de configs por elemento
 
 
 class LocalDocumentTemplate(BaseModel):
+    """Nível Instancial (Personalização) — sobrescritas do Webmaster por loja."""
+
     __tablename__ = "local_document_templates"
     id = Column(Integer, primary_key=True, index=True)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
@@ -868,12 +877,19 @@ class LocalDocumentTemplate(BaseModel):
     custom_footer = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
 
+    # v3 — Composição estrutural (Personalização)
+    page_settings_json = Column(JSON, nullable=True)
+    structural_elements_json = Column(JSON, nullable=True)
+    element_configs_json = Column(JSON, nullable=True)
+
     lodge = relationship("Lodge", backref="local_document_templates")
 
     __table_args__ = (UniqueConstraint("lodge_id", "document_type", name="_lodge_document_type_uc"),)
 
 
 class DocumentInstance(BaseModel):
+    """Nível Operacional (Adequação) — instância de documento produzido pelo Secretário."""
+
     __tablename__ = "document_instances"
     id = Column(Integer, primary_key=True, index=True)
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
@@ -887,6 +903,12 @@ class DocumentInstance(BaseModel):
     draft_html_content = Column(Text, nullable=True)
     final_html_content = Column(Text, nullable=True)
     created_by_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+
+    # v3 — Adequações de texto feitas pelo Secretário
+    element_text_overrides = Column(
+        JSON, nullable=True,
+        comment='Adequações de texto por elemento: {"assunto": "Texto adequado...", "texto": "<p>..."}'
+    )
 
     lodge = relationship("Lodge", backref="document_instances")
     session = relationship("MasonicSession", backref="document_instances")

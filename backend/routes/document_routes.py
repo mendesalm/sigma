@@ -38,8 +38,9 @@ def save_document_draft(
         lodge_id=payload.lodge_id,
         session_id=payload.session_id,
         document_type=payload.document_type,
-        draft_html_content=payload.draft_html_content,
+        draft_html_content=payload.draft_html_content or "",
         current_user_payload=current_user,
+        element_text_overrides=payload.element_text_overrides,
     )
 
 

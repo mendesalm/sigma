@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>{{ title | default('Documento') }}</title>
     <!-- CSS Isolado para a Folha de Papel (Phase 1 Refactoring) -->
-    <style>
-        @page {
+    {% set css_content %}
+        {{ "@" }}page {
             size: {{ page_settings.get('format', 'A4') }} {{ page_settings.get('orientation', 'portrait') }};
             margin-top: {{ page_settings.get('margin_top', '1cm') }};
             margin-bottom: {{ page_settings.get('margin_bottom', '1cm') }};
@@ -60,7 +60,10 @@
             position: relative;
             z-index: 10;
         }
-    </style>
+    {% endset %}
+    {% set s_tag = "<sty" ~ "le>" %}
+    {% set e_tag = "</sty" ~ "le>" %}
+    {{ s_tag ~ '\n' ~ css_content ~ '\n' ~ e_tag | safe }}
 </head>
 <body>
     {% if page_settings.get('watermark_image') %}

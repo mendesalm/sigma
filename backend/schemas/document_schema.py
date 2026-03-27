@@ -41,6 +41,7 @@ class DocumentInstanceBase(BaseModel):
     status: str = Field(default="DRAFT", description="DRAFT, PENDING_SIGNATURES, FINALIZED")
     draft_html_content: str | None = None
     final_html_content: str | None = None
+    element_text_overrides: dict[str, str] | None = None
 
 
 class DocumentInstanceCreate(DocumentInstanceBase):
