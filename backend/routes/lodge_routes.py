@@ -310,6 +310,10 @@ def update_lodge_document_settings(
     lodge.document_settings = current_json
     flag_modified(lodge, "document_settings")  # Important for JSON columns in some SQLA versions
 
+    # Sync V3 templates immediately
+    from services.template_service import sync_document_settings_to_local_templates
+    sync_document_settings_to_local_templates(db, lodge_id, current_json)
+
     db.commit()
     return {"message": "Configurações salvas com sucesso."}
 
@@ -346,6 +350,14 @@ def reset_lodge_document_settings(
         del current_json[doc_type]
         lodge.document_settings = current_json
         flag_modified(lodge, "document_settings")
+
+        # Apagar também da tabela LocalDocumentTemplate (V3)
+        from models.models import LocalDocumentTemplate
+        db.query(LocalDocumentTemplate).filter(
+            LocalDocumentTemplate.lodge_id == lodge_id,
+            LocalDocumentTemplate.document_type == doc_type
+        ).delete()
+
         db.commit()
 
     # 2. Delete Physical Template Files

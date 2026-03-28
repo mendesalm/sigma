@@ -5,6 +5,42 @@ from sqlalchemy.orm import Session
 from models.models import GlobalDocumentTemplate, LocalDocumentTemplate
 from schemas import template_schema
 
+def sync_document_settings_to_local_templates(db: Session, lodge_id: int, document_settings: dict) -> None:
+    """
+    Sincroniza do dicionário de configurações da Loja (V2) para a tabela LocalDocumentTemplate (V3).
+    document_settings é um dict onde a chave é o tipo_documento (ex: 'balaustre', 'prancha')
+    """
+    if not document_settings or not isinstance(document_settings, dict):
+        return
+
+    for doc_type, settings in document_settings.items():
+        # settings é tipicamente um dict correspondente a DocumentTypeSettings
+        if not isinstance(settings, dict):
+            continue
+            
+        local_tpl = db.query(LocalDocumentTemplate).filter(
+            LocalDocumentTemplate.lodge_id == lodge_id,
+            LocalDocumentTemplate.document_type == doc_type
+        ).first()
+
+        if not local_tpl:
+            local_tpl = LocalDocumentTemplate(
+                lodge_id=lodge_id,
+                document_type=doc_type,
+                is_active=True
+            )
+            db.add(local_tpl)
+
+        # Mapeia partes do frontend payload para as colunas do DB
+        if "page_settings" in settings:
+            local_tpl.page_settings_json = settings.get("page_settings")
+        if "structural_elements" in settings:
+            local_tpl.structural_elements_json = settings.get("structural_elements")
+        if "content_settings" in settings:
+            local_tpl.element_configs_json = settings.get("content_settings")
+            
+    db.commit()
+
 
 def get_global_template_by_type(db: Session, document_type: str) -> GlobalDocumentTemplate | None:
     return db.query(GlobalDocumentTemplate).filter(GlobalDocumentTemplate.document_type == document_type).first()

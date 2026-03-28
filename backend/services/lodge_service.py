@@ -108,10 +108,14 @@ def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpd
     for key, value in update_data.items():
         setattr(db_lodge, key, value)
 
+    # Sync V3 templates immediately if document_settings is updated
+    if "document_settings" in update_data and update_data["document_settings"]:
+        from services.template_service import sync_document_settings_to_local_templates
+        sync_document_settings_to_local_templates(db, db_lodge.id, update_data["document_settings"])
+
     db.commit()
     db.refresh(db_lodge)
     return db_lodge
-
 
 def delete_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
     """Deletes a lodge."""
