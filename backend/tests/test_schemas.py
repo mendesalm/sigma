@@ -9,9 +9,9 @@ from datetime import date, time, timedelta
 import pytest
 from pydantic import ValidationError
 
-from schemas.lodge_schema import LodgeCreate
-from schemas.masonic_session_schema import MasonicSessionCreate
-from schemas.member_schema import MemberCreate
+from app.modules.core.schemas.lodge_schema import LodgeCreate
+from app.modules.sessions.schemas.masonic_session_schema import MasonicSessionCreate
+from app.modules.members.schemas.member_schema import MemberCreate
 
 # ============================================================================
 # Testes do MemberSchema

@@ -1,0 +1,5 @@
+[MESSAGES CONTROL]
+# Disable specific pylint warnings that are false positives or noise
+disable=
+    not-callable,       # SQLAlchemy func.now() and other dynamic callables
+    no-member           # Dynamic attributes in SQLAlchemy models and Pydantic

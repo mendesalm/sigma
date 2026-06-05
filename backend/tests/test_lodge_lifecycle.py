@@ -1,6 +1,7 @@
 from models import models
-from schemas import lodge_schema
-from services import auth_service, lodge_service
+from app.modules.core.schemas import lodge_schema
+from app.modules.access_control.services import auth_service
+from app.modules.core.services import lodge_service
 
 # ============================================================================
 # Testes: Lodge Onboarding (Importação)

@@ -20,7 +20,7 @@ sys.path.insert(0, str(backend_dir))
 from database import get_db
 from main import app
 from models.models import Base, Lodge, Member, Obedience, SuperAdmin
-from utils import password_utils
+from app.modules.access_control.utils import password_utils
 
 # ============================================================================
 # Database Fixtures

@@ -5,7 +5,7 @@ import pytest
 from fastapi import HTTPException
 
 from models import models
-from services import session_service
+from app.modules.sessions.services import session_service
 
 # ============================================================================
 # Fixtures Específicas
@@ -130,7 +130,7 @@ def test_api_visitor_check_in(client, db_session, active_session):
     visitor_id = 123
 
     # Mock do serviço para não depender do banco global e lógica complexa no teste de rota
-    with patch("services.session_service.perform_visitor_check_in") as mock_perform:
+    with patch("app.modules.sessions.services.session_service.perform_visitor_check_in") as mock_perform:
         mock_perform.return_value = MagicMock(
             id=1,
             session_id=active_session.id,

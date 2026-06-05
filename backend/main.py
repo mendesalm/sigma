@@ -17,35 +17,50 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 # when running from the project root (e.g., uvicorn backend.main:app)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from routes import (  # noqa: E402
-    admin_template_routes,  # New
+from app.modules.core.routes import (
     administration_routes,
-    attendance_routes,
-    auth_routes,
-    check_in_routes,
-    classified_routes,
     committee_routes,
     dashboard_routes,
-    document_routes,
-    event_routes,
     external_lodge_routes,
-    financial_routes,
-    library_routes,
     lodge_routes,
-    member_role_routes,
-    member_routes,
-    notice_routes,
     obedience_routes,
-    permission_routes,
-    publication_routes,
     report_routes,
-    role_routes,
-    session_routes,
     super_admin_routes,
+)
+from app.modules.documents.routes import (
+    admin_template_routes,
+    document_routes,
     template_routes,
+)
+from app.modules.library.routes import (
+    library_routes,
+)
+from app.modules.communication.routes import (
+    classified_routes,
+    event_routes,
+    notice_routes,
+    publication_routes,
+)
+from app.modules.finance.routes import (
+    financial_routes,
+)
+from app.modules.sessions.routes import (
+    attendance_routes,
+    check_in_routes,
+    session_routes,
     visitor_routes,
+)
+from app.modules.members.routes import (
+    member_routes,
+    member_role_routes,
+)
+from app.modules.access_control.routes import (
+    auth_routes,
+    permission_routes,
+    role_routes,
     webmaster_routes,
 )
+
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 
 # Metadata para documentação da API

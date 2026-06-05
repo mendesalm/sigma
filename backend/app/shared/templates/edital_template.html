@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<meta charset="UTF-8">
+<title>Edital de Convocação</title>
+{{ dynamic_style_block | safe }}
+</head>
+
+<body>
+
+  <div class="page-content">
+
+    <!-- Modular Header -->
+    {% if custom_header %}
+    <div class="header-wrapper"
+      style="position: relative; margin-bottom: {{ styles.get('header_config', {}).spacing_bottom }}; font-family: {{ styles.get('header_config', {}).font_family or 'inherit' }}; line-height: {{ styles.get('header_config', {}).line_height }};">
+      <div class="header-bg" style="
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: {{ styles.get('header_config', {}).background_color or 'transparent' }};
+            {% if styles.get('header_config', {}).background_image %}
+            background-image: url('{{ styles.get('header_config', {}).background_image }}');
+            background-size: cover;
+            background-position: center;
+            {% endif %}
+            opacity: {{ styles.get('header_config', {}).background_opacity }};
+            z-index: 0;
+        "></div>
+      <div class="header-content" style="
+            position: relative; 
+            z-index: 1; 
+            padding: {{ styles.get('header_config', {}).padding or '0.3cm' }}; 
+            box-sizing: border-box; 
+            {% if styles.get('header_config', {}).border_bottom_show %}
+            border-bottom: {{ styles.get('header_config', {}).border_bottom_width }} {{ styles.get('header_config', {}).border_bottom_style }} {{ styles.get('header_config', {}).border_bottom_color or styles.get('primary_color', {}) }};
+            {% endif %}
+        ">
+        {{ custom_header | safe }}
+      </div>
+    </div>
+    {% elif header_template %}
+    {% include header_template %}
+    {% endif %}
+
+    <!-- Preamble Section -->
+    {% if custom_preamble %}
+    <div class="preamble-section" style="margin-bottom: 20px;">
+      {{ custom_preamble | safe }}
+    </div>
+    {% endif %}
+
+    <div class="content">
+      <div class="title-section">
+        {% if custom_titles %}
+        {{ custom_titles | safe }}
+        {% else %}
+        EDITAL DE CONVOCAÇÃO<br>
+        SESSÃO {{ session_type | upper }}
+        {% endif %}
+      </div>
+
+      {% if custom_content %}
+      {{ custom_content | safe }}
+      {% else %}
+      <p>
+        O Venerável Mestre da <strong>{{ lodge_title_formatted }} {{ lodge_name }} Nº {{ lodge_number }}</strong>,
+        conforme as disposições legais e regulamentares,
+        <strong>CONVOCA</strong> todos os Obreiros do Quadro e convida os Irmãos Regulares para a Sessão
+        {{ session_type }} a ser realizada no dia <strong>{{ DiaSessao }}</strong> ({{ DataSessaoExtenso }}),
+        com início às <strong>{{ HoraInicioSessao }}</strong>, em seu Templo situado à {{ lodge_address }}.
+      </p>
+
+      <p>
+        <strong>ORDEM DO DIA:</strong><br>
+        {{ OrdemDia }}
+      </p>
+
+      {% if ObrigatoriedadeTraje %}
+      <p>
+        <strong>Traje:</strong> {{ ObrigatoriedadeTraje }}
+      </p>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="footer">
+      <div class="footer-date">
+        Oriente de {{ CidadeLoja }}, {{ DataAssinatura }} da E∴ V∴
+      </div>
+
+      {% if custom_signatures %}
+      <div class="signatures-section">
+        {{ custom_signatures | safe }}
+      </div>
+      {% else %}
+      <div style="margin-top: {{ styles.get('signatures_config', {}).spacing_top or '2cm' }};">
+        <div class="signature-line"></div>
+        <div class="signature-name">{{ Veneravel }}</div>
+        <div class="signature-role">Venerável Mestre</div>
+      </div>
+
+      <div style="margin-top: 1cm;">
+        <div class="signature-line"></div>
+        <div class="signature-name">{{ SecretarioNome }}</div>
+        <div class="signature-role">Secretário</div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</body>
+
+</html>

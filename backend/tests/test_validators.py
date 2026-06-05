@@ -6,7 +6,7 @@ Execute com: pytest tests/test_validators.py -v
 
 import pytest
 
-from utils.validators import (
+from app.shared.utils.validators import (
     format_cnpj,
     format_cpf,
     format_phone,

@@ -1,14 +1,13 @@
 import os
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
-# Build the path to the .env file in the project root
-dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-load_dotenv(dotenv_path=dotenv_path)
+# Encontra o .env automaticamente em qualquer diretório acima
+load_dotenv(find_dotenv(usecwd=True))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 ORIENTE_DB_URL = os.getenv("ORIENTE_DB_URL")

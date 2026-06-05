@@ -1,0 +1,510 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { 
+  Button, Container, TextField, Typography, Select, MenuItem, FormControl, 
+  InputLabel, Grid, Paper, Box, CircularProgress, SelectChangeEvent, 
+  Stack, Divider, useTheme, Alert, Snackbar, Switch, FormGroup, FormControlLabel
+} from '@mui/material';
+import {
+  AccountBalance as AccountBalanceIcon,
+  LocationOn as LocationOnIcon,
+  ContactMail as ContactMailIcon,
+  Class as ClassIcon,
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon,
+  Search as SearchIcon,
+  Settings as SettingsIcon
+} from '@mui/icons-material';
+import api from '@/shared/services/api';
+import axios from 'axios';
+import { formatCNPJ, formatPhone, formatCEP, formatState } from '@/shared/utils/formatters';
+import { validateCNPJ, validateEmail } from '@/shared/utils/validators';
+
+// Reuse SectionHeader pattern
+const SectionHeader = ({ title, icon, color = "primary" }: { title: string, icon?: React.ReactNode, color?: "primary" | "secondary" | "info" | "warning" | "success" }) => {
+    const theme = useTheme();
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, mt: 1 }}>
+            {icon && <Box sx={{ mr: 1.5, color: theme.palette[color].main, display: 'flex' }}>{icon}</Box>}
+            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, letterSpacing: 0.5 }}>
+                {title}
+            </Typography>
+            <Divider sx={{ flexGrow: 1, ml: 2, borderColor: theme.palette.divider }} />
+        </Box>
+    );
+};
+
+const ObedienceForm = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    acronym: '',
+    type: '',
+    parent_obedience_id: '',
+    cnpj: '',
+    email: '',
+    phone: '',
+    website: '',
+    street_address: '',
+    street_number: '',
+    address_complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    technical_contact_name: '',
+    technical_contact_email: '',
+    available_modules: {
+      member_registration: true,
+      session_management: true,
+      session_attendance: true,
+      chancellery: true,
+      document_emission: true,
+      treasury: true,
+      library: true,
+    } as any,
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [obediences, setObediences] = useState([]);
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const theme = useTheme();
+
+  useEffect(() => {
+    const fetchObeidences = async () => {
+      try {
+        const response = await api.get('/obediences');
+        setObediences(response.data);
+      } catch (error) {
+        console.error('Failed to fetch obediences', error);
+      }
+    };
+    fetchObeidences();
+
+    if (id) {
+      const fetchObedience = async () => {
+        try {
+          const response = await api.get(`/obediences/${id}`);
+          setFormData(response.data);
+        } catch (error) {
+          console.error('Failed to fetch obedience', error);
+        }
+      };
+      fetchObedience();
+    }
+  }, [id]);
+
+  const validateField = (name: string, value: string) => {
+    let error = '';
+    if (name === 'cnpj' && value && !validateCNPJ(value)) {
+      error = 'CNPJ inválido';
+    }
+    if (name === 'email' && value && !validateEmail(value)) {
+      error = 'Email inválido';
+    }
+    if (name === 'technical_contact_email' && value && !validateEmail(value)) {
+      error = 'Email inválido';
+    }
+    
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error === '';
+  };
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | SelectChangeEvent) => {
+    const { name, value } = event.target;
+    let formattedValue = value;
+
+    if (typeof value === 'string') {
+      if (name === 'cnpj') formattedValue = formatCNPJ(value);
+      if (name === 'phone') formattedValue = formatPhone(value);
+      if (name === 'zip_code') formattedValue = formatCEP(value);
+      if (name === 'state') formattedValue = formatState(value);
+      
+      validateField(name as string, formattedValue as string);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name as string]: formattedValue,
+    }));
+  };
+
+  const handleModuleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      available_modules: {
+        ...prev.available_modules,
+        [name]: checked
+      }
+    }));
+  };
+
+  const handleCepBlur = async (event: React.FocusEvent<HTMLInputElement>) => {
+    const cep = event.target.value.replace(/\D/g, '');
+    if (cep.length === 8) {
+      setLoadingCep(true);
+      try {
+        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+        if (!response.data.erro) {
+          setFormData((prev) => ({
+            ...prev,
+            street_address: response.data.logradouro,
+            neighborhood: response.data.bairro,
+            city: response.data.localidade,
+            state: response.data.uf,
+          }));
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP', error);
+      } finally {
+        setLoadingCep(false);
+      }
+    }
+  };
+
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (loading) return;
+
+    // Validate all fields before submit
+    const newErrors: { [key: string]: string } = {};
+    if (formData.cnpj && !validateCNPJ(formData.cnpj)) newErrors.cnpj = 'CNPJ inválido';
+    if (formData.email && !validateEmail(formData.email)) newErrors.email = 'Email inválido';
+    if (formData.technical_contact_email && !validateEmail(formData.technical_contact_email)) newErrors.technical_contact_email = 'Email inválido';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setSnackbar({ open: true, message: 'Por favor, corrija os erros no formulário.', severity: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    const { parent_obedience_id, ...rest } = formData;
+    // Helper to convert empty strings to null and trim strings
+    const sanitize = (value: string) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed === '' ? null : trimmed;
+      }
+      return value;
+    };
+
+    const obedienceData = {
+      ...rest,
+      parent_obedience_id: parent_obedience_id || null,
+      acronym: sanitize(formData.acronym),
+      cnpj: sanitize(formData.cnpj),
+      email: sanitize(formData.email),
+      phone: sanitize(formData.phone),
+      website: sanitize(formData.website),
+      street_address: sanitize(formData.street_address),
+      street_number: sanitize(formData.street_number),
+      address_complement: sanitize(formData.address_complement),
+      neighborhood: sanitize(formData.neighborhood),
+      city: sanitize(formData.city),
+      state: sanitize(formData.state),
+      zip_code: sanitize(formData.zip_code),
+    };
+
+    try {
+      if (id) {
+        await api.put(`/obediences/${id}`, obedienceData);
+        setSnackbar({ open: true, message: 'Obediência atualizada com sucesso!', severity: 'success' });
+      } else {
+        await api.post('/obediences', obedienceData);
+        setSnackbar({ open: true, message: 'Obediência criada com sucesso!', severity: 'success' });
+      }
+      setTimeout(() => navigate('/dashboard/management/obediences'), 1500);
+    } catch (error) {
+      console.error('Failed to save obedience', error);
+      setSnackbar({ open: true, message: 'Erro ao salvar obediência. Verifique os dados.', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ pb: 5 }}>
+      {/* Page Header */}
+      <Box sx={{ mb: 4, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+       <Box>
+           <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+           {id ? 'Editar Obediência' : 'Nova Obediência'}
+           </Typography>
+           <Typography variant="subtitle1" color="text.secondary">
+           {id ? 'Atualize os dados da obediência.' : 'Preencha os dados abaixo para cadastrar uma nova obediência.'}
+           </Typography>
+       </Box>
+       <Button 
+           variant="outlined" 
+           startIcon={<ArrowBackIcon />} 
+           onClick={() => navigate('/dashboard/management/obediences')}
+           sx={{ borderRadius: 2 }}
+       >
+           Voltar
+       </Button>
+     </Box>
+      <form onSubmit={handleSubmit}>
+         <Grid container spacing={3}>
+             {/* Left Column */}
+            <Grid
+              size={{
+                xs: 12,
+                md: 9
+              }}>
+                {/* 1. Dados Gerais */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Dados Gerais" icon={<AccountBalanceIcon />} />
+                    <Grid container spacing={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
+                        <TextField name="name" label="Nome da Obediência" value={formData.name} onChange={handleChange} fullWidth required variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
+                        <TextField name="acronym" label="Sigla" value={formData.acronym} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
+                        <TextField 
+                            name="cnpj" 
+                            label="CNPJ" 
+                            value={formData.cnpj} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            error={!!errors.cnpj}
+                            helperText={errors.cnpj}
+                            variant="outlined"
+                        />
+                        </Grid>
+                        
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
+                        <TextField 
+                            name="email" 
+                            label="Email Principal" 
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            error={!!errors.email}
+                            helperText={errors.email}
+                            variant="outlined"
+                        />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
+                        <TextField name="phone" label="Telefone" value={formData.phone} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
+                        <TextField name="website" label="Website" value={formData.website} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* 2. Endereço */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Localização" icon={<LocationOnIcon />} color="info" />
+                    <Grid container spacing={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
+                        <TextField 
+                            name="zip_code" 
+                            label="CEP" 
+                            value={formData.zip_code} 
+                            onChange={handleChange} 
+                            onBlur={handleCepBlur}
+                            fullWidth 
+                            variant="outlined"
+                            InputProps={{
+                            endAdornment: loadingCep ? <CircularProgress size={20} /> : <SearchIcon color="action" />
+                            }}
+                        />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 7
+                          }}>
+                        <TextField name="street_address" label="Logradouro" value={formData.street_address} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 2
+                          }}>
+                        <TextField name="street_number" label="Número" value={formData.street_number} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
+                        <TextField name="neighborhood" label="Bairro" value={formData.neighborhood} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 4
+                          }}>
+                        <TextField name="address_complement" label="Complemento" value={formData.address_complement} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 3
+                          }}>
+                        <TextField name="city" label="Cidade" value={formData.city} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 1
+                          }}>
+                        <TextField name="state" label="UF" value={formData.state} onChange={handleChange} fullWidth variant="outlined" />
+                        </Grid>
+                    </Grid>
+                </Paper>
+
+                {/* 3. Contato Técnico */}
+                <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+                    <SectionHeader title="Contato Técnico" icon={<ContactMailIcon />} color="secondary" />
+                    <Grid container spacing={3}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
+                        <TextField name="technical_contact_name" label="Nome do Responsável Técnico" value={formData.technical_contact_name} onChange={handleChange} fullWidth required variant="outlined" />
+                        </Grid>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            md: 6
+                          }}>
+                        <TextField 
+                            name="technical_contact_email" 
+                            label="Email do Responsável" 
+                            value={formData.technical_contact_email} 
+                            onChange={handleChange} 
+                            fullWidth 
+                            required 
+                            error={!!errors.technical_contact_email}
+                            helperText={errors.technical_contact_email}
+                            variant="outlined"
+                        />
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Grid>
+
+            {/* Right Column (Sidebar) */}
+            <Grid
+              size={{
+                xs: 12,
+                md: 3
+              }}>
+                 <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+                    <SectionHeader title="Classificação" icon={<ClassIcon />} />
+                    <Stack spacing={2}>
+                        <FormControl fullWidth variant="outlined" size="small">
+                            <InputLabel>Tipo</InputLabel>
+                            <Select name="type" value={formData.type} label="Tipo" onChange={handleChange} required>
+                            <MenuItem value="Federal">Federal</MenuItem>
+                            <MenuItem value="Estadual">Estadual</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth variant="outlined" size="small">
+                            <InputLabel>Obediência Mãe</InputLabel>
+                            <Select name="parent_obedience_id" value={formData.parent_obedience_id} label="Obediência Mãe" onChange={handleChange}>
+                            <MenuItem value="">
+                                <em>Nenhuma (Raiz)</em>
+                            </MenuItem>
+                            {obediences.map((obedience: any) => (
+                                <MenuItem key={obedience.id} value={obedience.id}>
+                                {obedience.name}
+                                </MenuItem>
+                            ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                 </Paper>
+
+                 <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+                    <SectionHeader title="Módulos Habilitados" icon={<SettingsIcon />} />
+                    <FormGroup>
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.member_registration} onChange={handleModuleChange} name="member_registration" />} label="Cadastro de Membros" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.session_management} onChange={handleModuleChange} name="session_management" />} label="Gestão de Sessões" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.session_attendance} onChange={handleModuleChange} name="session_attendance" />} label="Registro de Presenças" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.chancellery} onChange={handleModuleChange} name="chancellery" />} label="Chancelaria" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.document_emission} onChange={handleModuleChange} name="document_emission" />} label="Emissão de Documentos" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.treasury} onChange={handleModuleChange} name="treasury" />} label="Tesouraria / Financeiro" />
+                      <FormControlLabel control={<Switch checked={!!formData.available_modules?.library} onChange={handleModuleChange} name="library" />} label="Biblioteca" />
+                    </FormGroup>
+                 </Paper>
+
+                 <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+                        Ações
+                    </Typography>
+                     <Stack spacing={2}>
+                         <Button 
+                            type="submit" 
+                            variant="contained" 
+                            color="primary" 
+                            size="large" 
+                            fullWidth 
+                            startIcon={<SaveIcon />} 
+                            disabled={loading}
+                        >
+                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Salvar'}
+                        </Button>
+                        <Button variant="text" color="inherit" fullWidth onClick={() => navigate('/dashboard/management/obediences')}>
+                        Cancelar
+                        </Button>
+                     </Stack>
+                 </Paper>
+            </Grid>
+         </Grid>
+      </form>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Container>
+  );
+};
+
+export default ObedienceForm;

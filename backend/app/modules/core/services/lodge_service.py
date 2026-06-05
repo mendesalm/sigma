@@ -1,0 +1,130 @@
+import os
+import uuid
+
+from sqlalchemy.orm import Session
+
+from app.modules.access_control.services import auth_service
+from app.modules.core.schemas import lodge_schema
+from models import models
+
+
+def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
+    """Fetches a single lodge by its ID."""
+    return db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
+
+
+def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodge]:
+    """Fetches all lodges with pagination."""
+    from sqlalchemy.orm import joinedload
+
+    return db.query(models.Lodge).options(joinedload(models.Lodge.obedience)).offset(skip).limit(limit).all()
+
+
+def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
+    """
+    Creates a new lodge with a unique lodge_code and an associated Webmaster user for its technical contact.
+    """
+    # Generate a unique code for the lodge
+    unique_code = str(uuid.uuid4())  # Simple unique code generation
+
+    try:
+        db_lodge = models.Lodge(
+            **lodge.model_dump(exclude={"external_id"}),
+            lodge_code=unique_code,
+            is_active=True,  # Set default active status
+        )
+        db.add(db_lodge)
+        db.flush()  # Flush to get the ID
+
+        # Now, create the associated webmaster user
+        auth_service._create_webmaster_user(
+            db=db,
+            name=lodge.technical_contact_name,
+            email=lodge.technical_contact_email,
+            lodge_id=db_lodge.id,
+            commit=False,  # Do not commit yet
+        )
+
+        # Create storage directory for the lodge
+        # Sanitize lodge_number to ensure valid directory name
+        if lodge.lodge_number:
+            safe_lodge_number = (
+                "".join(c for c in lodge.lodge_number if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
+            )
+            folder_name = f"loja_{safe_lodge_number}"
+        else:
+            folder_name = f"loja_id_{db_lodge.id}"
+
+        storage_path = os.path.join("storage", "lodges", folder_name)
+        os.makedirs(storage_path, exist_ok=True)
+
+        # Create subdirectories using the checked storage_path
+        # Structure based on existing standard (loja_2181):
+        # assets/images/logo
+        # publications
+        # templates/balaustre (singular), templates/edital, templates/convite, templates/prancha
+        # users/profile_pictures
+
+        os.makedirs(os.path.join(storage_path, "assets", "images"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
+
+        os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "edital"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "convite"), exist_ok=True)
+        os.makedirs(os.path.join(storage_path, "templates", "prancha"), exist_ok=True)
+
+        os.makedirs(os.path.join(storage_path, "users", "profile_pictures"), exist_ok=True)
+
+    except Exception as e:
+        db.rollback()
+        raise e
+
+    # --- Initial Assets Copying ---
+    try:
+        import shutil
+
+        # 1. Copy Generic Logo
+        # Assuming 'storage/general_assets/logo_generico.png' exists
+        generic_logo_path = os.path.join("storage", "general_assets", "logo_generico.png")
+        if os.path.exists(generic_logo_path):
+            # Target: storage/lodges/{folder}/assets/images/logo.png (Matches DocumentGenerationService lookup)
+            target_logo_path = os.path.join(storage_path, "assets", "images", "logo.png")
+            shutil.copy2(generic_logo_path, target_logo_path)
+
+    except Exception as copy_error:
+        # Log error but don't fail the lodge creation just for assets
+        print(f"Warning: Failed to copy initial assets for lodge {db_lodge.id}: {copy_error}")
+
+    return db_lodge
+
+
+def update_lodge(db: Session, lodge_id: int, lodge_update: lodge_schema.LodgeUpdate) -> models.Lodge | None:
+    """Updates an existing lodge."""
+    db_lodge = get_lodge(db, lodge_id)
+    if not db_lodge:
+        return None
+
+    update_data = lodge_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_lodge, key, value)
+
+    # Sync V3 templates immediately if document_settings is updated
+    if "document_settings" in update_data and update_data["document_settings"]:
+        from app.modules.documents.services.template_service import sync_document_settings_to_local_templates
+
+        sync_document_settings_to_local_templates(db, db_lodge.id, update_data["document_settings"])
+
+    db.commit()
+    db.refresh(db_lodge)
+    return db_lodge
+
+
+def delete_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
+    """Deletes a lodge."""
+    db_lodge = get_lodge(db, lodge_id)
+    if not db_lodge:
+        return None
+
+    db.delete(db_lodge)
+    db.commit()
+    return db_lodge

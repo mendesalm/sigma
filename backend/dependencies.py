@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from models.models import Member
-from utils import auth_utils
+from app.modules.access_control.utils import auth_utils
+from app.shared.tenant_context import TenantContextManager
 
 # This tells FastAPI which URL to check for the token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
@@ -22,6 +23,15 @@ def get_current_user_payload(token: str = Depends(oauth2_scheme)) -> dict:
     payload = auth_utils.decode_access_token(token)
     if payload is None:
         raise credentials_exception
+    
+    # Set the tenant context for the current request
+    lodge_id = payload.get("lodge_id")
+    obedience_id = payload.get("obedience_id")
+    if lodge_id is not None:
+        TenantContextManager.set_lodge_id(lodge_id)
+    if obedience_id is not None:
+        TenantContextManager.set_obedience_id(obedience_id)
+        
     return payload
 
 
@@ -160,6 +170,39 @@ def require_permission(permission_action: str):
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Insufficient credential for: {permission_action} (Required: {permission.min_credential}, Has: {context.active_credential})",
         )
+
+    return dependency
+
+
+def require_module(module_name: str):
+    """
+    Dependency factory to check if a specific module is enabled for the current user's Lodge/Obedience.
+    """
+    def dependency(
+        context: UserContext = Depends(get_current_active_user_with_permissions), db: Session = Depends(get_db)
+    ) -> UserContext:
+        if context.user_type == "super_admin":
+            return context
+
+        available_modules = {}
+        if context.lodge_id:
+            from models.models import Lodge
+            lodge = db.query(Lodge).filter(Lodge.id == context.lodge_id).first()
+            if lodge and lodge.available_modules:
+                available_modules = lodge.available_modules
+        elif context.obedience_id:
+            from models.models import Obedience
+            obedience = db.query(Obedience).filter(Obedience.id == context.obedience_id).first()
+            if obedience and obedience.available_modules:
+                available_modules = obedience.available_modules
+
+        if not available_modules.get(module_name, False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Módulo desativado para esta instituição: {module_name}",
+            )
+
+        return context
 
     return dependency
 
