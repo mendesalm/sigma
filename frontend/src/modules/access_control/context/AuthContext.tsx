@@ -13,7 +13,7 @@ interface AuthContextType {
   associations: Association[];
   requiresSelection: boolean;
   login: (email: string, pass: string) => Promise<any>;
-  logout: () => void;
+  logout: () => Promise<void> | void;
   selectAssociation: (association: Association) => Promise<void>;
 }
 
@@ -42,9 +42,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return false;
   });
 
+
   useEffect(() => {
-    // Initialized from state directly
+    // Escutar evento de logout forçado (vindo do Axios Interceptor)
+    const handleForceLogout = () => {
+      logout();
+    };
+    
+    window.addEventListener('force_logout', handleForceLogout);
+    return () => {
+      window.removeEventListener('force_logout', handleForceLogout);
+    };
   }, []);
+
 
   const login = async (email: string, pass: string) => {
     const params = new URLSearchParams();
@@ -84,11 +94,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setAssociations([]);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setAssociations([]);
-    setRequiresSelection(false);
+  const logout = async () => {
+    try {
+      // Fire-and-forget: we try to logout on backend but proceed to clean local state regardless
+      await api.post('/auth/logout');
+    } catch (e) {
+      console.warn('Logout API failed, cleaning local session anyway', e);
+    } finally {
+      localStorage.removeItem('token');
+      setUser(null);
+      setAssociations([]);
+      setRequiresSelection(false);
+    }
   };
 
   return (

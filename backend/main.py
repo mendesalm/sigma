@@ -62,6 +62,9 @@ from app.modules.access_control.routes import (
 )
 
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
+from app.core.middlewares.tenant_middleware import TenantMiddleware
+from app.shared.security.cache import permission_cache
+from database import SessionLocal
 
 # Metadata para documentação da API
 description = """
@@ -196,6 +199,15 @@ def startup_event():
     if "pytest" in sys.modules:
         print("Test environment detected. Skipping background scheduler.")
         return
+        
+    try:
+        db = SessionLocal()
+        permission_cache.load_all_permissions(db)
+    except Exception as e:
+        print(f"Warning: Could not load permission cache: {e}")
+    finally:
+        db.close()
+        
     initialize_scheduler()
 
 
@@ -214,6 +226,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+# Adiciona o middleware de Tenant para limpar o contexto após cada requisição
+app.add_middleware(TenantMiddleware)
 
 # Include routers (BEFORE mounting static files)
 app.include_router(auth_routes.router)

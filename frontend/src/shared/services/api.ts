@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -16,6 +17,47 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Check if it's 401 Unauthorized and not already retrying
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      // If we are already calling refresh, we don't want to loop
+      if (originalRequest.url === '/auth/refresh' || originalRequest.url === '/auth/login') {
+        window.dispatchEvent(new Event('force_logout'));
+        return Promise.reject(error);
+      }
+      
+      try {
+        // Try to get a new token
+        const response = await api.post('/auth/refresh');
+        const { access_token } = response.data;
+        
+        // Save new token
+        localStorage.setItem('token', access_token);
+        
+        // Retry original request
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh token failed (expired or revoked), force logout
+        console.error('Session expired or revoked.');
+        window.dispatchEvent(new Event('force_logout'));
+        return Promise.reject(refreshError);
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

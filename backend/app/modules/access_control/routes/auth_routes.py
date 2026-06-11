@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -27,7 +27,7 @@ class AssociationSelection(BaseModel):
     summary="Login de Usuários",
     description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT.",
 )
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Fornece um token de acesso para um usuário válido.
     O campo 'username' do formulário pode ser um email, nome de usuário ou CIM.
@@ -100,6 +100,34 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
     access_token = auth_utils.create_access_token(data=access_token_data)
 
+
+    # NOVO: Gerar e salvar Refresh Token no Banco de Dados
+    refresh_token = auth_utils.create_refresh_token()
+    from app.modules.access_control.models import RefreshToken
+    from config import settings
+    from datetime import datetime, UTC, timedelta
+    
+    expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    db_refresh_token = RefreshToken(
+        user_id=user.id,
+        user_type=user_type,
+        token=refresh_token,
+        expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+    db.commit()
+
+    # Setar Cookie HttpOnly
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Em dev (http). Para prod deve ser True
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -112,6 +140,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 )
 def select_association(
     association_data: AssociationSelection,
+    response: Response,
     payload: dict = Depends(get_current_user_payload),
     db: Session = Depends(get_db),
 ):
@@ -158,4 +187,124 @@ def select_association(
 
     access_token = auth_utils.create_access_token(data=access_token_data)
 
+
+    # NOVO: Gerar e salvar Refresh Token no Banco de Dados
+    refresh_token = auth_utils.create_refresh_token()
+    from app.modules.access_control.models import RefreshToken
+    from config import settings
+    from datetime import datetime, UTC, timedelta
+    
+    expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    db_refresh_token = RefreshToken(
+        user_id=user.id,
+        user_type=user_type,
+        token=refresh_token,
+        expires_at=expires_at
+    )
+    db.add(db_refresh_token)
+    db.commit()
+
+    # Setar Cookie HttpOnly
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=False,  # Em dev (http). Para prod deve ser True
+        samesite="lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Atualizar JWT via Refresh Token",
+    description="Gera um novo Access Token a partir de um Refresh Token válido salvo em um Cookie HttpOnly."
+)
+def refresh_token(request: Request, response: Response, db: Session = Depends(get_db)):
+    refresh_token_cookie = request.cookies.get("refresh_token")
+    if not refresh_token_cookie:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
+
+    from app.modules.access_control.models import RefreshToken
+    from datetime import datetime, UTC
+    
+    # Verify in DB
+    db_token = db.query(RefreshToken).filter(RefreshToken.token == refresh_token_cookie).first()
+    if not db_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+        
+    if db_token.revoked:
+        raise HTTPException(status_code=401, detail="Refresh token revoked")
+        
+    if db_token.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+
+    user_type = db_token.user_type
+    user = None
+    if user_type == "super_admin":
+        from models.models import SuperAdmin
+        user = db.query(SuperAdmin).filter(SuperAdmin.id == db_token.user_id).first()
+    elif user_type == "webmaster":
+        from models.models import Webmaster
+        user = db.query(Webmaster).filter(Webmaster.id == db_token.user_id).first()
+    elif user_type == "member":
+        from models.models import Member
+        user = db.query(Member).filter(Member.id == db_token.user_id).first()
+        
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Recreate access token data (simplified for refresh)
+    access_token_data = {
+        "sub": user.email if hasattr(user, 'email') else user.username,
+        "user_id": user.id,
+        "user_type": user_type,
+    }
+    
+    access_token = auth_utils.create_access_token(data=access_token_data)
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Fazer Logout Seguramente",
+    description="Invalida o Refresh Token e bloqueia o Access Token atual."
+)
+def logout(
+    request: Request,
+    response: Response,
+    payload: dict = Depends(get_current_user_payload),
+    db: Session = Depends(get_db)
+):
+    refresh_token_cookie = request.cookies.get("refresh_token")
+    if refresh_token_cookie:
+        from app.modules.access_control.models import RefreshToken
+        db_token = db.query(RefreshToken).filter(RefreshToken.token == refresh_token_cookie).first()
+        if db_token:
+            db_token.revoked = True
+            db.commit()
+    
+    # Adiciona o Access Token atual à Denylist
+    jti = payload.get("jti")
+    if jti:
+        from app.modules.access_control.models import RevokedAccessToken
+        from datetime import datetime, UTC
+        from config import settings
+        from datetime import timedelta
+        expires_at = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+        exists = db.query(RevokedAccessToken).filter(RevokedAccessToken.jti == jti).first()
+        if not exists:
+            db_revoked = RevokedAccessToken(jti=jti, expires_at=expires_at)
+            db.add(db_revoked)
+            db.commit()
+
+    # Limpar cookie
+    response.delete_cookie("refresh_token")
+    return

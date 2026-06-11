@@ -8,7 +8,8 @@ class Settings:
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable not set. Please set a strong, random secret key.")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutos (Stateless)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 dias (Stateful)
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")

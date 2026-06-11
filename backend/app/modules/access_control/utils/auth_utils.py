@@ -1,4 +1,6 @@
 import logging
+import secrets
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from jose import JWTError, jwt
@@ -16,9 +18,17 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
+    if "jti" not in to_encode:
+        to_encode["jti"] = str(uuid.uuid4())
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+
+def create_refresh_token() -> str:
+    """Creates a securely random opaque string for Refresh Token."""
+    return secrets.token_hex(64)
 
 
 def decode_access_token(token: str) -> dict | None:

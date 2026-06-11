@@ -4,6 +4,7 @@ from sqlalchemy import (
     Boolean,
     CheckConstraint,
     Column,
+    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -122,3 +123,20 @@ class MemberPermissionException(BaseModel):
             "member_id", "permission_id", "lodge_id", "obedience_id", name="_member_permission_context_uc"
         ),
     )
+
+
+class RefreshToken(BaseModel):
+    __tablename__ = "refresh_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    user_type = Column(String(50), nullable=False)
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked = Column(Boolean, default=False)
+
+
+class RevokedAccessToken(BaseModel):
+    __tablename__ = "revoked_access_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    jti = Column(String(36), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)

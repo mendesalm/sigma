@@ -6,6 +6,7 @@ import database
 import dependencies
 from app.modules.members.schemas import member_schema
 from app.modules.members.services import member_service
+from app.shared.security.abac import verify_resource_ownership
 from models.models import Lodge, Member, MemberLodgeAssociation, RoleHistory
 
 router = APIRouter(
@@ -207,10 +208,8 @@ def read_member(
             raise HTTPException(status_code=404, detail="Member not found in this lodge")
         return db_member
     elif user_type == "member":
-        # Check if the requesting member is accessing their own data
-        current_user_id = current_user.get("user_id")
-        if current_user_id != member_id:
-            raise HTTPException(status_code=403, detail="You can only access your own profile")
+        # ABAC Ownership verification
+        verify_resource_ownership(current_user, member_id)
 
         db_member = db.query(Member).filter(Member.id == member_id).first()
         if db_member is None:
@@ -271,10 +270,8 @@ def update_member(
             raise HTTPException(status_code=404, detail="Member not found in this lodge")
         return db_member
     elif user_type == "member":
-        # Check if the requesting member is updating their own data
-        current_user_id = current_user.get("user_id")
-        if current_user_id != member_id:
-            raise HTTPException(status_code=403, detail="You can only update your own profile")
+        # ABAC Ownership verification
+        verify_resource_ownership(current_user, member_id)
 
         db_member = db.query(Member).filter(Member.id == member_id).first()
         if not db_member:
@@ -537,10 +534,8 @@ async def upload_profile_picture(
         else:
             pass
     elif user_type == "member":
-        # Check if the requesting member is uploading for themselves
-        current_user_id = current_user.get("user_id")
-        if current_user_id != member_id:
-            raise HTTPException(status_code=403, detail="You can only upload your own profile picture")
+        # ABAC Ownership verification
+        verify_resource_ownership(current_user, member_id)
 
         db_member = db.query(Member).filter(Member.id == member_id).first()
         if not db_member:
@@ -642,11 +637,9 @@ def change_member_password(
     """Change password for a member. Members can only change their own password."""
     user_type = current_user.get("user_type")
 
-    # Members can only change their own password
+    # ABAC Ownership verification
     if user_type not in ["super_admin", "webmaster"]:
-        # If it's a regular member, they can only change their own password
-        if current_user.get("id") != member_id:
-            raise HTTPException(status_code=403, detail="You can only change your own password")
+        verify_resource_ownership(current_user, member_id)
 
     # Get the member
     db_member = db.query(Member).filter(Member.id == member_id).first()
