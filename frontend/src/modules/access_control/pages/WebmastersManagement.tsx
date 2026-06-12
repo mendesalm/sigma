@@ -23,6 +23,7 @@ import {
   VpnKey as VpnKeyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 import api from '@/shared/services/api';
 
 interface Webmaster {
@@ -38,6 +39,7 @@ const WebmastersManagement: React.FC = () => {
   const [webmasters, setWebmasters] = useState<Webmaster[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     fetchWebmasters();
@@ -47,8 +49,9 @@ const WebmastersManagement: React.FC = () => {
     try {
       const response = await api.get('/webmasters/');
       setWebmasters(response.data);
-    } catch (error) {
-      console.error('Falha ao buscar webmasters', error);
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Falha ao buscar webmasters';
+      enqueueSnackbar(msg, { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -58,10 +61,10 @@ const WebmastersManagement: React.FC = () => {
     if (window.confirm('Tem certeza que deseja resetar a senha deste webmaster? Uma nova senha será enviada para o email cadastrado.')) {
       try {
         await api.post(`/webmasters/${id}/reset-password`);
-        alert('Senha resetada com sucesso! A nova senha foi enviada para o email do usuário.');
-      } catch (error) {
-        console.error('Falha ao resetar a senha do webmaster', error);
-        alert('Falha ao resetar a senha do webmaster.');
+        enqueueSnackbar('Senha resetada com sucesso! A nova senha foi enviada para o email do usuário.', { variant: 'success' });
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Falha ao resetar a senha do webmaster.';
+        enqueueSnackbar(msg, { variant: 'error' });
       }
     }
   };
@@ -70,9 +73,11 @@ const WebmastersManagement: React.FC = () => {
     if (window.confirm('Tem certeza que deseja excluir este webmaster?')) {
       try {
         await api.delete(`/webmasters/${id}`);
+        enqueueSnackbar('Webmaster excluído com sucesso!', { variant: 'success' });
         fetchWebmasters();
-      } catch (error) {
-        console.error('Erro ao excluir webmaster:', error);
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Erro ao excluir webmaster';
+        enqueueSnackbar(msg, { variant: 'error' });
       }
     }
   };

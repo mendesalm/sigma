@@ -6,6 +6,7 @@ import router from '@/router';
 import { AuthProvider } from '@/modules/access_control/context/AuthContext';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { SnackbarProvider } from 'notistack';
 import theme from '@/theme';
 
 createRoot(document.getElementById('root')!).render(
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <RouterProvider router={router} />
+        <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+          <RouterProvider router={router} />
+        </SnackbarProvider>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>,

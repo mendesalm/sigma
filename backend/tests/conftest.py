@@ -127,6 +127,32 @@ def sample_lodge(db_session, sample_obedience):
 
 
 @pytest.fixture
+def sample_lodge_2(db_session, sample_obedience):
+    """Cria uma segunda loja de teste para isolamento cross-tenant."""
+    lodge = Lodge(
+        lodge_name="Loja Isolada Teste",
+        lodge_number="8888",
+        lodge_code="test-lodge-code-456",
+        foundation_date=date(2020, 1, 1),
+        rite="Rito Escocês Antigo e Aceito",
+        obedience_id=sample_obedience.id,
+        cnpj="11.222.333/0002-81",
+        email="loja2@teste.com",
+        phone="(61) 88888-8888",
+        city="Brasília",
+        state="DF",
+        zip_code="70000-000",
+        technical_contact_name="Pedro Paulo",
+        technical_contact_email="webmaster2@teste.com",
+        is_active=True,
+    )
+    db_session.add(lodge)
+    db_session.commit()
+    db_session.refresh(lodge)
+    return lodge
+
+
+@pytest.fixture
 def sample_super_admin(db_session):
     """Cria um super admin de teste."""
     admin = SuperAdmin(
@@ -199,6 +225,24 @@ def sample_permission(db_session):
     return permission
 
 
+@pytest.fixture(autouse=True)
+def setup_base_permissions(db_session):
+    """Insere as permissões base do sistema para que o RBAC funcione nos testes."""
+    from models.models import Permission
+    
+    actions = [
+        "members:create", "members:read", "members:update", "members:delete",
+        "members:assign_role", "admin:manage_permissions"
+    ]
+    
+    for action in actions:
+        perm = db_session.query(Permission).filter(Permission.action == action).first()
+        if not perm:
+            db_session.add(Permission(action=action, description=f"Permissão {action}", min_credential=100))
+    
+    db_session.commit()
+
+
 @pytest.fixture
 def sample_role(db_session):
     """Cria um cargo de teste."""
@@ -229,9 +273,42 @@ def sample_webmaster(db_session, sample_lodge):
 
 
 @pytest.fixture
+def sample_webmaster_2(db_session, sample_lodge_2):
+    """Cria um webmaster de teste para a loja 2."""
+    from models.models import Webmaster
+
+    webmaster = Webmaster(
+        username="webmaster_test_2",
+        email="webmaster2@teste.com",
+        password_hash=password_utils.hash_password("WebmasterPassword123"),
+        lodge_id=sample_lodge_2.id,
+    )
+    db_session.add(webmaster)
+    db_session.commit()
+    db_session.refresh(webmaster)
+    return webmaster
+
+
+@pytest.fixture
 def webmaster_token(client, sample_webmaster):
     """Gera token de autenticação para webmaster."""
     response = client.post("/auth/login", data={"username": "webmaster@teste.com", "password": "WebmasterPassword123"})
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def webmaster_token_2(client, sample_webmaster_2):
+    """Gera token de autenticação para webmaster da loja 2."""
+    response = client.post("/auth/login", data={"username": "webmaster2@teste.com", "password": "WebmasterPassword123"})
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def standard_member_token(client, sample_member):
+    """Gera token de autenticação para um membro padrão (sem cargos elevados)."""
+    response = client.post("/auth/login", data={"username": "joao@test.com", "password": "TestPassword123"})
     assert response.status_code == 200
     return response.json()["access_token"]
 

@@ -23,15 +23,14 @@ import {
   Select,
   Chip,
   Stack,
-  Alert,
-  Snackbar,
+  ListItemIcon,
+  Checkbox,
   List,
   ListItem,
   ListItemButton,
-  ListItemText,
-  ListItemIcon,
-  Checkbox
+  ListItemText
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import roleService, { Role, RoleCreate, Permission } from '../services/roleService';
 
@@ -48,37 +47,30 @@ const RolesPage: React.FC = () => {
     applicable_rites: '',
     permission_ids: []
   });
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
+  
+  const { enqueueSnackbar } = useSnackbar();
 
   const [permissions, setPermissions] = useState<Permission[]>([]);
-
-  const showSnackbar = React.useCallback((message: string, severity: 'success' | 'error') => {
-    setSnackbar({ open: true, message, severity });
-  }, []);
 
   const fetchRoles = React.useCallback(async () => {
     try {
       const data = await roleService.getAll();
       setRoles(data);
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-      showSnackbar('Erro ao carregar cargos', 'error');
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Erro ao carregar cargos';
+      enqueueSnackbar(msg, { variant: 'error' });
     }
-  }, [showSnackbar]);
+  }, [enqueueSnackbar]);
 
   const fetchPermissions = React.useCallback(async () => {
     try {
       const data = await roleService.getPermissions();
       setPermissions(data);
-    } catch (error) {
-      console.error('Error fetching permissions:', error);
-      showSnackbar('Erro ao carregar permissões', 'error');
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Erro ao carregar permissões';
+      enqueueSnackbar(msg, { variant: 'error' });
     }
-  }, [showSnackbar]);
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -120,16 +112,16 @@ const RolesPage: React.FC = () => {
     try {
       if (editingRole) {
         await roleService.update(editingRole.id, formData);
-        showSnackbar('Cargo atualizado com sucesso', 'success');
+        enqueueSnackbar('Cargo atualizado com sucesso', { variant: 'success' });
       } else {
         await roleService.create(formData);
-        showSnackbar('Cargo criado com sucesso', 'success');
+        enqueueSnackbar('Cargo criado com sucesso', { variant: 'success' });
       }
       handleCloseDialog();
       fetchRoles();
-    } catch (error) {
-      console.error('Error saving role:', error);
-      showSnackbar('Erro ao salvar cargo', 'error');
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Erro ao salvar cargo';
+      enqueueSnackbar(msg, { variant: 'error' });
     }
   };
 
@@ -137,11 +129,11 @@ const RolesPage: React.FC = () => {
     if (window.confirm('Tem certeza que deseja excluir este cargo?')) {
       try {
         await roleService.delete(id);
-        showSnackbar('Cargo excluído com sucesso', 'success');
+        enqueueSnackbar('Cargo excluído com sucesso', { variant: 'success' });
         fetchRoles();
-      } catch (error) {
-        console.error('Error deleting role:', error);
-        showSnackbar('Erro ao excluir cargo', 'error');
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Erro ao excluir cargo';
+        enqueueSnackbar(msg, { variant: 'error' });
       }
     }
   };
@@ -356,17 +348,7 @@ const RolesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Container >
+    </Container>
   );
 };
 

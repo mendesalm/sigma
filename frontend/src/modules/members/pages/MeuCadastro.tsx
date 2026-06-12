@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import api from '@/shared/services/api';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
+import { useSnackbar } from 'notistack';
 import { MemberResponse, RelationshipTypeEnum } from '@/types';
 import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
 import { validateCPF, validateEmail } from '@/shared/utils/validators';
@@ -167,11 +168,7 @@ const MeuCadastro: React.FC = () => {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
+  const { enqueueSnackbar } = useSnackbar();
 
   // --- Handlers ---
   useEffect(() => {
@@ -206,7 +203,7 @@ const MeuCadastro: React.FC = () => {
         setLoading(false);
       } catch (error: any) {
         console.error('Failed to fetch data', error);
-        setSnackbar({ open: true, message: 'Erro ao carregar dados do perfil.', severity: 'error' });
+        enqueueSnackbar('Erro ao carregar dados do perfil.', { variant: 'error' });
         setLoading(false);
       }
     };
@@ -229,7 +226,7 @@ const MeuCadastro: React.FC = () => {
           city: address.localidade,
         }));
       } else {
-        setSnackbar({ open: true, message: 'CEP não encontrado.', severity: 'warning' });
+        enqueueSnackbar('CEP não encontrado.', { variant: 'warning' });
       }
     }
   };
@@ -299,19 +296,19 @@ const MeuCadastro: React.FC = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
-      setSnackbar({ open: true, message: 'Perfil atualizado com sucesso!', severity: 'success' });
+      enqueueSnackbar('Perfil atualizado com sucesso!', { variant: 'success' });
     } catch (error: any) {
-      setSnackbar({ open: true, message: error.response?.data?.detail || 'Erro ao salvar alterações.', severity: 'error' });
+      enqueueSnackbar(error.response?.data?.detail || 'Erro ao salvar alterações.', { variant: 'error' });
     }
   };
 
   const handleChangePassword = async () => {
     if (!passwordData.current_password || !passwordData.new_password) {
-      setSnackbar({ open: true, message: 'Preencha todos os campos de senha.', severity: 'warning' });
+      enqueueSnackbar('Preencha todos os campos de senha.', { variant: 'warning' });
       return;
     }
     if (passwordData.new_password !== passwordData.confirm_password) {
-      setSnackbar({ open: true, message: 'As senhas não coincidem.', severity: 'error' });
+      enqueueSnackbar('As senhas não coincidem.', { variant: 'error' });
       return;
     }
     try {
@@ -319,11 +316,11 @@ const MeuCadastro: React.FC = () => {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password
       });
-      setSnackbar({ open: true, message: 'Senha alterada com sucesso!', severity: 'success' });
+      enqueueSnackbar('Senha alterada com sucesso!', { variant: 'success' });
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
     } catch (error: any) {
       const msg = error.response?.data?.detail || 'Erro ao alterar senha. Verifique sua senha atual.';
-      setSnackbar({ open: true, message: msg, severity: 'error' });
+      enqueueSnackbar(msg, { variant: 'error' });
     }
   };
 
@@ -503,22 +500,22 @@ const MeuCadastro: React.FC = () => {
                   <Grid
                     size={{
                       xs: 12
-                    }}><TextField label="Nome Completo" name="full_name" value={formState.full_name} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                    }}><TextField label="Nome Completo" name="full_name" value={formState.full_name} onChange={handleChange} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
                   <Grid
                     size={{
                       xs: 12,
                       md: 6
-                    }}><TextField label="CPF" name="cpf" value={formState.cpf} onChange={handleChange} fullWidth error={!!errors.cpf} helperText={errors.cpf} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                    }}><TextField label="CPF" name="cpf" value={formState.cpf} onChange={handleChange} fullWidth disabled error={!!errors.cpf} helperText={errors.cpf} sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
                   <Grid
                     size={{
                       xs: 12,
                       md: 6
-                    }}><TextField label="RG/Identidade" name="identity_document" value={formState.identity_document} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                    }}><TextField label="RG/Identidade" name="identity_document" value={formState.identity_document} onChange={handleChange} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
                   <Grid
                     size={{
                       xs: 12,
                       md: 6
-                    }}><TextField label="Data de Nascimento" type="date" name="birth_date" value={formState.birth_date || ''} onChange={handleChange} fullWidth sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
+                    }}><TextField label="Data de Nascimento" type="date" name="birth_date" value={formState.birth_date || ''} onChange={handleChange} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} /></Grid>
                   <Grid
                     size={{
                       xs: 12,
@@ -773,12 +770,7 @@ const MeuCadastro: React.FC = () => {
           </CardContent>
         </Card>
       </TabPanel>
-      {/* Snackbar */}
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      
     </Box>
   );
 };

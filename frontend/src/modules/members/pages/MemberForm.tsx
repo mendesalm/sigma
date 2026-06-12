@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Button, Container, TextField, Typography, Select, MenuItem, FormControl,
-  InputLabel, Grid, SelectChangeEvent, Paper, Box, Snackbar, Alert,
+  InputLabel, Grid, SelectChangeEvent, Paper, Box, 
   Avatar, IconButton, CircularProgress,
   Tabs, Tab, Fade, Card, CardContent, useTheme, useMediaQuery, Chip
 } from '@mui/material';
@@ -29,6 +29,7 @@ import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
 import { validateCPF, validateEmail } from '@/shared/utils/validators';
 import { fetchAddressByCep } from '@/shared/services/cepService';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
+import { useSnackbar } from 'notistack';
 
 // --- Theme Constants (Matching MeuCadastro) ---
 const COLORS = {
@@ -162,7 +163,7 @@ const MemberForm: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' | 'info' }>({ open: false, message: '', severity: 'success' });
+  const { enqueueSnackbar } = useSnackbar();
 
   const [isCimVerified, setIsCimVerified] = useState(false);
   const [cimCheckLoading, setCimCheckLoading] = useState(false);
@@ -252,7 +253,7 @@ const MemberForm: React.FC = () => {
           state: address.uf,
         }));
       } else {
-        setSnackbar({ open: true, message: 'CEP não encontrado.', severity: 'error' });
+        enqueueSnackbar('CEP não encontrado.', { variant: 'error' });
       }
     }
   };
@@ -284,7 +285,7 @@ const MemberForm: React.FC = () => {
 
   const handleCheckCim = async () => {
     if (!formState.cim) {
-      setSnackbar({ open: true, message: 'Por favor, informe o CIM.', severity: 'warning' });
+      enqueueSnackbar('Por favor, informe o CIM.', { variant: 'warning' });
       return;
     }
     setCimCheckLoading(true);
@@ -312,15 +313,15 @@ const MemberForm: React.FC = () => {
           is_deceased: fm.is_deceased
         })));
       }
-      setSnackbar({ open: true, message: 'Membro encontrado!', severity: 'success' });
+      enqueueSnackbar('Membro encontrado!', { variant: 'success' });
       setIsCimVerified(true);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        setSnackbar({ open: true, message: 'CIM não encontrado. Iniciando novo cadastro.', severity: 'info' });
+        enqueueSnackbar('CIM não encontrado. Iniciando novo cadastro.', { variant: 'info' });
         setIsCimVerified(true);
         setExistingMemberId(null);
       } else {
-        setSnackbar({ open: true, message: 'Erro ao verificar CIM.', severity: 'error' });
+        enqueueSnackbar('Erro ao verificar CIM.', { variant: 'error' });
       }
     } finally {
       setCimCheckLoading(false);
@@ -352,7 +353,7 @@ const MemberForm: React.FC = () => {
 
   const handleAddRole = async () => {
     if (!newRole.role_id || !newRole.start_date) {
-      setSnackbar({ open: true, message: 'Preencha o cargo e a data de início.', severity: 'error' });
+      enqueueSnackbar('Preencha o cargo e a data de início.', { variant: 'error' });
       return;
     }
     if (id) {
@@ -364,9 +365,9 @@ const MemberForm: React.FC = () => {
         });
         setRoleHistory([...roleHistory, response.data]);
         setNewRole({ role_id: '', start_date: '', end_date: '' });
-        setSnackbar({ open: true, message: 'Cargo adicionado!', severity: 'success' });
+        enqueueSnackbar('Cargo adicionado!', { variant: 'success' });
       } catch {
-        setSnackbar({ open: true, message: 'Erro ao adicionar cargo.', severity: 'error' });
+        enqueueSnackbar('Erro ao adicionar cargo.', { variant: 'error' });
       }
     } else {
       const newHistoryItem: RoleHistoryResponse = {
@@ -387,9 +388,9 @@ const MemberForm: React.FC = () => {
       try {
         await api.delete(`/members/${id}/roles/${roleHistoryId}`);
         setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
-        setSnackbar({ open: true, message: 'Cargo removido!', severity: 'success' });
+        enqueueSnackbar('Cargo removido!', { variant: 'success' });
       } catch {
-        setSnackbar({ open: true, message: 'Erro ao remover cargo.', severity: 'error' });
+        enqueueSnackbar('Erro ao remover cargo.', { variant: 'error' });
       }
     } else {
       setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
@@ -408,7 +409,7 @@ const MemberForm: React.FC = () => {
     }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setSnackbar({ open: true, message: 'Corrija os erros do formulário.', severity: 'error' });
+      enqueueSnackbar('Corrija os erros do formulário.', { variant: 'error' });
       return;
     }
 
@@ -440,10 +441,10 @@ const MemberForm: React.FC = () => {
           member_class: sanitizedFormState.member_class,
           member_update: memberData
         });
-        setSnackbar({ open: true, message: 'Membro associado!', severity: 'success' });
+        enqueueSnackbar('Membro associado!', { variant: 'success' });
       } else if (id) {
         await api.put(`/members/${id}`, memberData);
-        setSnackbar({ open: true, message: 'Membro atualizado!', severity: 'success' });
+        enqueueSnackbar('Membro atualizado!', { variant: 'success' });
       } else {
         const response = await api.post('/members', memberData);
         targetId = response.data.id;
@@ -456,7 +457,7 @@ const MemberForm: React.FC = () => {
             });
           }
         }
-        setSnackbar({ open: true, message: 'Membro criado!', severity: 'success' });
+        enqueueSnackbar('Membro criado!', { variant: 'success' });
       }
 
       if (selectedFile && targetId) {
@@ -469,7 +470,7 @@ const MemberForm: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to save', error);
       const msg = error.response?.data?.detail || 'Erro ao salvar. Verifique dados.';
-      setSnackbar({ open: true, message: msg, severity: 'error' });
+      enqueueSnackbar(msg, { variant: 'error' });
     }
   };
 
@@ -919,11 +920,7 @@ const MemberForm: React.FC = () => {
         </Card>
       </TabPanel>
       {/* SNACKBAR */}
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-        <Alert severity={snackbar.severity as any} onClose={() => setSnackbar({ ...snackbar, open: false })} variant="filled">
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      
     </Box>
   );
 };

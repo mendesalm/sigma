@@ -27,12 +27,17 @@ import {
   alpha
 } from '@mui/material';
 import { Search, Download, Add } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
 import api from '@/shared/services/api';
 import { MemberResponse } from '@/types';
+import { useAuth } from '@/modules/access_control/hooks/useAuth';
 
 const Members = () => {
   const theme = useTheme();
   const location = useLocation();
+  const { user } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const canEdit = user?.user_type === 'webmaster' || user?.user_type === 'super_admin' || (user?.credential && user.credential >= 100);
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [openExportDialog, setOpenExportDialog] = useState(false);
@@ -66,8 +71,9 @@ const Members = () => {
       try {
         const response = await api.get('/members');
         setMembers(response.data);
-      } catch (error) {
-        console.error('Falha ao buscar membros', error);
+      } catch (error: any) {
+        const msg = error.response?.data?.detail || 'Falha ao buscar membros';
+        enqueueSnackbar(msg, { variant: 'error' });
       }
     };
 
@@ -147,24 +153,26 @@ const Members = () => {
           >
             Exportar
           </Button>
-          <Button 
-            component={Link} 
-            to={`${basePath}/new`} 
-            variant="contained" 
-            color="primary"
-            startIcon={<Add />}
-            sx={{ 
-              fontWeight: 'bold',
-              textTransform: 'none',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
-              '&:hover': {
-                boxShadow: '0 6px 16px rgba(14, 165, 233, 0.4)',
-              }
-            }}
-          >
-            Novo Membro
-          </Button>
+          {canEdit && (
+            <Button 
+              component={Link} 
+              to={`${basePath}/new`} 
+              variant="contained" 
+              color="primary"
+              startIcon={<Add />}
+              sx={{ 
+                fontWeight: 'bold',
+                textTransform: 'none',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(14, 165, 233, 0.3)',
+                '&:hover': {
+                  boxShadow: '0 6px 16px rgba(14, 165, 233, 0.4)',
+                }
+              }}
+            >
+              Novo Membro
+            </Button>
+          )}
         </Box>
       </Box>
 
@@ -309,25 +317,27 @@ const Members = () => {
                     borderBottomRightRadius: '50px'
                   }}
                 >
-                  <Button 
-                    component={Link} 
-                    to={`${basePath}/edit/${member.id}`} 
-                    variant="text" 
-                    size="small"
-                    sx={{ 
-                      color: 'text.primary',
-                      fontSize: '0.75rem',
-                      fontWeight: 500,
-                      minWidth: 'auto',
-                      padding: '4px 8px',
-                      textTransform: 'none',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.05)'
-                      }
-                    }}
-                  >
-                    Editar
-                  </Button>
+                  {canEdit && (
+                    <Button 
+                      component={Link} 
+                      to={`${basePath}/edit/${member.id}`} 
+                      variant="text" 
+                      size="small"
+                      sx={{ 
+                        color: 'text.primary',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        minWidth: 'auto',
+                        padding: '4px 8px',
+                        textTransform: 'none',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255,255,255,0.05)'
+                        }
+                      }}
+                    >
+                      Editar
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

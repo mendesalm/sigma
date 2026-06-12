@@ -11,16 +11,16 @@ import {
   CircularProgress,
   FormControlLabel,
   Checkbox,
-  Alert,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import logoSigma from "../assets/images/SigmaLogo.png";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -28,7 +28,6 @@ const LoginPage: React.FC = () => {
 
   const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     setIsLoading(true);
 
     try {
@@ -49,8 +48,8 @@ const LoginPage: React.FC = () => {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Login failed. Please check your credentials.';
-      setError(errorMessage);
+      const errorMessage = err.response?.data?.message || err.response?.data?.detail || err.response?.data?.errors?.[0]?.msg || 'Falha no login. Verifique suas credenciais.';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -159,12 +158,7 @@ const LoginPage: React.FC = () => {
             >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
             </Button>
-            {error && (
-              <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-                      <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: 2, gap: 1 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: 2, gap: 1 }}>
                                                 <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ textAlign: 'center' }}>
                                                   Esqueci a senha
                                                 </Link>

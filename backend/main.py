@@ -63,6 +63,7 @@ from app.modules.access_control.routes import (
 
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 from app.core.middlewares.tenant_middleware import TenantMiddleware
+from app.core.middlewares.logging_middleware import LoggingMiddleware
 from app.shared.security.cache import permission_cache
 from database import SessionLocal
 
@@ -226,6 +227,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+# Adiciona o middleware de Logging para capturar trace_id e medir tempo
+app.add_middleware(LoggingMiddleware)
 
 # Adiciona o middleware de Tenant para limpar o contexto após cada requisição
 app.add_middleware(TenantMiddleware)

@@ -5,23 +5,30 @@ import database
 import dependencies
 from app.modules.access_control.schemas import permission_schema
 from app.modules.access_control.services import permission_service
+from app.core.logger import logger
 
 router = APIRouter(
     prefix="/permissions",
     tags=["Permissions"],
 )
 
-
 # Dependency for Super Admin check
 def get_current_super_admin(payload: dict = Depends(dependencies.get_current_user_payload)):
     if payload.get("user_type") != "super_admin":
+        logger.warning("Tentativa de acesso restrito a Super Admin negada", extra={"extra_data": {"user_id": payload.get("user_id"), "user_type": payload.get("user_type")}})
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="You do not have permission to perform this action."
+            status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado. Ação restrita a Super Administradores."
         )
     return payload
 
 
-@router.post("/", response_model=permission_schema.PermissionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", 
+    response_model=permission_schema.PermissionResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar Permissão",
+    description="Cria uma nova permissão (ação) no sistema de controle de acesso (ABAC). Acesso restrito a Super Admins."
+)
 def create_permission(
     permission: permission_schema.PermissionCreate,
     db: Session = Depends(database.get_db),
@@ -29,32 +36,51 @@ def create_permission(
 ):
     db_permission = permission_service.get_permission_by_action(db, action=permission.action)
     if db_permission:
-        raise HTTPException(status_code=400, detail="Permission action already exists")
-    return permission_service.create_permission(db=db, permission=permission)
+        logger.warning("Tentativa de criar permissão duplicada", extra={"extra_data": {"action": permission.action}})
+        raise HTTPException(status_code=400, detail="A ação desta permissão já existe.")
+        
+    new_permission = permission_service.create_permission(db=db, permission=permission)
+    logger.info("Permissão criada com sucesso", extra={"extra_data": {"permission_id": new_permission.id, "action": new_permission.action}})
+    return new_permission
 
 
-@router.get("/", response_model=list[permission_schema.PermissionResponse])
+@router.get(
+    "/", 
+    response_model=list[permission_schema.PermissionResponse],
+    summary="Listar Permissões",
+    description="Retorna uma lista paginada de todas as permissões cadastradas no sistema. Acesso restrito a Super Admins."
+)
 def read_permissions(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(get_current_super_admin),  # Secure this endpoint as well
+    current_user: dict = Depends(get_current_super_admin),
 ):
-    permissions = permission_service.get_permissions(db, skip=skip, limit=limit)
-    return permissions
+    return permission_service.get_permissions(db, skip=skip, limit=limit)
 
 
-@router.get("/{permission_id}", response_model=permission_schema.PermissionResponse)
+@router.get(
+    "/{permission_id}", 
+    response_model=permission_schema.PermissionResponse,
+    summary="Obter Permissão por ID",
+    description="Busca e retorna os detalhes de uma permissão específica. Acesso restrito a Super Admins."
+)
 def read_permission(
     permission_id: int, db: Session = Depends(database.get_db), current_user: dict = Depends(get_current_super_admin)
 ):
     db_permission = permission_service.get_permission(db, permission_id=permission_id)
     if db_permission is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found")
+        logger.warning("Permissão não encontrada na busca", extra={"extra_data": {"permission_id": permission_id}})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permissão não encontrada.")
     return db_permission
 
 
-@router.put("/{permission_id}", response_model=permission_schema.PermissionResponse)
+@router.put(
+    "/{permission_id}", 
+    response_model=permission_schema.PermissionResponse,
+    summary="Atualizar Permissão",
+    description="Atualiza os dados de uma permissão existente no sistema. Acesso restrito a Super Admins."
+)
 def update_permission(
     permission_id: int,
     permission: permission_schema.PermissionUpdate,
@@ -63,15 +89,26 @@ def update_permission(
 ):
     db_permission = permission_service.update_permission(db, permission_id=permission_id, permission_update=permission)
     if db_permission is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found")
+        logger.warning("Tentativa de atualizar permissão inexistente", extra={"extra_data": {"permission_id": permission_id}})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permissão não encontrada.")
+        
+    logger.info("Permissão atualizada com sucesso", extra={"extra_data": {"permission_id": permission_id}})
     return db_permission
 
 
-@router.delete("/{permission_id}", response_model=permission_schema.PermissionResponse)
+@router.delete(
+    "/{permission_id}", 
+    response_model=permission_schema.PermissionResponse,
+    summary="Excluir Permissão",
+    description="Remove fisicamente uma permissão do banco de dados. Acesso restrito a Super Admins."
+)
 def delete_permission(
     permission_id: int, db: Session = Depends(database.get_db), current_user: dict = Depends(get_current_super_admin)
 ):
     db_permission = permission_service.delete_permission(db, permission_id=permission_id)
     if db_permission is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permission not found")
+        logger.warning("Tentativa de excluir permissão inexistente", extra={"extra_data": {"permission_id": permission_id}})
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permissão não encontrada.")
+        
+    logger.info("Permissão excluída com sucesso", extra={"extra_data": {"permission_id": permission_id}})
     return db_permission

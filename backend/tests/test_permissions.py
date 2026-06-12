@@ -95,3 +95,25 @@ def test_create_permission_unauthorized(client):
         "/permissions/", json={"action": "hacker:action", "description": "Hacker", "min_credential": 0}
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.integration
+def test_create_permission_forbidden_webmaster(client, webmaster_token):
+    """Testa tentativa de criar permissão por webmaster (deve ser 403)."""
+    response = client.post(
+        "/permissions/",
+        json={"action": "hacker:webmaster", "description": "Hacker Webmaster", "min_credential": 0},
+        headers={"Authorization": f"Bearer {webmaster_token}"},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.integration
+def test_create_permission_forbidden_member(client, standard_member_token):
+    """Testa tentativa de criar permissão por membro comum (deve ser 403)."""
+    response = client.post(
+        "/permissions/",
+        json={"action": "hacker:member", "description": "Hacker Member", "min_credential": 0},
+        headers={"Authorization": f"Bearer {standard_member_token}"},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN

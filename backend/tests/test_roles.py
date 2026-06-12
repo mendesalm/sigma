@@ -119,3 +119,14 @@ def test_create_role_unauthorized(client, webmaster_token):
         headers={"Authorization": f"Bearer {webmaster_token}"},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.integration
+def test_create_role_unauthorized_member(client, standard_member_token):
+    """Testa tentativa de criar cargo por usuário sem privilégios (membro comum)."""
+    response = client.post(
+        "/roles/",
+        json={"name": "Cargo Hacker Membro", "role_type": "Loja", "level": 1, "base_credential": 10},
+        headers={"Authorization": f"Bearer {standard_member_token}"},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN

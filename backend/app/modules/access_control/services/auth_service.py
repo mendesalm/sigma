@@ -3,73 +3,64 @@ from sqlalchemy.orm import Session
 
 from app.modules.access_control.utils import password_utils
 from models import models
-
+from app.core.logger import logger
 
 def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any, str] | None:
     """
-    Authenticates a user by checking credentials against SuperAdmin, Webmaster, and Member tables.
+    Autentica um usuário verificando credenciais nas tabelas SuperAdmin, Webmaster e Member.
 
     Args:
-        db: The database session.
-        identifier: The user's identifier (can be email, username, or CIM).
-        password: The user's plain text password.
+        db: Sessão do banco de dados.
+        identifier: Identificador do usuário (pode ser e-mail, username ou CIM).
+        password: A senha em texto plano.
 
     Returns:
-        A tuple containing the user object and their role as a string (e.g., 'super_admin', 'webmaster', 'member'),
-        or None if authentication fails.
+        Uma tupla contendo o objeto do usuário e sua role como string (ex: 'super_admin', 'webmaster', 'member'),
+        ou None se a autenticação falhar.
     """
-    print(f"Authenticating user with identifier: {identifier}")
+    logger.info("Iniciando autenticação de usuário", extra={"extra_data": {"identifier": identifier}})
 
-    # 1. Check for SuperAdmin
+    # 1. Checa por SuperAdmin
     super_admin = (
         db.query(models.SuperAdmin)
         .filter(or_(models.SuperAdmin.username == identifier, models.SuperAdmin.email == identifier))
         .first()
     )
     if super_admin:
-        print(f"Found super_admin: {super_admin.username}")
-        password_verified = password_utils.verify_password(password, super_admin.password_hash)
-        print(f"Password verified: {password_verified}")
-        if password_verified:
+        logger.debug("Usuário identificado como super_admin", extra={"extra_data": {"username": super_admin.username}})
+        if password_utils.verify_password(password, super_admin.password_hash):
             return super_admin, "super_admin"
 
-    # 2. Check for Webmaster
+    # 2. Checa por Webmaster
     webmaster = (
         db.query(models.Webmaster)
         .filter(or_(models.Webmaster.username == identifier, models.Webmaster.email == identifier))
         .first()
     )
     if webmaster:
-        print(f"Found webmaster: {webmaster.username}")
-        password_verified = password_utils.verify_password(password, webmaster.password_hash)
-        print(f"Password verified: {password_verified}")
-
-        if password_verified:
-            # Check if associated lodge is active
+        logger.debug("Usuário identificado como webmaster", extra={"extra_data": {"username": webmaster.username}})
+        if password_utils.verify_password(password, webmaster.password_hash):
+            # Verifica se a loja associada está ativa
             if webmaster.lodge_id:
                 lodge = db.query(models.Lodge).filter(models.Lodge.id == webmaster.lodge_id).first()
                 if lodge and not lodge.is_active:
-                    print(f"Login denied: Lodge {lodge.lodge_name} is inactive.")
-                    return None  # Or raise specific exception if architecture allows
+                    logger.warning("Acesso negado: Loja do webmaster está inativa", extra={"extra_data": {"lodge_name": lodge.lodge_name}})
+                    return None
 
             return webmaster, "webmaster"
 
-    # 3. Check for Member (by email or CIM)
+    # 3. Checa por Member (por e-mail ou CIM)
     member = (
         db.query(models.Member).filter(or_(models.Member.email == identifier, models.Member.cim == identifier)).first()
     )
     if member:
-        print(f"Found member: {member.full_name}")
-        password_verified = password_utils.verify_password(password, member.password_hash)
-        print(f"Password verified: {password_verified}")
-        if password_verified:
-            # Note: Member login is global. Specific lodge access is checked at the application level (e.g. select_lodge)
-            # However, if member belongs ONLY to inactive lodges, they might be effectively blocked depending on business rule.
-            # For now, we allow login but they won't see the inactive lodge in the dashboard.
+        logger.debug("Usuário identificado como membro", extra={"extra_data": {"member_name": member.full_name}})
+        if password_utils.verify_password(password, member.password_hash):
+            # Nota: O login do membro é global. O acesso específico à loja é checado a nível de aplicação.
             return member, "member"
 
-    # 4. If no user is found or password does not match
-    print("User not found or password does not match.")
+    # 4. Falha na autenticação
+    logger.warning("Falha na autenticação: usuário não encontrado ou senha incorreta", extra={"extra_data": {"identifier": identifier}})
     return None
 
 
@@ -82,34 +73,34 @@ def _create_webmaster_user(
     commit: bool = True,
 ) -> tuple[models.Webmaster, str]:
     """
-    Creates a new Webmaster user, generates a temporary password, and associates
-    them with an obedience or a lodge.
+    Cria um novo usuário Webmaster, gera uma senha temporária e o associa
+    a uma obediência ou loja.
 
     Args:
-        db: The database session.
-        name: The full name of the webmaster.
-        email: The webmaster's email address, used as the username.
-        obedience_id: The ID of the obedience to associate with.
-        lodge_id: The ID of the lodge to associate with.
-        commit: Whether to commit the transaction immediately.
+        db: Sessão do banco de dados.
+        name: O nome completo do webmaster.
+        email: E-mail do webmaster, usado também como username.
+        obedience_id: ID da obediência associada.
+        lodge_id: ID da loja associada.
+        commit: Se deve efetuar o commit da transação imediatamente.
 
     Returns:
-        A tuple containing the created Webmaster object and the plain text temporary password.
+        Uma tupla contendo a instância do Webmaster criada e a senha temporária em texto plano.
     """
     import secrets
     import string
 
-    # 1. Generate a temporary password
+    # 1. Gera uma senha temporária
     alphabet = string.ascii_letters + string.digits
     temp_password = "".join(secrets.choice(alphabet) for i in range(10))
 
-    # 2. Hash the password
+    # 2. Faz o hash da senha
     password_hash = password_utils.hash_password(temp_password)
 
-    # 3. Create the Webmaster instance
+    # 3. Cria a instância
     db_webmaster = models.Webmaster(
         email=email,
-        username=email,  # Use email as username by default
+        username=email,
         password_hash=password_hash,
         is_active=True,
         obedience_id=obedience_id,
@@ -121,29 +112,26 @@ def _create_webmaster_user(
         db.commit()
         db.refresh(db_webmaster)
     else:
-        db.flush()  # Flush to get the ID if needed, but don't commit
+        db.flush()
 
-    # TODO: Implement actual email sending logic here
-    print("--- CUIDADO: SENHA TEMPORÁRIA GERADA ---")
-    print(f"Usuário Webmaster: {email}")
-    print(f"Senha Temporária: {temp_password}")
-    print("-----------------------------------------")
+    logger.info("Senha temporária de Webmaster gerada com sucesso", extra={"extra_data": {"email": email}})
+    # AVISO: Evitar imprimir senhas diretamente no console em produção. O envio deve ser via E-mail.
 
     return db_webmaster, temp_password
 
 
 def calculate_member_credential(member: models.Member, entity_id: int, entity_type: str) -> int:
     """
-    Calculates the active credential for a member within a specific entity context.
+    Calcula a credencial ativa para um membro dentro do contexto de uma entidade específica.
 
-    Logic:
-    1. Check for specific Role in the entity.
-    2. If Role exists: Credential = Role.base_credential + Role.level
-    3. If No Role: Credential = Degree (Apprentice=1, Fellow=2, Master=3)
+    Lógica:
+    1. Verifica se existe um Cargo (Role) específico na entidade.
+    2. Se existir: Credencial = Role.base_credential + Role.level
+    3. Sem Cargo: Credencial = Grau (Aprendiz=1, Companheiro=2, Mestre=3)
     """
     role = None
     if entity_type == "lodge":
-        # Check for active role in RoleHistory for this lodge
+        # Verifica se há cargo ativo no histórico desta loja
         active_role_history = next(
             (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), None
         )
@@ -151,35 +139,32 @@ def calculate_member_credential(member: models.Member, entity_id: int, entity_ty
             role = active_role_history.role
 
     elif entity_type == "obedience":
-        # Obedience associations still link directly to a role in the current model
+        # Associações com obediência ligam diretamente a um cargo
         association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)
         if association:
             role = association.role
 
     if role:
-        # Ensure base_credential and level are integers
         base = role.base_credential if role.base_credential is not None else 0
         level = role.level if role.level is not None else 0
         return base + level
 
-    # Fallback to Degree
+    # Fallback para o Grau Maçônico
     degree_map = {
         "Apprentice": 1,
         "Fellow": 2,
         "Master": 3,
-        "Installed Master": 3,  # Treat Installed Master as Master for base credential, specific roles handle higher privileges
+        "Installed Master": 3,
     }
-    # Handle Enum or String
     degree_val = member.degree.value if hasattr(member.degree, "value") else member.degree
-    return degree_map.get(degree_val, 1)  # Default to 1 (Apprentice)
+    return degree_map.get(degree_val, 1)
 
 
 def get_active_role_name(member: models.Member, entity_id: int, entity_type: str) -> str | None:
     """
-    Retrieves the name of the active role for a member within a specific entity context.
+    Recupera o nome do cargo ativo de um membro dentro do contexto de uma entidade.
     """
     if entity_type == "lodge":
-        # Check for active role in RoleHistory for this lodge
         active_role_history = next(
             (h for h in member.role_history if h.lodge_id == entity_id and h.end_date is None), None
         )
@@ -187,7 +172,6 @@ def get_active_role_name(member: models.Member, entity_id: int, entity_type: str
             return active_role_history.role.name
 
     elif entity_type == "obedience":
-        # Obedience associations still link directly to a role in the current model
         association = next((a for a in member.obedience_associations if a.obedience_id == entity_id), None)
         if association:
             return association.role.name

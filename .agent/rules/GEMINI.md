@@ -95,13 +95,16 @@ When auto-applying an agent, inform the user:
 
 ## TIER 0: UNIVERSAL RULES (Always Active)
 
-### 🌐 Language Handling
+### 🥇 Regras de Ouro (Sigma) & 🌐 Language Handling
 
 When user's prompt is NOT in English:
+1. **Internally translate** for better comprehension.
+2. **Respond in user's language** - match their communication.
 
-1. **Internally translate** for better comprehension
-2. **Respond in user's language** - match their communication
-3. **Code comments/variables** remain in English
+**🔥 Regras Arquiteturais e de Padronização (Obrigatórias):**
+3. **Idioma de Código:** Nomes de variáveis, funções e classes devem ser escritos em Inglês. Porém, **todos os *docstrings*, comentários explicativos e arquivos README.md DEVEM ser escritos em Português do Brasil (PT-BR)**.
+4. **Swagger (FastAPI):** Uso intenso e meticuloso do Swagger. Toda e qualquer rota da API deve possuir `summary`, `description` detalhado e `response_model` validado via Pydantic.
+5. **Logging Estruturado (JSON):** O projeto exige um sistema de Logging em formato JSON. Todo log gerado no backend deve capturar e registrar obrigatoriamente um `trace_id` e o rastreio (stack trace) dos erros. Proibido uso de `print()`.
 
 ### 🧹 Clean Code (Global Mandatory)
 

@@ -11,12 +11,11 @@ import {
   InputLabel,
   Select,
   SelectChangeEvent,
-  Alert,
-  Snackbar,
   Container,
   Divider,
   useTheme
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   ArrowBack as ArrowBackIcon,
@@ -71,7 +70,7 @@ const WebmasterForm: React.FC = () => {
   const [lodges, setLodges] = useState<Lodge[]>([]);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const { enqueueSnackbar } = useSnackbar();
 
   const fetchObediences = async () => {
     try {
@@ -149,7 +148,7 @@ const WebmasterForm: React.FC = () => {
 
     if (formData.email && !validateEmail(formData.email)) {
       setErrors({ email: 'Email inválido' });
-      setSnackbar({ open: true, message: 'Por favor, corrija os erros no formulário.', severity: 'error' });
+      enqueueSnackbar('Por favor, corrija os erros no formulário.', { variant: 'error' });
       return;
     }
 
@@ -176,16 +175,17 @@ const WebmasterForm: React.FC = () => {
     try {
       if (isEditMode) {
         await api.put(`/webmasters/${id}`, payload);
-        setSnackbar({ open: true, message: 'Webmaster atualizado com sucesso!', severity: 'success' });
+        enqueueSnackbar('Webmaster atualizado com sucesso!', { variant: 'success' });
       } else {
         await api.post('/webmasters/', payload);
-        setSnackbar({ open: true, message: 'Webmaster criado com sucesso!', severity: 'success' });
+        enqueueSnackbar('Webmaster criado com sucesso!', { variant: 'success' });
       }
       setTimeout(() => navigate('/dashboard/management/webmasters'), 1500);
     } catch (err: any) {
       console.error('Erro ao salvar webmaster:', err);
-      setError(err.response?.data?.detail || 'Erro ao salvar webmaster.');
-      setSnackbar({ open: true, message: 'Erro ao salvar webmaster.', severity: 'error' });
+      const msg = err.response?.data?.detail || 'Erro ao salvar webmaster.';
+      setError(msg);
+      enqueueSnackbar(msg, { variant: 'error' });
     }
   };
 
@@ -210,7 +210,6 @@ const WebmasterForm: React.FC = () => {
           Voltar
         </Button>
       </Box>
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           {/* 1. Dados de Acesso */}
@@ -378,16 +377,6 @@ const WebmasterForm: React.FC = () => {
           </Grid>
         </Grid>
       </form>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%', borderRadius: 2 }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 };

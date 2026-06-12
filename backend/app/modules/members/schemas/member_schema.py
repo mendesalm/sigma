@@ -296,6 +296,31 @@ class MemberCreateWithAssociation(MemberCreate):
     }
 
 
+class MemberSelfUpdate(BaseModel):
+    """Schema for members updating their own profile. Excludes sensitive fields like degree, status, cim."""
+    full_name: str | None = Field(None, max_length=255)
+    email: EmailStr | None = None
+    cpf: str | None = Field(None, max_length=14)
+    identity_document: str | None = Field(None, max_length=50)
+    birth_date: date | None = None
+    marriage_date: date | None = None
+    street_address: str | None = Field(None, max_length=255)
+    street_number: str | None = Field(None, max_length=50)
+    neighborhood: str | None = Field(None, max_length=100)
+    city: str | None = Field(None, max_length=100)
+    state: str | None = Field(None, max_length=2)
+    zip_code: str | None = Field(None, max_length=9)
+    phone: str | None = Field(None, max_length=20)
+    place_of_birth: str | None = Field(None, max_length=100)
+    nationality: str | None = Field(None, max_length=100)
+    religion: str | None = Field(None, max_length=100)
+    education_level: str | None = Field(None, max_length=255)
+    occupation: str | None = Field(None, max_length=255)
+    workplace: str | None = Field(None, max_length=255)
+    profile_picture_path: str | None = Field(None, max_length=255)
+    password: str | None = Field(None, min_length=8)
+
+
 class MemberUpdate(BaseModel):
     full_name: str | None = Field(None, max_length=255)
     email: EmailStr | None = None

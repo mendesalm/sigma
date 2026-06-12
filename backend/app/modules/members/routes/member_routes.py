@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
@@ -8,6 +8,8 @@ from app.modules.members.schemas import member_schema
 from app.modules.members.services import member_service
 from app.shared.security.abac import verify_resource_ownership
 from models.models import Lodge, Member, MemberLodgeAssociation, RoleHistory
+from app.modules.audit.services.audit_service import log_action
+from app.core.logger import logger
 
 router = APIRouter(
     prefix="/members",
@@ -30,7 +32,8 @@ def check_cim(
     # Allow any authenticated user to check CIM (needed for registration flow)
     member = member_service.get_member_by_cim(db, cim)
     if not member:
-        raise HTTPException(status_code=404, detail="Member not found")
+        logger.warning("CIM não encontrado na base", extra={"extra_data": {"cim": cim}})
+        raise HTTPException(status_code=404, detail="Membro não encontrado.")
     return member
 
 
@@ -43,6 +46,7 @@ def check_cim(
 def associate_member(
     member_id: int,
     association_data: member_schema.MemberAssociateLodge,
+    request: Request,
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
@@ -52,19 +56,34 @@ def associate_member(
     if user_type == "webmaster":
         lodge_id = current_user.get("lodge_id")
         if not lodge_id:
-            raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
+            logger.warning("Acesso negado: Webmaster sem loja associada", extra={"extra_data": {"user_id": current_user.get("user_id")}})
+            raise HTTPException(status_code=403, detail="Webmaster não associado a uma loja.")
         if association_data.lodge_id != lodge_id:
+            logger.warning("Acesso negado: Tentativa de associar a outra loja", extra={"extra_data": {"target_lodge": association_data.lodge_id}})
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="You can only associate members to your own lodge."
+                status_code=status.HTTP_403_FORBIDDEN, detail="Você só pode associar membros à sua própria loja."
             )
     elif user_type != "super_admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise HTTPException(status_code=403, detail="Não autorizado.")
 
     try:
-        return member_service.associate_member_to_lodge(db=db, member_id=member_id, association_data=association_data)
+        result = member_service.associate_member_to_lodge(db=db, member_id=member_id, association_data=association_data)
+        log_action(
+            db=db,
+            user_id=current_user.get("user_id"),
+            user_type=user_type,
+            action="ASSOCIATE_MEMBER_TO_LODGE",
+            resource_type="MEMBER",
+            resource_id=member_id,
+            details={"lodge_id": association_data.lodge_id},
+            ip_address=request.client.host if request.client else None
+        )
+        return result
     except ValueError as e:
+        logger.warning("Erro de validação ao associar membro", extra={"extra_data": {"error": str(e)}})
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error("Erro inesperado ao associar membro", exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -77,33 +96,45 @@ def associate_member(
 )
 def create_member(
     member: member_schema.MemberCreateWithAssociation,
+    request: Request,
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(dependencies.get_current_user_payload),
+    context: dependencies.UserContext = Depends(dependencies.require_permission("members:create")),
 ):
     """Create a new member. Webmasters can only create for their lodge."""
-    user_type = current_user.get("user_type")
-
-    if user_type == "webmaster":
-        lodge_id = current_user.get("lodge_id")
-        if not lodge_id:
-            raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
-        if member.lodge_id != lodge_id:
+    if context.user_type == "webmaster":
+        if not context.lodge_id:
+            logger.warning("Acesso negado: Webmaster sem loja associada")
+            raise HTTPException(status_code=403, detail="Webmaster não associado a uma loja.")
+        if member.lodge_id != context.lodge_id:
+            logger.warning("Acesso negado: Tentativa de criar membro para outra loja")
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="You can only create members for your own lodge."
+                status_code=status.HTTP_403_FORBIDDEN, detail="Você só pode criar membros para sua própria loja."
             )
-    elif user_type != "super_admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+    elif context.user_type != "super_admin":
+        raise HTTPException(status_code=403, detail="Não autorizado.")
 
     try:
-        return member_service.create_member_for_lodge(db=db, member_data=member)
+        new_member = member_service.create_member_for_lodge(db=db, member_data=member)
+        log_action(
+            db=db,
+            user_id=context.user_id,
+            user_type=context.user_type,
+            action="CREATE_MEMBER",
+            resource_type="MEMBER",
+            resource_id=new_member.id,
+            details={"email": new_member.email, "lodge_id": member.lodge_id},
+            ip_address=request.client.host if request.client else None
+        )
+        return new_member
     except IntegrityError as e:
         error_msg = str(e.orig)
+        logger.warning("Conflito de integridade ao criar membro", extra={"extra_data": {"error": error_msg}})
         if "ix_members_email" in error_msg or "UNIQUE constraint failed: members.email" in error_msg:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered.")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado.")
         if "ix_members_cpf" in error_msg or "UNIQUE constraint failed: members.cpf" in error_msg:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CPF already registered.")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CPF já cadastrado.")
         if "ix_members_cim" in error_msg or "UNIQUE constraint failed: members.cim" in error_msg:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CIM already registered.")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="CIM já cadastrado.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg)
 
 
@@ -119,7 +150,7 @@ def read_members(
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
-    """Retrieve members. SuperAdmins see all, Webmasters see their lodge's."""
+    """Retrieve members. SuperAdmins see all, Webmasters and Members see their lodge's."""
     user_type = current_user.get("user_type")
 
     if user_type == "super_admin":
@@ -130,27 +161,14 @@ def read_members(
             .limit(limit)
             .all()
         )
-    elif user_type == "webmaster":
+    elif user_type in ["webmaster", "member"]:
         lodge_id = current_user.get("lodge_id")
         if not lodge_id:
-            raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
-        members = member_service.get_members_by_lodge(db, lodge_id=lodge_id, skip=skip, limit=limit)
-    elif user_type == "member":
-        # Check if member has permission to view members list
-        # Allow "Secretário" and "Chanceler"
-        active_role = current_user.get("active_role_name")
-        allowed_roles = ["Secretário", "Chanceler"]
-
-        if active_role not in allowed_roles:
-            raise HTTPException(status_code=403, detail="Not authorized to view members list")
-
-        lodge_id = current_user.get("lodge_id")
-        if not lodge_id:
-            raise HTTPException(status_code=403, detail="Member not associated with a lodge context")
+            raise HTTPException(status_code=403, detail="Usuário não associado a um contexto de loja.")
 
         members = member_service.get_members_by_lodge(db, lodge_id=lodge_id, skip=skip, limit=limit)
     else:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise HTTPException(status_code=403, detail="Não autorizado.")
 
     # Convert to list response with computed active_role
     result = []
@@ -228,6 +246,7 @@ def read_member(
 def update_member(
     member_id: int,
     member: member_schema.MemberUpdate,
+    request: Request,
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
@@ -236,16 +255,10 @@ def update_member(
 
     if user_type == "super_admin":
         # For SuperAdmin, we need a generic update service or reuse existing logic if appropriate
-        # For now, let's assume we can use the same service but we need to be careful about lodge association checks
-        # Ideally we should have a generic update_member service.
-        # But member_service.update_member_in_lodge checks for lodge association.
-
-        # Let's fetch the member first
         db_member = db.query(Member).filter(Member.id == member_id).first()
         if not db_member:
             raise HTTPException(status_code=404, detail="Member not found")
 
-        # Update logic similar to update_member_in_lodge but without lodge check
         from app.modules.access_control.utils.password_utils import hash_password
 
         update_data = member.model_dump(exclude_unset=True)
@@ -257,6 +270,16 @@ def update_member(
 
         db.commit()
         db.refresh(db_member)
+        log_action(
+            db=db,
+            user_id=current_user.get("user_id"),
+            user_type=user_type,
+            action="UPDATE_MEMBER",
+            resource_type="MEMBER",
+            resource_id=member_id,
+            details={"updated_by": "super_admin"},
+            ip_address=request.client.host if request.client else None
+        )
         return db_member
 
     elif user_type == "webmaster":
@@ -268,6 +291,17 @@ def update_member(
         )
         if db_member is None:
             raise HTTPException(status_code=404, detail="Member not found in this lodge")
+            
+        log_action(
+            db=db,
+            user_id=current_user.get("user_id"),
+            user_type=user_type,
+            action="UPDATE_MEMBER",
+            resource_type="MEMBER",
+            resource_id=member_id,
+            details={"updated_by": "webmaster"},
+            ip_address=request.client.host if request.client else None
+        )
         return db_member
     elif user_type == "member":
         # ABAC Ownership verification
@@ -277,19 +311,35 @@ def update_member(
         if not db_member:
             raise HTTPException(status_code=404, detail="Member not found")
 
-        # Update logic for member self-update (similar to super_admin but restricted?)
-        # For now, allow full update as per schema, but maybe restrict sensitive fields later
         from app.modules.access_control.utils.password_utils import hash_password
 
         update_data = member.model_dump(exclude_unset=True)
-        if "password" in update_data:
-            db_member.password_hash = hash_password(update_data.pop("password"))
+        
+        # Security Fix: Filter out fields that are not in MemberSelfUpdate
+        from app.modules.members.schemas.member_schema import MemberSelfUpdate
 
-        for key, value in update_data.items():
+        self_update_data = MemberSelfUpdate(**member.model_dump(exclude_unset=True))
+        
+        for key, value in self_update_data.model_dump(exclude_unset=True).items():
+            if key == "password":
+                db_member.password_hash = hash_password(value)
+                continue
             setattr(db_member, key, value)
-
+            
         db.commit()
         db.refresh(db_member)
+        
+        log_action(
+            db=db,
+            user_id=current_user.get("user_id"),
+            user_type=user_type,
+            action="SELF_UPDATE_MEMBER",
+            resource_type="MEMBER",
+            resource_id=member_id,
+            details={"updated_fields": list(self_update_data.model_dump(exclude_unset=True).keys())},
+            ip_address=request.client.host if request.client else None
+        )
+        
         return db_member
 
     else:
@@ -305,14 +355,10 @@ def update_member(
 def delete_member_association(
     member_id: int,
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(dependencies.get_current_user_payload),
+    context: dependencies.UserContext = Depends(dependencies.require_permission("members:delete")),
 ):
     """Disassociate a member (Webmaster) or Delete member (SuperAdmin)."""
-    user_type = current_user.get("user_type")
-
-    if user_type == "super_admin":
-        # SuperAdmin deletes the member entirely? Or just association?
-        # For now, let's implement full delete for SuperAdmin
+    if context.user_type == "super_admin":
         db_member = db.query(Member).filter(Member.id == member_id).first()
         if not db_member:
             raise HTTPException(status_code=404, detail="Member not found")
@@ -320,11 +366,10 @@ def delete_member_association(
         db.commit()
         return
 
-    elif user_type == "webmaster":
-        lodge_id = current_user.get("lodge_id")
-        if not lodge_id:
+    elif context.user_type == "webmaster":
+        if not context.lodge_id:
             raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
-        deleted_association = member_service.delete_member_association(db, member_id=member_id, lodge_id=lodge_id)
+        deleted_association = member_service.delete_member_association(db, member_id=member_id, lodge_id=context.lodge_id)
         if deleted_association is None:
             raise HTTPException(status_code=404, detail="Member association not found in this lodge")
         return

@@ -115,3 +115,44 @@ def test_create_member_invalid_cpf(client, webmaster_token, sample_lodge):
         headers={"Authorization": f"Bearer {webmaster_token}"},
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+@pytest.mark.integration
+def test_member_self_update_privilege_escalation(client, standard_member_token, sample_member):
+    """Testa que um membro comum NÃO pode alterar seu grau ou status (Mass Assignment Blocked)."""
+    # Verify initial degree
+    assert sample_member.degree != "Mestre Instalado"
+    
+    response = client.put(
+        f"/members/{sample_member.id}",
+        json={
+            "phone": "(11) 99999-9999", 
+            "degree": "Mestre Instalado", 
+            "status": "Inativo"
+        },
+        headers={"Authorization": f"Bearer {standard_member_token}"},
+    )
+    
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    
+    # Phone should be updated (allowed in MemberSelfUpdate)
+    assert data["phone"] == "(11) 99999-9999"
+    
+    # Degree and Status should NOT be updated (ignored by MemberSelfUpdate filter)
+    assert data["degree"] != "Mestre Instalado"
+    assert data["status"] != "Inativo"
+
+
+@pytest.mark.integration
+def test_read_members_standard_member(client, standard_member_token, sample_member):
+    """Testa listagem de membros por um membro comum da mesma loja."""
+    response = client.get("/members/", headers={"Authorization": f"Bearer {standard_member_token}"})
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    
+    # Verifica se o membro consegue ver a si mesmo e outros na listagem da loja
+    member_ids = [m["id"] for m in data]
+    assert sample_member.id in member_ids
+

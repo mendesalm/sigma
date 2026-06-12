@@ -9,6 +9,8 @@ from app.modules.access_control.utils import auth_utils
 from database import get_db
 from dependencies import get_current_user_payload
 from models import models
+from app.modules.audit.services.audit_service import log_action
+from app.core.logger import logger
 
 router = APIRouter(
     prefix="/auth",
@@ -27,7 +29,7 @@ class AssociationSelection(BaseModel):
     summary="Login de Usuários",
     description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT.",
 )
-def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Fornece um token de acesso para um usuário válido.
     O campo 'username' do formulário pode ser um email, nome de usuário ou CIM.
@@ -35,6 +37,7 @@ def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestF
     user_auth_data = auth_service.authenticate_user(db=db, identifier=form_data.username, password=form_data.password)
 
     if not user_auth_data:
+        logger.warning("Falha de autenticação: Nome de usuário ou senha incorretos", extra={"extra_data": {"username": form_data.username}})
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nome de usuário ou senha incorretos",
@@ -128,6 +131,19 @@ def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestF
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
     )
 
+    log_action(
+        db=db,
+        user_id=user.id,
+        user_type=user_type,
+        action="LOGIN",
+        resource_type="SESSION",
+        resource_id=None,
+        details={"ip": request.client.host if request.client else None},
+        ip_address=request.client.host if request.client else None
+    )
+    
+    logger.info("Login realizado com sucesso", extra={"extra_data": {"user_id": user.id, "user_type": user_type}})
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -151,10 +167,12 @@ def select_association(
     user_type = payload.get("user_type")
 
     if user_type != "member" or user_id is None:
+        logger.warning("Tentativa de selecionar associação por usuário não membro", extra={"extra_data": {"user_type": user_type}})
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a membros.")
 
     user = db.query(models.Member).filter(models.Member.id == user_id).first()
     if not user:
+        logger.error("Membro não encontrado no banco de dados durante seleção de associação", extra={"extra_data": {"user_id": user_id}})
         raise HTTPException(status_code=404, detail="Membro não encontrado.")
 
     access_token_data = {
@@ -167,6 +185,10 @@ def select_association(
     }
 
     if association_data.association_type == "lodge":
+        # Validação de segurança: Verifica se o membro realmente pertence à Loja
+        if not any(la.lodge_id == association_data.association_id for la in user.lodge_associations):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado: Você não pertence a esta Loja.")
+            
         access_token_data["lodge_id"] = association_data.association_id
         access_token_data["credential"] = auth_service.calculate_member_credential(
             user, association_data.association_id, "lodge"
@@ -175,6 +197,10 @@ def select_association(
             user, association_data.association_id, "lodge"
         )
     elif association_data.association_type == "obedience":
+        # Validação de segurança: Verifica se o membro realmente pertence à Obediência
+        if not any(oa.obedience_id == association_data.association_id for oa in user.obedience_associations):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado: Você não pertence a esta Obediência.")
+            
         access_token_data["obedience_id"] = association_data.association_id
         access_token_data["credential"] = auth_service.calculate_member_credential(
             user, association_data.association_id, "obedience"
@@ -235,12 +261,15 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
     # Verify in DB
     db_token = db.query(RefreshToken).filter(RefreshToken.token == refresh_token_cookie).first()
     if not db_token:
+        logger.warning("Tentativa de uso de refresh token inválido ou inexistente no banco")
         raise HTTPException(status_code=401, detail="Invalid refresh token")
         
     if db_token.revoked:
+        logger.warning("Tentativa de uso de refresh token revogado", extra={"extra_data": {"user_id": db_token.user_id}})
         raise HTTPException(status_code=401, detail="Refresh token revoked")
         
     if db_token.expires_at.replace(tzinfo=UTC) < datetime.now(UTC):
+        logger.info("Refresh token expirado", extra={"extra_data": {"user_id": db_token.user_id}})
         raise HTTPException(status_code=401, detail="Refresh token expired")
 
     user_type = db_token.user_type
@@ -266,6 +295,8 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
     }
     
     access_token = auth_utils.create_access_token(data=access_token_data)
+    
+    logger.info("Access token renovado com sucesso via refresh token", extra={"extra_data": {"user_id": user.id}})
     
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -307,4 +338,6 @@ def logout(
 
     # Limpar cookie
     response.delete_cookie("refresh_token")
+    
+    logger.info("Logout realizado com sucesso", extra={"extra_data": {"jti": jti}})
     return
