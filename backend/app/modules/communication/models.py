@@ -87,3 +87,31 @@ class DiningScale(BaseModel):
 
     lodge = relationship("Lodge", backref="dining_scales")
     member = relationship("Member", backref="dining_scales")
+
+
+class EntityMessage(BaseModel):
+    __tablename__ = "entity_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    sender_obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
+    sender_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
+    recipient_obedience_id = Column(Integer, ForeignKey("obediences.id"), nullable=True)
+    recipient_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
+    subject = Column(String(255), nullable=False)
+    body = Column(Text, nullable=False)
+    status = Column(String(50), default="UNREAD") # UNREAD, READ, ARCHIVED
+
+    sender_obedience = relationship("Obedience", foreign_keys=[sender_obedience_id])
+    sender_lodge = relationship("Lodge", foreign_keys=[sender_lodge_id])
+    recipient_obedience = relationship("Obedience", foreign_keys=[recipient_obedience_id])
+    recipient_lodge = relationship("Lodge", foreign_keys=[recipient_lodge_id])
+    attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
+
+
+class MessageAttachment(BaseModel):
+    __tablename__ = "message_attachments"
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("entity_messages.id"), nullable=False)
+    file_url = Column(String(512), nullable=False)
+    file_name = Column(String(255), nullable=False)
+
+    message = relationship("EntityMessage", back_populates="attachments")

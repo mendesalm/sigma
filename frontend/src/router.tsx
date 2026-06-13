@@ -10,7 +10,6 @@ import { membersLodgeDashboardRoutes, membersDashboardRoutes } from '@/modules/m
 import { financeLodgeDashboardRoutes } from '@/modules/finance/routes';
 import { sessionsLodgeDashboardRoutes, sessionsPublicRoutes, sessionsDashboardRoutes } from '@/modules/sessions/routes';
 import { communicationLodgeDashboardRoutes, communicationDashboardRoutes } from '@/modules/communication/routes';
-import { documentsPublicRoutes, documentsDashboardRoutes, documentsLodgeDashboardRoutes } from '@/modules/documents/routes';
 import { libraryLodgeDashboardRoutes } from '@/modules/library/routes';
 
 const router = createBrowserRouter([
@@ -23,7 +22,6 @@ const router = createBrowserRouter([
           ...corePublicRoutes,
           ...accessControlPublicRoutes,
           ...sessionsPublicRoutes,
-          ...documentsPublicRoutes,
         ]
       },
       {
@@ -39,7 +37,6 @@ const router = createBrowserRouter([
               ...financeLodgeDashboardRoutes,
               ...sessionsLodgeDashboardRoutes,
               ...communicationLodgeDashboardRoutes,
-              ...documentsLodgeDashboardRoutes,
               ...libraryLodgeDashboardRoutes,
             ]
           },
@@ -51,7 +48,6 @@ const router = createBrowserRouter([
               ...membersDashboardRoutes,
               ...sessionsDashboardRoutes,
               ...communicationDashboardRoutes,
-              ...documentsDashboardRoutes,
             ]
           }
         ]

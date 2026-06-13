@@ -108,3 +108,32 @@ def delete_obedience(db: Session, obedience_id: int) -> models.Obedience | None:
     db.delete(db_obedience)
     db.commit()
     return db_obedience
+
+def get_all_subordinate_lodges(db: Session, obedience_id: int) -> list[int]:
+    """
+    Retorna uma lista contendo os IDs de todas as Lojas subordinadas a uma obediência,
+    incluindo as lojas das subobediências atreladas a ela.
+    """
+    lodge_ids = []
+
+    # Lojas diretamente subordinadas a esta obediência
+    direct_lodges = db.query(models.Lodge.id).filter(models.Lodge.obedience_id == obedience_id).all()
+    lodge_ids.extend([l.id for l in direct_lodges])
+
+    # Lojas subordinadas através de subobediências regionais
+    sub_lodges = db.query(models.Lodge.id).filter(models.Lodge.subobedience_id == obedience_id).all()
+    lodge_ids.extend([l.id for l in sub_lodges])
+
+    # Se a obediência for nacional e tiver subobediências estaduais atreladas a ela,
+    # precisamos buscar as lojas dessas subobediências também.
+    sub_obediences = db.query(models.Obedience.id).filter(models.Obedience.parent_obedience_id == obedience_id).all()
+    for sub_ob in sub_obediences:
+        # Lojas subordinadas diretamente à subobediência (como subobedience_id ou obedience_id)
+        # Assumindo que a modelagem usa subobedience_id para a ligação com as lojas
+        sub_direct_lodges = db.query(models.Lodge.id).filter(
+            (models.Lodge.subobedience_id == sub_ob.id) | (models.Lodge.obedience_id == sub_ob.id)
+        ).all()
+        lodge_ids.extend([l.id for l in sub_direct_lodges])
+        
+    return list(set(lodge_ids))
+

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, joinedload, sessionmaker
 
 from app.modules.core.services import geo_service
-from app.modules.documents.services.document_generation_service import DocumentGenerationService
+from app.modules.core.services import lodge_service
 from app.modules.sessions.schemas import masonic_session_schema
 from config import settings
 from models import models
@@ -253,8 +253,8 @@ def create_session(
     db.refresh(db_session)
 
     # Dispara a geração da minuta do Balaústre em background
-    doc_gen_service = DocumentGenerationService(db_session=db)
-    background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, db_session.id, current_user_payload)
+    # doc_gen_service = DocumentGenerationService(db_session=db)
+    # background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, db_session.id, current_user_payload)
 
     return db_session
 
@@ -434,8 +434,8 @@ def end_session(
     db.refresh(db_session)
 
     # Dispara a geração do Balaústre em background
-    doc_gen_service = DocumentGenerationService(db_session=db)
-    background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, session_id, current_user_payload)
+    # doc_gen_service = DocumentGenerationService(db_session=db)
+    # background_tasks.add_task(doc_gen_service.generate_balaustre_pdf_task, session_id, current_user_payload)
 
     return db_session
 

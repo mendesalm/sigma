@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import SettingsConfigDict
 
 from app.modules.core.schemas.lodge_schema import LodgeResponse
-from app.modules.documents.schemas.document_schema import DocumentInDB
 from app.modules.sessions.schemas.session_attendance_schema import SessionAttendanceResponse
 from models.models import SessionSubtypeEnum, SessionTypeEnum
 

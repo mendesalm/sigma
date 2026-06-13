@@ -9,8 +9,6 @@ import RolesPermissionsPage from '@/modules/access_control/pages/RolesPermission
 import WebmasterRoleAssignmentPage from '@/modules/access_control/pages/WebmasterRoleAssignmentPage';
 import AdministrationPage from '@/modules/access_control/pages/Webmaster/AdministrationPage';
 import MyLodgePage from '@/modules/access_control/pages/Webmaster/MyLodgePage';
-import DocumentConfigPage from '@/modules/access_control/pages/Webmaster/DocumentConfigPage';
-
 
 export const accessControlPublicRoutes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
@@ -19,7 +17,6 @@ export const accessControlPublicRoutes: RouteObject[] = [
 export const accessControlLodgeDashboardRoutes: RouteObject[] = [
   { path: 'secretario/exercicio/diretoria', element: <AdministrationPage /> },
   { path: 'webmaster/minha-loja', element: <MyLodgePage /> },
-  { path: 'webmaster/documentos', element: <DocumentConfigPage /> },
   { path: 'webmaster/administracoes', element: <AdministrationPage /> },
 ];
 

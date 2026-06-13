@@ -23,12 +23,10 @@ async def get_members_report_pdf(
     Generates a PDF report of active members for a specific lodge.
     """
     # Authorization check
-    user_type = current_user.get("user_type")
-    if user_type not in ["super_admin", "webmaster"]:
-        # Se for membro, verifica se tem permissão de secretaria na loja
-        # TODO: Implementar verificação fina de permissão.
-        # Por enquanto, assumimos que quem acessa a rota já passou pelo filtro do frontend
-        pass
+    from app.shared.tenant_context import TenantContextManager
+    accessible_lodges = TenantContextManager.get_accessible_lodges(db)
+    if accessible_lodges is not None and lodge_id not in accessible_lodges:
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar relatórios desta loja.")
 
     try:
         pdf_bytes = await ReportService.generate_members_report_pdf(

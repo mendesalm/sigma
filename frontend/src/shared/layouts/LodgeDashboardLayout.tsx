@@ -91,10 +91,11 @@ const MENU_CONFIG = [
       { text: 'Agenda', path: '/dashboard/lodge-dashboard/secretario/sessoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
       { text: 'Registro de Presenças', path: '/dashboard/lodge-dashboard/secretario/presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
 
-      // 3 - Gestão de Documentos
-      { type: 'header', text: 'Documentos' },
+      // 3 - Comunicações
+      { type: 'header', text: 'Comunicações' },
       { text: 'Publicações', path: '/dashboard/lodge-dashboard/secretario/publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Pranchas', path: '/dashboard/lodge-dashboard/secretario/pranchas', icon: <ScrollIcon sx={{ fontSize: 20 }} />, disabled: true },
+      { text: 'Caixa de Entrada', path: '/dashboard/lodge-dashboard/secretario/comunicacoes/inbox', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Enviados', path: '/dashboard/lodge-dashboard/secretario/comunicacoes/sent', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
 
       // 4 - Gestão de Processos
       { type: 'header', text: 'Processos' },
@@ -126,7 +127,7 @@ const MENU_CONFIG = [
     subItems: [
       { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
       { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Documentos', path: '/dashboard/lodge-dashboard/webmaster/documentos', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+      { text: 'Comunicações (Ofícios)', path: '/dashboard/lodge-dashboard/webmaster/comunicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
     ]
   },
 ];
@@ -232,7 +233,7 @@ const LodgeDashboardLayout: React.FC = () => {
 
       // Check specific roles for members
       if (item.id === 'secretario') {
-        return user.active_role_name === 'Secretário';
+        return ['Secretário', 'Venerável Mestre', 'Orador'].includes(user.active_role_name);
       }
       if (item.id === 'chanceler') {
         return user.active_role_name === 'Chanceler';

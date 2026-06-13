@@ -59,6 +59,7 @@ class Obedience(BaseModel):
             "chancellery": True,
         },
     )
+    previous_settings = Column(JSON, nullable=True, comment="Backup de configurações de fábrica")
 
 
 class Lodge(BaseModel):
@@ -125,6 +126,7 @@ class Lodge(BaseModel):
             "chancellery": True,
         },
     )
+    previous_settings = Column(JSON, nullable=True, comment="Backup de configurações de fábrica")
 
     @property
     def formatted_affiliation(self) -> str:

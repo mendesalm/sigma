@@ -10,9 +10,12 @@ from app.modules.library.services.book_service import BookService
 from app.modules.library.services.library_item_service import LibraryItemService
 from app.modules.library.services.loan_service import LoanService, WaitlistService
 
+from dependencies import require_module
+
 router = APIRouter(
     prefix="/library",
     tags=["Library"],
+    dependencies=[Depends(require_module("library"))]
 )
 
 

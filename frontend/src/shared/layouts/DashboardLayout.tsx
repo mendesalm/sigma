@@ -41,8 +41,6 @@ const navItems = [
   { text: 'Webmasters', path: '/dashboard/management/webmasters', icon: <WebmasterIcon />, allowedTypes: ['super_admin'] },
   { text: 'Cargos', path: '/dashboard/roles', icon: <AdminIcon />, allowedTypes: ['super_admin'] },
   { text: 'Sessões', path: '/dashboard/sessions', icon: <EventIcon />, allowedTypes: ['super_admin', 'webmaster', 'member'] },
-  { text: 'Modelos de Documentos', path: '/dashboard/management/templates', icon: <DescriptionIcon />, allowedTypes: ['super_admin'] },
-  { text: 'Modelos Universais', path: '/dashboard/management/admin-templates', icon: <DescriptionIcon />, allowedTypes: ['super_admin'] },
 ];
 
 const DashboardLayout: React.FC = () => {

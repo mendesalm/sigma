@@ -27,11 +27,6 @@ from app.modules.core.routes import (
     report_routes,
     super_admin_routes,
 )
-from app.modules.documents.routes import (
-    admin_template_routes,
-    document_routes,
-    template_routes,
-)
 from app.modules.library.routes import (
     library_routes,
 )
@@ -40,6 +35,7 @@ from app.modules.communication.routes import (
     event_routes,
     notice_routes,
     publication_routes,
+    message_routes,
 )
 from app.modules.finance.routes import (
     financial_routes,
@@ -240,7 +236,7 @@ app.include_router(dashboard_routes.router)
 app.include_router(obedience_routes.router)
 app.include_router(lodge_routes.router)
 app.include_router(member_routes.router)
-app.include_router(document_routes.router)
+
 app.include_router(event_routes.router)
 app.include_router(financial_routes.router)
 app.include_router(session_routes.router)
@@ -251,8 +247,11 @@ app.include_router(webmaster_routes.router)
 app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)
 app.include_router(permission_routes.router)
-app.include_router(template_routes.router)  # Included template_routes
-app.include_router(admin_template_routes.router)  # New
+
+# Módulo de documentos desativado por decisão arquitetural (uso de uploads genéricos em vez de geração complexa).
+# app.include_router(document_routes.router)
+# app.include_router(template_routes.router)
+# app.include_router(admin_template_routes.router)
 
 
 app.include_router(classified_routes.router)
@@ -264,6 +263,7 @@ app.include_router(notice_routes.router)
 app.include_router(administration_routes.router)
 app.include_router(report_routes.router)
 app.include_router(library_routes.router)
+app.include_router(message_routes.router)
 
 
 # Mount static files AFTER routers

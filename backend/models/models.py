@@ -3,7 +3,6 @@ from app.modules.access_control.models import *
 from app.modules.members.models import *
 from app.modules.sessions.models import *
 from app.modules.library.models import *
-from app.modules.documents.models import *
 from app.modules.communication.models import *
 from app.modules.committees.models import *
 from app.modules.finance.models import *

@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 from app.modules.finance.schemas import financial_transaction_schema as schemas
 from app.modules.finance.services import financial_service as services
 from database import get_db
-from dependencies import get_current_user_payload
+from dependencies import get_current_user_payload, require_module
 
 router = APIRouter(
     prefix="/financial",
     tags=["Financial"],  # Updated to "Financial" to match main.py
+    dependencies=[Depends(require_module("finance"))]
 )
 
 

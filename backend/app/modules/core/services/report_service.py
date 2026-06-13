@@ -2,7 +2,6 @@ from datetime import date, datetime
 
 from sqlalchemy.orm import Session
 
-from app.modules.documents.services.document_generation_service import DocumentGenerationService
 from models import models
 
 
@@ -61,11 +60,11 @@ class ReportService:
             members_list.append(member_data)
 
         # 4. Instanciar Serviço de Geração (para renderizar HTML e usar assets)
-        doc_service = DocumentGenerationService(db_session=db)
+        # doc_service = DocumentGenerationService(db_session=db)
 
         # Dados do contexto do template
         template_data = {
-            "header_image": doc_service._get_lodge_logo(lodge_id),
+            # "header_image": doc_service._get_lodge_logo(lodge_id),
             "lodge_title_formatted": lodge.lodge_title or "A∴R∴B∴L∴S∴",
             "lodge_name": lodge.lodge_name,
             "lodge_number": lodge.lodge_number,
@@ -78,9 +77,7 @@ class ReportService:
         }
 
         # 5. Renderizar HTML
-        html_content = doc_service._render_template("members_report_template.html", template_data)
+        # html_content = doc_service._render_template("members_report_template.html", template_data)
 
-        # 6. Gerar PDF
-        pdf_bytes = await doc_service._generate_pdf_from_html(html_content)
-
-        return pdf_bytes
+        # Relatório removido
+        return {"report": "Report functionality currently disabled due to documents module removal"}

@@ -111,20 +111,7 @@ export const reopenSession = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/reopen`);
 };
 
-// --- Document Management ---
-export const uploadDocument = (formData: FormData) => {
-  return api.post('/documents/', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-};
 
-export const downloadDocument = (documentId: number) => {
-  return api.get(`/documents/${documentId}/download`, {
-    responseType: 'blob', // Important for file downloads
-  });
-};
 
 // --- Attendance Management ---
 export const getSessionAttendance = (sessionId: number) => {

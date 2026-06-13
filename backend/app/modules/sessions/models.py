@@ -132,7 +132,6 @@ class MasonicSession(BaseModel):
     study_director = relationship("Member", foreign_keys=[study_director_id])
 
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
-    documents = relationship("Document", back_populates="session")
 
 
 class CheckInMethodEnum(enum.StrEnum):
