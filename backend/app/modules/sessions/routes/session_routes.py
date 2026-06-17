@@ -561,3 +561,34 @@ async def generate_certificate_for_member(
         background_tasks=background_tasks,
         extra_data={"member_id": member_id},
     )
+
+
+from fastapi.responses import FileResponse
+from app.modules.access_control.utils.document_access import check_document_access
+
+@router.get(
+    "/{session_id}/download-balaustre",
+    summary="Download do Balaústre com Restrição de Acesso",
+    description="Baixa o balaústre da sessão caso o usuário tenha permissão de grau e cargo adequada.",
+)
+def download_balaustre_endpoint(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(get_current_user_payload),
+):
+    session = session_service.get_session(db, session_id, current_user_payload)
+    if not session.balaustre_file_path:
+        raise HTTPException(status_code=404, detail="Balaústre não encontrado para esta sessão.")
+    
+    if not check_document_access(current_user_payload, session.degree):
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar documentos deste grau.")
+    
+    import os
+    if not os.path.exists(session.balaustre_file_path):
+        raise HTTPException(status_code=404, detail="Arquivo físico do balaústre não encontrado no servidor.")
+        
+    return FileResponse(
+        path=session.balaustre_file_path, 
+        filename=os.path.basename(session.balaustre_file_path),
+        media_type="application/pdf"
+    )

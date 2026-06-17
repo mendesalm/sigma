@@ -82,6 +82,12 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
       treasury: true,
       library: true,
     } as any,
+    auto_schedule_sessions: false,
+    session_weeks: [] as number[],
+    custom_holidays: [
+      { day: 20, month: 8, name: "Dia do Maçom" },
+      { day: 17, month: 6, name: "Criação do GOB" }
+    ],
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [obediences, setObediences] = useState([]);
@@ -98,6 +104,10 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [recesses, setRecesses] = useState<any[]>([]);
+  const [newRecess, setNewRecess] = useState({ start_date: '', end_date: '', description: '' });
+  const [loadingRecess, setLoadingRecess] = useState(false);
 
   useEffect(() => {
     const fetchObediences = async () => {
@@ -121,9 +131,72 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
           console.error('Falha ao buscar loja', error);
         }
       };
+      
+      const fetchRecesses = async () => {
+        try {
+          const response = await api.get(`/masonic-sessions/recesses`);
+          setRecesses(response.data);
+        } catch (error) {
+          console.error('Falha ao buscar recessos', error);
+        }
+      };
+
       fetchLodge();
+      fetchRecesses();
     }
   }, [id]);
+
+  const handleCreateRecess = async () => {
+    if (!newRecess.start_date || !newRecess.end_date) {
+      setSnackbar({ open: true, message: 'Data de início e fim são obrigatórias', severity: 'error' });
+      return;
+    }
+    setLoadingRecess(true);
+    try {
+      const response = await api.post('/masonic-sessions/recesses', newRecess);
+      setRecesses(prev => [...prev, response.data]);
+      setNewRecess({ start_date: '', end_date: '', description: '' });
+      setSnackbar({ open: true, message: 'Recesso adicionado com sucesso!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Erro ao adicionar recesso', severity: 'error' });
+    } finally {
+      setLoadingRecess(false);
+    }
+  };
+
+  const handleDeleteRecess = async (recessId: number) => {
+    try {
+      await api.delete(`/masonic-sessions/recesses/${recessId}`);
+      setRecesses(prev => prev.filter(r => r.id !== recessId));
+      setSnackbar({ open: true, message: 'Recesso removido!', severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Erro ao remover recesso', severity: 'error' });
+    }
+  };
+
+  const handleResetSettings = async () => {
+    if (!id || !window.confirm('Tem certeza que deseja restaurar as configurações de fábrica? Os módulos serão resetados. Um backup será criado para caso queira desfazer.')) return;
+    try {
+      await api.resetLodgeSettings(parseInt(id));
+      setSnackbar({ open: true, message: 'Configurações de fábrica restauradas com sucesso!', severity: 'success' });
+      // Reload page to fetch new settings
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.response?.data?.detail || 'Erro ao restaurar configurações', severity: 'error' });
+    }
+  };
+
+  const handleRestoreSettings = async () => {
+    if (!id || !window.confirm('Tem certeza que deseja desfazer o reset e restaurar as configurações anteriores?')) return;
+    try {
+      await api.restoreLodgeSettings(parseInt(id));
+      setSnackbar({ open: true, message: 'Configurações anteriores restauradas com sucesso!', severity: 'success' });
+      // Reload page to fetch new settings
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error.response?.data?.detail || 'Erro ao desfazer reset', severity: 'error' });
+    }
+  };
 
   // Efeito para busca de lojas globais
   useEffect(() => {
@@ -210,6 +283,36 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
         [name]: checked
       }
     }));
+  };
+
+  const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked
+    }));
+  };
+
+  const handleAddCustomHoliday = () => {
+    setFormData(prev => ({
+      ...prev,
+      custom_holidays: [...(prev.custom_holidays || []), { day: 1, month: 1, name: 'Novo Feriado' }]
+    }));
+  };
+
+  const handleRemoveCustomHoliday = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      custom_holidays: (prev.custom_holidays || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleCustomHolidayChange = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const newHolidays = [...(prev.custom_holidays || [])];
+      newHolidays[index] = { ...newHolidays[index], [field]: value };
+      return { ...prev, custom_holidays: newHolidays };
+    });
   };
 
   const handleCepBlur = async (event: React.FocusEvent<HTMLInputElement>) => {
@@ -645,11 +748,43 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                                             </Select>
                                         </FormControl>
                                     </Grid>
+                                    {(formData.periodicity === 'Mensal' || formData.periodicity === 'Quinzenal') && (
+                                    <Grid
+                                        size={{
+                                            xs: 12
+                                        }}>
+                                        <FormControl fullWidth variant="outlined">
+                                            <InputLabel>Semanas do Mês</InputLabel>
+                                            <Select
+                                                multiple
+                                                name="session_weeks"
+                                                value={formData.session_weeks || []}
+                                                onChange={(e) => {
+                                                    const value = e.target.value as number[];
+                                                    setFormData({ ...formData, session_weeks: value });
+                                                }}
+                                                label="Semanas do Mês"
+                                            >
+                                                <MenuItem value={1}>1ª Semana</MenuItem>
+                                                <MenuItem value={2}>2ª Semana</MenuItem>
+                                                <MenuItem value={3}>3ª Semana</MenuItem>
+                                                <MenuItem value={4}>4ª Semana</MenuItem>
+                                                <MenuItem value={-1}>Última Semana</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    )}
                                     <Grid
                                         size={{
                                             xs: 12
                                         }}>
                                         <TextField name="session_time" label="Horário" type="time" value={formData.session_time} onChange={handleChange} fullWidth InputLabelProps={{ shrink: true }} variant="outlined" />
+                                    </Grid>
+                                    <Grid size={{ xs: 12 }}>
+                                        <FormControlLabel
+                                            control={<Switch checked={formData.auto_schedule_sessions} onChange={handleToggleChange} name="auto_schedule_sessions" color="primary" />}
+                                            label="Gerar previsões de calendário automaticamente"
+                                        />
                                     </Grid>
                                 </Grid>
                             </Paper>
@@ -687,6 +822,118 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                                         />
                                     </Grid>
                                 </Grid>
+                            </Paper>
+                         </Grid>
+                     </Grid>
+
+                     {/* 5. Feriados Customizados e Férias */}
+                     <Grid container spacing={3} sx={{ mt: 1 }}>
+                         <Grid size={{ xs: 12, md: 6 }}>
+                            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
+                                <SectionHeader title="Feriados da Loja" icon={<EventIcon />} color="info" />
+                                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                    Defina os dias em que a Loja não realiza sessões (ex: Feriados maçônicos locais).
+                                </Typography>
+                                <Stack spacing={2}>
+                                    {(formData.custom_holidays || []).map((holiday, index) => (
+                                        <Box key={index} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                            <TextField 
+                                                size="small" 
+                                                label="Nome" 
+                                                value={holiday.name} 
+                                                onChange={(e) => handleCustomHolidayChange(index, 'name', e.target.value)} 
+                                                fullWidth 
+                                            />
+                                            <TextField 
+                                                size="small" 
+                                                label="Dia" 
+                                                type="number" 
+                                                value={holiday.day} 
+                                                onChange={(e) => handleCustomHolidayChange(index, 'day', parseInt(e.target.value))} 
+                                                sx={{ width: 80 }} 
+                                            />
+                                            <TextField 
+                                                size="small" 
+                                                label="Mês" 
+                                                type="number" 
+                                                value={holiday.month} 
+                                                onChange={(e) => handleCustomHolidayChange(index, 'month', parseInt(e.target.value))} 
+                                                sx={{ width: 80 }} 
+                                            />
+                                            <Button color="error" onClick={() => handleRemoveCustomHoliday(index)}>X</Button>
+                                        </Box>
+                                    ))}
+                                    <Button variant="outlined" onClick={handleAddCustomHoliday} startIcon={<EventIcon />}>
+                                        Adicionar Feriado
+                                    </Button>
+                                </Stack>
+                            </Paper>
+                         </Grid>
+
+                         <Grid size={{ xs: 12, md: 6 }}>
+                            <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: `1px solid ${theme.palette.divider}`, height: '100%' }}>
+                                <SectionHeader title="Períodos de Férias / Recesso" icon={<EventIcon />} color="primary" />
+                                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                                    Cadastre períodos longos sem sessões (ex: Recesso de final de ano).
+                                </Typography>
+                                <Stack spacing={2}>
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                        <TextField
+                                            size="small"
+                                            label="Início"
+                                            type="date"
+                                            InputLabelProps={{ shrink: true }}
+                                            value={newRecess.start_date}
+                                            onChange={(e) => setNewRecess({ ...newRecess, start_date: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            size="small"
+                                            label="Fim"
+                                            type="date"
+                                            InputLabelProps={{ shrink: true }}
+                                            value={newRecess.end_date}
+                                            onChange={(e) => setNewRecess({ ...newRecess, end_date: e.target.value })}
+                                            fullWidth
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                        <TextField
+                                            size="small"
+                                            label="Descrição"
+                                            value={newRecess.description}
+                                            onChange={(e) => setNewRecess({ ...newRecess, description: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <Button 
+                                            variant="contained" 
+                                            onClick={handleCreateRecess} 
+                                            disabled={loadingRecess || !id} // Need lodge ID to save recesses properly
+                                        >
+                                            {loadingRecess ? <CircularProgress size={24} /> : 'Adicionar'}
+                                        </Button>
+                                    </Box>
+
+                                    {recesses.length > 0 && (
+                                        <Box sx={{ mt: 2 }}>
+                                            <Typography variant="subtitle2">Recessos Cadastrados:</Typography>
+                                            {recesses.map((recess) => (
+                                                <Box key={recess.id} sx={{ display: 'flex', justifyContent: 'space-between', p: 1, borderBottom: '1px solid #eee' }}>
+                                                    <Box>
+                                                        <Typography variant="body2"><strong>{recess.description || 'Recesso'}</strong></Typography>
+                                                        <Typography variant="caption" color="textSecondary">
+                                                            {new Date(recess.start_date).toLocaleDateString()} - {new Date(recess.end_date).toLocaleDateString()}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Button size="small" color="error" onClick={() => handleDeleteRecess(recess.id)}>Remover</Button>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    )}
+                                    {!id && (
+                                        <Alert severity="info">Salve a loja primeiro para poder adicionar recessos.</Alert>
+                                    )}
+                                </Stack>
                             </Paper>
                          </Grid>
                      </Grid>
@@ -761,6 +1008,25 @@ const LodgeForm = ({ idProp }: LodgeFormProps = {}) => {
                           <FormControlLabel control={<Switch checked={!!formData.available_modules?.library} onChange={handleModuleChange} name="library" />} label="Biblioteca" />
                         </FormGroup>
                      </Paper>
+
+                     {id && (
+                     <Paper elevation={3} sx={{ p: 3, mb: 3, borderRadius: 3, border: `1px solid ${theme.palette.error.light}` }}>
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.error.main, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <SettingsIcon fontSize="small" /> Padrões de Fábrica
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
+                            Reseta módulos e configs para o padrão do sistema. Um backup da configuração atual será gerado.
+                        </Typography>
+                        <Stack spacing={1}>
+                            <Button variant="outlined" color="error" size="small" fullWidth onClick={handleResetSettings}>
+                                Restaurar Padrões de Fábrica
+                            </Button>
+                            <Button variant="text" color="inherit" size="small" fullWidth onClick={handleRestoreSettings}>
+                                Desfazer Último Reset
+                            </Button>
+                        </Stack>
+                     </Paper>
+                     )}
 
                      <Paper elevation={3} sx={{ p: 3, position: 'sticky', top: 20, borderRadius: 3 }}>
                         <Typography variant="subtitle1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>

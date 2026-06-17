@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Box, Typography, Paper, Tabs, Tab, CircularProgress, Alert, Button, Stack, Chip, Snackbar, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import AttendanceTab from '@/modules/sessions/pages/components/AttendanceTab';
-import { getSessionDetails, startSession, endSession, cancelSession, generateBalaustre, generateEdital, uploadDocument, approveSessionMinutes, reopenSession, generateInvitation, generateElectoralBalaustre } from '@/shared/services/api';
+import { getSessionDetails, startSession, endSession, cancelSession, uploadDocument, approveSessionMinutes, reopenSession, uploadBalaustre, getBalaustreData } from '@/shared/services/api';
 import { PlayArrow, Stop, Cancel, Description, Add, QrCodeScanner, CheckCircle, LockOpen } from '@mui/icons-material';
 import SessionCheckIn from '@/modules/sessions/components/SessionCheckIn';
 
@@ -143,6 +143,67 @@ const SessionDetailsPage: React.FC = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  const handleUploadBalaustre = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      try {
+        setActionLoading(true);
+        await uploadBalaustre(sessionId, event.target.files[0]);
+        setSnackbar({ open: true, message: 'Balaústre enviado com sucesso!', severity: 'success' });
+        fetchSessionDetails();
+      } catch (err) {
+        console.error(err);
+        setSnackbar({ open: true, message: 'Falha ao enviar balaústre.', severity: 'error' });
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  const handleFetchBalaustreData = async () => {
+    try {
+      setActionLoading(true);
+      const res = await getBalaustreData(sessionId);
+      // Create a text file with the text
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `balaustre_data_session_${sessionId}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setSnackbar({ open: true, message: 'Dados do balaústre baixados com sucesso!', severity: 'success' });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({ open: true, message: 'Falha ao obter dados do balaústre.', severity: 'error' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDownloadBalaustre = async () => {
+    try {
+      setActionLoading(true);
+      const response = await import('@/shared/services/api').then(m => m.downloadBalaustre(sessionId));
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `balaustre_session_${sessionId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error: any) {
+      console.error('Download failed', error);
+      if (error.response?.status === 403) {
+        setSnackbar({ open: true, message: 'Você não tem permissão de grau para baixar este documento.', severity: 'error' });
+      } else {
+        setSnackbar({ open: true, message: 'Falha ao baixar balaústre.', severity: 'error' });
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return <CircularProgress />;
   }
@@ -184,32 +245,6 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Iniciar
                   </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Description />}
-                    onClick={() => handleAction(() => generateEdital(sessionId), 'Geração de Edital iniciada!')}
-                    disabled={actionLoading}
-                  >
-                    Gerar Edital
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<Description />}
-                    onClick={() => handleAction(() => generateInvitation(sessionId), 'Geração de Convite iniciada!')}
-                    disabled={actionLoading}
-                  >
-                    Gerar Convite
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<Description />}
-                    component={Link}
-                    to={`balaustre`}
-                    disabled={actionLoading}
-                  >
-                    Prévia Balaústre
-                  </Button>
                 </>
               )}
               {session.status === 'EM_ANDAMENTO' && (
@@ -232,16 +267,6 @@ const SessionDetailsPage: React.FC = () => {
                   >
                     Finalizar
                   </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<Description />}
-                    component={Link}
-                    to={`balaustre`}
-                    disabled={actionLoading}
-                  >
-                    Prévia Balaústre
-                  </Button>
                 </>
               )}
               {session.status === 'REALIZADA' && (
@@ -249,44 +274,68 @@ const SessionDetailsPage: React.FC = () => {
                   <Button
                     variant="outlined"
                     startIcon={<Description />}
-                    onClick={() => handleAction(() => generateBalaustre(sessionId), 'Geração de Balaústre iniciada!')}
+                    onClick={handleFetchBalaustreData}
                     disabled={actionLoading}
                   >
-                    Gerar Balaústre (PDF Direto)
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<Description />}
-                    onClick={() => handleAction(() => generateElectoralBalaustre(sessionId), 'Geração de Ata Eleitoral iniciada!')}
-                    disabled={actionLoading}
-                  >
-                    Balaústre Eleitoral
+                    Obter Resumo para Balaústre
                   </Button>
                   <Button
                     variant="contained"
-                    color="primary"
+                    component="label"
+                    color="info"
                     startIcon={<Description />}
-                    component={Link}
-                    to={`balaustre`}
                     disabled={actionLoading}
                   >
-                    Editar Balaústre
+                    Upload Balaústre (PDF)
+                    <input
+                      type="file"
+                      hidden
+                      accept="application/pdf"
+                      onChange={handleUploadBalaustre}
+                    />
                   </Button>
+                  {session.balaustre_file_path && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<Description />}
+                      onClick={handleDownloadBalaustre}
+                      disabled={actionLoading}
+                    >
+                      Baixar Balaústre
+                    </Button>
+                  )}
                   <Button
                     variant="contained"
                     color="success"
                     startIcon={<CheckCircle />}
                     onClick={() => handleAction(() => approveSessionMinutes(sessionId), 'Ata aprovada e sessão encerrada!')}
-                    disabled={actionLoading}
+                    disabled={actionLoading || !session.balaustre_file_path}
                   >
                     Aprovar Ata
                   </Button>
+                  {!session.balaustre_file_path && (
+                    <Typography variant="caption" color="error" sx={{ alignSelf: 'center', ml: 1 }}>
+                      Obrigatório fazer upload do Balaústre antes de aprovar.
+                    </Typography>
+                  )}
                 </>
               )}
+
               {session.status === 'ENCERRADA' && (
                 <>
                   <Chip label="Sessão Encerrada" color="default" variant="outlined" />
+                  {session.balaustre_file_path && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<Description />}
+                      onClick={handleDownloadBalaustre}
+                      disabled={actionLoading}
+                    >
+                      Baixar Balaústre
+                    </Button>
+                  )}
                   <Button
                     variant="outlined"
                     color="warning"

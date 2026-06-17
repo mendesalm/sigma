@@ -7,6 +7,9 @@ from database import SessionLocal
 from models import models
 from app.modules.communication.services import classified_service
 from app.modules.sessions.services import session_service
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 # Cria uma instância do agendador que rodará com asyncio
 scheduler = AsyncIOScheduler()
@@ -18,7 +21,7 @@ def check_and_start_sessions_job():
     Ela verifica por sessões que deveriam iniciar e as inicia.
     Também verifica sessões que devem ser encerradas.
     """
-    print(f"[{datetime.now()}] Executando tarefa agendada: Verificando sessões...")
+    logger.info("Executando tarefa agendada: Verificando sessões...")
     db = SessionLocal()
     try:
         now = datetime.now()
@@ -38,7 +41,7 @@ def check_and_start_sessions_job():
             two_hours_before_start = session_start_datetime - timedelta(hours=2)
 
             if two_hours_before_start <= now:
-                print(f"Iniciando sessão agendada ID: {session.id} - {session.title}")
+                logger.info(f"Iniciando sessão agendada ID: {session.id} - {session.title}")
                 session_service.start_scheduled_session(db, session.id)
 
         # 2. Encerrar Sessões
@@ -57,7 +60,7 @@ def check_and_start_sessions_job():
             two_hours_after_end = session_end_datetime + timedelta(hours=2)
 
             if now >= two_hours_after_end:
-                print(f"Finalizando sessão ID: {session.id} - {session.title}")
+                logger.info(f"Finalizando sessão ID: {session.id} - {session.title}")
                 session_service.close_scheduled_session(db, session.id)
 
         # 3. Auto-Encerrar Sessões (14 dias após realizada - Aprovação Tácita)
@@ -73,13 +76,13 @@ def check_and_start_sessions_job():
             auto_close_date = session_start_dt + timedelta(days=14)
 
             if now > auto_close_date:
-                print(f"Auto-encerrando sessão ID: {session.id} (Prazo de 14 dias expirado)")
+                logger.info(f"Auto-encerrando sessão ID: {session.id} (Prazo de 14 dias expirado)")
                 session.status = "ENCERRADA"
                 db.add(session)
                 db.commit()
 
     except Exception as e:
-        print(f"Erro ao executar a tarefa agendada de sessões: {e}")
+        logger.error(f"Erro ao executar a tarefa agendada de sessões: {e}", exc_info=True)
     finally:
         db.close()
 
@@ -88,12 +91,12 @@ def check_classifieds_lifecycle_job():
     """
     Tarefa agendada para gerenciar o ciclo de vida dos classificados.
     """
-    print(f"[{datetime.now()}] Executando tarefa agendada: Limpeza de classificados...")
+    logger.info("Executando tarefa agendada: Limpeza de classificados...")
     db = SessionLocal()
     try:
         classified_service.cleanup_classifieds(db)
     except Exception as e:
-        print(f"Erro ao executar a tarefa de classificados: {e}")
+        logger.error(f"Erro ao executar a tarefa de classificados: {e}", exc_info=True)
     finally:
         db.close()
 
@@ -105,11 +108,11 @@ def initialize_scheduler():
     scheduler.add_job(check_classifieds_lifecycle_job, "interval", hours=1, id="check_classifieds_job")
     if not scheduler.running:
         scheduler.start()
-        print("Agendador de tarefas iniciado. A verificação de sessões será executada a cada 5 minutos.")
+        logger.info("Agendador de tarefas iniciado. A verificação de sessões será executada a cada 5 minutos.")
 
 
 def shutdown_scheduler():
     """Desliga o agendador de forma limpa."""
     if scheduler.running:
         scheduler.shutdown()
-        print("Agendador de tarefas desligado.")
+        logger.info("Agendador de tarefas desligado.")

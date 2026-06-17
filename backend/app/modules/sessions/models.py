@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    Boolean,
     UniqueConstraint,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
@@ -111,9 +112,13 @@ class MasonicSession(BaseModel):
 
     type = Column(SQLAlchemyEnum(SessionTypeEnum, name="session_type_enum"), nullable=True)
     subtype = Column(SQLAlchemyEnum(SessionSubtypeEnum, name="session_subtype_enum"), nullable=True)
+    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum"), nullable=False, default=DegreeEnum.APPRENTICE)
 
     status = Column(
-        SQLAlchemyEnum("AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA", "CANCELADA", name="session_status_enum"),
+        SQLAlchemyEnum(
+            "PREVISTA", "AGENDADA", "EM_ANDAMENTO", "REALIZADA", "ENCERRADA", "CANCELADA", "SUPRIMIDA",
+            name="session_status_enum"
+        ),
         nullable=False,
         default="AGENDADA",
     )
@@ -125,6 +130,8 @@ class MasonicSession(BaseModel):
 
     temporary_role_assignments = Column(JSON, nullable=True)
 
+    is_manually_modified = Column(Boolean, default=False, nullable=False, comment="Sessão teve a data alterada manualmente")
+
     agenda = Column(Text, nullable=True)
     sent_expedients = Column(Text, nullable=True)
     received_expedients = Column(Text, nullable=True)
@@ -132,6 +139,7 @@ class MasonicSession(BaseModel):
     study_director = relationship("Member", foreign_keys=[study_director_id])
 
     attendances = relationship("SessionAttendance", back_populates="session", cascade="all, delete-orphan")
+    balaustre_file_path = Column(String(500), nullable=True)
 
 
 class CheckInMethodEnum(enum.StrEnum):
@@ -194,3 +202,13 @@ class Visit(BaseModel):
     session = relationship("MasonicSession", backref="visits")
 
     __table_args__ = (UniqueConstraint("member_id", "session_id", name="_member_session_visit_uc"),)
+
+class LodgeRecess(BaseModel):
+    __tablename__ = 'lodge_recesses'
+    id = Column(Integer, primary_key=True, index=True)
+    lodge_id = Column(Integer, ForeignKey('lodges.id'), nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    description = Column(String(255), nullable=True)
+
+    lodge = relationship('Lodge', backref='recesses')

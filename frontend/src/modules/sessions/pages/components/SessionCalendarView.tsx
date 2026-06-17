@@ -122,6 +122,7 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
                     session.status === 'REALIZADA' ? <CheckCircle sx={{ fontSize: '12px !important' }} /> :
                     session.status === 'EM_ANDAMENTO' ? <PlayArrow sx={{ fontSize: '12px !important' }} /> :
                     session.status === 'CANCELADA' ? <Cancel sx={{ fontSize: '12px !important' }} /> :
+                    session.status === 'SUPRIMIDA' ? <Cancel sx={{ fontSize: '12px !important' }} /> :
                     <EventIcon sx={{ fontSize: '12px !important' }} />
                   }
                   sx={{
@@ -135,12 +136,16 @@ const SessionCalendarView: React.FC<SessionCalendarViewProps> = ({ sessions, bas
                         session.status === 'ENCERRADA' ? alpha('#64748b', 0.2) : 
                         session.status === 'EM_ANDAMENTO' ? alpha(theme.palette.info.main, 0.2) :
                         session.status === 'CANCELADA' ? alpha(theme.palette.error.main, 0.2) :
+                        session.status === 'SUPRIMIDA' ? alpha(theme.palette.error.dark, 0.2) :
+                        session.status === 'PREVISTA' ? alpha(theme.palette.grey[500], 0.2) :
                         alpha(theme.palette.warning.main, 0.2),
                     color: 
                         session.status === 'REALIZADA' ? '#15803d' : 
                         session.status === 'ENCERRADA' ? '#475569' : 
                         session.status === 'EM_ANDAMENTO' ? theme.palette.info.dark :
                         session.status === 'CANCELADA' ? theme.palette.error.dark :
+                        session.status === 'SUPRIMIDA' ? theme.palette.error.dark :
+                        session.status === 'PREVISTA' ? theme.palette.grey[700] :
                         theme.palette.warning.dark,
                     '& .MuiChip-label': {
                         paddingLeft: '4px',

@@ -14,9 +14,13 @@ class MasonicSessionBase(BaseModel):
     session_date: date = Field(..., description="Data da sessão")
     start_time: time | None = Field(None, description="Horário de início")
     end_time: time | None = Field(None, description="Horário de término")
+    administration_id: Optional[int] = Field(None, description="ID da administração vigente")
+    temporary_role_assignments: Optional[dict] = Field(None, description="Substituições temporárias de cargos")
+    is_manually_modified: bool = Field(False, description="Indica se a data da sessão foi alterada manualmente")
 
     type: SessionTypeEnum | None = Field(None, description="Tipo da sessão (Ordinária, Magna, Extraordinária)")
     subtype: SessionSubtypeEnum | None = Field(None, description="Subtipo da sessão")
+    degree: str | None = Field("Aprendiz", description="Grau em que a sessão opera")
 
     status: str = Field("AGENDADA", description="Status da sessão: AGENDADA, EM_ANDAMENTO, REALIZADA, CANCELADA")
 
@@ -24,6 +28,7 @@ class MasonicSessionBase(BaseModel):
     sent_expedients: str | None = Field(None, description="Expediente(s) Expedido(s)")
     received_expedients: str | None = Field(None, description="Expediente(s) Recebido(s)")
     study_director_id: int | None = Field(None, description="ID do Responsável pelo Tempo de Estudos")
+    balaustre_file_path: str | None = Field(None, description="Caminho do arquivo do balaústre associado à sessão")
 
     @field_validator("title", mode="after", check_fields=False)
     @classmethod
@@ -43,7 +48,7 @@ class MasonicSessionBase(BaseModel):
     @classmethod
     def validate_status(cls, v):
         """Valida status da sessão."""
-        valid_statuses = {"AGENDADA", "EM_ANDAMENTO", "REALIZADA", "CANCELADA", "ENCERRADA"}
+        valid_statuses = {"PREVISTA", "AGENDADA", "EM_ANDAMENTO", "REALIZADA", "CANCELADA", "ENCERRADA", "SUPRIMIDA"}
 
         v_upper = v.upper()
 

@@ -10,6 +10,7 @@ class PublicationBase(BaseModel):
     content: str | None = None
     type: PublicationTypeEnum
     valid_until: date | None = None
+    minimum_degree: str | None = "Aprendiz"
 
 
 class PublicationCreate(PublicationBase):
@@ -22,6 +23,7 @@ class PublicationUpdate(BaseModel):
     type: PublicationTypeEnum | None = None
     valid_until: date | None = None
     status: PublicationStatusEnum | None = None
+    minimum_degree: str | None = None
 
 
 class PublicationResponse(PublicationBase):

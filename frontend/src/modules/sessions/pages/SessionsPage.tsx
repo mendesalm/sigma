@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Stack, TextField, FormControl, InputLabel, Select, MenuItem, Container, useTheme, alpha, Chip, IconButton } from '@mui/material';
+import { Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Stack, TextField, FormControl, InputLabel, Select, MenuItem, Container, useTheme, alpha, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar } from '@mui/material';
 import { Add, Search, Event, PlayArrow, CheckCircle, Cancel, Visibility, Description } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
-import { getSessions } from '@/shared/services/api';
+import { getSessions, generateAnnualCalendar, confirmMonthSessions } from '@/shared/services/api';
 
 interface Session {
   id: number;
@@ -25,6 +25,15 @@ const SessionsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar' | 'stats'>('list');
+
+  // Calendar Actions States
+  const [openGenerateCalendar, setOpenGenerateCalendar] = useState(false);
+  const [generateYear, setGenerateYear] = useState(new Date().getFullYear());
+  const [generatingCalendar, setGeneratingCalendar] = useState(false);
+  
+  const [openConfirmMonth, setOpenConfirmMonth] = useState(false);
+  const [confirmMonthStr, setConfirmMonthStr] = useState('');
+  const [confirmingMonth, setConfirmingMonth] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState('');
@@ -80,6 +89,52 @@ const SessionsPage: React.FC = () => {
     }
   };
 
+  const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error' | 'info'}>({ open: false, message: '', severity: 'success' });
+
+  const handleGenerateCalendar = async () => {
+    setGeneratingCalendar(true);
+    try {
+      await generateAnnualCalendar(generateYear);
+      setSnackbar({ open: true, message: `Calendário para ${generateYear} gerado com sucesso!`, severity: 'success' });
+      setOpenGenerateCalendar(false);
+      fetchSessions();
+    } catch (err: any) {
+      console.error(err);
+      setSnackbar({ open: true, message: err.response?.data?.detail || 'Erro ao gerar calendário.', severity: 'error' });
+    } finally {
+      setGeneratingCalendar(false);
+    }
+  };
+
+  const handleConfirmMonth = async () => {
+    if (!confirmMonthStr) {
+      setSnackbar({ open: true, message: 'Selecione um mês', severity: 'error' });
+      return;
+    }
+    
+    setConfirmingMonth(true);
+    try {
+      // confirmMonthStr comes as 'YYYY-MM'. Let's convert to startDate and endDate
+      const year = parseInt(confirmMonthStr.split('-')[0]);
+      const month = parseInt(confirmMonthStr.split('-')[1]) - 1; // 0-indexed
+      
+      // first day of the month
+      const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+      // last day of the month
+      const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+      
+      const response = await confirmMonthSessions(startDate, endDate);
+      setSnackbar({ open: true, message: `Mês confirmado! ${response.data.confirmed_count} sessões agendadas.`, severity: 'success' });
+      setOpenConfirmMonth(false);
+      fetchSessions();
+    } catch (err: any) {
+      console.error(err);
+      setSnackbar({ open: true, message: err.response?.data?.detail || 'Erro ao confirmar mês.', severity: 'error' });
+    } finally {
+      setConfirmingMonth(false);
+    }
+  };
+
   if (loading) {
     return <CircularProgress />;
   }
@@ -116,6 +171,32 @@ const SessionsPage: React.FC = () => {
               <BarChart />
             </ToggleButton>
           </ToggleButtonGroup>
+
+          <Button
+            variant="outlined"
+            onClick={() => setOpenGenerateCalendar(true)}
+            startIcon={<Event />}
+            sx={{
+              fontWeight: 'bold',
+              textTransform: 'none',
+              borderRadius: '8px',
+            }}
+          >
+            Gerar Calendário
+          </Button>
+          <Button
+            variant="outlined"
+            color="success"
+            onClick={() => setOpenConfirmMonth(true)}
+            startIcon={<CheckCircle />}
+            sx={{
+              fontWeight: 'bold',
+              textTransform: 'none',
+              borderRadius: '8px',
+            }}
+          >
+            Confirmar Mês
+          </Button>
 
           <Button
             variant="contained"
@@ -293,7 +374,9 @@ const SessionsPage: React.FC = () => {
                                 session.status === 'ENCERRADA' ? <CheckCircle sx={{ fontSize: '16px !important' }} /> :
                                   session.status === 'EM_ANDAMENTO' ? <PlayArrow sx={{ fontSize: '16px !important' }} /> :
                                     session.status === 'CANCELADA' ? <Cancel sx={{ fontSize: '16px !important' }} /> :
-                                      <Event sx={{ fontSize: '16px !important' }} />
+                                      session.status === 'SUPRIMIDA' ? <Cancel sx={{ fontSize: '16px !important' }} /> :
+                                        session.status === 'PREVISTA' ? <Event sx={{ fontSize: '16px !important' }} /> :
+                                          <Event sx={{ fontSize: '16px !important' }} />
                             }
                             label={session.status}
                             size="small"
@@ -305,7 +388,9 @@ const SessionsPage: React.FC = () => {
                                   session.status === 'ENCERRADA' ? '#64748b' :
                                     session.status === 'EM_ANDAMENTO' ? theme.palette.info.main :
                                       session.status === 'CANCELADA' ? theme.palette.error.main :
-                                        alpha(theme.palette.warning.main, 0.8),
+                                        session.status === 'SUPRIMIDA' ? theme.palette.error.dark :
+                                          session.status === 'PREVISTA' ? theme.palette.grey[400] :
+                                            alpha(theme.palette.warning.main, 0.8),
                               color: '#fff',
                               fontWeight: 700,
                               borderRadius: '12px',
@@ -327,22 +412,7 @@ const SessionsPage: React.FC = () => {
                             borderBottomRightRadius: '50px'
                           }}
                         >
-                          <IconButton
-                            component={Link}
-                            to={`${basePath}/${session.id}/balaustre`}
-                            size="small"
-                            title="Editor de Balaústre"
-                            sx={{
-                              color: 'text.secondary',
-                              mr: 1,
-                              '&:hover': {
-                                color: theme.palette.secondary.main,
-                                backgroundColor: alpha(theme.palette.secondary.main, 0.1)
-                              }
-                            }}
-                          >
-                            <Description fontSize="small" />
-                          </IconButton>
+
                           <IconButton
                             component={Link}
                             to={`${basePath}/${session.id}`}
@@ -375,6 +445,57 @@ const SessionsPage: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Modal Gerar Calendário */}
+      <Dialog open={openGenerateCalendar} onClose={() => setOpenGenerateCalendar(false)}>
+        <DialogTitle>Gerar Calendário Anual</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Esta ação irá criar sessões PREVISTAS para todo o ano, com base nas configurações da Loja (dia da sessão, feriados, recessos).
+          </Typography>
+          <TextField
+            label="Ano"
+            type="number"
+            value={generateYear}
+            onChange={(e) => setGenerateYear(parseInt(e.target.value))}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenGenerateCalendar(false)}>Cancelar</Button>
+          <Button onClick={handleGenerateCalendar} variant="contained" disabled={generatingCalendar}>
+            {generatingCalendar ? <CircularProgress size={24} /> : 'Gerar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal Confirmar Mês */}
+      <Dialog open={openConfirmMonth} onClose={() => setOpenConfirmMonth(false)}>
+        <DialogTitle>Confirmar Mês de Sessões</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Selecione o mês para confirmar as sessões PREVISTAS, convertendo-as em AGENDADAS e criando a pauta básica (Balaústre).
+          </Typography>
+          <TextField
+            label="Mês/Ano"
+            type="month"
+            InputLabelProps={{ shrink: true }}
+            value={confirmMonthStr}
+            onChange={(e) => setConfirmMonthStr(e.target.value)}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenConfirmMonth(false)}>Cancelar</Button>
+          <Button onClick={handleConfirmMonth} variant="contained" color="success" disabled={confirmingMonth || !confirmMonthStr}>
+            {confirmingMonth ? <CircularProgress size={24} /> : 'Confirmar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>{snackbar.message}</Alert>
+      </Snackbar>
     </Container>
   );
 };

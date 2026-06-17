@@ -15,6 +15,7 @@ class MessageAttachmentResponse(MessageAttachmentBase):
 class EntityMessageBase(BaseModel):
     subject: str = Field(..., max_length=255)
     body: str
+    minimum_degree: str | None = Field("Aprendiz", description="Grau mínimo necessário para acessar o documento")
 
 class EntityMessageCreate(EntityMessageBase):
     recipient_obedience_id: int | None = None

@@ -39,6 +39,9 @@ class LodgeBase(BaseModel):
         },
         description="Módulos disponíveis",
     )
+    auto_schedule_sessions: bool = Field(False, description="Se agendamento automático de sessões está ativo")
+    session_weeks: list[int] | None = Field(None, description="Semanas do mês para sessões mensais/quinzenais, ex: [1, 3]")
+    custom_holidays: list[dict] | None = Field(None, description="Lista de feriados customizados da loja. Ex: [{'month': 8, 'day': 20, 'name': 'Dia do Maçom'}]")
 
     @field_validator("lodge_name", mode="after", check_fields=False)
     @classmethod
@@ -303,6 +306,9 @@ class LodgeUpdate(BaseModel):
     session_time: time | None = None
     document_settings: dict | None = None
     available_modules: dict | None = None
+    auto_schedule_sessions: bool | None = None
+    session_weeks: list[int] | None = None
+    custom_holidays: list[dict] | None = None
 
 
 class LodgeResponse(LodgeBase):

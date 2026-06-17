@@ -154,6 +154,9 @@ const SessionForm = () => {
             received_expedients: session.received_expedients || '',
             study_director_id: session.study_director_id || '',
           });
+          if (session.degree) {
+            setDegree(session.degree);
+          }
         } else {
           const token = localStorage.getItem('token');
           if (token) {
@@ -275,6 +278,7 @@ const SessionForm = () => {
 
     const payload = {
       ...formData,
+      degree,
       session_number: formData.session_number ? parseInt(formData.session_number) : null,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,

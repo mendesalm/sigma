@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
 
-from app.shared.base_model import BaseModel
+from app.shared.base_model import BaseModel, DegreeEnum
 
 
 class BookConditionEnum(enum.StrEnum):
@@ -23,7 +23,6 @@ class BookConditionEnum(enum.StrEnum):
     GOOD = "Bom"
     FAIR = "Regular"
     POOR = "Ruim"
-
 
 class ItemStatusEnum(enum.StrEnum):
     AVAILABLE = "Disponível"
@@ -163,6 +162,7 @@ class Publication(BaseModel):
     lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False)
     published_at = Column(DateTime(timezone=True), server_default=func.now())
     valid_until = Column(Date, nullable=True)
+    minimum_degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum", create_type=False), nullable=False, default=DegreeEnum.APPRENTICE)
 
     author = relationship("Member", backref="publications")
     lodge = relationship("Lodge", backref="publications")

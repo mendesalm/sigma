@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, date
 from fastapi import HTTPException, status
 from geopy.distance import geodesic  # Dependência para cálculo de distância
 from sqlalchemy.orm import Session, joinedload
@@ -306,3 +305,80 @@ def record_qr_code_attendance(
     db.commit()
     db.refresh(attendance_record)
     return attendance_record
+
+
+def get_lodge_attendance_stats(db: Session, lodge_id: int, period_months: int = 12) -> dict:
+    """
+    Calcula estatísticas de presença da loja para os últimos X meses.
+    """
+    # 1. Definir período
+    end_date = date.today()
+    start_date = end_date - timedelta(days=period_months * 30)
+
+    # 2. Buscar sessões realizadas/encerradas no período
+    sessions = (
+        db.query(models.MasonicSession)
+        .filter(
+            models.MasonicSession.lodge_id == lodge_id,
+            models.MasonicSession.session_date >= start_date,
+            models.MasonicSession.session_date <= end_date,
+            models.MasonicSession.status.in_(["REALIZADA", "ENCERRADA"]),
+        )
+        .all()
+    )
+
+    total_sessions = len(sessions)
+    if total_sessions == 0:
+        return {"total_sessions": 0, "average_attendance": 0.0, "member_stats": []}
+
+    # 3. Calcular média de presença por sessão
+    total_attendance_count = 0
+    session_ids = [s.id for s in sessions]
+
+    # Busca todas as presenças dessas sessões
+    all_attendances = (
+        db.query(models.SessionAttendance)
+        .filter(
+            models.SessionAttendance.session_id.in_(session_ids),
+            models.SessionAttendance.attendance_status == "Presente",
+        )
+        .all()
+    )
+
+    total_attendance_count = len(all_attendances)
+    average_attendance = total_attendance_count / total_sessions if total_sessions > 0 else 0
+
+    # 4. Calcular estatísticas por membro
+    # Primeiro, buscar membros ativos da loja
+    active_members = (
+        db.query(models.Member)
+        .join(models.MemberLodgeAssociation)
+        .filter(models.MemberLodgeAssociation.lodge_id == lodge_id, models.MemberLodgeAssociation.status == "Ativo")
+        .all()
+    )
+
+    member_stats = []
+    for member in active_members:
+        # Contar presenças deste membro nas sessões do período
+        member_presence_count = sum(1 for a in all_attendances if a.member_id == member.id)
+
+        attendance_rate = (member_presence_count / total_sessions) * 100
+
+        member_stats.append(
+            {
+                "member_id": member.id,
+                "member_name": member.full_name,
+                "total_sessions": total_sessions,
+                "present_sessions": member_presence_count,
+                "attendance_rate": round(attendance_rate, 2),
+            }
+        )
+
+    # Ordenar por taxa de presença (decrescente)
+    member_stats.sort(key=lambda x: x["attendance_rate"], reverse=True)
+
+    return {
+        "total_sessions": total_sessions,
+        "average_attendance": round(average_attendance, 2),
+        "member_stats": member_stats,
+    }

@@ -79,6 +79,11 @@ export const endSession = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/end`);
 };
 
+export const approveSessionMinutes = (sessionId: number) => api.post(`/masonic-sessions/${sessionId}/approve-minutes`);
+export const reopenSession = (sessionId: number) => api.post(`/masonic-sessions/${sessionId}/reopen`);
+export const getBalaustreData = (sessionId: number) => api.get(`/masonic-sessions/${sessionId}/balaustre-data`);
+export const downloadBalaustre = (sessionId: number) => api.get(`/masonic-sessions/${sessionId}/download-balaustre`, { responseType: 'blob' });
+
 export const cancelSession = (sessionId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/cancel`);
 };
@@ -87,20 +92,14 @@ export const deleteSession = (sessionId: number) => {
   return api.delete(`/masonic-sessions/${sessionId}`);
 };
 
-export const generateBalaustre = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/generate-balaustre`);
-};
-
-export const generateEdital = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/generate-edital`);
-};
-
-export const generateInvitation = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/generate-invitation`);
-};
-
-export const generateElectoralBalaustre = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/generate-electoral-balaustre`);
+export const uploadBalaustre = (sessionId: number, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post(`/masonic-sessions/${sessionId}/upload-balaustre`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
 
 export const approveSessionMinutes = (sessionId: number) => {
@@ -187,6 +186,38 @@ export const getLodgeAttendanceStats = (periodMonths: number = 12) => {
 
 export const generateCertificate = (sessionId: number, memberId: number) => {
   return api.post(`/masonic-sessions/${sessionId}/generate-certificate/${memberId}`);
+};
+
+export const generateAnnualCalendar = (year: number) => {
+  return api.post('/masonic-sessions/generate-calendar', null, {
+    params: { year }
+  });
+};
+
+export const confirmMonthSessions = (startDate: string, endDate: string) => {
+  return api.post('/masonic-sessions/confirm-month', null, {
+    params: { start_date: startDate, end_date: endDate }
+  });
+};
+
+export const resetLodgeSettings = (lodgeId: number) => {
+  return api.post(`/lodges/${lodgeId}/settings/reset`);
+};
+
+export const restoreLodgeSettings = (lodgeId: number) => {
+  return api.post(`/lodges/${lodgeId}/settings/restore`);
+};
+
+export const getLodgeRecesses = () => {
+  return api.get('/masonic-sessions/recesses');
+};
+
+export const createLodgeRecess = (data: any) => {
+  return api.post('/masonic-sessions/recesses', data);
+};
+
+export const deleteLodgeRecess = (id: number) => {
+  return api.delete(`/masonic-sessions/recesses/${id}`);
 };
 
 // --- Committees ---

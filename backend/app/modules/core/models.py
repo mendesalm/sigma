@@ -127,6 +127,9 @@ class Lodge(BaseModel):
         },
     )
     previous_settings = Column(JSON, nullable=True, comment="Backup de configurações de fábrica")
+    auto_schedule_sessions = Column(Boolean, default=False, nullable=False)
+    session_weeks = Column(JSON, nullable=True, comment="Ex: [1, 3] para primeira e terceira semana")
+    custom_holidays = Column(JSON, nullable=True, default=list)
 
     @property
     def formatted_affiliation(self) -> str:
