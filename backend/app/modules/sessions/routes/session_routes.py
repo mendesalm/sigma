@@ -251,12 +251,12 @@ async def generate_electoral_balaustre_for_session(
     summary="Obter Rascunho do Balaústre",
     description="Retorna o texto pré-formatado do balaústre para edição.",
 )
-async def get_balaustre_draft(
+def get_balaustre_draft(
     session_id: int,
     db: Session = Depends(get_db),
     current_user_payload: dict = Depends(get_current_user_payload),
 ):
-    return await session_service.get_balaustre_draft(
+    return session_service.get_balaustre_draft(
         db=db, session_id=session_id, current_user_payload=current_user_payload
     )
 

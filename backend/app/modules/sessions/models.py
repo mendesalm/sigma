@@ -13,6 +13,7 @@ from sqlalchemy import (
     Time,
     Boolean,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
@@ -146,6 +147,12 @@ class CheckInMethodEnum(enum.StrEnum):
     MANUAL = "MANUAL"
     QR_CODE = "QR_CODE"
     APP_VISITOR = "APP_VISITOR"
+    TOTEM = "TOTEM"
+
+
+class TrustLevelEnum(enum.StrEnum):
+    VERIFICADO = "Verificado"
+    CERTIFICADO = "Certificado"
 
 
 class SessionAttendance(BaseModel):
@@ -185,6 +192,11 @@ class Visitor(BaseModel):
     manual_lodge_obedience = Column(String(100), nullable=True)
     global_visitor_id = Column(String(36), nullable=True, index=True)
     remarks = Column(Text, nullable=True)
+    trust_level = Column(
+        SQLAlchemyEnum(TrustLevelEnum, name="visitor_trust_level_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=TrustLevelEnum.VERIFICADO,
+    )
 
 
 class Visit(BaseModel):
@@ -212,3 +224,48 @@ class LodgeRecess(BaseModel):
     description = Column(String(255), nullable=True)
 
     lodge = relationship('Lodge', backref='recesses')
+
+
+class AttendanceAuditLog(BaseModel):
+    __tablename__ = "attendance_audit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=False, index=True)
+    webmaster_id = Column(Integer, ForeignKey("members.id"), nullable=False)
+    target_member_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+    target_visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
+    action = Column(String(50), nullable=False)
+    reason = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    
+    session = relationship("MasonicSession")
+    webmaster = relationship("Member", foreign_keys=[webmaster_id])
+    target_member = relationship("Member", foreign_keys=[target_member_id])
+    target_visitor = relationship("Visitor", foreign_keys=[target_visitor_id])
+
+
+class AbsenceJustificationStatusEnum(enum.StrEnum):
+    PENDING = "Pendente"
+    APPROVED = "Aprovado"
+    REJECTED = "Rejeitado"
+
+class AbsenceJustification(BaseModel):
+    __tablename__ = "absence_justifications"
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("masonic_sessions.id"), nullable=False, index=True)
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=False, index=True)
+    justification_text = Column(Text, nullable=False)
+    attachment_url = Column(String(500), nullable=True)
+    status = Column(
+        SQLAlchemyEnum(AbsenceJustificationStatusEnum, name="absence_status_enum", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        default=AbsenceJustificationStatusEnum.PENDING,
+    )
+    reviewed_by_id = Column(Integer, ForeignKey("members.id"), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    
+    session = relationship("MasonicSession", backref="absence_justifications")
+    member = relationship("Member", foreign_keys=[member_id], backref="absence_justifications")
+    reviewed_by = relationship("Member", foreign_keys=[reviewed_by_id])
+    
+    __table_args__ = (UniqueConstraint("session_id", "member_id", name="_member_session_absence_uc"),)

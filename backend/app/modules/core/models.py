@@ -7,11 +7,13 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     Date,
+    DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
     Time,
+    func,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
@@ -130,6 +132,8 @@ class Lodge(BaseModel):
     auto_schedule_sessions = Column(Boolean, default=False, nullable=False)
     session_weeks = Column(JSON, nullable=True, comment="Ex: [1, 3] para primeira e terceira semana")
     custom_holidays = Column(JSON, nullable=True, default=list)
+    checkin_window_start_minutes = Column(Integer, default=120, nullable=False, comment="Minutos antes do início para abrir check-in")
+    checkin_window_end_minutes = Column(Integer, default=120, nullable=False, comment="Minutos depois do início para fechar check-in")
 
     @property
     def formatted_affiliation(self) -> str:
@@ -164,3 +168,17 @@ class SuperAdmin(BaseModel):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
+
+
+class LodgeCreationRequest(BaseModel):
+    __tablename__ = "lodge_creation_requests"
+    id = Column(Integer, primary_key=True, index=True)
+    requester_id = Column(Integer, ForeignKey("members.id"), nullable=False, comment="Chanceler que solicitou")
+    requested_lodge_name = Column(String(255), nullable=False)
+    requested_lodge_number = Column(String(50), nullable=True)
+    requested_obedience = Column(String(100), nullable=True)
+    status = Column(SQLAlchemyEnum("PENDENTE", "CRIADA", "REJEITADA", name="lodge_creation_status_enum"), default="PENDENTE", nullable=False)
+    resolved_lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    requester = relationship("Member", foreign_keys=[requester_id])
+    resolved_lodge = relationship("Lodge", foreign_keys=[resolved_lodge_id])

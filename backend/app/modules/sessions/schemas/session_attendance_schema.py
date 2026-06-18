@@ -44,6 +44,7 @@ class SessionAttendanceCreate(SessionAttendanceBase):
 class SessionAttendanceResponse(SessionAttendanceBase):
     id: int
     session_id: int
+    alerts: list[str] = []
 
     model_config = SettingsConfigDict(from_attributes=True)
 

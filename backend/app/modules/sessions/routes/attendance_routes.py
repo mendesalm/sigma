@@ -10,7 +10,7 @@ from app.modules.sessions.services import attendance_service
 
 # Importações do projeto
 from database import get_db
-from dependencies import require_permission
+from dependencies import require_permission, UserContext
 from models.models import Member
 
 router = APIRouter(
@@ -29,9 +29,9 @@ router = APIRouter(
 def get_session_attendance(
     session_id: int,
     db: Session = Depends(get_db),
-    current_member: Member = Depends(require_permission("manage_attendance")),
+    current_user: UserContext = Depends(require_permission("manage_attendance")),
 ):
-    return attendance_service.get_attendance_for_session(db=db, session_id=session_id, current_member=current_member)
+    return attendance_service.get_attendance_for_session(db=db, session_id=session_id, current_user=current_user)
 
 
 @router.post(
@@ -44,10 +44,10 @@ def record_member_attendance_manually(
     session_id: int,
     attendance_update: attendance_schema.ManualAttendanceUpdate,
     db: Session = Depends(get_db),
-    current_member: Member = Depends(require_permission("manage_attendance")),
+    current_user: UserContext = Depends(require_permission("manage_attendance")),
 ):
     return attendance_service.record_manual_attendance(
-        db=db, session_id=session_id, attendance_update=attendance_update, current_member=current_member
+        db=db, session_id=session_id, attendance_update=attendance_update, current_user=current_user
     )
 
 
@@ -61,8 +61,8 @@ def record_visitor_attendance(
     session_id: int,
     visitor_data: attendance_schema.VisitorCreate,
     db: Session = Depends(get_db),
-    current_member: Member = Depends(require_permission("manage_attendance")),
+    current_user: UserContext = Depends(require_permission("manage_attendance")),
 ):
     return attendance_service.record_visitor_attendance(
-        db=db, session_id=session_id, visitor_data=visitor_data, current_member=current_member
+        db=db, session_id=session_id, visitor_data=visitor_data, current_user=current_user
     )

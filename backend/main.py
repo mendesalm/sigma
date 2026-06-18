@@ -45,6 +45,8 @@ from app.modules.sessions.routes import (
     check_in_routes,
     session_routes,
     visitor_routes,
+    absence_routes,
+    attendance_analytics_routes,
 )
 from app.modules.members.routes import (
     member_routes,
@@ -242,6 +244,8 @@ app.include_router(financial_routes.router)
 app.include_router(session_routes.router)
 app.include_router(attendance_routes.router)
 app.include_router(check_in_routes.router)
+app.include_router(absence_routes.router)
+app.include_router(attendance_analytics_routes.router)
 app.include_router(super_admin_routes.router)
 app.include_router(webmaster_routes.router)
 app.include_router(member_role_routes.router)

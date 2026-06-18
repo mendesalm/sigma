@@ -9,24 +9,21 @@ from models import models
 # --- Helper Functions ---
 
 
-def _validate_session_access(db: Session, session_id: int, current_member: models.Member) -> models.MasonicSession:
+from dependencies import UserContext
+
+def _validate_session_access(db: Session, session_id: int, current_user: UserContext) -> models.MasonicSession:
     """
-    Valida se a sessão existe e se o membro atual pertence à loja da sessão.
+    Valida se a sessão existe e se o usuário atual pertence à loja da sessão.
     Retorna o objeto da sessão se a validação for bem-sucedida.
     """
     session = db.query(models.MasonicSession).filter(models.MasonicSession.id == session_id).first()
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada.")
 
-    admin_association = (
-        db.query(models.MemberLodgeAssociation)
-        .filter(
-            models.MemberLodgeAssociation.member_id == current_member.id,
-            models.MemberLodgeAssociation.lodge_id == session.lodge_id,
-        )
-        .first()
-    )
-    if not admin_association:
+    if getattr(current_user, 'user_type', None) == 'super_admin':
+        return session
+
+    if getattr(current_user, 'lodge_id', None) != session.lodge_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="O usuário não tem permissão para acessar os dados desta sessão.",
@@ -38,13 +35,13 @@ def _validate_session_access(db: Session, session_id: int, current_member: model
 
 
 def get_attendance_for_session(
-    db: Session, session_id: int, current_member: models.Member
+    db: Session, session_id: int, current_user: UserContext
 ) -> list[models.SessionAttendance]:
     """
     Retorna todos os registros de presença para uma sessão específica,
     incluindo os detalhes dos membros, após validar o acesso.
     """
-    _validate_session_access(db, session_id, current_member)  # Valida o acesso
+    _validate_session_access(db, session_id, current_user)  # Valida o acesso
     return (
         db.query(models.SessionAttendance)
         .options(joinedload(models.SessionAttendance.member), joinedload(models.SessionAttendance.visitor))
@@ -57,19 +54,31 @@ def record_manual_attendance(
     db: Session,
     session_id: int,
     attendance_update: attendance_schema.ManualAttendanceUpdate,
-    current_member: models.Member,
+    current_user: UserContext,
 ) -> models.SessionAttendance:
     """
     Registra ou atualiza manualmente a presença de um membro em uma sessão.
     Ação permitida para usuários com a permissão 'manage_attendance'.
     """
-    session = _validate_session_access(db, session_id, current_member)  # Valida o acesso
+    session = _validate_session_access(db, session_id, current_user)  # Valida o acesso
 
-    # Valida o status da sessão
-    if session.status not in ["AGENDADA", "EM_ANDAMENTO"]:
+    is_webmaster = getattr(current_user, 'user_type', None) == 'webmaster'
+    
+    if session.status == "ENCERRADA":
+        if not is_webmaster:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas webmasters podem alterar presenças de sessões encerradas."
+            )
+        if not attendance_update.reason:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O motivo da correção é obrigatório para sessões encerradas."
+            )
+    elif session.status not in ["EM_ANDAMENTO", "REALIZADA"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível registrar presença. A sessão não está agendada ou em andamento.",
+            detail="Não é possível registrar presença. A sessão não está em andamento ou realizada.",
         )
 
     # Valida se o membro-alvo pertence à mesma loja
@@ -109,34 +118,78 @@ def record_manual_attendance(
         datetime.utcnow() if attendance_update.attendance_status == "Presente" else None
     )
 
+    if session.status == "ENCERRADA" and is_webmaster:
+        audit_log = models.AttendanceAuditLog(
+            session_id=session.id,
+            webmaster_id=current_user.user.id,
+            target_member_id=target_member_id,
+            action="MANUAL_ATTENDANCE_UPDATE",
+            reason=attendance_update.reason
+        )
+        db.add(audit_log)
+
     db.commit()
     db.refresh(attendance_record)
     return attendance_record
 
 
 def record_visitor_attendance(
-    db: Session, session_id: int, visitor_data: attendance_schema.VisitorCreate, current_member: models.Member
+    db: Session, session_id: int, visitor_data: attendance_schema.VisitorCreate, current_user: UserContext
 ) -> models.SessionAttendance:
     """
     Registra a presença de um visitante em uma sessão.
     """
-    session = _validate_session_access(db, session_id, current_member)
+    session = _validate_session_access(db, session_id, current_user)
 
-    if session.status not in ["AGENDADA", "EM_ANDAMENTO"]:
+    is_webmaster = getattr(current_user, 'user_type', None) == 'webmaster'
+    
+    if session.status == "ENCERRADA":
+        if not is_webmaster:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Apenas webmasters podem alterar presenças de sessões encerradas."
+            )
+        if not visitor_data.reason:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O motivo da correção é obrigatório para sessões encerradas."
+            )
+    elif session.status not in ["EM_ANDAMENTO", "REALIZADA"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Não é possível registrar visitantes. A sessão não está agendada ou em andamento.",
+            detail="Não é possível registrar visitantes. A sessão não está em andamento ou realizada.",
         )
 
     # Cria ou encontra o visitante
-    visitor = None
-    # Verifica primeiro pelo CIM (identificador principal)
     visitor = db.query(models.Visitor).filter(models.Visitor.cim == visitor_data.cim).first()
 
+    trust_level = "Verificado"
+    
+    # Lógica de Loja de Origem
+    if visitor_data.origin_lodge_id:
+        origin_lodge = db.query(models.Lodge).filter(models.Lodge.id == visitor_data.origin_lodge_id).first()
+        if origin_lodge:
+            trust_level = "Certificado" # Achou no sigma
+    else:
+        # Criar Request de Loja se não existir
+        if visitor_data.manual_lodge_name:
+            creation_request = models.LodgeCreationRequest(
+                requester_id=current_user.user.id,
+                requested_lodge_name=visitor_data.manual_lodge_name,
+                requested_lodge_number=visitor_data.manual_lodge_number,
+                requested_obedience=visitor_data.manual_lodge_obedience,
+                status="PENDENTE"
+            )
+            db.add(creation_request)
+
     if not visitor:
-        visitor = models.Visitor(**visitor_data.model_dump())
+        v_data = visitor_data.model_dump(exclude={"reason"})
+        visitor = models.Visitor(**v_data)
+        visitor.trust_level = trust_level
         db.add(visitor)
         db.flush()  # Para obter o ID do visitante
+    elif trust_level == "Certificado" and visitor.trust_level != "Certificado":
+        visitor.trust_level = "Certificado" # Evolui confiança
 
     # Cria o registro de presença para o visitante
     visitor_attendance = models.SessionAttendance(
@@ -147,6 +200,16 @@ def record_visitor_attendance(
         check_in_datetime=datetime.utcnow(),
     )
     db.add(visitor_attendance)
+    
+    if session.status == "ENCERRADA" and is_webmaster:
+        audit_log = models.AttendanceAuditLog(
+            session_id=session.id,
+            webmaster_id=current_user.user.id,
+            target_visitor_id=visitor.id,
+            action="VISITOR_ATTENDANCE_UPDATE",
+            reason=visitor_data.reason
+        )
+        db.add(audit_log)
     db.commit()
     db.refresh(visitor_attendance)
     return visitor_attendance
@@ -180,8 +243,8 @@ def record_qr_code_attendance(
         )
 
     session_start_datetime = datetime.combine(session.session_date, session.start_time)
-    check_in_window_start = session_start_datetime - timedelta(minutes=30)  # Configurável
-    check_in_window_end = session_start_datetime + timedelta(minutes=60)  # Configurável
+    check_in_window_start = session_start_datetime - timedelta(minutes=session.lodge.checkin_window_start_minutes)
+    check_in_window_end = session_start_datetime + timedelta(minutes=session.lodge.checkin_window_end_minutes)
 
     if not (check_in_window_start <= datetime.now() <= check_in_window_end):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Fora da janela de tempo para check-in.")
@@ -246,12 +309,14 @@ def record_qr_code_attendance(
                 cim=user_as_member.cim,
                 degree=user_as_member.degree,
                 email=user_as_member.email,
-                # cpf=user_as_member.cpf, # CPF removido do fluxo de visitante
                 manual_lodge_name="Membro Sigma de outra loja",  # Identificador genérico
                 remarks=f"Membro Sigma ID: {user_as_member.id}",
+                trust_level="Certificado", # É um membro validado no Sigma
             )
             db.add(visitor)
             db.flush()
+        elif visitor.trust_level != "Certificado":
+            visitor.trust_level = "Certificado"
 
         # Cria ou encontra o registro de presença para o visitante
         attendance_record = (
@@ -302,8 +367,161 @@ def record_qr_code_attendance(
     attendance_record.check_in_longitude = check_in_data.longitude
     attendance_record.check_in_datetime = datetime.utcnow()
 
+    if session.status == "ENCERRADA" and is_webmaster:
+        audit_log = models.AttendanceAuditLog(
+            session_id=session.id,
+            webmaster_id=current_user.user.id,
+            target_member_id=target_member_id,
+            action="MANUAL_ATTENDANCE_UPDATE",
+            reason=attendance_update.reason
+        )
+        db.add(audit_log)
+
     db.commit()
     db.refresh(attendance_record)
+    return attendance_record
+
+
+
+from app.modules.access_control.utils import auth_utils
+
+def record_totem_attendance(
+    db: Session, totem_data: attendance_schema.TotemCheckInRequest
+) -> models.SessionAttendance:
+    """
+    Valida o JWT do Maçom app e registra a presença na sessão ativa da loja do Totem.
+    """
+    # 1. Encontra a sessão ativa para a loja do totem
+    session = (
+        db.query(models.MasonicSession)
+        .filter(
+            models.MasonicSession.lodge_id == totem_data.lodge_id, models.MasonicSession.status == "EM_ANDAMENTO"
+        )
+        .first()
+    )
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Nenhuma sessão ativa encontrada para o Totem."
+        )
+
+    # 2. Decodifica o JWT do QR Code do usuário
+    payload = auth_utils.decode_access_token(totem_data.jwt_token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="QR Code inválido ou expirado."
+        )
+
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="QR Code inválido: sem identificação do membro."
+        )
+
+    # 3. Identifica se é Membro da Loja ou Visitante
+    is_lodge_member = (
+        db.query(models.MemberLodgeAssociation)
+        .filter(
+            models.MemberLodgeAssociation.member_id == user_id,
+            models.MemberLodgeAssociation.lodge_id == totem_data.lodge_id,
+        )
+        .first()
+    )
+
+    if is_lodge_member:
+        # MEMBRO DO QUADRO
+        attendance_record = (
+            db.query(models.SessionAttendance)
+            .filter(
+                models.SessionAttendance.session_id == session.id,
+                models.SessionAttendance.member_id == user_id,
+            )
+            .first()
+        )
+        if not attendance_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sua presença como membro não foi pré-registrada para esta sessão.",
+            )
+    else:
+        # VISITANTE
+        user_as_member = db.query(models.Member).filter(models.Member.id == user_id).first()
+        if not user_as_member:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado no sistema.")
+
+        visitor = db.query(models.Visitor).filter(models.Visitor.cim == user_as_member.cim).first()
+
+        if not visitor:
+            # Cria novo registro de visitante local baseado no membro do Sigma
+            visitor = models.Visitor(
+                full_name=user_as_member.full_name,
+                cim=user_as_member.cim,
+                degree=user_as_member.degree,
+                email=user_as_member.email,
+                manual_lodge_name="Membro Sigma de outra loja",
+                remarks=f"Membro Sigma ID: {user_as_member.id}",
+                trust_level="Certificado",
+            )
+            db.add(visitor)
+            db.flush()
+        elif visitor.trust_level != "Certificado":
+            visitor.trust_level = "Certificado"
+
+        # Cria ou encontra o registro de presença para o visitante
+        attendance_record = (
+            db.query(models.SessionAttendance)
+            .filter(
+                models.SessionAttendance.session_id == session.id, models.SessionAttendance.visitor_id == visitor.id
+            )
+            .first()
+        )
+
+        if not attendance_record:
+            attendance_record = models.SessionAttendance(session_id=session.id, visitor_id=visitor.id)
+            db.add(attendance_record)
+
+        # Registra a visita para as lojas de origem do membro
+        home_associations = (
+            db.query(models.MemberLodgeAssociation)
+            .filter(models.MemberLodgeAssociation.member_id == user_id)
+            .all()
+        )
+
+        for assoc in home_associations:
+            if assoc.lodge_id != totem_data.lodge_id:
+                existing_visit = (
+                    db.query(models.Visit)
+                    .filter(models.Visit.member_id == user_id, models.Visit.session_id == session.id)
+                    .first()
+                )
+                if not existing_visit:
+                    new_visit = models.Visit(
+                        visit_date=session.session_date,
+                        member_id=user_id,
+                        home_lodge_id=assoc.lodge_id,
+                        visited_lodge_id=totem_data.lodge_id,
+                        session_id=session.id,
+                    )
+                    db.add(new_visit)
+
+    # Atualiza status e salva
+    if attendance_record.attendance_status != "Presente":
+        attendance_record.attendance_status = "Presente"
+        attendance_record.check_in_method = "TOTEM"
+        attendance_record.check_in_datetime = datetime.utcnow()
+
+    db.commit()
+    db.refresh(attendance_record)
+
+    # ADD ALERTS
+    alerts = []
+    if is_lodge_member:
+        if is_lodge_member.status in ["Inativo", "Desativado", "Suspenso"]:
+            alerts.append(f"Membro com status {is_lodge_member.status}")
+        if is_lodge_member.member_class == "Irregular":
+            alerts.append("Membro Irregular")
+    
+    setattr(attendance_record, "alerts", alerts)
     return attendance_record
 
 
@@ -382,3 +600,100 @@ def get_lodge_attendance_stats(db: Session, lodge_id: int, period_months: int = 
         "average_attendance": round(average_attendance, 2),
         "member_stats": member_stats,
     }
+
+
+def record_bulk_totem_attendance(db: Session, bulk_data: attendance_schema.TotemBulkRequest) -> dict:
+    """
+    Sincroniza uma lista de check-ins coletados offline pelo Totem.
+    Ignora a expiração do JWT (verify_exp=False) confiando na leitura local do totem.
+    """
+    import jwt
+    from app.modules.access_control.utils.auth_utils import SECRET_KEY, ALGORITHM
+    
+    session = (
+        db.query(models.MasonicSession)
+        .filter(
+            models.MasonicSession.lodge_id == bulk_data.lodge_id, 
+            models.MasonicSession.status.in_(["EM_ANDAMENTO", "REALIZADA"])
+        )
+        .first()
+    )
+
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Nenhuma sessão ativa/realizada encontrada para o Totem."
+        )
+
+    success_count = 0
+    errors = []
+
+    for item in bulk_data.check_ins:
+        try:
+            # Decode bypassing expiration
+            payload = jwt.decode(item.jwt_token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_exp": False})
+            user_id = payload.get("user_id")
+            if not user_id:
+                errors.append(f"Token sem user_id: {item.jwt_token[:10]}...")
+                continue
+                
+            # Identifica membro ou visitante
+            is_lodge_member = (
+                db.query(models.MemberLodgeAssociation)
+                .filter(
+                    models.MemberLodgeAssociation.member_id == user_id,
+                    models.MemberLodgeAssociation.lodge_id == bulk_data.lodge_id,
+                )
+                .first()
+            )
+            
+            visitor_id = None
+            if not is_lodge_member:
+                user_as_member = db.query(models.Member).filter(models.Member.id == user_id).first()
+                if not user_as_member:
+                    errors.append(f"Usuário não encontrado: {user_id}")
+                    continue
+                
+                visitor = db.query(models.Visitor).filter(models.Visitor.cim == user_as_member.cim).first()
+                if not visitor:
+                    visitor = models.Visitor(
+                        full_name=user_as_member.full_name,
+                        cim=user_as_member.cim,
+                        degree=user_as_member.degree,
+                        trust_level="Certificado",
+                    )
+                    db.add(visitor)
+                    db.flush()
+                visitor_id = visitor.id
+
+            attendance_record = (
+                db.query(models.SessionAttendance)
+                .filter(
+                    models.SessionAttendance.session_id == session.id,
+                    models.SessionAttendance.member_id == (user_id if is_lodge_member else None),
+                    models.SessionAttendance.visitor_id == visitor_id
+                )
+                .first()
+            )
+
+            if not attendance_record:
+                attendance_record = models.SessionAttendance(
+                    session_id=session.id, 
+                    member_id=(user_id if is_lodge_member else None),
+                    visitor_id=visitor_id
+                )
+                db.add(attendance_record)
+
+            if attendance_record.attendance_status != "Presente":
+                attendance_record.attendance_status = "Presente"
+                attendance_record.check_in_method = "TOTEM"
+                # Use the offline timestamp
+                attendance_record.check_in_datetime = item.timestamp_local
+
+            db.commit()
+            success_count += 1
+
+        except Exception as e:
+            db.rollback()
+            errors.append(f"Erro ao processar token: {str(e)}")
+
+    return {"processed": len(bulk_data.check_ins), "success": success_count, "errors": errors}

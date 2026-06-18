@@ -490,13 +490,14 @@ import os
 from fastapi import UploadFile
 from sqlalchemy.orm import joinedload
 
-def get_balaustre_data(db: Session, session_id: int, current_user_payload: dict) -> dict:
+def get_balaustre_draft(db: Session, session_id: int, current_user_payload: dict) -> dict:
     """
-    Retorna os dados consolidados da sessão para que o secretário possa redigir o balaústre.
+    Retorna os dados consolidados da sessão organizados para redigir o balaústre nominal.
+    Lista membros agrupados por grau, visitantes agrupados por loja e faltas justificadas.
     """
     db_session = get_session_by_id(db, session_id, current_user_payload)
     
-    # Coletar presenças (membros e visitantes)
+    # Coletar presenças
     attendances = (
         db.query(models.SessionAttendance)
         .filter(models.SessionAttendance.session_id == session_id, models.SessionAttendance.attendance_status == "Presente")
@@ -504,15 +505,49 @@ def get_balaustre_data(db: Session, session_id: int, current_user_payload: dict)
         .all()
     )
     
-    present_members = [
-        {"name": att.member.full_name, "cim": att.member.cim, "degree": att.member.degree}
-        for att in attendances if att.member
-    ]
-    present_visitors = [
-        {"name": att.visitor.full_name, "cim": att.visitor.cim, "lodge": att.visitor.manual_lodge_name}
-        for att in attendances if att.visitor
-    ]
+    # Coletar Faltas Justificadas Aprovadas
+    justifications = (
+        db.query(models.AbsenceJustification)
+        .filter(models.AbsenceJustification.session_id == session_id, models.AbsenceJustification.status == "Aprovado")
+        .options(joinedload(models.AbsenceJustification.member))
+        .all()
+    )
+
+    members_by_degree = {
+        "Aprendiz": [],
+        "Companheiro": [],
+        "Mestre": [],
+        "Outros": []
+    }
     
+    visitors_by_lodge = {}
+    present_members_count = 0
+    present_visitors_count = 0
+
+    for att in attendances:
+        if att.member:
+            degree = getattr(att.member, "degree", "Outros") or "Outros"
+            if degree in members_by_degree:
+                members_by_degree[degree].append(att.member.full_name)
+            else:
+                members_by_degree["Outros"].append(att.member.full_name)
+            present_members_count += 1
+        elif att.visitor:
+            lodge_name = att.visitor.manual_lodge_name or "Desconhecida"
+            if lodge_name not in visitors_by_lodge:
+                visitors_by_lodge[lodge_name] = []
+            visitors_by_lodge[lodge_name].append(att.visitor.full_name)
+            present_visitors_count += 1
+
+    justified_absences = [j.member.full_name for j in justifications if j.member]
+
+    # Ordenar alfabeticamente
+    for degree in members_by_degree:
+        members_by_degree[degree].sort()
+    for lodge in visitors_by_lodge:
+        visitors_by_lodge[lodge].sort()
+    justified_absences.sort()
+
     return {
         "session_id": db_session.id,
         "title": db_session.title,
@@ -521,10 +556,13 @@ def get_balaustre_data(db: Session, session_id: int, current_user_payload: dict)
         "session_type": db_session.session_type,
         "status": db_session.status,
         "temporary_role_assignments": db_session.temporary_role_assignments,
-        "present_members_count": len(present_members),
-        "present_visitors_count": len(present_visitors),
-        "present_members": present_members,
-        "present_visitors": present_visitors,
+        "present_members_count": present_members_count,
+        "present_visitors_count": present_visitors_count,
+        "nominal_list": {
+            "members_by_degree": members_by_degree,
+            "visitors_by_lodge": visitors_by_lodge,
+            "justified_absences": justified_absences
+        }
     }
 
 def upload_balaustre(db: Session, session_id: int, file: UploadFile, current_user_payload: dict) -> models.MasonicSession:
