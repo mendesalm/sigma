@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from dependencies import get_current_user, UserContext, require_permission
+from dependencies import get_current_active_user_with_permissions, UserContext, require_permission
 from app.modules.sessions.services import attendance_service, attendance_analytics_service
 
 router = APIRouter(prefix="/analytics/attendance", tags=["Dashboards de Assiduidade"], responses={404: {"description": "Não encontrado"}})
@@ -27,6 +27,6 @@ def lodge_attendance_dashboard(
 def member_attendance_dashboard(
     period_months: int = 12,
     db: Session = Depends(get_db),
-    current_user: UserContext = Depends(get_current_user)
+    current_user: UserContext = Depends(get_current_active_user_with_permissions)
 ):
     return attendance_analytics_service.get_member_attendance_stats(db, current_user.user.id, period_months)

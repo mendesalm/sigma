@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.modules.access_control.schemas.auth_schema import Token
+from app.modules.access_control.schemas.auth_schema import Token, RegisterRequest
 from app.modules.access_control.services import auth_service
 from app.modules.access_control.utils import auth_utils
 from database import get_db
@@ -145,6 +145,74 @@ def login_for_access_token(request: Request, response: Response, form_data: OAut
     logger.info("Login realizado com sucesso", extra={"extra_data": {"user_id": user.id, "user_type": user_type}})
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    summary="Cadastro de Membro",
+    description="Endpoint público para cadastro de membros. Cria a Loja e a Obediência caso não existam.",
+)
+def register_member(data: RegisterRequest, db: Session = Depends(get_db)):
+    from app.modules.access_control.utils.password_utils import hash_password
+    from models.models import Member, Lodge, Obedience, LodgeMemberAssociation, ObedienceMemberAssociation
+
+    # 1. Verifica ou cria a Obediência
+    obedience = db.query(Obedience).filter(Obedience.name.ilike(data.obedience_name)).first()
+    if not obedience:
+        obedience = Obedience(name=data.obedience_name)
+        db.add(obedience)
+        db.flush()
+
+    # 2. Verifica ou cria a Loja
+    lodge = db.query(Lodge).filter(
+        Lodge.number == data.lodge_number,
+        Lodge.lodge_name.ilike(data.lodge_name),
+        Lodge.obedience_id == obedience.id
+    ).first()
+    
+    if not lodge:
+        lodge = Lodge(
+            number=data.lodge_number,
+            lodge_name=data.lodge_name,
+            obedience_id=obedience.id,
+            is_active=True
+        )
+        db.add(lodge)
+        db.flush()
+
+    # 3. Verifica se o membro já existe
+    existing_member = db.query(Member).filter(
+        (Member.email == data.email) | (Member.cim == data.cim)
+    ).first()
+    
+    if existing_member:
+        member = existing_member
+    else:
+        member = Member(
+            email=data.email,
+            cim=data.cim,
+            full_name=data.full_name,
+            degree=data.degree,
+            password_hash=hash_password(data.password),
+            is_active=True
+        )
+        db.add(member)
+        db.flush()
+
+    # 4. Associações
+    assoc = db.query(LodgeMemberAssociation).filter_by(member_id=member.id, lodge_id=lodge.id).first()
+    if not assoc:
+        new_assoc = LodgeMemberAssociation(member_id=member.id, lodge_id=lodge.id)
+        db.add(new_assoc)
+
+    ob_assoc = db.query(ObedienceMemberAssociation).filter_by(member_id=member.id, obedience_id=obedience.id).first()
+    if not ob_assoc:
+        new_ob_assoc = ObedienceMemberAssociation(member_id=member.id, obedience_id=obedience.id)
+        db.add(new_ob_assoc)
+
+    db.commit()
+    return {"message": "Cadastro realizado com sucesso."}
 
 
 @router.post(

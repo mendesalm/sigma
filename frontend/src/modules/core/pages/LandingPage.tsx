@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, Grid, Paper } from "@mui/material";
 import { Security, People, Cloud, Speed } from "@mui/icons-material";
-import logoSigma from "../assets/images/SigmaLogo.png";
+import logoSigma from "../../../assets/images/SigmaLogo.png";
 
 const features = [
   {

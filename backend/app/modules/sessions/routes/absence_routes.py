@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from dependencies import get_current_user, UserContext, require_permission
+from dependencies import get_current_active_user_with_permissions, UserContext, require_permission
 from app.modules.sessions.schemas import attendance_schema
 from app.modules.sessions.services import absence_service
 
@@ -16,7 +16,7 @@ def submit_justification(
     session_id: int,
     justification_data: attendance_schema.AbsenceJustificationCreate,
     db: Session = Depends(get_db),
-    current_user: UserContext = Depends(get_current_user)
+    current_user: UserContext = Depends(get_current_active_user_with_permissions)
 ):
     return absence_service.submit_absence_justification(db, session_id, justification_data, current_user)
 

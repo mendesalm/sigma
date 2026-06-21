@@ -13,7 +13,7 @@ import {
   Checkbox,
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import logoSigma from "../assets/images/SigmaLogo.png";
+import logoSigma from "../../../assets/images/SigmaLogo.png";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');

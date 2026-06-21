@@ -12,6 +12,24 @@ class Token(BaseModel):
     }
 
 
+class RegisterRequest(BaseModel):
+    # Membro
+    email: EmailStr = Field(..., description="Email do membro.")
+    password: str = Field(..., description="Senha do membro.")
+    cim: str = Field(..., description="CIM do membro.")
+    full_name: str = Field(..., description="Nome completo.")
+    degree: str = Field(..., description="Grau do membro (Apprentice, Fellow, Master, Installed Master).")
+    
+    # Obediência
+    obedience_name: str = Field(..., description="Nome da Obediência.")
+    
+    # Loja
+    lodge_number: int = Field(..., description="Número da loja.")
+    lodge_name: str = Field(..., description="Nome da loja.")
+    lodge_city: str = Field(..., description="Oriente/Cidade da loja.")
+
+
+
 class EmailSchema(BaseModel):
     email: EmailStr = Field(..., description="Endereço de email válido.")
 

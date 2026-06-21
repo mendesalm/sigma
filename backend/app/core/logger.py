@@ -51,3 +51,5 @@ def setup_logger(name: str = "sigma_api") -> logging.Logger:
 
 # Instância global do logger
 logger = setup_logger()
+get_logger = logging.getLogger
+

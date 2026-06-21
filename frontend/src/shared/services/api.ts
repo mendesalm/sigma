@@ -102,15 +102,13 @@ export const uploadBalaustre = (sessionId: number, file: File) => {
   });
 };
 
-export const approveSessionMinutes = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/approve-minutes`);
+export const uploadDocument = (formData: FormData) => {
+  return api.post(`/masonic-sessions/${formData.get('session_id')}/documents`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 };
-
-export const reopenSession = (sessionId: number) => {
-  return api.post(`/masonic-sessions/${sessionId}/reopen`);
-};
-
-
 
 // --- Attendance Management ---
 export const getSessionAttendance = (sessionId: number) => {
