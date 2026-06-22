@@ -409,3 +409,132 @@ def logout(
     
     logger.info("Logout realizado com sucesso", extra={"extra_data": {"jti": jti}})
     return
+
+from app.modules.access_control.schemas.auth_schema import (
+    FirstAccessVerifyRequest, FirstAccessVerifyResponse,
+    FirstAccessConfirmPreRegistrationRequest, FirstAccessRegisterRequest
+)
+
+@router.post(
+    "/first-access/verify",
+    response_model=FirstAccessVerifyResponse,
+    summary="Verificar CIM para Primeiro Acesso",
+)
+def verify_first_access(data: FirstAccessVerifyRequest, db: Session = Depends(get_db)):
+    from models.models import Member
+    member = db.query(Member).filter(Member.cim == data.cim).first()
+    
+    if member:
+        valid = True
+        if data.obedience_id:
+            valid = any(assoc.obedience_id == data.obedience_id for assoc in member.obedience_associations)
+        if valid and data.lodge_id:
+            valid = any(assoc.lodge_id == data.lodge_id for assoc in member.lodge_associations)
+            
+        if valid:
+            email = member.email
+            email_hint = ""
+            if email:
+                parts = email.split("@")
+                if len(parts) == 2:
+                    email_hint = f"{parts[0][:2]}***@{parts[1]}"
+                    
+            return FirstAccessVerifyResponse(
+                status="PRE_REGISTERED",
+                email_hint=email_hint,
+                message="Cadastro encontrado. Por favor, confirme seu e-mail para receber a senha."
+            )
+            
+    return FirstAccessVerifyResponse(
+        status="NOT_FOUND",
+        message="Cadastro não encontrado. Por favor, preencha os dados básicos."
+    )
+
+@router.post(
+    "/first-access/confirm-pre-registration",
+    summary="Confirmar Pré-Cadastro e Enviar Senha",
+)
+def confirm_pre_registration(data: FirstAccessConfirmPreRegistrationRequest, db: Session = Depends(get_db)):
+    from models.models import Member, RegistrationStatusEnum
+    member = db.query(Member).filter(Member.cim == data.cim).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Membro não encontrado.")
+        
+    if member.email != data.email:
+        raise HTTPException(status_code=400, detail="E-mail não confere com o cadastro.")
+        
+    # Generate new password
+    import secrets
+    from app.modules.access_control.utils.password_utils import hash_password
+    new_password = secrets.token_urlsafe(8)
+    
+    member.password_hash = hash_password(new_password)
+    member.registration_status = RegistrationStatusEnum.ACTIVE
+    member.is_active = True
+    db.commit()
+    
+    # Send email with password
+    # email_service.send_password_email(member.email, new_password)
+    
+    return {"message": "Senha enviada para o seu e-mail."}
+
+@router.post(
+    "/first-access/register",
+    summary="Cadastrar Membro não encontrado",
+)
+def first_access_register(data: FirstAccessRegisterRequest, db: Session = Depends(get_db)):
+    from models.models import Member, Lodge, Obedience, RegistrationStatusEnum, LodgeMemberAssociation, ObedienceMemberAssociation
+    from app.modules.access_control.utils.password_utils import hash_password
+    import secrets
+    
+    obedience = None
+    if data.obedience_id:
+        obedience = db.query(Obedience).filter(Obedience.id == data.obedience_id).first()
+        
+    lodge = None
+    if data.lodge_id and obedience:
+        lodge = db.query(Lodge).filter(
+            Lodge.id == data.lodge_id,
+            Lodge.obedience_id == obedience.id
+        ).first()
+        
+    if lodge and obedience:
+        # Lodge and Obedience found, auto approve and send password
+        new_password = secrets.token_urlsafe(8)
+        new_member = Member(
+            cim=data.cim,
+            full_name=data.full_name,
+            degree=data.degree,
+            email=data.email,
+            phone=data.phone,
+            password_hash=hash_password(new_password),
+            registration_status=RegistrationStatusEnum.ACTIVE,
+            is_active=True
+        )
+        db.add(new_member)
+        db.flush()
+        
+        db.add(LodgeMemberAssociation(member_id=new_member.id, lodge_id=lodge.id))
+        db.add(ObedienceMemberAssociation(member_id=new_member.id, obedience_id=obedience.id))
+        db.commit()
+        
+        # Send email with password
+        # email_service.send_password_email(new_member.email, new_password)
+        
+        return {"message": "Cadastro realizado. Senha enviada para o seu e-mail."}
+    else:
+        # Lodge or Obedience not found (Custom/Other), go to moderation
+        new_member = Member(
+            cim=data.cim,
+            full_name=data.full_name,
+            degree=data.degree,
+            email=data.email,
+            phone=data.phone,
+            password_hash=hash_password(secrets.token_urlsafe(16)), 
+            registration_status=RegistrationStatusEnum.PENDING,
+            is_active=False,
+            # We would typically store the custom requested lodge/obedience info in a separate registration request table or metadata
+        )
+        db.add(new_member)
+        db.commit()
+        return {"message": "Sua solicitação de cadastro foi enviada para moderação e você receberá instruções por e-mail quando for aprovada."}

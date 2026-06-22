@@ -26,6 +26,7 @@ from app.modules.core.routes import (
     obedience_routes,
     report_routes,
     super_admin_routes,
+    import_template_routes,
 )
 from app.modules.library.routes import (
     library_routes,
@@ -220,7 +221,15 @@ def shutdown_event():
 # IMPORTANT: In production, you should restrict the origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:19006",
+        "http://localhost:8080",
+        "http://localhost",
+        "https://sigma.dantec.com.br", # Add production domains later
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -247,6 +256,7 @@ app.include_router(check_in_routes.router)
 app.include_router(absence_routes.router)
 app.include_router(attendance_analytics_routes.router)
 app.include_router(super_admin_routes.router)
+app.include_router(import_template_routes.router)
 app.include_router(webmaster_routes.router)
 app.include_router(member_role_routes.router)
 app.include_router(role_routes.router)

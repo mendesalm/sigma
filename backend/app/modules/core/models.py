@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Time,
     func,
+    Text,
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
@@ -182,3 +183,16 @@ class LodgeCreationRequest(BaseModel):
     created_at = Column(DateTime(timezone=True), default=func.now())
     requester = relationship("Member", foreign_keys=[requester_id])
     resolved_lodge = relationship("Lodge", foreign_keys=[resolved_lodge_id])
+
+
+class ImportTemplate(BaseModel):
+    __tablename__ = "import_templates"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, unique=True, comment="Nome do template (ex: Ficha GOB)")
+    potency = Column(String(100), nullable=True, comment="Potência associada")
+    file_type = Column(String(50), nullable=False, default="PDF", comment="PDF, EXCEL, CSV")
+    cim_regex = Column(Text, nullable=True, comment="RegEx para encontrar o CIM")
+    name_regex = Column(Text, nullable=True, comment="RegEx para encontrar o Nome")
+    email_regex = Column(Text, nullable=True, comment="RegEx para encontrar o E-mail")
+    degree_regex = Column(Text, nullable=True, comment="RegEx para encontrar o Grau")
+    is_active = Column(Boolean, default=True)

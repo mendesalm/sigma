@@ -13,11 +13,21 @@ def get_lodge(db: Session, lodge_id: int) -> models.Lodge | None:
     return db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
 
 
-def get_lodges(db: Session, skip: int = 0, limit: int = 100) -> list[models.Lodge]:
-    """Fetches all lodges with pagination."""
+def get_lodges(db: Session, skip: int = 0, limit: int = 100, obedience_id: int | None = None, search: str | None = None) -> list[models.Lodge]:
+    """Fetches all lodges with pagination and optional obedience/search filter."""
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import or_
 
-    return db.query(models.Lodge).options(joinedload(models.Lodge.obedience)).offset(skip).limit(limit).all()
+    query = db.query(models.Lodge).options(joinedload(models.Lodge.obedience))
+    if obedience_id:
+        # Check if the lodge belongs directly to the obedience or as a subobedience
+        query = query.filter(or_(models.Lodge.obedience_id == obedience_id, models.Lodge.subobedience_id == obedience_id))
+    if search:
+        query = query.filter(or_(
+            models.Lodge.lodge_name.ilike(f"%{search}%"),
+            models.Lodge.lodge_number.ilike(f"%{search}%")
+        ))
+    return query.offset(skip).limit(limit).all()
 
 
 def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:

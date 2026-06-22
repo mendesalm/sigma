@@ -28,10 +28,10 @@ def create_obedience(
 
 @router.get("/", response_model=list[obedience_schema.ObedienceResponse])
 def read_obediences(
-    skip: int = 0, limit: int = 100, only_top_level: bool = False, db: Session = Depends(database.get_db)
+    skip: int = 0, limit: int = 100, only_top_level: bool = False, parent_id: int | None = None, db: Session = Depends(database.get_db)
 ):
     """Retrieve all obediences. Publicly accessible."""
-    obediences = obedience_service.get_obediences(db, skip=skip, limit=limit, only_top_level=only_top_level)
+    obediences = obedience_service.get_obediences(db, skip=skip, limit=limit, only_top_level=only_top_level, parent_id=parent_id)
     return obediences
 
 

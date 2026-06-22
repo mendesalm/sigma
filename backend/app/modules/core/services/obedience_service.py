@@ -15,12 +15,14 @@ def get_obedience(db: Session, obedience_id: int) -> models.Obedience | None:
 
 
 def get_obediences(
-    db: Session, skip: int = 0, limit: int = 100, only_top_level: bool = False
+    db: Session, skip: int = 0, limit: int = 100, only_top_level: bool = False, parent_id: int | None = None
 ) -> list[models.Obedience]:
     """Fetches all obediences with pagination."""
     query = db.query(models.Obedience)
     if only_top_level:
-        query = query.filter(models.Obedience.parent_obedience_id is None)
+        query = query.filter(models.Obedience.parent_obedience_id.is_(None))
+    if parent_id is not None:
+        query = query.filter(models.Obedience.parent_obedience_id == parent_id)
     return query.offset(skip).limit(limit).all()
 
 

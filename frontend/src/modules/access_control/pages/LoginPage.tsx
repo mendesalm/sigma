@@ -14,12 +14,15 @@ import {
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import logoSigma from "../../../assets/images/SigmaLogo.png";
+import FirstAccessWizard from '../components/FirstAccessWizard';
+
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
   const { login } = useAuth();
@@ -164,10 +167,15 @@ const LoginPage: React.FC = () => {
                                                 </Link>
                                                 <Link component={RouterLink} to="/register" variant="body2" sx={{ textAlign: 'center' }}>
                                                   Não tem uma conta? Solicitar cadastro
-                                                </Link>            </Box>
+                                                </Link>            
+                                                <Button variant="outlined" color="secondary" onClick={() => setWizardOpen(true)} sx={{ mt: 2 }}>
+                                                  Primeiro Acesso / Ativar Conta
+                                                </Button>
+                                              </Box>
           </Box>
         </Box>
       </Container>
+      <FirstAccessWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </Box>
   );
 };

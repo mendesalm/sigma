@@ -38,9 +38,9 @@ def create_lodge(
     summary="Listar Todas as Lojas",
     description="Retorna uma lista paginada de todas as lojas cadastradas no portal.",
 )
-def read_lodges(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
+def read_lodges(skip: int = 0, limit: int = 100, obedience_id: int | None = None, search: str | None = None, db: Session = Depends(database.get_db)):
     """Retrieve all lodges. Publicly accessible."""
-    lodges = lodge_service.get_lodges(db, skip=skip, limit=limit)
+    lodges = lodge_service.get_lodges(db, skip=skip, limit=limit, obedience_id=obedience_id, search=search)
     return lodges
 
 

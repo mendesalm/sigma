@@ -13,6 +13,7 @@ import SuperAdminForm from '@/modules/core/pages/SuperAdminForm';
 import AdministrativeProcessesPage from '@/modules/core/pages/AdministrativeProcessesPage';
 import ObedienceDashboardPage from '@/modules/core/pages/ObedienceDashboardPage';
 import CommitteesPage from '@/modules/core/pages/Committees/CommitteesPage';
+import ImportTemplates from '@/modules/core/pages/ImportTemplates';
 
 
 export const corePublicRoutes: RouteObject[] = [
@@ -39,4 +40,5 @@ export const coreDashboardRoutes: RouteObject[] = [
   { path: 'management/super-admins/edit/:id', element: <SuperAdminForm /> },
   { path: 'administrative-processes', element: <AdministrativeProcessesPage /> },
   { path: 'obedience-dashboard', element: <ObedienceDashboardPage /> },
+  { path: 'management/import-templates', element: <ImportTemplates /> },
 ];

@@ -701,4 +701,79 @@ def change_member_password(
     db_member.password_hash = hash_password(password_data.new_password)
     db.commit()
 
+    db.commit()
+
     return {"message": "Password changed successfully"}
+
+from typing import List
+from app.modules.members.schemas.import_schemas import ImportPreviewResponse, ImportConfirmRequest
+from app.modules.members.services.import_service import process_upload_files
+
+@router.post(
+    "/import/preview",
+    response_model=ImportPreviewResponse,
+    summary="Pré-visualizar Importação",
+    description="Recebe arquivos PDF ou Excel e retorna as linhas extraídas e validadas.",
+)
+async def preview_import(
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    if current_user.get("user_type") not in ["super_admin", "webmaster"]:
+        raise HTTPException(status_code=403, detail="Não autorizado")
+        
+    return await process_upload_files(db, files)
+
+@router.post(
+    "/import/confirm",
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar Importação",
+    description="Salva os membros validados no banco de dados com status pré-cadastrado.",
+)
+def confirm_import(
+    request_data: ImportConfirmRequest,
+    request: Request,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    user_type = current_user.get("user_type")
+    if user_type not in ["super_admin", "webmaster"]:
+        raise HTTPException(status_code=403, detail="Não autorizado")
+        
+    lodge_id = current_user.get("lodge_id")
+    
+    saved_count = 0
+    from app.modules.members.models import RegistrationStatusEnum
+    from app.modules.access_control.utils.password_utils import hash_password
+    import secrets
+    
+    for row in request_data.rows:
+        if row.is_valid:
+            existing = member_service.get_member_by_cim(db, row.cim)
+            if not existing and row.email:
+                existing_email = db.query(Member).filter(Member.email == row.email).first()
+                if not existing_email:
+                    new_member = Member(
+                        cim=row.cim,
+                        full_name=row.name,
+                        email=row.email,
+                        degree=row.degree,
+                        password_hash=hash_password(secrets.token_urlsafe(16)), 
+                        registration_status=RegistrationStatusEnum.PENDING
+                    )
+                    db.add(new_member)
+                    db.commit()
+                    db.refresh(new_member)
+                    
+                    if lodge_id:
+                        assoc = MemberLodgeAssociation(
+                            member_id=new_member.id,
+                            lodge_id=lodge_id,
+                        )
+                        db.add(assoc)
+                        db.commit()
+                        
+                    saved_count += 1
+                    
+    return {"message": f"{saved_count} membros importados com sucesso."}

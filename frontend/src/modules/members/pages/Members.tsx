@@ -31,6 +31,8 @@ import { useSnackbar } from 'notistack';
 import api from '@/shared/services/api';
 import { MemberResponse } from '@/types';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
+import ImportMembersModal from '../components/ImportMembersModal';
+
 
 const Members = () => {
   const theme = useTheme();
@@ -51,6 +53,7 @@ const Members = () => {
     phone: false,
     birth_date: false
   });
+  const [openImportModal, setOpenImportModal] = useState(false);
 
   // Determine base path for links based on current location
   const getBasePath = () => {
@@ -66,17 +69,17 @@ const Members = () => {
 
   const basePath = getBasePath();
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const response = await api.get('/members');
-        setMembers(response.data);
-      } catch (error: any) {
-        const msg = error.response?.data?.detail || 'Falha ao buscar membros';
-        enqueueSnackbar(msg, { variant: 'error' });
-      }
-    };
+  const fetchMembers = async () => {
+    try {
+      const response = await api.get('/members');
+      setMembers(response.data);
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Falha ao buscar membros';
+      enqueueSnackbar(msg, { variant: 'error' });
+    }
+  };
 
+  useEffect(() => {
     fetchMembers();
   }, []);
 
@@ -153,6 +156,20 @@ const Members = () => {
           >
             Exportar
           </Button>
+          {canEdit && (
+            <Button 
+              variant="outlined" 
+              color="secondary"
+              onClick={() => setOpenImportModal(true)}
+              sx={{ 
+                fontWeight: 'bold',
+                textTransform: 'none',
+                borderRadius: '8px',
+              }}
+            >
+              Importar Ficha GOB
+            </Button>
+          )}
           {canEdit && (
             <Button 
               component={Link} 
@@ -379,6 +396,12 @@ const Members = () => {
           <Button onClick={handleExport} variant="contained" color="primary" sx={{ borderRadius: '8px', fontWeight: 600 }}>Exportar CSV</Button>
         </DialogActions>
       </Dialog>
+      
+      <ImportMembersModal 
+        open={openImportModal}
+        onClose={() => setOpenImportModal(false)}
+        onSuccess={fetchMembers}
+      />
     </Container>
   );
 };

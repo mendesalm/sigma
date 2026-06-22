@@ -124,3 +124,32 @@ class WebmasterForgotPassword(BaseModel):
 class WebmasterResetPassword(BaseModel):
     token: str = Field(..., description="Token seguro de recuperação de senha.")
     new_password: str = Field(..., description="Nova senha definida pelo Webmaster.")
+
+class FirstAccessVerifyRequest(BaseModel):
+    cim: str
+    obedience_id: int | None = None
+    lodge_id: int | None = None
+
+class FirstAccessVerifyResponse(BaseModel):
+    status: str
+    email_hint: str | None = None
+    message: str
+
+class FirstAccessConfirmPreRegistrationRequest(BaseModel):
+    cim: str
+    email: EmailStr
+    obedience_id: int | None = None
+    lodge_id: int | None = None
+
+class FirstAccessRegisterRequest(BaseModel):
+    cim: str
+    full_name: str
+    degree: str
+    email: EmailStr
+    phone: str | None = None
+    obedience_id: int | None = None
+    obedience_name: str | None = None
+    lodge_id: int | None = None
+    lodge_name: str | None = None
+    lodge_number: int | None = None
+
