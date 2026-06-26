@@ -9,7 +9,7 @@ export default function LoginScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, tenantPotencia, setTenantPotencia } = useAuth();
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -26,6 +26,7 @@ export default function LoginScreen({ navigation }: any) {
       const response = await api.post('/auth/login', formData.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          ...(tenantPotencia ? { 'X-Tenant-Potencia': tenantPotencia } : {})
         },
       });
 
@@ -46,13 +47,36 @@ export default function LoginScreen({ navigation }: any) {
         role: decodedToken.role || 'Membro',
       };
 
-      await signIn(token, user);
+      if (response.data.requires_selection) {
+        // Híbrido: Passar token provisório e navegar para seleção
+        navigation.navigate('SelectLodge', { tempToken: token });
+      } else {
+        // Login normal finalizado
+        await signIn(token, user);
+      }
     } catch (error: any) {
       console.error('Login error', error.response?.data || error.message);
       Alert.alert('Erro de Autenticação', 'Usuário ou senha incorretos.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetPotencia = () => {
+    Alert.alert(
+      "Alterar Potência",
+      "Isso desconectará você da Potência atual. Deseja continuar?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Sim, alterar", 
+          onPress: async () => {
+            await setTenantPotencia(null);
+            navigation.replace('TenantOnboarding');
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -100,8 +124,22 @@ export default function LoginScreen({ navigation }: any) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-white font-bold text-lg">Entrar</Text>
+            <Text className="text-white font-bold text-center text-lg">Entrar</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="mt-4 p-3 items-center"
+          onPress={() => navigation.navigate('FirstAccess')}
+        >
+          <Text className="text-primary-600 dark:text-primary-300 font-medium">Primeiro Acesso / Recuperar Senha</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="mt-2 p-2 items-center"
+          onPress={handleResetPotencia}
+        >
+          <Text className="text-gray-500 dark:text-gray-400 text-sm">Não é desta Potência? Toque aqui para alterar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
