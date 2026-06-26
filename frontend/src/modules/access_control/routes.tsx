@@ -1,5 +1,6 @@
 import { RouteObject } from 'react-router-dom';
 import LoginPage from '@/modules/access_control/pages/LoginPage';
+import TenantOnboarding from '@/modules/access_control/pages/TenantOnboarding';
 import WebmastersManagement from '@/modules/access_control/pages/WebmastersManagement';
 import WebmasterForm from '@/modules/access_control/pages/WebmasterForm';
 import RoleHistoryForm from '@/modules/access_control/pages/RoleHistoryForm';
@@ -12,6 +13,7 @@ import MyLodgePage from '@/modules/access_control/pages/Webmaster/MyLodgePage';
 
 export const accessControlPublicRoutes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },
+  { path: '/onboarding', element: <TenantOnboarding /> },
 ];
 
 export const accessControlLodgeDashboardRoutes: RouteObject[] = [

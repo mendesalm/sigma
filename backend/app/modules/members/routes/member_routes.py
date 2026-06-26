@@ -28,11 +28,29 @@ def check_cim(
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
-    """Check if a member with the given CIM exists."""
-    # Allow any authenticated user to check CIM (needed for registration flow)
-    member = member_service.get_member_by_cim(db, cim)
+    """Check if a member with the given CIM exists in the same Obedience as the user."""
+    context = dependencies.UserContext(current_user)
+    
+    # Restringir busca à obediência do usuário atual (Webmaster ou Membro logado)
+    obedience_id = None
+    if context.user_type == "webmaster":
+        obedience_id = context.get_obedience_id(db)
+    elif context.user_type == "member":
+        obedience_id = context.get_obedience_id(db) # Se logado numa loja específica
+
+    # Se não conseguirmos determinar a obediência, buscamos globalmente (apenas para super admins)
+    if obedience_id:
+        member = (
+            db.query(models.Member)
+            .join(models.MemberObedienceAssociation, models.Member.id == models.MemberObedienceAssociation.member_id)
+            .filter(models.Member.cim == cim, models.MemberObedienceAssociation.obedience_id == obedience_id)
+            .first()
+        )
+    else:
+        member = member_service.get_member_by_cim(db, cim)
+
     if not member:
-        logger.warning("CIM não encontrado na base", extra={"extra_data": {"cim": cim}})
+        logger.warning(f"CIM {cim} não encontrado na base ou fora do escopo da obediência {obedience_id}")
         raise HTTPException(status_code=404, detail="Membro não encontrado.")
     return member
 
@@ -126,6 +144,9 @@ def create_member(
             ip_address=request.client.host if request.client else None
         )
         return new_member
+    except ValueError as e:
+        logger.warning("Erro de validação ao criar membro", extra={"extra_data": {"error": str(e)}})
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except IntegrityError as e:
         error_msg = str(e.orig)
         logger.warning("Conflito de integridade ao criar membro", extra={"extra_data": {"error": error_msg}})

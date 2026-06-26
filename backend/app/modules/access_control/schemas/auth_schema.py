@@ -144,12 +144,18 @@ class FirstAccessConfirmPreRegistrationRequest(BaseModel):
 class FirstAccessRegisterRequest(BaseModel):
     cim: str
     full_name: str
-    degree: str
     email: EmailStr
-    phone: str | None = None
-    obedience_id: int | None = None
-    obedience_name: str | None = None
-    lodge_id: int | None = None
-    lodge_name: str | None = None
-    lodge_number: int | None = None
+    phone: str
+    degree: str
+    obedience_id: Optional[int] = None
+    obedience_name: Optional[str] = None
+    lodge_id: Optional[int] = None
+    lodge_name: Optional[str] = None
+    lodge_number: Optional[int] = None
 
+class FirstAccessUpdateEmailRequest(BaseModel):
+    cim: str
+    new_email: EmailStr
+    birth_date: date
+    obedience_id: Optional[int] = None
+    lodge_id: Optional[int] = None

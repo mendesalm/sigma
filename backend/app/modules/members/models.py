@@ -70,7 +70,7 @@ class Member(BaseModel):
     occupation = Column(String(255), nullable=True)
     workplace = Column(String(255), nullable=True)
     profile_picture_path = Column(String(255), nullable=True)
-    cim = Column(String(50), unique=True, nullable=True, index=True)
+    cim = Column(String(50), unique=False, nullable=True, index=True)
     status = Column(String(50), nullable=True, default="Active")
     degree = Column(
         SQLAlchemyEnum(DegreeEnum, name="degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=True

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request, Header
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.modules.access_control.schemas.auth_schema import Token, RegisterRequest
 from app.modules.access_control.services import auth_service
@@ -17,6 +18,21 @@ router = APIRouter(
     tags=["Authentication"],
 )
 
+@router.get(
+    "/obediences",
+    summary="Listar Potências (Onboarding)",
+    description="Endpoint público para popular o seletor de Potências no primeiro acesso do app.",
+)
+def get_obediences(db: Session = Depends(get_db)):
+    from models.models import Obedience
+    from sqlalchemy import not_
+    obediences = db.query(Obedience).filter(
+        Obedience.is_active == True,
+        ~Obedience.name.ilike('%[TESTE]%')
+    ).order_by(Obedience.name).all()
+    return [{"id": o.id, "name": o.name} for o in obediences]
+
+
 
 class AssociationSelection(BaseModel):
     association_id: int
@@ -29,18 +45,33 @@ class AssociationSelection(BaseModel):
     summary="Login de Usuários",
     description="Endpoint unificado de login. Aceita E-mail, CPF ou CIM. Autentica Membros, Webmasters e Super Admins e retorna um JWT.",
 )
-def login_for_access_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(
+    request: Request, 
+    response: Response, 
+    form_data: OAuth2PasswordRequestForm = Depends(), 
+    db: Session = Depends(get_db),
+    x_tenant_potencia: Optional[str] = Header(None)
+):
     """
     Fornece um token de acesso para um usuário válido.
     O campo 'username' do formulário pode ser um email, nome de usuário ou CIM.
     """
-    user_auth_data = auth_service.authenticate_user(db=db, identifier=form_data.username, password=form_data.password)
+    potencia_id = None
+    if x_tenant_potencia and x_tenant_potencia.isdigit():
+        potencia_id = int(x_tenant_potencia)
+
+    user_auth_data = auth_service.authenticate_user(
+        db=db, 
+        identifier=form_data.username, 
+        password=form_data.password,
+        potencia_id=potencia_id
+    )
 
     if not user_auth_data:
         logger.warning("Falha de autenticação: Nome de usuário ou senha incorretos", extra={"extra_data": {"username": form_data.username}})
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Nome de usuário ou senha incorretos",
+            detail="Nome de usuário ou senha incorretos (ou Potência divergente)",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -58,6 +89,8 @@ def login_for_access_token(request: Request, response: Response, form_data: OAut
         access_token_data["name"] = user.full_name
         access_token_data["role"] = "Membro"  # Default role name
         access_token_data["profile_picture_path"] = user.profile_picture_path
+        if potencia_id:
+             access_token_data["potencia_id"] = potencia_id
     elif user_type == "webmaster":
         access_token_data["name"] = user.username
         access_token_data["role"] = "Webmaster"
@@ -69,11 +102,18 @@ def login_for_access_token(request: Request, response: Response, form_data: OAut
     if user_type == "webmaster":
         if user.lodge_id:
             access_token_data["lodge_id"] = user.lodge_id
+            access_token_data["loja_atual_id"] = user.lodge_id
         if user.obedience_id:
             access_token_data["obedience_id"] = user.obedience_id
+            access_token_data["potencia_id"] = user.obedience_id
     elif user_type == "member":
         lodge_associations = user.lodge_associations
         obedience_associations = user.obedience_associations
+
+        # Filtramos as lojas caso uma potencia_id tenha sido informada no header
+        if potencia_id:
+            lodge_associations = [la for la in lodge_associations if la.lodge.obedience_id == potencia_id]
+            obedience_associations = [oa for oa in obedience_associations if oa.obedience_id == potencia_id]
 
         all_associations = [
             {"id": la.lodge.id, "name": la.lodge.lodge_name, "type": "lodge"} for la in lodge_associations
@@ -85,21 +125,32 @@ def login_for_access_token(request: Request, response: Response, form_data: OAut
         elif len(all_associations) == 1:
             association = all_associations[0]
             if association["type"] == "lodge":
+                la_obj = next((la for la in lodge_associations if la.lodge.id == association["id"]), None)
+                if la_obj:
+                    access_token_data["potencia_id"] = la_obj.lodge.obedience_id
+                
                 access_token_data["lodge_id"] = association["id"]
+                access_token_data["loja_atual_id"] = association["id"]
                 access_token_data["credential"] = auth_service.calculate_member_credential(
                     user, association["id"], "lodge"
                 )
                 access_token_data["active_role_name"] = auth_service.get_active_role_name(
                     user, association["id"], "lodge"
                 )
+                access_token_data["cargo_na_loja"] = access_token_data.get("active_role_name") or "Membro"
             else:
                 access_token_data["obedience_id"] = association["id"]
+                access_token_data["potencia_id"] = association["id"]
                 access_token_data["credential"] = auth_service.calculate_member_credential(
                     user, association["id"], "obedience"
                 )
                 access_token_data["active_role_name"] = auth_service.get_active_role_name(
                     user, association["id"], "obedience"
                 )
+                access_token_data["cargo_na_loja"] = access_token_data.get("active_role_name") or "Membro"
+        else:
+            # Sem associações válidas
+            pass
 
     access_token = auth_utils.create_access_token(data=access_token_data)
 
@@ -233,6 +284,9 @@ def select_association(
     """
     user_id = payload.get("user_id")
     user_type = payload.get("user_type")
+    
+    # Mantém o potencia_id se já estava no token anterior (enviado da Etapa 1)
+    potencia_id = payload.get("potencia_id")
 
     if user_type != "member" or user_id is None:
         logger.warning("Tentativa de selecionar associação por usuário não membro", extra={"extra_data": {"user_type": user_type}})
@@ -253,29 +307,35 @@ def select_association(
     }
 
     if association_data.association_type == "lodge":
-        # Validação de segurança: Verifica se o membro realmente pertence à Loja
-        if not any(la.lodge_id == association_data.association_id for la in user.lodge_associations):
+        la_obj = next((la for la in user.lodge_associations if la.lodge_id == association_data.association_id), None)
+        if not la_obj:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado: Você não pertence a esta Loja.")
             
+        access_token_data["potencia_id"] = la_obj.lodge.obedience_id
         access_token_data["lodge_id"] = association_data.association_id
+        access_token_data["loja_atual_id"] = association_data.association_id
         access_token_data["credential"] = auth_service.calculate_member_credential(
             user, association_data.association_id, "lodge"
         )
         access_token_data["active_role_name"] = auth_service.get_active_role_name(
             user, association_data.association_id, "lodge"
         )
+        access_token_data["cargo_na_loja"] = access_token_data.get("active_role_name") or "Membro"
+        
     elif association_data.association_type == "obedience":
-        # Validação de segurança: Verifica se o membro realmente pertence à Obediência
-        if not any(oa.obedience_id == association_data.association_id for oa in user.obedience_associations):
+        oa_obj = next((oa for oa in user.obedience_associations if oa.obedience_id == association_data.association_id), None)
+        if not oa_obj:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso negado: Você não pertence a esta Obediência.")
             
         access_token_data["obedience_id"] = association_data.association_id
+        access_token_data["potencia_id"] = association_data.association_id
         access_token_data["credential"] = auth_service.calculate_member_credential(
             user, association_data.association_id, "obedience"
         )
         access_token_data["active_role_name"] = auth_service.get_active_role_name(
             user, association_data.association_id, "obedience"
         )
+        access_token_data["cargo_na_loja"] = access_token_data.get("active_role_name") or "Membro"
     else:
         raise HTTPException(status_code=400, detail="Tipo de associação inválido.")
 
@@ -412,7 +472,8 @@ def logout(
 
 from app.modules.access_control.schemas.auth_schema import (
     FirstAccessVerifyRequest, FirstAccessVerifyResponse,
-    FirstAccessConfirmPreRegistrationRequest, FirstAccessRegisterRequest
+    FirstAccessConfirmPreRegistrationRequest, FirstAccessRegisterRequest,
+    FirstAccessUpdateEmailRequest
 )
 
 @router.post(
@@ -477,6 +538,45 @@ def confirm_pre_registration(data: FirstAccessConfirmPreRegistrationRequest, db:
     # email_service.send_password_email(member.email, new_password)
     
     return {"message": "Senha enviada para o seu e-mail."}
+
+@router.post(
+    "/first-access/update-email",
+    summary="Atualizar E-mail Obsoleto e Enviar Senha",
+)
+def update_email_first_access(data: FirstAccessUpdateEmailRequest, db: Session = Depends(get_db)):
+    from models.models import Member, RegistrationStatusEnum
+    member = db.query(Member).filter(Member.cim == data.cim).first()
+    
+    if not member:
+        raise HTTPException(status_code=404, detail="Membro não encontrado.")
+        
+    # Validação de Segurança (Match de Data de Nascimento)
+    if not member.birth_date or member.birth_date != data.birth_date:
+        raise HTTPException(
+            status_code=403, 
+            detail="Data de nascimento não confere com nossos registros (ou não foi cadastrada). "
+                   "Por segurança, solicite a atualização do seu e-mail ao Secretário da sua Loja."
+        )
+
+    # Verifica se o novo e-mail já está em uso por outra pessoa
+    email_in_use = db.query(Member).filter(Member.email == data.new_email, Member.id != member.id).first()
+    if email_in_use:
+        raise HTTPException(status_code=400, detail="Este e-mail já está sendo utilizado por outra conta.")
+
+    import secrets
+    from app.modules.access_control.utils.password_utils import hash_password
+    new_password = secrets.token_urlsafe(8)
+    
+    member.email = data.new_email
+    member.password_hash = hash_password(new_password)
+    member.registration_status = RegistrationStatusEnum.ACTIVE
+    member.is_active = True
+    db.commit()
+    
+    # Send email with password
+    # email_service.send_password_email(member.email, new_password)
+    
+    return {"message": "E-mail atualizado com sucesso. Nova senha enviada para o seu e-mail."}
 
 @router.post(
     "/first-access/register",

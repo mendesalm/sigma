@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import {
@@ -27,6 +27,20 @@ const LoginPage: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const tenantPotencia = localStorage.getItem('tenant_potencia');
+    if (!tenantPotencia) {
+      navigate('/onboarding');
+    }
+  }, [navigate]);
+
+  const handleResetPotencia = () => {
+    if (window.confirm("Atenção: Redefinir a Potência apagará sua escolha atual e o levará de volta à tela inicial. Deseja continuar?")) {
+      localStorage.removeItem('tenant_potencia');
+      navigate('/onboarding');
+    }
+  };
 
 
   const handleFormSubmit = async (event: React.FormEvent) => {
@@ -170,6 +184,9 @@ const LoginPage: React.FC = () => {
                                                 </Link>            
                                                 <Button variant="outlined" color="secondary" onClick={() => setWizardOpen(true)} sx={{ mt: 2 }}>
                                                   Primeiro Acesso / Ativar Conta
+                                                </Button>
+                                                <Button variant="text" color="inherit" onClick={handleResetPotencia} sx={{ mt: 1, fontSize: '0.8rem', opacity: 0.7 }}>
+                                                  Redefinir Potência Selecionada
                                                 </Button>
                                               </Box>
           </Box>

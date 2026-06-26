@@ -61,10 +61,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     params.append('username', email);
     params.append('password', pass);
 
+    const tenantPotencia = localStorage.getItem('tenant_potencia');
+    const headers: any = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    
+    if (tenantPotencia && tenantPotencia !== 'admin') {
+      headers['x-tenant-potencia'] = tenantPotencia;
+    }
+
     const response = await api.post('/auth/login', params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: headers,
     });
     const { access_token } = response.data;
     localStorage.setItem('token', access_token);

@@ -42,10 +42,14 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
   const [cim, setCim] = useState('');
 
   // Step 3: Registration / Confirmation
-  const [status, setStatus] = useState<'PRE_REGISTERED' | 'NOT_FOUND' | null>(null);
+  const [status, setStatus] = useState<'PRE_REGISTERED' | 'NOT_FOUND' | 'UPDATE_EMAIL' | null>(null);
   const [emailHint, setEmailHint] = useState('');
   const [verifyMessage, setVerifyMessage] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
+  
+  // States for UPDATE_EMAIL
+  const [birthDate, setBirthDate] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -192,6 +196,16 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
           });
           enqueueSnackbar('Senha enviada para o seu e-mail!', { variant: 'success' });
           onClose();
+        } else if (status === 'UPDATE_EMAIL') {
+          await api.post('/auth/first-access/update-email', {
+            cim,
+            new_email: newEmail,
+            birth_date: birthDate,
+            obedience_id: obedienceIdToSubmit,
+            lodge_id: selectedLodgeId && selectedLodgeId !== 'OTHER' ? parseInt(selectedLodgeId) : null,
+          });
+          enqueueSnackbar('E-mail atualizado e nova senha enviada!', { variant: 'success' });
+          onClose();
         } else if (status === 'NOT_FOUND') {
           await api.post('/auth/first-access/register', {
             cim,
@@ -227,6 +241,7 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
     if (activeStep === 1 && selectedObedienceId !== 'OTHER' && !selectedLodgeId) return true;
     if (activeStep === 2 && !cim) return true;
     if (activeStep === 3 && status === 'PRE_REGISTERED' && !confirmEmail) return true;
+    if (activeStep === 3 && status === 'UPDATE_EMAIL' && (!birthDate || !newEmail)) return true;
     if (activeStep === 3 && status === 'NOT_FOUND' && (!fullName || !email || !degree)) return true;
     return false;
   };
@@ -394,7 +409,7 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
             </Typography>
             {emailHint && (
               <Typography variant="body2" color="text.secondary">
-                Dica de e-mail: {emailHint}
+                Dica de e-mail atual: {emailHint}
               </Typography>
             )}
             <TextField
@@ -404,6 +419,48 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
               onChange={(e) => setConfirmEmail(e.target.value)}
               fullWidth
             />
+            <Button 
+              variant="text" 
+              color="secondary" 
+              onClick={() => setStatus('UPDATE_EMAIL')}
+              sx={{ alignSelf: 'flex-start', mt: 1 }}
+            >
+              Não tenho mais acesso a este e-mail
+            </Button>
+          </Box>
+        )}
+
+        {activeStep === 3 && status === 'UPDATE_EMAIL' && (
+          <Box display="flex" flexDirection="column" gap={2}>
+            <Typography variant="body1" color="primary.main">
+              Atualização de Segurança
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Para redefinir o e-mail, precisamos confirmar a sua Data de Nascimento conforme registrada na sua ficha cadastral.
+            </Typography>
+            <TextField
+              label="Novo E-mail"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Data de Nascimento"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+            />
+            <Button 
+              variant="text" 
+              color="inherit" 
+              onClick={() => setStatus('PRE_REGISTERED')}
+              sx={{ alignSelf: 'flex-start', mt: 1 }}
+            >
+              Voltar para e-mail anterior
+            </Button>
           </Box>
         )}
 

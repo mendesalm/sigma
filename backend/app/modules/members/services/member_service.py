@@ -46,6 +46,24 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
     status = member_data.status
     member_class = member_data.member_class
     family_members_data = member_data.family_members
+    cim = member_data.cim
+
+    # Validação de unicidade de CIM na mesma Potência (Com Pessimistic Locking)
+    if cim:
+        lodge = db.query(models.Lodge).filter(models.Lodge.id == lodge_id).first()
+        if lodge:
+            # Trava a obediência para atualizações concorrentes, serializando a verificação
+            db.query(models.Obedience).filter(models.Obedience.id == lodge.obedience_id).with_for_update().first()
+            
+            existing_cim_member = (
+                db.query(models.Member)
+                .join(models.MemberObedienceAssociation, models.Member.id == models.MemberObedienceAssociation.member_id)
+                .filter(models.Member.cim == cim, models.MemberObedienceAssociation.obedience_id == lodge.obedience_id)
+                .first()
+            )
+            if existing_cim_member:
+                logger.warning(f"Tentativa de criar membro com CIM {cim} que já existe na mesma Obediência {lodge.obedience_id}")
+                raise ValueError("CIM já cadastrado nesta Potência.")
 
     member_dict = member_data.model_dump(
         exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class"}
@@ -85,6 +103,24 @@ def associate_member_to_lodge(
     if not db_member:
         logger.warning("Tentativa de associar membro inexistente a loja", extra={"extra_data": {"member_id": member_id}})
         raise ValueError("Membro não encontrado.")
+
+    # [SECURITY] Cross-Tenant Validation: 
+    # Garantir que o membro já pertence à Obediência da Loja para qual está sendo importado.
+    target_lodge = db.query(models.Lodge).filter(models.Lodge.id == association_data.lodge_id).first()
+    if not target_lodge:
+        raise ValueError("Loja destino não encontrada.")
+
+    member_obedience = (
+        db.query(models.MemberObedienceAssociation)
+        .filter(
+            models.MemberObedienceAssociation.member_id == member_id,
+            models.MemberObedienceAssociation.obedience_id == target_lodge.obedience_id
+        )
+        .first()
+    )
+    if not member_obedience:
+        logger.warning(f"IDOR Alert: Tentativa de importar membro {member_id} para a loja {target_lodge.id} (Potência divergente).")
+        raise ValueError("Membro não pertence a esta Potência e não pode ser importado.")
 
     existing_association = (
         db.query(models.MemberLodgeAssociation)

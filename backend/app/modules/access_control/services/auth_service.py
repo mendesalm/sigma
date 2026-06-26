@@ -5,7 +5,7 @@ from app.modules.access_control.utils import password_utils
 from models import models
 from app.core.logger import logger
 
-def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any, str] | None:
+def authenticate_user(db: Session, identifier: str, password: str, potencia_id: int | None = None) -> tuple[any, str] | None:
     """
     Autentica um usuário verificando credenciais nas tabelas SuperAdmin, Webmaster e Member.
 
@@ -13,6 +13,7 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
         db: Sessão do banco de dados.
         identifier: Identificador do usuário (pode ser e-mail, username ou CIM).
         password: A senha em texto plano.
+        potencia_id: ID da Potência (Opcional, porém obrigatório para Membros para evitar colisão de CIM).
 
     Returns:
         Uma tupla contendo o objeto do usuário e sua role como string (ex: 'super_admin', 'webmaster', 'member'),
@@ -50,13 +51,20 @@ def authenticate_user(db: Session, identifier: str, password: str) -> tuple[any,
             return webmaster, "webmaster"
 
     # 3. Checa por Member (por e-mail ou CIM)
-    member = (
-        db.query(models.Member).filter(or_(models.Member.email == identifier, models.Member.cim == identifier)).first()
-    )
+    # Se potencia_id foi fornecido, o login de membro é restrito a esta potência para evitar colisão de CIM
+    member_query = db.query(models.Member).filter(or_(models.Member.email == identifier, models.Member.cim == identifier))
+    
+    if potencia_id is not None:
+        member_query = member_query.join(
+            models.MemberObedienceAssociation, models.Member.id == models.MemberObedienceAssociation.member_id
+        ).filter(models.MemberObedienceAssociation.obedience_id == potencia_id)
+        
+    member = member_query.first()
+    
     if member:
         logger.debug("Usuário identificado como membro", extra={"extra_data": {"member_name": member.full_name}})
         if password_utils.verify_password(password, member.password_hash):
-            # Nota: O login do membro é global. O acesso específico à loja é checado a nível de aplicação.
+            # Nota: O login do membro agora exige escopo da obediência (potencia_id) se existirem CIMs duplicados globais.
             return member, "member"
 
     # 4. Falha na autenticação
