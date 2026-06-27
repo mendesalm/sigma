@@ -59,6 +59,7 @@ from app.modules.access_control.routes import (
     role_routes,
     webmaster_routes,
 )
+from app.modules.cashless import routes as cashless_routes
 
 from scheduler import initialize_scheduler, shutdown_scheduler  # noqa: E402
 from app.core.middlewares.tenant_middleware import TenantMiddleware
@@ -278,6 +279,7 @@ app.include_router(administration_routes.router)
 app.include_router(report_routes.router)
 app.include_router(library_routes.router)
 app.include_router(message_routes.router)
+app.include_router(cashless_routes.router)
 
 
 # Mount static files AFTER routers

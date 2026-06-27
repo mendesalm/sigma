@@ -6,4 +6,5 @@ from app.modules.library.models import *
 from app.modules.communication.models import *
 from app.modules.committees.models import *
 from app.modules.finance.models import *
+from app.modules.cashless.models import *
 from app.shared.base_model import *

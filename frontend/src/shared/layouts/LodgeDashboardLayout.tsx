@@ -45,6 +45,8 @@ import ObreiroIcon from '@/assets/icons/Obreiro.png';
 import SecretariaIcon from '@/assets/icons/Secretaria.png';
 import ChancelariaIcon from '@/assets/icons/Chancelaria.png';
 import WebmasterIcon from '@/assets/icons/Webmaster.png';
+import TesourariaIcon from '@/assets/icons/Tesouraria.png';
+import StoreIcon from '@mui/icons-material/Store';
 
 const SIDEBAR_WIDTH_EXPANDED = 80;
 const SIDEBAR_WIDTH_COLLAPSED = 80;
@@ -128,6 +130,15 @@ const MENU_CONFIG = [
       { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
       { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
       { text: 'Comunicações (Ofícios)', path: '/dashboard/lodge-dashboard/webmaster/comunicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
+    ]
+  },
+  {
+    id: 'banquetes',
+    label: 'M. de Banquetes',
+    icon: <img src={TesourariaIcon} alt="Banquetes" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/banquetes',
+    subItems: [
+      { text: 'PDV Bar (Cashless)', path: '/dashboard/lodge-dashboard/banquetes/pdv', icon: <StoreIcon sx={{ fontSize: 20 }} /> },
     ]
   },
 ];
@@ -237,6 +248,9 @@ const LodgeDashboardLayout: React.FC = () => {
       }
       if (item.id === 'chanceler') {
         return user.active_role_name === 'Chanceler';
+      }
+      if (item.id === 'banquetes') {
+        return ['Mestre de Banquetes', 'Venerável Mestre'].includes(user.active_role_name);
       }
 
       return false;

@@ -1,23 +1,29 @@
 # Contexto Atual: Projeto Sigma
 
-**Data da Última Atualização:** 26 de Junho de 2026
+**Data da Última Atualização:** 27 de Junho de 2026
 **Arquitetura Base:** Modular Monolith (Vertical Slices / Feature-Sliced Design)
 
 ## Resumo do Estado da Aplicação
-O projeto Sigma concluiu a homologação das Regras de Ouro de Qualidade e avançou para uma **Arquitetura Multi-Tenant** que isola dados por Potência e permite associações múltiplas (um maçom pertencendo a múltiplas lojas).
+O projeto Sigma possui agora uma **Arquitetura Multi-Tenant** sólida (isolando dados por Potência e suportando associações múltiplas).
+Recentemente, o **Módulo Cashless (Sistema de Comanda Eletrônica e PDV do Bar)** foi integralmente desenhado e implementado.
 
 ## 1. Backend (FastAPI / SQLAlchemy)
-Os módulos `access_control` e `members` foram expandidos para lidar com Multi-Tenancy:
-- **Remoção da Trava Global de CIM:** A tabela `members` não obriga mais a unicidade de `cim`. A trava de unicidade foi movida para a camada de serviços (via *Pessimistic Locking* `with_for_update`), garantindo que o CIM só seja único **dentro de uma mesma Potência**.
-- **Segurança IDOR e Associação Cruzada:** Rota `/check-cim` restrita à Potência do secretário logado. Implementação de fluxo de importação intra-potência via `POST /{member_id}/associate` sem duplicar dados pessoais.
-- **Tenant Isolation no Login:** Autenticação agora exige `X-Tenant-Potencia`. Casos de maçons em múltiplas Lojas geram um redirecionamento ao frontend para a Seleção de Loja (Contexto Pós-Login).
+- **Múltiplos Tenants (Access Control e Members):** Suporte robusto a login via `X-Tenant-Potencia`, seletores pós-login e bloqueios de associação seguros (`with_for_update`).
+- **Módulo Cashless (Carteira e Motor Transacional ACID):**
+  - Modelagem do Livro Razão (Ledger) para a Carteira de Usuários, com saldo calculado dinamicamente baseando-se em eventos estritos (Créditos e Débitos).
+  - Rotas expostas para `Webhooks do Mercado Pago` que alimentam as carteiras (Idempotência garantida).
+  - Controle de estoque e processamento de Venda (Omnichannel) via PDV com prevenção de Race Conditions (`with_for_update`).
+  - Banco populado com um seeder `seed_cashless.py` contendo produtos, Gerente, e Cliente.
 
 ## 2. Frontend (React / Vite)
-- **Tenant Onboarding:** Adicionado fluxo obrigatório pré-login para seleção da Potência do usuário, persistindo no `localStorage`.
-- **Seleção de Loja Pós-Login:** Usuários híbridos escolhem o contexto operacional, que é selado no JWT final (`loja_atual_id`).
-- **Wizard de Primeiro Acesso:** Fluxo de validação cruzada entre CIM e Data de Nascimento para recuperação de contas com e-mails defasados.
+- **Tenant Onboarding & Multi-lojas:** Fluxos pré-login e pós-login finalizados.
+- **Integração Cashless PDV:**
+  - O terminal "Sandbox" de testes do PDV do Bar foi evoluído para uma rota segura de Produção em `/dashboard/lodge-dashboard/banquetes/pdv`.
+  - Exibição exclusiva para as permissões **Mestre de Banquetes**, **Venerável Mestre** e Admins globais.
+  - A interface comunica-se com a API (`getProducts`, `createOrder`, `getBalance`), reflete a tela de Caixa (produtos à esquerda, carrinho à direita) e lê dados do `AuthContext` do Operador do Caixa.
 
 ## Próximos Passos (Backlog Futuro)
-1. Aplicar a mesma auditoria e Regras de Ouro para os demais módulos de negócio (`finance`, `check-in`, etc).
-2. **Homologação Geográfica:** Testes das cercas virtuais usando os dados de teste populados (Lojas A a F).
-3. **Feature Toggles Granulares:** Implementar painel para o SuperAdmin desligar Módulos inteiros por Cliente/Loja no Banco de Dados.
+1. **App Mobile Cashless:** Construir a visão do cliente no aplicativo móvel para recarga (integração PIX/QR Code) e consulta de extrato.
+2. **Homologação Geográfica:** Testes das cercas virtuais de check-in (Lojas A a F).
+3. **Gateway Real:** Integrar de fato o SDK do Mercado Pago ao invés de webhooks mockados.
+4. **Testes Automatizados (Pytest):** Cobertura das transações críticas (Race conditions de estoque e saldo).

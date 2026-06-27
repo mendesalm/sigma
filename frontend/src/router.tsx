@@ -11,6 +11,7 @@ import { financeLodgeDashboardRoutes } from '@/modules/finance/routes';
 import { sessionsLodgeDashboardRoutes, sessionsPublicRoutes, sessionsDashboardRoutes } from '@/modules/sessions/routes';
 import { communicationLodgeDashboardRoutes, communicationDashboardRoutes } from '@/modules/communication/routes';
 import { libraryLodgeDashboardRoutes } from '@/modules/library/routes';
+import { cashlessLodgeDashboardRoutes } from '@/modules/cashless/routes';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ const router = createBrowserRouter([
               ...sessionsLodgeDashboardRoutes,
               ...communicationLodgeDashboardRoutes,
               ...libraryLodgeDashboardRoutes,
+              ...cashlessLodgeDashboardRoutes,
             ]
           },
           {
