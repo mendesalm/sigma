@@ -29,7 +29,7 @@ const TenantOnboarding: React.FC = () => {
   useEffect(() => {
     const fetchObediences = async () => {
       try {
-        const response = await api.get('/auth/obediences');
+        const response = await api.get('/auth/obediences?only_top_level=true');
         setObediences(response.data);
       } catch (error) {
         console.error("Erro ao carregar potências:", error);

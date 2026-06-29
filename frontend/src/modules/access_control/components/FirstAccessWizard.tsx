@@ -75,7 +75,7 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
   const fetchTopLevelObediences = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/obediences?only_top_level=true');
+      const response = await api.get('/auth/obediences?only_top_level=true');
       setObediences(response.data);
     } catch (error) {
       enqueueSnackbar('Erro ao buscar obediências', { variant: 'error' });
@@ -87,7 +87,7 @@ const FirstAccessWizard: React.FC<Props> = ({ open, onClose }) => {
   const fetchSubObediences = async (parentId: number) => {
     setLoading(true);
     try {
-      const response = await api.get(`/obediences?parent_id=${parentId}`);
+      const response = await api.get(`/auth/obediences?parent_id=${parentId}`);
       if (response.data && response.data.length > 0) {
         setSubObediences(response.data);
         setIsSubpotencyStepActive(true);

@@ -23,13 +23,23 @@ router = APIRouter(
     summary="Listar Potências (Onboarding)",
     description="Endpoint público para popular o seletor de Potências no primeiro acesso do app.",
 )
-def get_obediences(db: Session = Depends(get_db)):
+def get_obediences(
+    only_top_level: Optional[bool] = False,
+    parent_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
     from models.models import Obedience
     from sqlalchemy import not_
-    obediences = db.query(Obedience).filter(
-        Obedience.is_active == True,
-        ~Obedience.name.ilike('%[TESTE]%')
-    ).order_by(Obedience.name).all()
+    
+    query = db.query(Obedience).filter(~Obedience.name.ilike('%[TESTE]%'))
+    
+    if only_top_level:
+        query = query.filter(Obedience.parent_obedience_id.is_(None))
+        
+    if parent_id is not None:
+        query = query.filter(Obedience.parent_obedience_id == parent_id)
+        
+    obediences = query.order_by(Obedience.name).all()
     return [{"id": o.id, "name": o.name} for o in obediences]
 
 

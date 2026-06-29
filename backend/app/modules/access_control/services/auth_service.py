@@ -20,6 +20,7 @@ def authenticate_user(db: Session, identifier: str, password: str, potencia_id: 
         ou None se a autenticação falhar.
     """
     logger.info("Iniciando autenticação de usuário", extra={"extra_data": {"identifier": identifier}})
+    logger.info(f"DEBUG LOGIN: identifier='{identifier}', password='{password}', potencia_id={potencia_id}")
 
     # 1. Checa por SuperAdmin
     super_admin = (
@@ -55,9 +56,18 @@ def authenticate_user(db: Session, identifier: str, password: str, potencia_id: 
     member_query = db.query(models.Member).filter(or_(models.Member.email == identifier, models.Member.cim == identifier))
     
     if potencia_id is not None:
-        member_query = member_query.join(
+        member_query = member_query.outerjoin(
             models.MemberObedienceAssociation, models.Member.id == models.MemberObedienceAssociation.member_id
-        ).filter(models.MemberObedienceAssociation.obedience_id == potencia_id)
+        ).outerjoin(
+            models.MemberLodgeAssociation, models.Member.id == models.MemberLodgeAssociation.member_id
+        ).outerjoin(
+            models.Lodge, models.MemberLodgeAssociation.lodge_id == models.Lodge.id
+        ).filter(
+            or_(
+                models.MemberObedienceAssociation.obedience_id == potencia_id,
+                models.Lodge.obedience_id == potencia_id
+            )
+        )
         
     member = member_query.first()
     

@@ -33,8 +33,16 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      // If we are already calling refresh, we don't want to loop
-      if (originalRequest.url === '/auth/refresh' || originalRequest.url === '/auth/login') {
+      // If we are already logging out, just reject the error to avoid loop
+      if (originalRequest.url?.includes('/auth/logout')) {
+         return Promise.reject(error);
+      }
+
+      // If we are calling refresh or login, dispatch force_logout
+      if (
+        originalRequest.url?.includes('/auth/refresh') || 
+        originalRequest.url?.includes('/auth/login')
+      ) {
         window.dispatchEvent(new Event('force_logout'));
         return Promise.reject(error);
       }
