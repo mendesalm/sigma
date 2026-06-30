@@ -274,3 +274,6 @@ When user's prompt is NOT in English:
 - **Test**: `playwright_runner.py`, `test_runner.py`
 
 ---
+
+### ?? Configurações Default de Módulos (Global Mandatory)
+- **Regra**: Todos os módulos e recursos opcionais do sistema (ex: notificações de whatsapp whatsapp_notifications_enabled, chancelaria extra, etc) devem ter uma flag is_active ou similar associada e vir desativados (False) por default na modelagem (banco de dados/Alembic) e nos Schemas.

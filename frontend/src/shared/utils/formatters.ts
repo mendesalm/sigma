@@ -20,6 +20,12 @@ export const formatCPF = (value: string) => {
 export const formatPhone = (value: string) => {
   if (!value) return "";
   let v = value.replace(/\D/g, "");
+  
+  // If it comes from backend as E.164 (e.g., 5511999999999), strip the 55
+  if (v.length >= 12 && v.startsWith("55")) {
+    v = v.substring(2);
+  }
+  
   if (v.length > 11) v = v.substring(0, 11); // Limit to 11 digits (DDD + 9 digits)
   
   v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); // Add DDD parenthesis

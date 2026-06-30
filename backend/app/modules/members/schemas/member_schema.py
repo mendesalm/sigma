@@ -141,16 +141,16 @@ class MemberBase(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone_format(cls, v):
-        """Valida formato de telefone brasileiro."""
+        """Valida e converte formato de telefone para E.164."""
         if not v:
             return v
 
-        from app.shared.utils.validators import validate_phone
+        from app.shared.utils.validators import validate_phone, format_phone_e164
 
         if not validate_phone(v):
             raise ValueError("Telefone inválido. Use formato: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX")
 
-        return v
+        return format_phone_e164(v)
 
     @field_validator("zip_code")
     @classmethod

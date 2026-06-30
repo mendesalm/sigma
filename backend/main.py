@@ -37,6 +37,7 @@ from app.modules.communication.routes import (
     notice_routes,
     publication_routes,
     message_routes,
+    whatsapp_routes,
 )
 from app.modules.finance.routes import (
     financial_routes,
@@ -279,6 +280,7 @@ app.include_router(administration_routes.router)
 app.include_router(report_routes.router)
 app.include_router(library_routes.router)
 app.include_router(message_routes.router)
+app.include_router(whatsapp_routes.router)
 app.include_router(cashless_routes.router)
 
 
@@ -301,6 +303,16 @@ STORAGE_DIR.mkdir(exist_ok=True)
 # Mount the storage directory
 app.mount("/storage", StaticFiles(directory=str(STORAGE_DIR)), name="storage")
 
+
+@app.on_event("startup")
+async def startup_event():
+    from app.jobs.scheduler import start_scheduler
+    start_scheduler()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    from app.jobs.scheduler import shutdown_scheduler
+    shutdown_scheduler()
 
 @app.get("/", tags=["Root"])
 def read_root():

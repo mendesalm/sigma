@@ -98,6 +98,7 @@ class Lodge(BaseModel):
     user_limit = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True)
     status = Column(String(255), nullable=True)
+    whatsapp_group_id = Column(String(255), nullable=True, comment="ID do grupo oficial do WhatsApp")
     session_day = Column(
         SQLAlchemyEnum(
             "Domingos",
@@ -135,6 +136,7 @@ class Lodge(BaseModel):
     custom_holidays = Column(JSON, nullable=True, default=list)
     checkin_window_start_minutes = Column(Integer, default=120, nullable=False, comment="Minutos antes do início para abrir check-in")
     checkin_window_end_minutes = Column(Integer, default=120, nullable=False, comment="Minutos depois do início para fechar check-in")
+    whatsapp_notifications_enabled = Column(Boolean, default=False, nullable=False, comment="Habilita/desabilita envios automáticos para o WhatsApp (Bumps/Aniversários)")
 
     @property
     def formatted_affiliation(self) -> str:

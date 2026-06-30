@@ -31,6 +31,7 @@ class SessionAttendanceBase(BaseModel):
     member_id: int | None = None
     visitor_id: int | None = None
     attendance_status: str
+    guests_count: int = 0
     check_in_datetime: datetime | None = None
     check_in_method: str | None = None
     check_in_latitude: float | None = None

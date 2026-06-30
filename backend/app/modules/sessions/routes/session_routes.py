@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.modules.sessions.schemas import masonic_session_schema, session_attendance_schema, visitor_checkin_schema
+from app.modules.sessions.schemas import masonic_session_schema, session_attendance_schema, visitor_checkin_schema, forecast_schema
 from app.modules.sessions.services import session_service
 from database import get_db
 from dependencies import get_current_user_payload, require_module
@@ -45,6 +45,24 @@ def perform_visitor_check_in_endpoint(
         latitude=check_in_data.latitude,
         longitude=check_in_data.longitude,
     )
+
+
+@router.get(
+    "/{session_id}/presence-forecast",
+    response_model=forecast_schema.PresenceForecastResponse,
+    summary="Obter Previsão de Presença",
+    description="Retorna os quantitativos consolidados de previsão de presenças (membros, acompanhantes, visitantes) confirmados para uma sessão.",
+)
+def get_presence_forecast_endpoint(
+    session_id: int, 
+    db: Session = Depends(get_db),
+    current_user_payload: dict = Depends(require_module("masonic_sessions"))
+):
+    # O get_session_by_id interno pode fazer a validação de permissão se necessário
+    # ou podemos chamar o forecast direto
+    return session_service.get_presence_forecast(db, session_id)
+
+
 
 
 @router.post(

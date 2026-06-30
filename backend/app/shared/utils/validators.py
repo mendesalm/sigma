@@ -294,3 +294,29 @@ def format_phone(phone: str) -> str:
         return f"({phone[:2]}) {phone[2:6]}-{phone[6:]}"
 
     return phone
+
+def format_phone_e164(phone: str, default_country_code: str = "55") -> str:
+    """
+    Formata telefone para o padrão internacional E.164 (ex: 5511999999999),
+    necessário para integração com WhatsApp.
+
+    Args:
+        phone: Telefone em qualquer formato
+        default_country_code: Código do país padrão se não fornecido
+
+    Returns:
+        Telefone formatado no padrão E.164 numérico.
+    """
+    if not phone:
+        return ""
+    
+    clean_phone = sanitize_phone(phone)
+    if not clean_phone:
+        return ""
+
+    # Se já tem o código do país (tamanho 12 ou 13 começando com 55)
+    if len(clean_phone) >= 12 and clean_phone.startswith(default_country_code):
+        return clean_phone
+
+    # Se não tem o código do país, adiciona
+    return f"{default_country_code}{clean_phone}"

@@ -162,6 +162,7 @@ class SessionAttendance(BaseModel):
     member_id = Column(Integer, ForeignKey("members.id"), nullable=True)
     visitor_id = Column(Integer, ForeignKey("visitors.id"), nullable=True)
     attendance_status = Column(String(50), nullable=False)
+    guests_count = Column(Integer, nullable=False, default=0)
     check_in_datetime = Column(DateTime(timezone=True), nullable=True)
     check_in_method = Column(
         SQLAlchemyEnum(CheckInMethodEnum, name="check_in_method_enum", values_callable=lambda x: [e.value for e in x]),

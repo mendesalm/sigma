@@ -590,3 +590,37 @@ def upload_balaustre(db: Session, session_id: int, file: UploadFile, current_use
     db.commit()
     db.refresh(db_session)
     return db_session
+
+def get_presence_forecast(db: Session, session_id: int) -> dict:
+    """
+    Calcula a previsão de presença para uma sessão (membros, acompanhantes e visitantes).
+    """
+    attendances = (
+        db.query(models.SessionAttendance)
+        .filter(models.SessionAttendance.session_id == session_id)
+        .filter(models.SessionAttendance.attendance_status.in_(["Confirmado", "Presente"]))
+        .all()
+    )
+    
+    confirmed_members = 0
+    confirmed_guests = 0
+    confirmed_visitors = 0
+    
+    for att in attendances:
+        if att.member_id:
+            confirmed_members += 1
+        elif att.visitor_id:
+            confirmed_visitors += 1
+            
+        if att.guests_count:
+            confirmed_guests += att.guests_count
+            
+    total_expected = confirmed_members + confirmed_guests + confirmed_visitors
+    
+    return {
+        "session_id": session_id,
+        "confirmed_members": confirmed_members,
+        "confirmed_guests": confirmed_guests,
+        "confirmed_visitors": confirmed_visitors,
+        "total_expected": total_expected
+    }

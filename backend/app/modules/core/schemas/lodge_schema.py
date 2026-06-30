@@ -42,6 +42,8 @@ class LodgeBase(BaseModel):
     auto_schedule_sessions: bool = Field(False, description="Se agendamento automático de sessões está ativo")
     session_weeks: list[int] | None = Field(None, description="Semanas do mês para sessões mensais/quinzenais, ex: [1, 3]")
     custom_holidays: list[dict] | None = Field(None, description="Lista de feriados customizados da loja. Ex: [{'month': 8, 'day': 20, 'name': 'Dia do Maçom'}]")
+    whatsapp_group_id: str | None = Field(None, max_length=255, description="ID do grupo oficial do WhatsApp vinculado à Loja")
+    whatsapp_notifications_enabled: bool = Field(False, description="Habilita ou desabilita as notificações do bot no WhatsApp")
 
     @field_validator("lodge_name", mode="after", check_fields=False)
     @classmethod
