@@ -9,6 +9,7 @@ from database import SessionLocal
 from app.modules.cashless.models import (
     CashlessUser, Wallet, CashlessUserTypeEnum, CashlessProfileTypeEnum, Product
 )
+from app.modules.core.models import Lodge
 # Ensure all models are registered in SQLAlchemy metadata before creating tables/sessions
 from models import models
 
@@ -20,6 +21,13 @@ def run_seed():
     db = SessionLocal()
     try:
         print("[SEED] Iniciando Seed do Modulo Cashless...")
+
+        lodge = db.query(Lodge).first()
+        if not lodge:
+            print("[SEED] Nenhuma Loja encontrada. Por favor, rode o seed principal primeiro.")
+            return
+
+        lodge_id = lodge.id
 
         # 1. Create a Gerente (Manager)
         manager_cim = "GERENTE_001"
@@ -35,7 +43,7 @@ def run_seed():
             db.add(manager)
             db.flush()
             
-            manager_wallet = Wallet(cashless_user_id=manager.id, balance=0, allow_negative_balance=False)
+            manager_wallet = Wallet(cashless_user_id=manager.id, lodge_id=lodge_id, balance=0, allow_negative_balance=False)
             db.add(manager_wallet)
             print("[SEED] Gerente criado: Joao Gerente (PIN: 1234, CIM: GERENTE_001)")
 
@@ -53,7 +61,7 @@ def run_seed():
             db.add(client)
             db.flush()
             
-            client_wallet = Wallet(cashless_user_id=client.id, balance=0, allow_negative_balance=False)
+            client_wallet = Wallet(cashless_user_id=client.id, lodge_id=lodge_id, balance=0, allow_negative_balance=False)
             db.add(client_wallet)
             print("[SEED] Cliente criado: Maria Visitante (CPF: 000.000.000-00)")
 
@@ -67,14 +75,15 @@ def run_seed():
         ]
         
         for p_data in products_data:
-            existing = db.query(Product).filter_by(name=p_data["name"]).first()
+            existing = db.query(Product).filter_by(name=p_data["name"], lodge_id=lodge_id).first()
             if not existing:
                 prod = Product(
                     name=p_data["name"],
                     price=p_data["price"],
                     stock=p_data["stock"],
                     min_stock=p_data["min_stock"],
-                    is_active=p_data["is_active"]
+                    is_active=p_data["is_active"],
+                    lodge_id=lodge_id
                 )
                 db.add(prod)
         print(f"[SEED] {len(products_data)} Produtos criados/verificados.")

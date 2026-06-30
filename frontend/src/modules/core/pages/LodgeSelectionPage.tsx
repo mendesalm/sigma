@@ -4,8 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Typography, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
 
 const LodgeSelectionPage: React.FC = () => {
-  const { associations, selectAssociation } = useAuth();
+  const { user, associations, selectAssociation } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   const handleSelectAssociation = async (association: any) => {
     try {
@@ -28,13 +34,19 @@ const LodgeSelectionPage: React.FC = () => {
         Selecione uma Loja ou Obediência
       </Typography>
       <List>
-        {associations.map((association) => (
-          <ListItem key={`${association.type}-${association.id}`} disablePadding>
-            <ListItemButton onClick={() => handleSelectAssociation(association)}>
-              <ListItemText primary={association.name} secondary={association.type === 'lodge' ? 'Loja' : 'Obediência'} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {associations && associations.length > 0 ? (
+          associations.map((association) => (
+            <ListItem key={`${association.type}-${association.id}`} disablePadding>
+              <ListItemButton onClick={() => handleSelectAssociation(association)}>
+                <ListItemText primary={association.name} secondary={association.type === 'lodge' ? 'Loja' : 'Obediência'} />
+              </ListItemButton>
+            </ListItem>
+          ))
+        ) : (
+          <Typography color="textSecondary" sx={{ mt: 2 }}>
+            Nenhuma associação disponível. Por favor, verifique sua conta.
+          </Typography>
+        )}
       </List>
     </Container>
   );

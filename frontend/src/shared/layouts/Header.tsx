@@ -8,13 +8,17 @@ import {
   Box, 
   useTheme,
   Container,
-  alpha
+  alpha,
+  IconButton
 } from "@mui/material";
+import { Brightness4, Brightness7 } from "@mui/icons-material";
+import { useCustomTheme } from "@/shared/contexts/ThemeContext";
 import logoSigma from "@/assets/images/SigmaLogo.png";
 
 const Header: React.FC = () => {
   const location = useLocation();
   const theme = useTheme();
+  const { mode, toggleColorMode } = useCustomTheme();
   const isLoginPage = location.pathname === "/login";
   
   // State to track scroll position for styling
@@ -114,7 +118,10 @@ const Header: React.FC = () => {
           </Box>
 
           {/* Navigation Section */}
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <IconButton onClick={toggleColorMode} color="inherit">
+              {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+            </IconButton>
             <Button 
               component={RouterLink} 
               to={isLoginPage ? "/" : "/login"}

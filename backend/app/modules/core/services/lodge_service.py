@@ -55,36 +55,6 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
             commit=False,  # Do not commit yet
         )
 
-        # Create storage directory for the lodge
-        # Sanitize lodge_number to ensure valid directory name
-        if lodge.lodge_number:
-            safe_lodge_number = (
-                "".join(c for c in lodge.lodge_number if c.isalnum() or c in (" ", "-", "_")).strip().replace(" ", "_")
-            )
-            folder_name = f"loja_{safe_lodge_number}"
-        else:
-            folder_name = f"loja_id_{db_lodge.id}"
-
-        storage_path = os.path.join("storage", "lodges", folder_name)
-        os.makedirs(storage_path, exist_ok=True)
-
-        # Create subdirectories using the checked storage_path
-        # Structure based on existing standard (loja_2181):
-        # assets/images/logo
-        # publications
-        # templates/balaustre (singular), templates/edital, templates/convite, templates/prancha
-        # users/profile_pictures
-
-        os.makedirs(os.path.join(storage_path, "assets", "images"), exist_ok=True)
-        os.makedirs(os.path.join(storage_path, "publications"), exist_ok=True)
-
-        os.makedirs(os.path.join(storage_path, "templates", "balaustre"), exist_ok=True)
-        os.makedirs(os.path.join(storage_path, "templates", "edital"), exist_ok=True)
-        os.makedirs(os.path.join(storage_path, "templates", "convite"), exist_ok=True)
-        os.makedirs(os.path.join(storage_path, "templates", "prancha"), exist_ok=True)
-
-        os.makedirs(os.path.join(storage_path, "users", "profile_pictures"), exist_ok=True)
-
     except Exception as e:
         db.rollback()
         raise e
@@ -92,19 +62,21 @@ def create_lodge(db: Session, lodge: lodge_schema.LodgeCreate) -> models.Lodge:
     # --- Initial Assets Copying ---
     try:
         import shutil
+        from app.shared.utils.path_utils import get_tenant_path_for_lodge
 
         # 1. Copy Generic Logo
-        # Assuming 'storage/general_assets/logo_generico.png' exists
         generic_logo_path = os.path.join("storage", "general_assets", "logo_generico.png")
         if os.path.exists(generic_logo_path):
-            # Target: storage/lodges/{folder}/assets/images/logo.png (Matches DocumentGenerationService lookup)
-            target_logo_path = os.path.join(storage_path, "assets", "images", "logo.png")
+            assets_path = get_tenant_path_for_lodge(db, db_lodge.id, "assets/images")
+            target_logo_path = assets_path / "logo.png"
             shutil.copy2(generic_logo_path, target_logo_path)
 
     except Exception as copy_error:
         # Log error but don't fail the lodge creation just for assets
         print(f"Warning: Failed to copy initial assets for lodge {db_lodge.id}: {copy_error}")
 
+    db.commit()
+    db.refresh(db_lodge)
     return db_lodge
 
 

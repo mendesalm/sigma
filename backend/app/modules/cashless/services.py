@@ -17,7 +17,7 @@ def get_password_hash(pin: str) -> str:
     return pwd_context.hash(pin)
 
 
-def create_cashless_user_and_wallet(db: Session, user_data: CashlessUserCreate) -> CashlessUser:
+def create_cashless_user_and_wallet(db: Session, user_data: CashlessUserCreate, lodge_id: int) -> CashlessUser:
     # Check if user already exists
     existing_user = db.query(CashlessUser).filter(CashlessUser.identification_key == user_data.identification_key).first()
     if existing_user:
@@ -44,6 +44,7 @@ def create_cashless_user_and_wallet(db: Session, user_data: CashlessUserCreate) 
     # Create associated Wallet
     new_wallet = Wallet(
         cashless_user_id=new_user.id,
+        lodge_id=lodge_id,
         balance=0.00,
         allow_negative_balance=False
     )
@@ -54,8 +55,8 @@ def create_cashless_user_and_wallet(db: Session, user_data: CashlessUserCreate) 
     return new_user
 
 
-def get_dynamic_balance(db: Session, user_id: str) -> Decimal:
-    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == user_id).first()
+def get_dynamic_balance(db: Session, user_id: str, lodge_id: int) -> Decimal:
+    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == user_id, Wallet.lodge_id == lodge_id).first()
     if not wallet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found for this user.")
 
@@ -79,9 +80,9 @@ def get_dynamic_balance(db: Session, user_id: str) -> Decimal:
     return balance
 
 
-def process_manual_transaction(db: Session, tx_data: ManualTransactionRequest) -> WalletTransaction:
+def process_manual_transaction(db: Session, tx_data: ManualTransactionRequest, lodge_id: int) -> WalletTransaction:
     # 1. Get Wallet
-    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == tx_data.usuario_id).first()
+    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == tx_data.usuario_id, Wallet.lodge_id == lodge_id).first()
     if not wallet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wallet of the receiving user not found.")
         
@@ -102,6 +103,7 @@ def process_manual_transaction(db: Session, tx_data: ManualTransactionRequest) -
     # 3. Create Transaction
     new_tx = WalletTransaction(
         wallet_id=wallet.id,
+        lodge_id=lodge_id,
         type=tx_data.tipo,
         amount=tx_data.valor,
         operator_id=operator.id
@@ -146,6 +148,7 @@ def process_mercadopago_webhook(db: Session, payload: WebhookPayload) -> Mercado
                 # Here we assume a valid payment payload
                 tx = WalletTransaction(
                     wallet_id=wallet.id,
+                    lodge_id=wallet.lodge_id,
                     type=WalletTransactionTypeEnum.CREDITO_PIX,
                     amount=Decimal("0.00"),  # Stub value. Real value would come from MP API
                     gateway_id=event_id
@@ -163,13 +166,13 @@ def process_mercadopago_webhook(db: Session, payload: WebhookPayload) -> Mercado
 
 from sqlalchemy.exc import IntegrityError
 
-def process_order(db: Session, order_data: OrderCreate) -> Order:
+def process_order(db: Session, order_data: OrderCreate, lodge_id: int) -> Order:
     total = Decimal("0.00")
     items_to_create = []
     products_to_update = []
     
     # LOCK WALLET first to prevent deadlocks and concurrent balance consumption
-    wallet = db.query(Wallet).with_for_update().filter(Wallet.cashless_user_id == order_data.usuario_id).first()
+    wallet = db.query(Wallet).with_for_update().filter(Wallet.cashless_user_id == order_data.usuario_id, Wallet.lodge_id == lodge_id).first()
     if not wallet:
         db.rollback()
         raise HTTPException(status_code=404, detail="Carteira não encontrada para este usuário")
@@ -179,7 +182,7 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
     
     for item_in in sorted_items:
         # LOCK PRODUCT to prevent concurrent stock consumption
-        product = db.query(Product).with_for_update().filter(Product.id == item_in.produto_id).first()
+        product = db.query(Product).with_for_update().filter(Product.id == item_in.produto_id, Product.lodge_id == lodge_id).first()
         if not product:
             db.rollback()
             raise HTTPException(status_code=404, detail=f"Produto {item_in.produto_id} não encontrado")
@@ -203,7 +206,7 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
         })
 
     # b) Ver se tem saldo
-    balance = get_dynamic_balance(db, order_data.usuario_id)
+    balance = get_dynamic_balance(db, order_data.usuario_id, lodge_id)
     if balance < total and not wallet.allow_negative_balance:
         db.rollback()
         raise HTTPException(status_code=400, detail="Saldo insuficiente")
@@ -212,6 +215,7 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
         # c) Crie o Pedido
         new_order = Order(
             cashless_user_id=order_data.usuario_id,
+            lodge_id=lodge_id,
             channel=order_data.canal,
             total=total
         )
@@ -230,6 +234,7 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
             # f) Insira a movimentação na tabela Movimentacoes_Estoque
             stock_mov = StockMovement(
                 product_id=item_data["product"].id,
+                lodge_id=lodge_id,
                 type=StockMovementTypeEnum.SAIDA_VENDA,
                 quantity=-item_data["quantity"],
                 order_id=new_order.id
@@ -239,6 +244,7 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
         # d) Insira a saída na tabela Transacoes_Carteira
         tx = WalletTransaction(
             wallet_id=wallet.id,
+            lodge_id=lodge_id,
             type=WalletTransactionTypeEnum.DEBITO_CONSUMO,
             amount=total, 
             order_id=new_order.id
@@ -266,20 +272,21 @@ def process_order(db: Session, order_data: OrderCreate) -> Order:
     return new_order
 
 
-def list_products(db: Session, active_only: bool = True):
-    query = db.query(Product)
+def list_products(db: Session, lodge_id: int, active_only: bool = True):
+    query = db.query(Product).filter(Product.lodge_id == lodge_id)
     if active_only:
         query = query.filter(Product.is_active == True)
     return query.all()
 
 
-def create_product(db: Session, product_in: ProductCreate) -> Product:
+def create_product(db: Session, product_in: ProductCreate, lodge_id: int) -> Product:
     new_product = Product(
         name=product_in.name,
         price=product_in.price,
         stock=product_in.stock,
         min_stock=product_in.min_stock,
-        is_active=product_in.is_active
+        is_active=product_in.is_active,
+        lodge_id=lodge_id
     )
     db.add(new_product)
     db.commit()
@@ -287,8 +294,8 @@ def create_product(db: Session, product_in: ProductCreate) -> Product:
     return new_product
 
 
-def get_wallet_transactions(db: Session, user_id: str, limit: int = 50):
-    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == user_id).first()
+def get_wallet_transactions(db: Session, user_id: str, lodge_id: int, limit: int = 50):
+    wallet = db.query(Wallet).filter(Wallet.cashless_user_id == user_id, Wallet.lodge_id == lodge_id).first()
     if not wallet:
         raise HTTPException(status_code=404, detail="Carteira não encontrada.")
         
@@ -300,9 +307,9 @@ def get_wallet_transactions(db: Session, user_id: str, limit: int = 50):
     return transactions
 
 
-def get_user_orders(db: Session, user_id: str, limit: int = 50):
+def get_user_orders(db: Session, user_id: str, lodge_id: int, limit: int = 50):
     orders = db.query(Order)\
-        .filter(Order.cashless_user_id == user_id)\
+        .filter(Order.cashless_user_id == user_id, Order.lodge_id == lodge_id)\
         .order_by(Order.created_at.desc())\
         .limit(limit).all()
         

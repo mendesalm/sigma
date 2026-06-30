@@ -11,6 +11,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -45,12 +46,18 @@ class CashlessUser(BaseModel):
 class Wallet(BaseModel):
     __tablename__ = "cashless_wallets"
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    cashless_user_id = Column(String(36), ForeignKey("cashless_users.id"), unique=True, nullable=False)
+    cashless_user_id = Column(String(36), ForeignKey("cashless_users.id"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     balance = Column(Numeric(10, 2), nullable=False, default=0.00, comment="Saldo atual. Atualizado via trigger ou sum dinâmico")
     allow_negative_balance = Column(Boolean, nullable=False, default=False, comment="Permite Pós-Pago (Fatura) se True")
     
     cashless_user = relationship("CashlessUser", back_populates="wallet")
     transactions = relationship("WalletTransaction", back_populates="wallet", cascade="all, delete-orphan")
+    lodge = relationship("Lodge")
+
+    __table_args__ = (
+        UniqueConstraint("cashless_user_id", "lodge_id", name="uq_cashless_user_lodge_wallet"),
+    )
 
 
 class WalletTransactionTypeEnum(enum.StrEnum):
@@ -67,6 +74,7 @@ class WalletTransaction(BaseModel):
     __tablename__ = "cashless_wallet_transactions"
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     wallet_id = Column(String(36), ForeignKey("cashless_wallets.id"), nullable=False, index=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     type = Column(SQLAlchemyEnum(WalletTransactionTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     gateway_id = Column(String(255), nullable=True, comment="ID da transação no Mercado Pago, se aplicável")
@@ -97,6 +105,7 @@ class MercadoPagoWebhook(BaseModel):
 class Product(BaseModel):
     __tablename__ = "cashless_products"
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
     stock = Column(Integer, nullable=False, default=0)
@@ -123,6 +132,7 @@ class StockMovement(BaseModel):
     __tablename__ = "cashless_stock_movements"
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     product_id = Column(String(36), ForeignKey("cashless_products.id"), nullable=False, index=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     type = Column(SQLAlchemyEnum(StockMovementTypeEnum, values_callable=lambda x: [e.value for e in x]), nullable=False)
     quantity = Column(Integer, nullable=False)
     order_id = Column(String(36), ForeignKey("cashless_orders.id"), nullable=True)
@@ -150,6 +160,7 @@ class Order(BaseModel):
     __tablename__ = "cashless_orders"
     id = Column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     cashless_user_id = Column(String(36), ForeignKey("cashless_users.id"), nullable=False, index=True)
+    lodge_id = Column(Integer, ForeignKey("lodges.id"), nullable=False, index=True)
     channel = Column(SQLAlchemyEnum(OrderChannelEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=OrderChannelEnum.PDV_BALCAO)
     status = Column(SQLAlchemyEnum(OrderStatusEnum, values_callable=lambda x: [e.value for e in x]), nullable=False, default=OrderStatusEnum.CRIADO)
     total = Column(Numeric(10, 2), nullable=False, default=0.00)

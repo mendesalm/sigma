@@ -115,6 +115,8 @@ from fastapi import File, UploadFile
 from dependencies import get_current_user_payload
 
 
+from app.shared.utils.path_utils import get_tenant_path_for_lodge
+
 @router.post("/{lodge_id}/logo", summary="Upload do Logo da Loja")
 async def upload_lodge_logo(
     lodge_id: int,
@@ -125,11 +127,9 @@ async def upload_lodge_logo(
     # Verifica permissões (apenas admin ou webmaster da loja)
     # TODO: Implementar verificação de permissão mais robusta
 
-    # Define o caminho de armazenamento
-    storage_dir = os.path.join("storage", "lodges", str(lodge_id))
-    os.makedirs(storage_dir, exist_ok=True)
-
-    file_path = os.path.join(storage_dir, "logo.png")
+    # Define o caminho de armazenamento usando lazy loading
+    storage_dir = get_tenant_path_for_lodge(db, lodge_id, "assets/images")
+    file_path = storage_dir / "logo.png"
 
     try:
         with open(file_path, "wb") as buffer:
@@ -137,13 +137,14 @@ async def upload_lodge_logo(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao salvar logo: {str(e)}")
 
-    return {"message": "Logo atualizado com sucesso", "path": file_path}
+    return {"message": "Logo atualizado com sucesso", "path": str(file_path)}
 
 
 @router.post("/{lodge_id}/upload_asset", summary="Upload de Asset Genérico da Loja")
 async def upload_lodge_asset(
     lodge_id: int,
     file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
     """
@@ -164,11 +165,8 @@ async def upload_lodge_asset(
     safe_filename = file.filename.replace(" ", "_").lower()
 
     # Define storage path
-    # storage/lodges/{id}/assets/
-    storage_dir = os.path.join("storage", "lodges", str(lodge_id), "assets")
-    os.makedirs(storage_dir, exist_ok=True)
-
-    file_path = os.path.join(storage_dir, safe_filename)
+    storage_dir = get_tenant_path_for_lodge(db, lodge_id, "assets")
+    file_path = storage_dir / safe_filename
 
     try:
         with open(file_path, "wb") as buffer:
@@ -177,9 +175,7 @@ async def upload_lodge_asset(
         raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}")
 
     # Return Public URL
-    # Assuming /storage is mounted to root storage
-    # Windows paths might use \, force / for URL
-    url_path = f"/storage/lodges/{lodge_id}/assets/{safe_filename}"
+    url_path = f"/{file_path.as_posix()}"
 
     return {"url": url_path}
 
@@ -288,3 +284,60 @@ def restore_previous_lodge_settings(
     db.commit()
     return {"message": "Configurações restauradas para a versão anterior com sucesso."}
 
+
+from typing import List
+from app.modules.core.schemas.import_lodge_schema import ImportLodgePreviewResponse, ImportLodgeConfirmRequest
+from app.modules.core.services.import_lodge_service import process_lodge_upload_files
+
+@router.post(
+    "/import/preview",
+    response_model=ImportLodgePreviewResponse,
+    summary="Pré-visualizar Importação de Lojas",
+)
+async def preview_lodge_import(
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_super_admin),
+):
+    return await process_lodge_upload_files(db, files)
+
+@router.post(
+    "/import/confirm",
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar Importação de Lojas",
+)
+def confirm_lodge_import(
+    request_data: ImportLodgeConfirmRequest,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_super_admin),
+):
+    saved_count = 0
+    from app.modules.core.models import Obedience
+    all_obediences = db.query(Obedience).all()
+    potency_map = {o.acronym.lower(): o.id for o in all_obediences if o.acronym and not o.parent_obedience_id}
+    subpotency_map = {o.acronym.lower(): o.id for o in all_obediences if o.acronym and o.parent_obedience_id}
+    
+    for row in request_data.rows:
+        if not row.is_valid:
+            continue
+            
+        potency_id = potency_map.get(row.potency_acronym.lower()) if row.potency_acronym else None
+        subpotency_id = subpotency_map.get(row.subpotency_acronym.lower()) if row.subpotency_acronym else None
+        
+        lodge_create = lodge_schema.LodgeCreate(
+            lodge_name=row.name,
+            lodge_number=row.number,
+            obedience_id=potency_id,
+            subobedience_id=subpotency_id,
+            cnpj=row.cnpj,
+            technical_contact_email=row.technical_contact_email,
+            technical_contact_name=row.technical_contact_name,
+        )
+        try:
+            lodge_service.create_lodge(db=db, lodge=lodge_create)
+            saved_count += 1
+        except Exception as e:
+            print(f"Error creating lodge {row.name}: {e}")
+            
+    db.commit()
+    return {"message": "Importação concluída.", "saved_count": saved_count}
