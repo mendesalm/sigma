@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Brightness4, Brightness7 } from "@mui/icons-material";
 import { useCustomTheme } from "@/shared/contexts/ThemeContext";
-import logoSigma from "@/assets/images/SigmaLogo.png";
+import logoSigma from "@/assets/images/logos/Sigma_Logo_PrataAzul_P.png";
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -23,20 +23,43 @@ const Header: React.FC = () => {
   
   // State to track scroll position for styling
   const [scrolled, setScrolled] = useState(false);
+  const isHomePage = location.pathname === "/";
 
   useEffect(() => {
+    let customScrollY = 0;
+
+    const updateScroll = () => {
+      // Determine if we should show the background and logo.
+      // Use customScrollY if on home page, otherwise window.scrollY
+      const currentScroll = location.pathname === '/' ? customScrollY : window.scrollY;
+      setScrolled(currentScroll > 100);
+    };
+
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 20;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
+      updateScroll();
+    };
+
+    const handleCustomScroll = (e: Event) => {
+      if ('detail' in e) {
+        customScrollY = (e as CustomEvent).detail;
+        updateScroll();
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('landing-scroll', handleCustomScroll, { passive: true });
+    
+    // Initial check
+    updateScroll();
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('landing-scroll', handleCustomScroll);
     };
-  }, [scrolled]);
+  }, [location.pathname]);
+
+  // Determine if logo should be hidden (only on home page when NOT scrolled)
+  const hideLogo = isHomePage && !scrolled;
 
   return (
     <AppBar
@@ -45,12 +68,12 @@ const Header: React.FC = () => {
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
         backgroundColor: scrolled 
-          ? alpha(theme.palette.background.default, 0.8) 
+          ? alpha(theme.palette.background.default, 0.85) 
           : 'transparent',
         backdropFilter: scrolled ? "blur(12px)" : "none",
         borderBottom: scrolled ? `1px solid ${alpha(theme.palette.divider, 0.1)}` : 'none',
         transition: 'all 0.3s ease-in-out',
-        backgroundImage: 'none', // Remove default MUI gradient if any
+        backgroundImage: 'none',
         width: '100%',
       }}
     >
@@ -58,7 +81,16 @@ const Header: React.FC = () => {
         <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 80 }, transition: 'min-height 0.3s' }}>
           
           {/* Logo Section */}
-          <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+          <Box 
+            sx={{ 
+              display: "flex", 
+              alignItems: "center", 
+              flexGrow: 1,
+              opacity: hideLogo ? 0 : 1,
+              pointerEvents: hideLogo ? 'none' : 'auto',
+              transition: 'opacity 0.4s ease-in-out',
+            }}
+          >
             <RouterLink
               to="/"
               style={{
@@ -89,13 +121,15 @@ const Header: React.FC = () => {
                   variant="h6" 
                   component="div" 
                   sx={{ 
+                    fontFamily: "'Audiowide', cursive",
                     fontWeight: 700, 
                     lineHeight: 1,
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                    background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     color: "transparent",
-                    letterSpacing: '-0.02em'
+                    letterSpacing: '-0.02em',
+                    textShadow: '0 0 5px rgba(180, 180, 180, 0.2)'
                   }}
                 >
                   SiGMa
@@ -111,7 +145,7 @@ const Header: React.FC = () => {
                     textTransform: 'uppercase'
                   }}
                 >
-                  Sistema de Gestão Maçônica
+                  Sistema Integrado de Gerenciamento Maçônico
                 </Typography>
               </Box>
             </RouterLink>

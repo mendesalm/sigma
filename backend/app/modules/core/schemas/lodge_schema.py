@@ -44,6 +44,7 @@ class LodgeBase(BaseModel):
     custom_holidays: list[dict] | None = Field(None, description="Lista de feriados customizados da loja. Ex: [{'month': 8, 'day': 20, 'name': 'Dia do Maçom'}]")
     whatsapp_group_id: str | None = Field(None, max_length=255, description="ID do grupo oficial do WhatsApp vinculado à Loja")
     whatsapp_notifications_enabled: bool = Field(False, description="Habilita ou desabilita as notificações do bot no WhatsApp")
+    whatsapp_settings: dict | None = Field(None, description="Configurações granulares (JSON) do Módulo de WhatsApp para a Loja")
 
     @field_validator("lodge_name", mode="after", check_fields=False)
     @classmethod

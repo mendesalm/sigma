@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from app.database import get_db
+from database import get_db
 from app.modules.core.models import Lodge
 from app.shared.tenant_context import TenantContextManager
 from app.modules.communication.services.evolution_client import evolution_client

@@ -11,15 +11,21 @@ import {
   CircularProgress,
   FormControlLabel,
   Checkbox,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import logoSigma from "../../../assets/images/SigmaLogo.png";
 import FirstAccessWizard from '../components/FirstAccessWizard';
+import { motion } from 'framer-motion';
 
+const AnimatedBox = motion(Box);
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -36,12 +42,11 @@ const LoginPage: React.FC = () => {
   }, [navigate]);
 
   const handleResetPotencia = () => {
-    if (window.confirm("Atenção: Redefinir a Potência apagará sua escolha atual e o levará de volta à tela inicial. Deseja continuar?")) {
+    if (window.confirm("Atenção: Redefinir a Potência apagará sua escolha atual e o levá-lo-á de volta à tela inicial. Deseja continuar?")) {
       localStorage.removeItem('tenant_potencia');
       navigate('/onboarding');
     }
   };
-
 
   const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -72,8 +77,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-
-
   return (
     <Box
       sx={{
@@ -81,51 +84,76 @@ const LoginPage: React.FC = () => {
         minHeight: "100vh", 
         display: "flex",
         flexDirection: "column",
-        backgroundImage: `url('/src/assets/images/bg.jpg')`, 
-        backgroundSize: "cover", 
-        backgroundPosition: "center", 
-        backgroundRepeat: "no-repeat", 
-        backgroundAttachment: "fixed", 
         position: 'relative', 
-        pt: { xs: 10, md: 12 }, // Adjusted for new header height + spacing
+        overflow: 'hidden',
+        bgcolor: '#0b111b',
       }}
     >
-      {/* Blur effect box removed */}
-      <Container component="main" maxWidth="xs" sx={{
+      {/* Animated Gradient Background */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 176, 255, 0.15) 0%, rgba(11, 17, 27, 1) 50%)',
+          animation: 'spin 30s linear infinite',
+          zIndex: 0,
+          '@keyframes spin': {
+            '0%': { transform: 'rotate(0deg)' },
+            '100%': { transform: 'rotate(360deg)' },
+          }
+        }}
+      />
+      
+      {/* Glow Orbs */}
+      <Box sx={{ position: 'absolute', top: '10%', left: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
+      <Box sx={{ position: 'absolute', bottom: '10%', right: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
+
+      <Container component="main" maxWidth="sm" sx={{
+        position: 'relative',
+        zIndex: 1,
         margin: 'auto',
         display: 'flex',
-        flexDirection: 'column', // Align items in a column
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        flexGrow: 1, // Allow it to grow and center content vertically
-        py: 4, // Add some vertical padding
+        flexGrow: 1,
+        py: 4,
       }}>
-        <Box
+        <AnimatedBox
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)', // More transparent white
-            backdropFilter: 'blur(10px)', // Glassmorphism blur
-            border: '1px solid rgba(255, 255, 255, 0.1)', // More transparent subtle border
-            p: 4,
-            borderRadius: 2,
-            boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.2)', // Lighter glassmorphism shadow
+            backgroundColor: 'rgba(19, 27, 41, 0.6)', 
+            backdropFilter: 'blur(20px)', 
+            border: '1px solid rgba(255, 255, 255, 0.08)', 
+            p: { xs: 4, md: 6 },
+            borderRadius: 4,
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)', 
             width: '100%',
-            maxWidth: '600px', // Limit the width of the form box
           }}
         >
-          <Box sx={{ mb: 3 }}> {/* Box for the logo */}
+          <Box sx={{ mb: 4, mt: 1 }}>
             <img
               src={logoSigma}
               alt="Sigma Logo"
-              style={{ maxHeight: "120px", width: "auto", filter: "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.5))" }}
+              style={{ maxHeight: "100px", width: "auto" }}
             />
           </Box>
-          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-            Área Restrita
+          <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 700, letterSpacing: '0.5px' }}>
+            Acesso Restrito
           </Typography>
-          <Box component="form" onSubmit={handleFormSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+            Insira suas credenciais para continuar
+          </Typography>
+
+          <Box component="form" onSubmit={handleFormSubmit} noValidate sx={{ width: '100%' }}>
             <TextField
               margin="normal"
               required
@@ -139,6 +167,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
               variant="outlined"
+              sx={{ mb: 2 }}
             />
             <TextField
               margin="normal"
@@ -146,51 +175,93 @@ const LoginPage: React.FC = () => {
               fullWidth
               name="password"
               label="Senha"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
               variant="outlined"
+              sx={{ mb: 2 }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      sx={{ color: 'text.secondary' }}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
-            <FormControlLabel
-              control={
-                <Checkbox
-                  value="remember"
-                  color="primary"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={isLoading}
-                />
-              }
-              label="Lembrar-me"
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    value="remember"
+                    color="primary"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    disabled={isLoading}
+                    sx={{ color: 'rgba(255,255,255,0.3)' }}
+                  />
+                }
+                label={<Typography variant="body2" sx={{ color: 'text.secondary' }}>Lembrar-me</Typography>}
+              />
+              <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                Esqueci a senha
+              </Link>
+            </Box>
+            
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
               disabled={isLoading}
+              sx={{ 
+                py: 1.5, 
+                mb: 3, 
+                fontSize: '1rem', 
+                borderRadius: 2,
+                boxShadow: '0 4px 14px 0 rgba(0, 176, 255, 0.39)',
+                '&:hover': {
+                  boxShadow: '0 6px 20px rgba(0, 176, 255, 0.23)'
+                }
+              }}
             >
               {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
             </Button>
-            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', mt: 2, gap: 1 }}>
-                                                <Link component={RouterLink} to="/forgot-password" variant="body2" sx={{ textAlign: 'center' }}>
-                                                  Esqueci a senha
-                                                </Link>
-                                                <Link component={RouterLink} to="/register" variant="body2" sx={{ textAlign: 'center' }}>
-                                                  Não tem uma conta? Solicitar cadastro
-                                                </Link>            
-                                                <Button variant="outlined" color="secondary" onClick={() => setWizardOpen(true)} sx={{ mt: 2 }}>
-                                                  Primeiro Acesso / Ativar Conta
-                                                </Button>
-                                                <Button variant="text" color="inherit" onClick={handleResetPotencia} sx={{ mt: 1, fontSize: '0.8rem', opacity: 0.7 }}>
-                                                  Redefinir Potência Selecionada
-                                                </Button>
-                                              </Box>
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Não tem uma conta?{' '}
+                <Link component={RouterLink} to="/register" sx={{ color: 'primary.main', textDecoration: 'none', fontWeight: 600 }}>
+                  Solicitar cadastro
+                </Link>
+              </Typography>
+              
+              <Button 
+                variant="outlined" 
+                onClick={() => setWizardOpen(true)} 
+                sx={{ mt: 1, borderRadius: 2, py: 1, width: '100%', borderColor: 'rgba(255,255,255,0.1)', color: 'text.secondary' }}
+              >
+                Primeiro Acesso / Ativar Conta
+              </Button>
+              
+              <Button 
+                variant="text" 
+                onClick={handleResetPotencia} 
+                sx={{ mt: 2, fontSize: '0.75rem', color: 'text.secondary', opacity: 0.6, '&:hover': { opacity: 1 } }}
+              >
+                Redefinir Potência Selecionada
+              </Button>
+            </Box>
           </Box>
-        </Box>
+        </AnimatedBox>
       </Container>
       <FirstAccessWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
     </Box>

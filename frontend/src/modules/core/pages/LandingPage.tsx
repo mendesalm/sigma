@@ -1,216 +1,423 @@
-import React from "react";
-import { 
-  Box, 
-  Typography, 
-  Grid, 
-  Paper, 
-  Button, 
-  IconButton, 
-  Container,
-  useTheme,
-  Chip
-} from "@mui/material";
-import { 
-  Security, 
-  People, 
-  Cloud, 
-  Speed, 
-  Brightness4, 
-  Brightness7, 
-  AccountBalance,
-  MenuBook,
-  Restaurant,
-  Architecture,
-  SyncAlt,
-  Login
-} from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import { useCustomTheme } from "@/shared/contexts/ThemeContext";
-import logoSigma from "@/assets/images/SigmaLogo.png";
+import React, { useEffect, useRef } from 'react';
+import { Box, Button, Typography, Grid, Paper } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { People, Security, AccountBalance, Extension, AutoAwesome } from '@mui/icons-material';
+import sigmaLogo from '@/assets/images/logos/Sigma_Logo_PrataAzul_G.png';
+import Footer from '@/shared/layouts/Footer';
 
-const basicModules = [
-  { title: "Secretaria", icon: <People fontSize="large" />, desc: "Gestão completa de membros e documentação." },
-  { title: "Tesouraria", icon: <AccountBalance fontSize="large" />, desc: "Controle financeiro, mensalidades e balancetes." },
-  { title: "Chancelaria", icon: <Security fontSize="large" />, desc: "Controle de presenças, graus e interações." }
-];
+// Premium Glassmorphism style for cards
+const glassStyle = {
+  backgroundColor: 'rgba(19, 27, 41, 0.6)',
+  backdropFilter: 'blur(20px)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+  borderRadius: 4,
+  p: 4,
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 12px 40px 0 rgba(0, 176, 255, 0.2)',
+    borderColor: 'rgba(0, 176, 255, 0.3)',
+  }
+};
 
-const optionalModules = [
-  { title: "Banquete", icon: <Restaurant />, desc: "Gestão de eventos e ágapes." },
-  { title: "Biblioteca", icon: <MenuBook />, desc: "Acervo literário e empréstimos." },
-  { title: "Harmonia", icon: <Speed />, desc: "Gestão musical e acervo sonoro." },
-  { title: "Arquiteto", icon: <Architecture />, desc: "Controle patrimonial e inventário." }
-];
+const SectionContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Box
+    sx={{
+      minHeight: '100vh',
+      width: '100%',
+      scrollSnapAlign: 'start',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      zIndex: 1,
+      px: { xs: 2, md: 8 },
+      pt: { xs: '80px', md: '100px' },
+      pb: 4
+    }}
+  >
+    {children}
+  </Box>
+);
 
 const LandingPage: React.FC = () => {
-  const muiTheme = useTheme();
-  const { mode, toggleColorMode } = useCustomTheme();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
 
-  const isDark = mode === 'dark';
+  useEffect(() => {
+    const can = canvasRef.current;
+    if (!can) return;
+    const ctx = can.getContext("2d");
+    if (!ctx) return;
 
-  // Estilos de Glassmorphism
-  const glassStyle = {
-    background: isDark ? 'rgba(19, 27, 41, 0.65)' : 'rgba(255, 255, 255, 0.7)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.5)'}`,
-    boxShadow: isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
-    borderRadius: '16px',
-  };
+    let animationFrameId: number;
+
+    const setSize = () => {
+      can.width = window.innerWidth;
+      can.height = window.innerHeight;
+      can.style.background = "black";
+    };
+    setSize();
+    window.addEventListener('resize', setSize);
+
+    let p: any[] = [];
+
+    let particles: any[] = [];
+
+    function initParticles() {
+      if (!can) return;
+      particles = [];
+      const numParticles = Math.min(120, Math.floor(window.innerWidth / 12));
+      for (let i = 0; i < numParticles; i++) {
+        let rand = Math.random();
+        let isGold = false;
+        let isPurple = false;
+        if (rand > 0.95) {
+          isGold = true;
+        } else if (rand > 0.90) {
+          isPurple = true; // 5% chance to be purple
+        }
+
+        particles.push({
+          x: Math.random() * can.width,
+          y: Math.random() * can.height,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          radius: Math.random() * 1.5 + 0.5,
+          isGold,
+          isPurple
+        });
+      }
+    }
+
+    function drawNetwork() {
+      if (!ctx || !can) return;
+      animationFrameId = requestAnimationFrame(drawNetwork);
+
+      // Clear canvas entirely for sharp network lines
+      ctx.clearRect(0, 0, can.width, can.height);
+
+      // To prevent the center from shifting visually during scroll snap, we use a static, screen-relative offset.
+      // Elevated 95px above the vertical center as requested.
+      let focalPoint = { x: can.width / 2, y: (can.height / 2) - 95 };
+
+      const maxDistance = 150;
+
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+
+        // Move
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Soft Bounce
+        if (p.x < 0 || p.x > can.width) p.vx *= -1;
+        if (p.y < 0 || p.y > can.height) p.vy *= -1;
+
+        // Draw Particle Node
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        if (p.isGold) {
+          ctx.fillStyle = "rgba(255, 215, 0, 0.8)";
+        } else if (p.isPurple) {
+          ctx.fillStyle = "rgba(180, 50, 255, 0.8)"; // Neon purple
+        } else {
+          ctx.fillStyle = "rgba(0, 176, 255, 0.6)";
+        }
+        ctx.fill();
+
+        // Connect to other particles
+        for (let j = i + 1; j < particles.length; j++) {
+          let p2 = particles[j];
+          let dx = p.x - p2.x;
+          let dy = p.y - p2.y;
+          let dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < maxDistance) {
+            let opacity = 1 - (dist / maxDistance);
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+
+            let isConnectionGold = p.isGold || p2.isGold;
+            let isConnectionPurple = p.isPurple || p2.isPurple;
+
+            if (isConnectionGold) {
+              ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
+            } else if (isConnectionPurple) {
+              ctx.strokeStyle = `rgba(180, 50, 255, ${opacity * 0.3})`;
+            } else {
+              ctx.strokeStyle = `rgba(100, 200, 255, ${opacity * 0.25})`;
+            }
+
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+
+        // Connect to focal point (Logo Center)
+        let dxF = p.x - focalPoint.x;
+        let dyF = p.y - focalPoint.y;
+        let distF = Math.sqrt(dxF * dxF + dyF * dyF);
+        let logoPullDistance = 350; // Reach further to grab nodes
+
+        if (distF < logoPullDistance) {
+          let opacityF = 1 - (distF / logoPullDistance);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(focalPoint.x, focalPoint.y);
+
+          // Connection color to logo depends on particle type
+          if (p.isGold) {
+            ctx.strokeStyle = `rgba(255, 215, 0, ${opacityF * 0.5})`;
+            ctx.lineWidth = 1.5;
+          } else if (p.isPurple) {
+            ctx.strokeStyle = `rgba(180, 50, 255, ${opacityF * 0.5})`;
+            ctx.lineWidth = 1.5;
+          } else {
+            ctx.strokeStyle = `rgba(0, 85, 213, ${opacityF * 0.4})`;
+            ctx.lineWidth = 1.2;
+          }
+          ctx.stroke();
+
+          // Slight gravitational pull towards the logo to create density
+          p.vx -= (dxF / distF) * 0.001;
+          p.vy -= (dyF / distF) * 0.001;
+        }
+      }
+    }
+
+    initParticles();
+    drawNetwork();
+
+    return () => {
+      window.removeEventListener('resize', setSize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   return (
     <Box
       sx={{
-        color: "text.primary",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundImage: `url('/src/assets/images/bg.jpg')`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
         position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.3)',
-          zIndex: 0
+        width: '100%',
+        height: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollSnapType: 'y mandatory',
+        scrollBehavior: 'smooth',
+        m: 0,
+        p: 0,
+        bgcolor: '#0b111b'
+      }}
+      onScroll={(e) => {
+        const target = e.target as HTMLElement;
+        window.dispatchEvent(new CustomEvent('landing-scroll', { detail: target.scrollTop }));
+
+        // Dynamically adjust canvas opacity based on scroll (dim down to 15% after Section 1)
+        if (canvasRef.current) {
+          const threshold = window.innerHeight * 0.5;
+          canvasRef.current.style.opacity = target.scrollTop > threshold ? '0.15' : '1';
         }
       }}
     >
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+          transition: 'opacity 0.5s ease-in-out'
+        }}
+      />
 
+      <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
 
-      {/* Main Content Area */}
-      <Box sx={{ position: 'relative', zIndex: 1, pt: 14, pb: 8, flexGrow: 1 }}>
-        <Container maxWidth="lg">
-          
-          {/* Hero Section */}
-          <Box sx={{ textAlign: 'center', mt: 4, mb: 10 }}>
-            <Paper elevation={0} sx={{ ...glassStyle, p: { xs: 4, md: 8 }, display: 'inline-block', maxWidth: '800px', mx: 'auto' }}>
-              <img
-                src={logoSigma}
-                alt="Sigma Logo"
-                style={{ maxHeight: "220px", width: "auto", filter: "drop-shadow(0px 8px 16px rgba(0,0,0,0.4))", marginBottom: '24px' }}
-              />
-              <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: "800", background: muiTheme.palette.primary.main, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Sistema Sigma
+      {/* SECTION 1: HERO */}
+      <SectionContainer>
+        <Box sx={{ textAlign: 'center', width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img
+            id="hero-logo"
+            src={sigmaLogo}
+            alt="Sigma Logo"
+            style={{
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '35vh',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 30px rgba(0,176,255,0.4))',
+              marginTop: '40px'
+            }}
+          />
+          <Box sx={{ mt: 3, mb: 5 }}>
+            <Typography
+              variant="h1"
+              sx={{
+                fontFamily: "'Audiowide', cursive",
+                fontSize: { xs: '28px', sm: '38px', md: '50px' },
+                background: 'linear-gradient(to right, #B4B4B4, #9F9F9F)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: 'drop-shadow(0 0 10px rgba(180, 180, 180, 0.3))',
+                lineHeight: 1.2
+              }}
+            >
+              Sistema Integrado de<br />Gerenciamento Maçônico
+            </Typography>
+          </Box>
+          <Box sx={{ width: '100%' }}>
+            <Paper sx={{ ...glassStyle, mx: 'auto', p: { xs: 3, sm: 4, md: 5 }, width: '100%' }}>
+              <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: { xs: '1rem', md: '1.15rem' }, fontFamily: "'Inter', sans-serif", lineHeight: 1.8 }}>
+                O Sigma não é apenas um software, é a evolução digital da gestão maçônica.
+                Projetado como um ecossistema multi-tenant de ponta, ele isola e protege os dados
+                de cada Loja e Potência através de um sofisticado controle de acesso baseado em atributos (ABAC).
+                Com interfaces fluidas e módulos integrados, reduzimos a burocracia para que o foco retorne ao
+                verdadeiro trabalho em Loja.
               </Typography>
-              <Typography variant="h5" color="text.secondary" sx={{ mb: 4, fontWeight: 400 }}>
-                A plataforma maçônica mais moderna e integrada.
-                Conectando Lojas, Potências e Subpotências em um único ecossistema.
-              </Typography>
-              
-              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <Button variant="contained" size="large" color="primary" sx={{ borderRadius: '30px', px: 4, py: 1.5, fontSize: '1.1rem' }}>
-                  Teste Grátis por 30 Dias
-                </Button>
-                <Button variant="outlined" size="large" sx={{ borderRadius: '30px', px: 4, py: 1.5, fontSize: '1.1rem', borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)', color: isDark ? '#fff' : '#000' }}>
-                  Conheça os Módulos
-                </Button>
-              </Box>
             </Paper>
           </Box>
+        </Box>
+      </SectionContainer>
 
-          {/* Abrangência e Integração */}
-          <Box sx={{ mb: 10 }}>
-            <Grid container spacing={4} alignItems="stretch">
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Paper elevation={0} sx={{ ...glassStyle, p: 5, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    Abrangência Total
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}>
-                    O Sistema Sigma foi desenhado para atender todos os níveis da estrutura maçônica brasileira:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Cloud color="primary" />
-                      <Typography><strong>Potências:</strong> GOB, Grandes Lojas, COMAB</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <People color="primary" />
-                      <Typography><strong>Subpotências:</strong> Grandes Orientes Estaduais</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <AccountBalance color="primary" />
-                      <Typography><strong>Lojas:</strong> Diretamente subordinadas e jurisdicionadas</Typography>
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Paper elevation={0} sx={{ ...glassStyle, p: 5, height: '100%', background: isDark ? 'linear-gradient(135deg, rgba(19, 27, 41, 0.8) 0%, rgba(0, 176, 255, 0.1) 100%)' : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(0, 176, 255, 0.2) 100%)' }}>
-                  <Box sx={{ textAlign: 'center', mb: 3 }}>
-                    <SyncAlt sx={{ fontSize: 60, color: muiTheme.palette.primary.main }} />
-                  </Box>
-                  <Typography variant="h4" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
-                    Integração Poderosa
-                  </Typography>
-                  <Typography variant="body1" align="center" sx={{ fontSize: '1.1rem', mb: 2 }}>
-                    Nosso maior diferencial. Esqueça sistemas isolados e redigitação de dados.
-                  </Typography>
-                  <Typography variant="body1" align="center" sx={{ fontSize: '1.1rem' }}>
-                    Com a forte integração do Sigma, a comunicação entre <strong>Loja ↔ Loja</strong> e <strong>Loja ↔ Potência/Subpotência</strong> flui naturalmente de forma segura e imediata.
-                  </Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Box>
+      {/* SECTION 2: MODULES */}
+      <SectionContainer>
+        <Typography
+          variant="h3"
+          sx={{
+            fontFamily: "'Audiowide', cursive",
+            mb: { xs: 4, md: 8 },
+            fontSize: { xs: '1.8rem', md: '3rem' },
+            color: '#fff',
+            textShadow: '0 0 10px rgba(0, 176, 255, 0.5)',
+            textAlign: 'center'
+          }}
+        >
+          Um sistema moderno e modular
+        </Typography>
 
-          {/* Módulos do Sistema */}
-          <Box sx={{ mb: 10 }}>
-            <Typography variant="h3" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 6, color: isDark ? '#fff' : '#000' }}>
-              Módulos do Sistema
-            </Typography>
-            
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: muiTheme.palette.primary.main, mb: 3 }}>
-              Módulos Básicos (Inclusos no Teste de 30 Dias)
-            </Typography>
-            <Grid container spacing={4} sx={{ mb: 6 }}>
-              {basicModules.map((mod) => (
-                <Grid size={{ xs: 12, sm: 4 }} key={mod.title}>
-                  <Paper elevation={0} sx={{ ...glassStyle, p: 4, textAlign: "center", height: "100%", transition: 'transform 0.3s', '&:hover': { transform: 'translateY(-10px)' } }}>
-                    <Box sx={{ color: "primary.main", mb: 2 }}>{mod.icon}</Box>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>{mod.title}</Typography>
-                    <Typography variant="body2" color="text.secondary">{mod.desc}</Typography>
-                  </Paper>
-                </Grid>
-              ))}
+        <Box sx={{ width: '100%', maxWidth: '1400px', px: { xs: 1, sm: 2 } }}>
+          <Grid
+            container
+            spacing={{ xs: 3, md: 4 }}
+            alignItems="stretch"
+            sx={{ flexWrap: { xs: 'wrap', md: 'nowrap' } }}
+          >
+            {/* Secretaria */}
+            <Grid item xs={12} sm={6} md={3} sx={{ minWidth: { md: '25%' } }}>
+              <Paper sx={glassStyle}>
+                <Box sx={{ color: '#00B0FF', mb: 2 }}>
+                  <People sx={{ fontSize: 50 }} />
+                </Box>
+                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                  Secretaria
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
+                  Gestão centralizada de membros, prontuários, emissão de certificados, atas e toda a documentação da Loja.
+                </Typography>
+              </Paper>
             </Grid>
 
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: muiTheme.palette.secondary.main, mb: 3 }}>
-              Módulos Opcionais (Integração Futura)
-            </Typography>
-            <Grid container spacing={3}>
-              {optionalModules.map((mod) => (
-                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={mod.title}>
-                  <Paper elevation={0} sx={{ ...glassStyle, p: 3, textAlign: "center", height: "100%", opacity: 0.85 }}>
-                    <Box sx={{ color: "secondary.main", mb: 2 }}>{mod.icon}</Box>
-                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: "bold" }}>{mod.title}</Typography>
-                    <Typography variant="body2" color="text.secondary">{mod.desc}</Typography>
-                  </Paper>
-                </Grid>
-              ))}
+            {/* Chancelaria */}
+            <Grid item xs={12} sm={6} md={3} sx={{ minWidth: { md: '25%' } }}>
+              <Paper sx={glassStyle}>
+                <Box sx={{ color: '#00B0FF', mb: 2 }}>
+                  <Security sx={{ fontSize: 50 }} />
+                </Box>
+                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                  Chancelaria
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
+                  Controle rigoroso de presenças, histórico maçônico, gestão de graus e interações entre irmãos.
+                </Typography>
+              </Paper>
             </Grid>
-          </Box>
 
-          {/* Assinatura */}
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Paper elevation={0} sx={{ ...glassStyle, p: 6, display: 'inline-block', maxWidth: '800px', mx: 'auto', border: `2px solid ${muiTheme.palette.primary.main}` }}>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Experimente o Sigma Hoje
-              </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
-                Transforme a gestão da sua Loja ou Potência. Cadastre-se e aproveite <Chip label="30 Dias Grátis" color="primary" sx={{ fontWeight: 'bold', fontSize: '1rem', py: 2 }} /> em todos os módulos básicos.
-              </Typography>
-              <Button variant="contained" size="large" color="primary" onClick={() => navigate('/login')} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.2rem', fontWeight: 'bold' }}>
-                Começar Agora
-              </Button>
-            </Paper>
-          </Box>
+            {/* Tesouraria */}
+            <Grid item xs={12} sm={6} md={3} sx={{ minWidth: { md: '25%' } }}>
+              <Paper sx={glassStyle}>
+                <Box sx={{ color: '#00B0FF', mb: 2 }}>
+                  <AccountBalance sx={{ fontSize: 50 }} />
+                </Box>
+                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                  Tesouraria
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
+                  Módulo financeiro robusto. Controle de mensalidades, balancetes, despesas e relatórios de fluxo de caixa.
+                </Typography>
+              </Paper>
+            </Grid>
 
-        </Container>
+            {/* Opcionais */}
+            <Grid item xs={12} sm={6} md={3} sx={{ minWidth: { md: '25%' } }}>
+              <Paper sx={{
+                ...glassStyle,
+                border: '1px solid rgba(0, 176, 255, 0.3)',
+                background: 'linear-gradient(135deg, rgba(19, 27, 41, 0.8) 0%, rgba(0, 85, 213, 0.2) 100%)',
+              }}>
+                <Box sx={{ color: '#00B0FF', mb: 2 }}>
+                  <AutoAwesome sx={{ fontSize: 50 }} />
+                </Box>
+                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                  Opcionais
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif", mb: 1 }}>
+                  • <strong>Harmonia:</strong> Gestão de acervo.<br />
+                  • <strong>Arquitetura:</strong> Patrimônio.<br />
+                  • <strong>Biblioteca:</strong> Empréstimos.<br />
+                  • <strong>Banquete:</strong> Ágapes.
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Box>
+      </SectionContainer>
+
+      {/* SECTION 3: SYSTEM PREVIEW */}
+      <SectionContainer>
+        <Typography
+          variant="h3"
+          sx={{
+            fontFamily: "'Audiowide', cursive",
+            mb: 4,
+            color: '#fff',
+            textShadow: '0 0 10px rgba(0, 176, 255, 0.5)'
+          }}
+        >
+          CONHEÇA O SISTEMA
+        </Typography>
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: '1200px',
+            height: '500px',
+            border: '2px dashed rgba(0, 176, 255, 0.3)',
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'rgba(0,0,0,0.2)',
+            backdropFilter: 'blur(5px)'
+          }}
+        >
+          <Typography sx={{ color: 'rgba(255,255,255,0.4)', fontFamily: "'Inter', sans-serif", fontSize: '1.2rem', textAlign: 'center', px: 2 }}>
+            [ Placeholder: Screenshots e Vídeos dos Dashboards (Lojas e Potências) serão inseridos aqui futuramente ]
+          </Typography>
+        </Box>
+      </SectionContainer>
+
+      {/* SECTION 4: FOOTER */}
+      <Box sx={{ width: '100%', scrollSnapAlign: 'end', position: 'relative', zIndex: 1 }}>
+        <Footer />
       </Box>
     </Box>
   );

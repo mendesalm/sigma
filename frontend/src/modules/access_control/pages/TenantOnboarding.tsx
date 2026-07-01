@@ -14,6 +14,9 @@ import {
 } from '@mui/material';
 import logoSigma from "../../../assets/images/SigmaLogo.png";
 import api from '@/shared/services/api';
+import { motion } from 'framer-motion';
+
+const AnimatedBox = motion(Box);
 
 interface Obedience {
   id: number;
@@ -59,16 +62,36 @@ const TenantOnboarding: React.FC = () => {
         minHeight: "100vh", 
         display: "flex",
         flexDirection: "column",
-        backgroundImage: `url('/src/assets/images/bg.jpg')`, 
-        backgroundSize: "cover", 
-        backgroundPosition: "center", 
-        backgroundRepeat: "no-repeat", 
-        backgroundAttachment: "fixed", 
         position: 'relative', 
-        pt: { xs: 10, md: 12 },
+        overflow: 'hidden',
+        bgcolor: '#0b111b',
       }}
     >
-      <Container component="main" maxWidth="xs" sx={{
+      {/* Animated Gradient Background */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 176, 255, 0.15) 0%, rgba(11, 17, 27, 1) 50%)',
+          animation: 'spin 30s linear infinite',
+          zIndex: 0,
+          '@keyframes spin': {
+            '0%': { transform: 'rotate(0deg)' },
+            '100%': { transform: 'rotate(360deg)' },
+          }
+        }}
+      />
+      
+      {/* Glow Orbs */}
+      <Box sx={{ position: 'absolute', top: '10%', left: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
+      <Box sx={{ position: 'absolute', bottom: '10%', right: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
+
+      <Container component="main" maxWidth="sm" sx={{
+        position: 'relative',
+        zIndex: 1,
         margin: 'auto',
         display: 'flex',
         flexDirection: 'column',
@@ -77,39 +100,43 @@ const TenantOnboarding: React.FC = () => {
         flexGrow: 1,
         py: 4,
       }}>
-        <Box
+        <AnimatedBox
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            p: 4,
-            borderRadius: 2,
-            boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.2)',
+            backgroundColor: 'rgba(19, 27, 41, 0.6)', 
+            backdropFilter: 'blur(20px)', 
+            border: '1px solid rgba(255, 255, 255, 0.08)', 
+            p: { xs: 4, md: 6 },
+            borderRadius: 4,
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)', 
             width: '100%',
-            maxWidth: '600px',
           }}
         >
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 4, mt: 1 }}>
             <img
               src={logoSigma}
               alt="Sigma Logo"
-              style={{ maxHeight: "120px", width: "auto", filter: "drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.5))" }}
+              style={{ maxHeight: "100px", width: "auto" }}
             />
           </Box>
-          <Typography component="h1" variant="h5" sx={{ mb: 1, textAlign: 'center' }}>
+          <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 700, letterSpacing: '0.5px', textAlign: 'center' }}>
             Bem-vindo ao Sigma
           </Typography>
-          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, textAlign: 'center' }}>
             Para iniciar seu acesso, por favor selecione a Potência (Obediência) a qual você pertence.
           </Typography>
 
           {isLoading ? (
-            <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
+            </Box>
           ) : (
-            <FormControl fullWidth sx={{ mb: 3 }}>
+            <FormControl fullWidth sx={{ mb: 4 }}>
               <InputLabel id="obedience-select-label">Qual a sua Potência?</InputLabel>
               <Select
                 labelId="obedience-select-label"
@@ -117,6 +144,18 @@ const TenantOnboarding: React.FC = () => {
                 value={selectedObedience}
                 label="Qual a sua Potência?"
                 onChange={(e) => setSelectedObedience(e.target.value)}
+                sx={{
+                  bgcolor: 'rgba(0,0,0,0.2)',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255,255,255,0.1)',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(255,255,255,0.2)',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'primary.main',
+                  }
+                }}
               >
                 {obediences.map((ob) => (
                   <MenuItem key={ob.id} value={ob.id.toString()}>
@@ -133,21 +172,30 @@ const TenantOnboarding: React.FC = () => {
             color="primary"
             onClick={handleContinue}
             disabled={!selectedObedience || isLoading}
-            sx={{ mb: 2 }}
+            sx={{ 
+              py: 1.5, 
+              mb: 3, 
+              fontSize: '1rem', 
+              borderRadius: 2,
+              boxShadow: '0 4px 14px 0 rgba(0, 176, 255, 0.39)',
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(0, 176, 255, 0.23)'
+              }
+            }}
           >
             Continuar
           </Button>
 
-          <Button
-            fullWidth
-            variant="text"
-            color="inherit"
-            onClick={handleAdminAccess}
-            sx={{ mt: 1, fontSize: '0.8rem', opacity: 0.7 }}
-          >
-            Acesso Restrito (Webmaster/Admin)
-          </Button>
-        </Box>
+          <Box sx={{ mt: 2 }}>
+            <Button
+              variant="text"
+              onClick={handleAdminAccess}
+              sx={{ fontSize: '0.8rem', color: 'text.secondary', opacity: 0.6, '&:hover': { opacity: 1 } }}
+            >
+              Acesso Restrito (Webmaster/Admin)
+            </Button>
+          </Box>
+        </AnimatedBox>
       </Container>
     </Box>
   );
