@@ -58,6 +58,14 @@ const Header: React.FC = () => {
     };
   }, [location.pathname]);
 
+  const scrollToSection = (id: string) => {
+    const container = document.getElementById('landing-container');
+    const el = document.getElementById(id);
+    if (container && el) {
+      container.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+    }
+  };
+
   // Determine if logo should be hidden (only on home page when NOT scrolled)
   const hideLogo = isHomePage && !scrolled;
 
@@ -78,17 +86,19 @@ const Header: React.FC = () => {
       }}
     >
       <Container maxWidth="xl" disableGutters sx={{ px: { xs: 2, md: 4 } }}>
-        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 80 }, transition: 'min-height 0.3s' }}>
+        <Toolbar disableGutters sx={{ minHeight: { xs: 64, md: 80 }, transition: 'min-height 0.3s', position: 'relative' }}>
           
           {/* Logo Section */}
           <Box 
             sx={{ 
+              position: 'absolute',
+              left: 0,
               display: "flex", 
               alignItems: "center", 
-              flexGrow: 1,
               opacity: hideLogo ? 0 : 1,
               pointerEvents: hideLogo ? 'none' : 'auto',
               transition: 'opacity 0.4s ease-in-out',
+              zIndex: 2
             }}
           >
             <RouterLink
@@ -149,6 +159,26 @@ const Header: React.FC = () => {
                 </Typography>
               </Box>
             </RouterLink>
+          </Box>
+
+          {/* Middle Space & Hero Nav */}
+          <Box sx={{ flexGrow: 1, position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}>
+            <Box 
+              sx={{
+                display: isHomePage ? 'flex' : 'none',
+                gap: { xs: 1, md: 3 },
+                position: 'absolute',
+                left: hideLogo ? 0 : '100%',
+                transform: hideLogo ? 'translateX(0)' : 'translateX(calc(-100% - 24px))',
+                transition: 'left 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: 3,
+                pointerEvents: 'auto'
+              }}
+            >
+              <Button variant="text" onClick={() => scrollToSection('hero-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Home</Button>
+              <Button variant="text" onClick={() => scrollToSection('modules-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Funcionalidades</Button>
+              <Button variant="text" onClick={() => scrollToSection('planos-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Planos</Button>
+            </Box>
           </Box>
 
           {/* Navigation Section */}
