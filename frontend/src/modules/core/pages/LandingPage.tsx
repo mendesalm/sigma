@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Typography, Grid, Paper, IconButton } from '@mui/material';
+import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { People, Security, AccountBalance, Extension, AutoAwesome, Restaurant, MenuBook, MusicNote, Storefront, Campaign, ArrowForwardIos, ArrowBackIosNew } from '@mui/icons-material';
 import sigmaLogo from '@/assets/images/logos/Sigma_Logo_PrataAzul_G.png';
-import SecretariaIcon from '@/assets/icons/Secretaria.png';
-import ChancelariaIcon from '@/assets/icons/Chancelaria.png';
-import TesourariaIcon from '@/assets/icons/Tesouraria.png';
+import SecretariaIcon from '@/assets/icons/Secretaria.svg';
+import ChancelariaIcon from '@/assets/icons/Chanceler.svg';
+import TesourariaIcon from '@/assets/icons/Tesouraria.svg';
+import HarmoniaIcon from '@/assets/icons/Harmonia.svg';
 import seloIcon from '@/assets/icons/selo.png';
 import Footer from '@/shared/layouts/Footer';
+import HeroBackground from '../components/HeroBackground';
+import FeaturesBackground from '../components/FeaturesBackground';
 
 // Premium Glassmorphism style for cards
 const glassStyle = {
@@ -40,6 +43,7 @@ const SectionContainer: React.FC<{ children: React.ReactNode, id?: string }> = (
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
+      overflow: 'hidden',
       zIndex: 1,
       px: { xs: 2, md: 8 },
       pt: { xs: '80px', md: '100px' },
@@ -52,7 +56,6 @@ const SectionContainer: React.FC<{ children: React.ReactNode, id?: string }> = (
 
 const LandingPage: React.FC = () => {
   const [showSelo, setShowSelo] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -118,157 +121,8 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const can = canvasRef.current;
-    if (!can) return;
-    const ctx = can.getContext("2d");
-    if (!ctx) return;
+  // Animações de Fundo agora são tratadas por componentes isolados
 
-    let animationFrameId: number;
-
-    const setSize = () => {
-      can.width = window.innerWidth;
-      can.height = window.innerHeight;
-      can.style.background = "black";
-    };
-    setSize();
-    window.addEventListener('resize', setSize);
-
-    let p: any[] = [];
-
-    let particles: any[] = [];
-
-    function initParticles() {
-      if (!can) return;
-      particles = [];
-      const numParticles = Math.min(120, Math.floor(window.innerWidth / 12));
-      for (let i = 0; i < numParticles; i++) {
-        let rand = Math.random();
-        let isGold = false;
-        let isPurple = false;
-        if (rand > 0.95) {
-          isGold = true;
-        } else if (rand > 0.90) {
-          isPurple = true; // 5% chance to be purple
-        }
-
-        particles.push({
-          x: Math.random() * can.width,
-          y: Math.random() * can.height,
-          vx: (Math.random() - 0.5) * 0.8,
-          vy: (Math.random() - 0.5) * 0.8,
-          radius: Math.random() * 1.5 + 0.5,
-          isGold,
-          isPurple
-        });
-      }
-    }
-
-    function drawNetwork() {
-      if (!ctx || !can) return;
-      animationFrameId = requestAnimationFrame(drawNetwork);
-
-      // Clear canvas entirely for sharp network lines
-      ctx.clearRect(0, 0, can.width, can.height);
-
-      // To prevent the center from shifting visually during scroll snap, we use a static, screen-relative offset.
-      // Elevated 95px above the vertical center as requested.
-      let focalPoint = { x: can.width / 2, y: (can.height / 2) - 95 };
-
-      const maxDistance = 150;
-
-      for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
-
-        // Move
-        p.x += p.vx;
-        p.y += p.vy;
-
-        // Soft Bounce
-        if (p.x < 0 || p.x > can.width) p.vx *= -1;
-        if (p.y < 0 || p.y > can.height) p.vy *= -1;
-
-        // Draw Particle Node
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        if (p.isGold) {
-          ctx.fillStyle = "rgba(255, 215, 0, 0.8)";
-        } else if (p.isPurple) {
-          ctx.fillStyle = "rgba(180, 50, 255, 0.8)"; // Neon purple
-        } else {
-          ctx.fillStyle = "rgba(0, 176, 255, 0.6)";
-        }
-        ctx.fill();
-
-        // Connect to other particles
-        for (let j = i + 1; j < particles.length; j++) {
-          let p2 = particles[j];
-          let dx = p.x - p2.x;
-          let dy = p.y - p2.y;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < maxDistance) {
-            let opacity = 1 - (dist / maxDistance);
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-
-            let isConnectionGold = p.isGold || p2.isGold;
-            let isConnectionPurple = p.isPurple || p2.isPurple;
-
-            if (isConnectionGold) {
-              ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
-            } else if (isConnectionPurple) {
-              ctx.strokeStyle = `rgba(180, 50, 255, ${opacity * 0.3})`;
-            } else {
-              ctx.strokeStyle = `rgba(100, 200, 255, ${opacity * 0.25})`;
-            }
-
-            ctx.lineWidth = 0.8;
-            ctx.stroke();
-          }
-        }
-
-        // Connect to focal point (Logo Center)
-        let dxF = p.x - focalPoint.x;
-        let dyF = p.y - focalPoint.y;
-        let distF = Math.sqrt(dxF * dxF + dyF * dyF);
-        let logoPullDistance = 350; // Reach further to grab nodes
-
-        if (distF < logoPullDistance) {
-          let opacityF = 1 - (distF / logoPullDistance);
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(focalPoint.x, focalPoint.y);
-
-          // Connection color to logo depends on particle type
-          if (p.isGold) {
-            ctx.strokeStyle = `rgba(255, 215, 0, ${opacityF * 0.5})`;
-            ctx.lineWidth = 1.5;
-          } else if (p.isPurple) {
-            ctx.strokeStyle = `rgba(180, 50, 255, ${opacityF * 0.5})`;
-            ctx.lineWidth = 1.5;
-          } else {
-            ctx.strokeStyle = `rgba(0, 85, 213, ${opacityF * 0.4})`;
-            ctx.lineWidth = 1.2;
-          }
-          ctx.stroke();
-
-          // Slight gravitational pull towards the logo to create density
-          p.vx -= (dxF / distF) * 0.001;
-          p.vy -= (dyF / distF) * 0.001;
-        }
-      }
-    }
-
-    initParticles();
-    drawNetwork();
-
-    return () => {
-      window.removeEventListener('resize', setSize);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
 
   return (
     <Box
@@ -291,11 +145,7 @@ const LandingPage: React.FC = () => {
         const windowHeight = window.innerHeight;
         
         window.dispatchEvent(new CustomEvent('landing-scroll', { detail: currentScroll }));
-
-        // Dynamically adjust canvas opacity based on scroll (dim down to 15% after Section 1)
-        if (canvasRef.current) {
-          canvasRef.current.style.opacity = currentScroll > windowHeight * 0.5 ? '0.15' : '1';
-        }
+        window.dispatchEvent(new CustomEvent('landing-scroll', { detail: currentScroll }));
 
         // Floating seal logic: Show only between Hero and Footer
         const isPastHero = currentScroll > windowHeight * 0.3;
@@ -307,25 +157,12 @@ const LandingPage: React.FC = () => {
         }
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100vh',
-          zIndex: 0,
-          pointerEvents: 'none',
-          transition: 'opacity 0.5s ease-in-out'
-        }}
-      />
-
-      <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Tektur:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
 
       {/* SECTION 1: HERO */}
       <SectionContainer id="hero-section">
+        <HeroBackground />
         <Box sx={{ textAlign: 'center', width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <img
             id="hero-logo"
@@ -344,7 +181,8 @@ const LandingPage: React.FC = () => {
             <Typography
               variant="h1"
               sx={{
-                fontFamily: "'Audiowide', cursive",
+                fontFamily: "'Tektur', sans-serif",
+                fontWeight: 600,
                 fontSize: { xs: '28px', sm: '38px', md: '50px' },
                 background: 'linear-gradient(to right, #B4B4B4, #9F9F9F)',
                 WebkitBackgroundClip: 'text',
@@ -380,10 +218,12 @@ const LandingPage: React.FC = () => {
 
       {/* SECTION 2: MODULES */}
       <SectionContainer id="modules-section">
+        <FeaturesBackground />
         <Typography
           variant="h3"
           sx={{
-            fontFamily: "'Audiowide', cursive",
+            fontFamily: "'Tektur', sans-serif",
+            fontWeight: 600,
             mb: { xs: 4, md: 8 },
             fontSize: { xs: '1.8rem', md: '3rem' },
             color: '#fff',
@@ -405,7 +245,7 @@ const LandingPage: React.FC = () => {
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
                 <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={SecretariaIcon} alt="Secretaria" sx={{ width: 50, height: 50, objectFit: 'contain' }} />
+                  <Box component="img" src={SecretariaIcon} alt="Secretaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
                 </Box>
                 <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Secretaria
@@ -420,7 +260,7 @@ const LandingPage: React.FC = () => {
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
                 <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={ChancelariaIcon} alt="Chancelaria" sx={{ width: 50, height: 50, objectFit: 'contain' }} />
+                  <Box component="img" src={ChancelariaIcon} alt="Chancelaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
                 </Box>
                 <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Chancelaria
@@ -435,7 +275,7 @@ const LandingPage: React.FC = () => {
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
                 <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={TesourariaIcon} alt="Tesouraria" sx={{ width: 50, height: 50, objectFit: 'contain' }} />
+                  <Box component="img" src={TesourariaIcon} alt="Tesouraria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
                 </Box>
                 <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Tesouraria
@@ -449,7 +289,7 @@ const LandingPage: React.FC = () => {
           
           {/* Módulos Opcionais Carrossel */}
           <Box sx={{ mt: 6, position: 'relative' }}>
-            <Typography variant="h5" sx={{ color: '#fff', mb: 3, fontFamily: "'Audiowide', cursive", textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 1, display: 'inline-block' }}>
+            <Typography variant="h5" sx={{ color: '#fff', mb: 3, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 1, display: 'inline-block' }}>
               Módulos Opcionais
             </Typography>
             
@@ -494,7 +334,7 @@ const LandingPage: React.FC = () => {
                   { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <AccountBalance sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
                   { title: 'Banquete', desc: 'Gestão dos ágapes.', icon: <Restaurant sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
                   { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <MenuBook sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
-                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <MusicNote sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
+                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
                   { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Storefront sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
                   { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Campaign sx={{ fontSize: 40, pointerEvents: 'none' }}/> }
                 ]).flat().map((modulo, idx) => (
@@ -541,10 +381,12 @@ const LandingPage: React.FC = () => {
 
       {/* SECTION 3: FUNCIONALIDADES EXTRAS */}
       <SectionContainer id="features-section">
+        <FeaturesBackground />
         <Typography
           variant="h3"
           sx={{
-            fontFamily: "'Audiowide', cursive",
+            fontFamily: "'Tektur', sans-serif",
+            fontWeight: 600,
             mb: { xs: 4, md: 8 },
             fontSize: { xs: '1.8rem', md: '3rem' },
             color: '#fff',
@@ -588,10 +430,12 @@ const LandingPage: React.FC = () => {
 
       {/* SECTION 4: PLANOS */}
       <SectionContainer id="planos-section">
+        <FeaturesBackground />
         <Typography
           variant="h3"
           sx={{
-            fontFamily: "'Audiowide', cursive",
+            fontFamily: "'Tektur', sans-serif",
+            fontWeight: 600,
             mb: { xs: 4, md: 6 },
             fontSize: { xs: '1.8rem', md: '3rem' },
             color: '#fff',
@@ -613,7 +457,7 @@ const LandingPage: React.FC = () => {
             {/* PLANO BÁSICO */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(0, 176, 255, 0.3)' }}>
-                <Typography variant="h5" sx={{ color: '#00B0FF', fontWeight: 'bold', mb: 3, fontFamily: "'Audiowide', cursive" }}>
+                <Typography variant="h5" sx={{ color: '#00B0FF', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   BÁSICO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
@@ -634,7 +478,7 @@ const LandingPage: React.FC = () => {
             {/* PLANO INTERMEDIÁRIO */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                <Typography variant="h5" sx={{ color: '#E0E0E0', fontWeight: 'bold', mb: 3, fontFamily: "'Audiowide', cursive" }}>
+                <Typography variant="h5" sx={{ color: '#E0E0E0', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   INTERMEDIÁRIO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
@@ -663,7 +507,7 @@ const LandingPage: React.FC = () => {
                 boxShadow: '0 0 20px rgba(255, 215, 0, 0.15)',
                 transform: { md: 'scale(1.05)' } 
               }}>
-                <Typography variant="h5" sx={{ color: '#FFD700', fontWeight: 'bold', mb: 3, fontFamily: "'Audiowide', cursive" }}>
+                <Typography variant="h5" sx={{ color: '#FFD700', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   AVANÇADO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
@@ -693,7 +537,7 @@ const LandingPage: React.FC = () => {
             background: 'linear-gradient(90deg, rgba(0, 176, 255, 0.1) 0%, rgba(19, 27, 41, 0.8) 50%, rgba(0, 176, 255, 0.1) 100%)',
             border: '1px solid rgba(0, 176, 255, 0.3)'
           }}>
-            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 3, fontFamily: "'Audiowide', cursive" }}>
+            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
               Prepare sua Loja para o Futuro. Comece agora.
             </Typography>
             <Button variant="contained" color="primary" size="large" onClick={() => navigate('/login')} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 0 15px rgba(0, 176, 255, 0.4)' }}>

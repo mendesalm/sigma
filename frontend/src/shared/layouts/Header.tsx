@@ -131,7 +131,8 @@ const Header: React.FC = () => {
                   variant="h6" 
                   component="div" 
                   sx={{ 
-                    fontFamily: "'Audiowide', cursive",
+                    fontFamily: "'Tektur', sans-serif",
+                    textTransform: "uppercase",
                     fontWeight: 700, 
                     lineHeight: 1,
                     background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
@@ -175,9 +176,9 @@ const Header: React.FC = () => {
                 pointerEvents: 'auto'
               }}
             >
-              <Button variant="text" onClick={() => scrollToSection('hero-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Home</Button>
-              <Button variant="text" onClick={() => scrollToSection('modules-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Funcionalidades</Button>
-              <Button variant="text" onClick={() => scrollToSection('planos-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>Planos</Button>
+              <Button variant="text" onClick={() => scrollToSection('hero-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Home</Button>
+              <Button variant="text" onClick={() => scrollToSection('modules-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Funcionalidades</Button>
+              <Button variant="text" onClick={() => scrollToSection('planos-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Planos</Button>
             </Box>
           </Box>
 
@@ -204,7 +205,10 @@ const Header: React.FC = () => {
                   transform: 'translateY(-1px)',
                   boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`
                 },
-                transition: 'all 0.2s ease-in-out'
+                transition: 'all 0.2s ease-in-out',
+                fontFamily: "'Tektur', sans-serif",
+                fontWeight: 400,
+                textTransform: 'uppercase'
               }}
             >
               {isLoginPage ? "Voltar ao Início" : "Acessar Sistema"}
