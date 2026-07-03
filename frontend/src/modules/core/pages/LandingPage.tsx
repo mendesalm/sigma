@@ -4,9 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { People, Security, AccountBalance, Extension, AutoAwesome, Restaurant, MenuBook, MusicNote, Storefront, Campaign, ArrowForwardIos, ArrowBackIosNew } from '@mui/icons-material';
 import sigmaLogo from '@/assets/images/logos/Sigma_Logo_PrataAzul_G.png';
 import SecretariaIcon from '@/assets/icons/Secretaria.svg';
-import ChancelariaIcon from '@/assets/icons/Chanceler.svg';
+import ChancelariaIcon from '@/assets/icons/chancelaria.svg';
 import TesourariaIcon from '@/assets/icons/Tesouraria.svg';
 import HarmoniaIcon from '@/assets/icons/Harmonia.svg';
+import BibliotecaIcon from '@/assets/icons/Biblioteca.svg';
+import BarIcon from '@/assets/icons/Bar.svg';
+import ArquitetoIcon from '@/assets/icons/Arquiteto.svg';
+import OradorIcon from '@/assets/icons/Orador.svg';
+import ClassificadosIcon from '@/assets/icons/Classificados.svg';
+import ComunicacaoIcon from '@/assets/icons/Comunicacao.svg';
 import seloIcon from '@/assets/icons/selo.png';
 import Footer from '@/shared/layouts/Footer';
 import HeroBackground from '../components/HeroBackground';
@@ -331,12 +337,13 @@ const LandingPage: React.FC = () => {
                 }}
               >
                 {Array(15).fill([
-                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <AccountBalance sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
-                  { title: 'Banquete', desc: 'Gestão dos ágapes.', icon: <Restaurant sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
-                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <MenuBook sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
+                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <Box component="img" src={ArquitetoIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Bar', desc: 'Gestão dos ágapes.', icon: <Box component="img" src={BarIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Orador Virtual', desc: 'Gestão de leis e regulamentos da Ordem.', icon: <Box component="img" src={OradorIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <Box component="img" src={BibliotecaIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
                   { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Storefront sx={{ fontSize: 40, pointerEvents: 'none' }}/> },
-                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Campaign sx={{ fontSize: 40, pointerEvents: 'none' }}/> }
+                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Box component="img" src={ClassificadosIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Box component="img" src={ComunicacaoIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> }
                 ]).flat().map((modulo, idx) => (
                   <Paper 
                     key={idx} 
