@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps } from '@mui/material';
+import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { People, Security, AccountBalance, Extension, AutoAwesome, Restaurant, MenuBook, MusicNote, Storefront, Campaign, ArrowForwardIos, ArrowBackIosNew } from '@mui/icons-material';
 import sigmaLogo from '@/assets/images/logos/Sigma_Logo_PrataAzul_G.png';
@@ -20,7 +20,7 @@ import FeaturesBackground from '../components/FeaturesBackground';
 
 // Premium Glassmorphism style for cards
 const glassStyle = {
-  backgroundColor: 'rgba(19, 27, 41, 0.6)',
+  backgroundColor: 'rgba(19, 27, 41, 0.3)',
   backdropFilter: 'blur(20px)',
   border: '1px solid rgba(255, 255, 255, 0.08)',
   boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
@@ -64,6 +64,22 @@ const LandingPage: React.FC = () => {
   const [showSelo, setShowSelo] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  const [openContact, setOpenContact] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', message: '' });
+
+  const handleOpenContact = (plan: string) => {
+    setSelectedPlan(plan);
+    setOpenContact(true);
+  };
+
+  const handleContactSubmit = () => {
+    const subject = `Solicitação de Plano - ${selectedPlan}`;
+    const body = `Nome/Responsável: ${contactForm.name}\nEmail: ${contactForm.email}\nTelefone: ${contactForm.phone}\n\nMensagem/Detalhes:\n${contactForm.message}`;
+    window.location.href = `mailto:contato@e-sigma.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setOpenContact(false);
+  };
 
   const scrollCarousel = (direction: 'left' | 'right') => {
     setLastInteraction(Date.now());
@@ -337,13 +353,13 @@ const LandingPage: React.FC = () => {
                 }}
               >
                 {Array(15).fill([
-                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <Box component="img" src={ArquitetoIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Bar', desc: 'Gestão dos ágapes.', icon: <Box component="img" src={BarIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Orador Virtual', desc: 'Gestão de leis e regulamentos da Ordem.', icon: <Box component="img" src={OradorIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <Box component="img" src={BibliotecaIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Box component="img" src={ClassificadosIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Box component="img" src={ComunicacaoIcon} sx={{ width: 40, height: 40, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> }
+                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <Box component="img" src={ArquitetoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Bar', desc: 'Gestão dos ágapes.', icon: <Box component="img" src={BarIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Orador Virtual', desc: 'Gestão de leis e regulamentos da Ordem.', icon: <Box component="img" src={OradorIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <Box component="img" src={BibliotecaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Box component="img" src={ClassificadosIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
+                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Box component="img" src={ComunicacaoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> }
                 ]).flat().map((modulo, idx) => (
                   <Paper 
                     key={idx} 
@@ -352,7 +368,7 @@ const LandingPage: React.FC = () => {
                       flex: { xs: '0 0 100%', md: '0 0 calc((100% - 64px) / 3)' }, // 3 por vez no desktop (64px = 2 * gap de 32px)
                       scrollSnapAlign: 'start',
                       border: '1px solid rgba(0, 176, 255, 0.2)',
-                      background: 'linear-gradient(135deg, rgba(19, 27, 41, 0.6) 0%, rgba(0, 85, 213, 0.1) 100%)'
+                      background: 'linear-gradient(135deg, rgba(19, 27, 41, 0.3) 0%, rgba(0, 85, 213, 0.1) 100%)'
                     }}
                   >
                     <Box sx={{ color: '#00B0FF', mb: 2 }}>
@@ -474,38 +490,16 @@ const LandingPage: React.FC = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Suporte por E-mail</Typography>
                 </Box>
                 <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold', mb: 3 }}>
-                  R$ 99<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
+                  R$ 75<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
                 </Typography>
-                <Button variant="outlined" color="primary" fullWidth sx={{ borderRadius: '20px', py: 1 }} onClick={() => navigate('/login')}>
+                <Button variant="outlined" color="primary" fullWidth sx={{ borderRadius: '20px', py: 1 }} onClick={() => handleOpenContact('Básico')}>
                   Começar Agora
                 </Button>
               </Paper>
             </Grid>
 
-            {/* PLANO INTERMEDIÁRIO */}
-            <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
-              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                <Typography variant="h5" sx={{ color: '#E0E0E0', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
-                  INTERMEDIÁRIO
-                </Typography>
-                <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
-                  <Typography variant="body2" sx={{ color: '#fff', mb: 1.5 }}>• Todos os recursos do Básico</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Controle Financeiro</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Biblioteca de Rituais</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Fórum de Discussão</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Suporte Prioritário</Typography>
-                </Box>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold', mb: 3 }}>
-                  R$ 199<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
-                </Typography>
-                <Button variant="outlined" sx={{ color: '#E0E0E0', borderColor: '#E0E0E0', borderRadius: '20px', py: 1, '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }} fullWidth onClick={() => navigate('/login')}>
-                  Assinar
-                </Button>
-              </Paper>
-            </Grid>
-
-            {/* PLANO AVANÇADO (DESTAQUE) */}
-            <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
+            {/* PLANO INTERMEDIÁRIO (DESTAQUE) */}
+            <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 }, position: 'relative', zIndex: 1 }}>
               <Paper sx={{ 
                 ...glassStyle, 
                 p: 4, 
@@ -515,6 +509,28 @@ const LandingPage: React.FC = () => {
                 transform: { md: 'scale(1.05)' } 
               }}>
                 <Typography variant="h5" sx={{ color: '#FFD700', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
+                  INTERMEDIÁRIO
+                </Typography>
+                <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
+                  <Typography variant="body2" sx={{ color: '#fff', mb: 1.5 }}>• Todos os recursos do Básico</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Controle Financeiro</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Biblioteca de Rituais</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Fórum de Discussão</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Suporte Prioritário</Typography>
+                </Box>
+                <Typography variant="h4" sx={{ color: '#FFD700', fontWeight: 'bold', mb: 3 }}>
+                  R$ 90<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
+                </Typography>
+                <Button variant="contained" sx={{ bgcolor: '#FFD700', color: '#000', fontWeight: 'bold', borderRadius: '20px', py: 1, '&:hover': { bgcolor: '#F0C800' } }} fullWidth onClick={() => handleOpenContact('Intermediário')}>
+                  ASSINAR AGORA
+                </Button>
+              </Paper>
+            </Grid>
+
+            {/* PLANO AVANÇADO */}
+            <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
+              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                <Typography variant="h5" sx={{ color: '#E0E0E0', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   AVANÇADO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
@@ -525,11 +541,11 @@ const LandingPage: React.FC = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Integrações de API</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Gestão de Graus Superiores</Typography>
                 </Box>
-                <Typography variant="h4" sx={{ color: '#FFD700', fontWeight: 'bold', mb: 3 }}>
-                  R$ 299<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
+                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold', mb: 3 }}>
+                  R$ 120<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
                 </Typography>
-                <Button variant="contained" sx={{ bgcolor: '#FFD700', color: '#000', fontWeight: 'bold', borderRadius: '20px', py: 1, '&:hover': { bgcolor: '#F0C800' } }} fullWidth onClick={() => navigate('/login')}>
-                  TORNAR-SE AVANÇADO
+                <Button variant="outlined" sx={{ color: '#E0E0E0', borderColor: '#E0E0E0', borderRadius: '20px', py: 1, '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }} fullWidth onClick={() => handleOpenContact('Avançado')}>
+                  Assinar
                 </Button>
               </Paper>
             </Grid>
@@ -578,6 +594,25 @@ const LandingPage: React.FC = () => {
           zIndex: 999,
         }}
       />
+      {/* CONTACT DIALOG */}
+      <Dialog open={openContact} onClose={() => setOpenContact(false)} PaperProps={{ sx: { background: 'rgba(19, 27, 41, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0, 176, 255, 0.3)', color: '#fff', minWidth: { xs: '90vw', md: '500px' } } }}>
+        <DialogTitle sx={{ fontFamily: "'Tektur', sans-serif", color: '#00B0FF' }}>
+          Solicitar Plano {selectedPlan}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: '#E0E0E0', mb: 3, mt: 1 }}>
+            Preencha os dados abaixo e entraremos em contato para finalizar a assinatura.
+          </Typography>
+          <TextField fullWidth label="Nome do Responsável" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.name} onChange={(e) => setContactForm({...contactForm, name: e.target.value})} />
+          <TextField fullWidth label="Email de Contato" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.email} onChange={(e) => setContactForm({...contactForm, email: e.target.value})} />
+          <TextField fullWidth label="Telefone / WhatsApp" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.phone} onChange={(e) => setContactForm({...contactForm, phone: e.target.value})} />
+          <TextField fullWidth label="Mensagem Opcional" variant="outlined" multiline rows={3} sx={{ '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.message} onChange={(e) => setContactForm({...contactForm, message: e.target.value})} />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setOpenContact(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleContactSubmit} sx={{ bgcolor: '#00B0FF', '&:hover': { bgcolor: '#0081CB' } }}>Enviar Solicitação</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
