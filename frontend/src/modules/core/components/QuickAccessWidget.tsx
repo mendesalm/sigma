@@ -109,7 +109,7 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
         >
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, pb: 0.5, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <Typography variant="h6" sx={{ fontFamily: '"Playfair Display", serif', color: COLORS.gold, fontWeight: 600, fontSize: '1rem', lineHeight: 1 }}>
+                    <Typography variant="h6" sx={{ fontFamily: '"Inter", sans-serif', color: COLORS.gold, fontWeight: 600, fontSize: '1rem', lineHeight: 1 }}>
                         Acesso Rápido
                     </Typography>
                 </Box>

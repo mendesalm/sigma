@@ -180,11 +180,21 @@ const LodgeDashboardLayout: React.FC = () => {
   // Helper to generate logo URL
   const getLogoUrl = () => {
     if (!lodgeData) return undefined;
-    // Replica a lógica do backend (lodge_service.py) para gerar o nome da pasta
+
+    const sanitize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
     const safeNumber = lodgeData.lodge_number
       ? lodgeData.lodge_number.replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_')
       : `id_${lodgeData.id}`;
 
+    if (lodgeData.potencia) {
+      const safePotency = sanitize(lodgeData.potencia);
+      const safeSubpotency = lodgeData.subpotencia ? sanitize(lodgeData.subpotencia) : null;
+      const subpotencyPart = safeSubpotency ? `subpotencias/${safeSubpotency}/` : '';
+      return `${API_URL}/storage/potencias/${safePotency}/${subpotencyPart}lojas/loja${safeNumber}/assets/images/logo/logo_jpg.png`;
+    }
+
+    // Fallback for legacy paths
     return `${API_URL}/storage/lodges/loja_${safeNumber}/assets/images/logo/logo_jpg.png`;
   };
 

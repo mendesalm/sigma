@@ -75,25 +75,25 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
         # Member Birthday
         bday = get_next_occurrence(member.birth_date, today)
         if bday and today <= bday <= limit_date:
-            upcoming_birthdays.append({"name": member.full_name, "date": bday, "type": "aniversario"})
+            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": bday, "type": "aniversario"})
 
         # Wedding Anniversary
         wedding_day = get_next_occurrence(member.marriage_date, today)
         if wedding_day and today <= wedding_day <= limit_date:
-            upcoming_birthdays.append({"name": member.full_name, "date": wedding_day, "type": "casamento"})
+            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": wedding_day, "type": "casamento"})
 
         # Masonic Anniversaries
         initiation = get_next_occurrence(member.initiation_date, today)
         if initiation and today <= initiation <= limit_date:
-            upcoming_birthdays.append({"name": member.full_name, "date": initiation, "type": "iniciacao"})
+            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": initiation, "type": "iniciacao"})
 
         elevation = get_next_occurrence(member.elevation_date, today)
         if elevation and today <= elevation <= limit_date:
-            upcoming_birthdays.append({"name": member.full_name, "date": elevation, "type": "elevacao"})
+            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": elevation, "type": "elevacao"})
 
         exaltation = get_next_occurrence(member.exaltation_date, today)
         if exaltation and today <= exaltation <= limit_date:
-            upcoming_birthdays.append({"name": member.full_name, "date": exaltation, "type": "exaltacao"})
+            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": exaltation, "type": "exaltacao"})
 
         # Family Birthdays
         for fm in member.family_members:
@@ -350,7 +350,7 @@ def get_calendar_events(
                 calendar_events.append(
                     {
                         "date": day,
-                        "title": f"Aniversário ({m.full_name})",
+                        "title": f"Ir. {m.full_name}",
                         "type": "aniversario",
                         "full_date": event_date,
                     }
@@ -360,7 +360,7 @@ def get_calendar_events(
                     calendar_events.append(
                         {
                             "date": 28,
-                            "title": f"Aniversário ({m.full_name})",
+                            "title": f"Ir. {m.full_name}",
                             "type": "aniversario",
                             "full_date": date(year, month, 28),
                         }
@@ -372,14 +372,14 @@ def get_calendar_events(
             try:
                 event_date = date(year, month, day)
                 calendar_events.append(
-                    {"date": day, "title": f"Casamento ({m.full_name})", "type": "casamento", "full_date": event_date}
+                    {"date": day, "title": f"Ir. {m.full_name}", "type": "casamento", "full_date": event_date}
                 )
             except ValueError:
                 if month == 2 and day == 29:
                     calendar_events.append(
                         {
                             "date": 28,
-                            "title": f"Casamento ({m.full_name})",
+                            "title": f"Ir. {m.full_name}",
                             "type": "casamento",
                             "full_date": date(year, month, 28),
                         }
@@ -390,7 +390,7 @@ def get_calendar_events(
             calendar_events.append(
                 {
                     "date": m.initiation_date.day,
-                    "title": f"Iniciação de {m.full_name}",
+                    "title": f"Ir. {m.full_name}",
                     "type": "iniciacao",  # Frontend can group this under 'maconico'
                     "full_date": date(year, month, m.initiation_date.day),
                 }
@@ -400,7 +400,7 @@ def get_calendar_events(
             calendar_events.append(
                 {
                     "date": m.elevation_date.day,
-                    "title": f"Elevação de {m.full_name}",
+                    "title": f"Ir. {m.full_name}",
                     "type": "elevacao",  # Frontend can group this under 'maconico'
                     "full_date": date(year, month, m.elevation_date.day),
                 }
@@ -410,7 +410,7 @@ def get_calendar_events(
             calendar_events.append(
                 {
                     "date": m.exaltation_date.day,
-                    "title": f"Exaltação de {m.full_name}",
+                    "title": f"Ir. {m.full_name}",
                     "type": "exaltacao",  # Frontend can group this under 'maconico'
                     "full_date": date(year, month, m.exaltation_date.day),
                 }
@@ -428,7 +428,7 @@ def get_calendar_events(
                 calendar_events.append(
                     {
                         "date": fm.birth_date.day,
-                        "title": f"Aniversário ({fm.full_name}, {rel_type} do Ir. {m.full_name})",
+                        "title": f"{fm.full_name} ({rel_type} do Ir. {m.full_name})",
                         "type": "aniversario_familiar",
                         "full_date": date(year, month, fm.birth_date.day),
                     }

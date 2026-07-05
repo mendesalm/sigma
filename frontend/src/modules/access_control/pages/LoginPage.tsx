@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import logoSigma from "../../../assets/images/SigmaLogo.png";
+import logoSigma from "../../../assets/logos/SigmaLogo.png";
 import FirstAccessWizard from '../components/FirstAccessWizard';
 import { motion } from 'framer-motion';
 

@@ -12,7 +12,7 @@ import {
   MenuItem,
   Link
 } from '@mui/material';
-import logoSigma from "../../../assets/images/SigmaLogo.png";
+import logoSigma from "../../../assets/logos/SigmaLogo.png";
 import api from '@/shared/services/api';
 import { motion } from 'framer-motion';
 
