@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 import { getDashboardStats, getCalendarEvents, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '@/modules/core/services/dashboardService';
 import MinhaLojaWidget from '@/modules/core/components/MinhaLojaWidget';
-import QuickAccessWidget from '@/modules/core/components/QuickAccessWidget';
+
 import LodgeMembersWidget from '@/modules/core/components/LodgeMembersWidget';
 import LodgeCommemorativeEventsWidget from '@/modules/core/components/LodgeCommemorativeEventsWidget';
 import LodgeNoticesWidget from '@/modules/core/components/LodgeNoticesWidget';
@@ -341,12 +341,7 @@ const LodgeDashboard: React.FC = () => {
                         onNoticeClick={handleNoticeClick}
                     />
 
-                    <Box sx={{ flexShrink: 0 }}>
-                        <QuickAccessWidget
-                            onOpenClassifieds={handleOpenClassifiedsModal}
-                            onOpenDiningScale={() => alert("Modal da Escala do Ágape pronto para ser implementado.")}
-                        />
-                    </Box>
+
                 </Grid>
             </Grid>
 

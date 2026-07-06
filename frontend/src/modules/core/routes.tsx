@@ -14,6 +14,8 @@ import AdministrativeProcessesPage from '@/modules/core/pages/AdministrativeProc
 import ObedienceDashboardPage from '@/modules/core/pages/ObedienceDashboardPage';
 import CommitteesPage from '@/modules/core/pages/Committees/CommitteesPage';
 import ImportTemplates from '@/modules/core/pages/ImportTemplates';
+import ObreiroPanelPage from '@/modules/core/pages/ObreiroPanelPage';
+import AdminPanelPage from '@/modules/core/pages/AdminPanelPage';
 
 
 export const corePublicRoutes: RouteObject[] = [
@@ -23,6 +25,8 @@ export const corePublicRoutes: RouteObject[] = [
 
 export const coreLodgeDashboardRoutes: RouteObject[] = [
   { index: true, element: <LodgeDashboard /> },
+  { path: 'obreiro', element: <ObreiroPanelPage /> },
+  { path: 'admin', element: <AdminPanelPage /> },
   { path: 'chanceler/comissoes', element: <CommitteesPage /> },
 ];
 

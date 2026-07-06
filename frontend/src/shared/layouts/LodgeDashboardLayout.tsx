@@ -54,93 +54,29 @@ const HEADER_HEIGHT = 70; // Slightly taller for better logo fit
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// Define menu structure - Nova estrutura hierárquica
+// Define menu structure - Nova estrutura hierárquica (Grids)
 const MENU_CONFIG = [
   {
     id: 'home',
     label: 'Dashboard',
     icon: <img src={HomeIcon} alt="Dashboard" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard',
-    subItems: [] // HOME não possui menu secundário
+    subItems: []
   },
   {
     id: 'obreiro',
-    label: 'Obreiros',
-    icon: <img src={ObreiroIcon} alt="Obreiros" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    label: 'Painel do Obreiro',
+    icon: <img src={ObreiroIcon} alt="Painel do Obreiro" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
     path: '/dashboard/lodge-dashboard/obreiro',
-    subItems: [
-      { text: 'Meu Cadastro', path: '/dashboard/lodge-dashboard/obreiro/meu-cadastro', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Minhas Presenças', path: '/dashboard/lodge-dashboard/obreiro/minhas-presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Minhas Visitações', path: '/dashboard/lodge-dashboard/obreiro/minhas-visitacoes', icon: <VisitationIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Publicações', path: '/dashboard/lodge-dashboard/obreiro/minhas-publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Meus Anúncios', path: '/dashboard/lodge-dashboard/obreiro/meus-anuncios', icon: <BellIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Meus Empréstimos', path: '/dashboard/lodge-dashboard/obreiro/meus-emprestimos', icon: <BooksIcon sx={{ fontSize: 20 }} /> },
-    ]
+    subItems: []
   },
   {
-    id: 'secretario',
-    label: 'Secretaria',
-    icon: <img src={SecretariaIcon} alt="Secretaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/lodge-dashboard/secretario',
-    subItems: [
-      // 1 - Gestão de Irmãos
-      { type: 'header', text: 'Irmãos' },
-      { text: 'Cadastro de Membros', path: '/dashboard/lodge-dashboard/secretario/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Relatórios do Quadro', path: '/dashboard/lodge-dashboard/secretario/relatorios', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
-
-      // 2 - Gestão de Sessões Maçonicas
-      { type: 'header', text: 'Sessões' },
-      { text: 'Agenda', path: '/dashboard/lodge-dashboard/secretario/sessoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Registro de Presenças', path: '/dashboard/lodge-dashboard/secretario/presencas', icon: <AttendanceBookIcon sx={{ fontSize: 20 }} /> },
-
-      // 3 - Comunicações
-      { type: 'header', text: 'Comunicações' },
-      { text: 'Publicações', path: '/dashboard/lodge-dashboard/secretario/publicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Caixa de Entrada', path: '/dashboard/lodge-dashboard/secretario/comunicacoes/inbox', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Enviados', path: '/dashboard/lodge-dashboard/secretario/comunicacoes/sent', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-
-      // 4 - Gestão de Processos
-      { type: 'header', text: 'Processos' },
-      { text: 'Admissão', path: '/dashboard/lodge-dashboard/secretario/processos/admissao', icon: <ChecklistIcon sx={{ fontSize: 20 }} />, disabled: true },
-
-      // 5 - Gestão de Exercícios Maçônicos
-      { type: 'header', text: 'Exercícios Maçônicos' },
-      { text: 'Gestão de Diretoria', path: '/dashboard/lodge-dashboard/secretario/exercicio/diretoria', icon: <SquareCompassIcon sx={{ fontSize: 20 }} /> },
-    ]
-  },
-  {
-    id: 'chanceler',
-    label: 'Chancelaria',
-    icon: <img src={ChancelariaIcon} alt="Chancelaria" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/lodge-dashboard/chanceler',
-    subItems: [
-      { text: 'Cadastro', path: '/dashboard/lodge-dashboard/chanceler/cadastro', icon: <QuillBookIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Presenças', path: '/dashboard/lodge-dashboard/chanceler/presencas', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Visitações', path: '/dashboard/lodge-dashboard/chanceler/visitacoes', icon: <VisitationIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Visitantes', path: '/dashboard/lodge-dashboard/chanceler/visitantes', icon: <PersonIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Gestão de Comissões', path: '/dashboard/lodge-dashboard/chanceler/comissoes', icon: <ChecklistIcon sx={{ fontSize: 20 }} /> },
-    ]
-  },
-  {
-    id: 'webmaster',
-    label: 'Webmaster',
-    icon: <img src={WebmasterIcon} alt="Webmaster" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/lodge-dashboard/webmaster',
-    subItems: [
-      { text: 'Minha Loja', path: '/dashboard/lodge-dashboard/webmaster/minha-loja', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Administrações', path: '/dashboard/lodge-dashboard/webmaster/administracoes', icon: <TempleColumnsIcon sx={{ fontSize: 20 }} /> },
-      { text: 'Comunicações (Ofícios)', path: '/dashboard/lodge-dashboard/webmaster/comunicacoes', icon: <ScrollIcon sx={{ fontSize: 20 }} /> },
-    ]
-  },
-  {
-    id: 'banquetes',
-    label: 'M. de Banquetes',
-    icon: <img src={TesourariaIcon} alt="Banquetes" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
-    path: '/dashboard/lodge-dashboard/banquetes',
-    subItems: [
-      { text: 'PDV Bar (Cashless)', path: '/dashboard/lodge-dashboard/banquetes/pdv', icon: <StoreIcon sx={{ fontSize: 20 }} /> },
-    ]
-  },
+    id: 'admin',
+    label: 'Painel Admin',
+    icon: <img src={SecretariaIcon} alt="Painel Administrativo" style={{ width: 35, height: 35, objectFit: 'contain' }} />,
+    path: '/dashboard/lodge-dashboard/admin',
+    subItems: []
+  }
 ];
 
 import api from '@/shared/services/api';
@@ -204,65 +140,30 @@ const LodgeDashboardLayout: React.FC = () => {
   const filteredMenu = React.useMemo(() => {
     if (!user) return [];
 
-    const availableModules = lodgeData?.available_modules || {};
-
-    const isModuleEnabled = (moduleName: string) => {
-      return availableModules[moduleName] !== false; // assume true if undefined
-    };
-
-    const mappedMenu = MENU_CONFIG.map(item => {
-      // Create a copy of the item so we can filter subitems
-      const copy = { ...item };
-      
-      if (item.subItems) {
-        copy.subItems = item.subItems.filter(subItem => {
-          if (subItem.text === 'Registro de Presenças' || subItem.text === 'Minhas Presenças' || subItem.text === 'Presenças') {
-            return isModuleEnabled('session_attendance');
-          }
-          if (subItem.text === 'Publicações' || subItem.text === 'Minhas Publicações' || subItem.text === 'Pranchas') {
-            return isModuleEnabled('document_emission');
-          }
-          if (subItem.text === 'Meus Empréstimos') {
-             return isModuleEnabled('library');
-          }
-          if (subItem.text === 'Agenda') {
-             return isModuleEnabled('session_management');
-          }
-          return true;
-        });
-      }
-      return copy;
-    });
-
-    return mappedMenu.filter(item => {
-      // Module filtering at category level
-      if (item.id === 'chanceler' && !isModuleEnabled('chancellery')) return false;
-
-      // Always show Home and Obreiro
+    return MENU_CONFIG.filter(item => {
       if (item.id === 'home' || item.id === 'obreiro') return true;
 
-      // Webmaster specific
-      if (item.id === 'webmaster') {
-        return user.user_type === 'webmaster' || user.user_type === 'super_admin';
+      if (item.id === 'admin') {
+        if (user.user_type === 'super_admin' || user.user_type === 'webmaster') return true;
+        const adminRoles = [
+          'Venerável Mestre',
+          'Secretário',
+          'Secretário Adjunto',
+          'Chanceler',
+          'Chanceler Adjunto',
+          'Tesoureiro',
+          'Tesoureiro Adjunto',
+          'Arquiteto',
+          'Arquiteto Adjunto',
+          'Bibliotecário',
+          'Bibliotecário Adjunto',
+          'Mestre de Harmonia',
+          'Mestre de Harmonia Adjunto',
+          'Mestre de Banquetes',
+          'Mestre de Banquetes Adjunto'
+        ];
+        return adminRoles.includes(user.active_role_name);
       }
-
-      // If user is super_admin, they see everything
-      if (user.user_type === 'super_admin') return true;
-
-      // If user is webmaster, they see everything
-      if (user.user_type === 'webmaster') return true;
-
-      // Check specific roles for members
-      if (item.id === 'secretario') {
-        return ['Secretário', 'Venerável Mestre', 'Orador'].includes(user.active_role_name);
-      }
-      if (item.id === 'chanceler') {
-        return user.active_role_name === 'Chanceler';
-      }
-      if (item.id === 'banquetes') {
-        return ['Mestre de Banquetes', 'Venerável Mestre'].includes(user.active_role_name);
-      }
-
       return false;
     });
   }, [user, lodgeData]);
@@ -271,46 +172,27 @@ const LodgeDashboardLayout: React.FC = () => {
   useEffect(() => {
     const currentPath = location.pathname;
 
-    // If exact match for dashboard home, no active category
     if (currentPath === '/dashboard/lodge-dashboard' || currentPath === '/dashboard/lodge-dashboard/') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveCategory(null);
+      setActiveCategory('home');
       return;
     }
 
-    // Find category that matches the current path
-    let found = false;
-    for (const category of filteredMenu) {
-      // Skip HOME menu (no subitems)
-      if (category.subItems.length === 0) continue;
-
-      // Check if we're in any of the category's sub-routes
-      // Example: /dashboard/lodge-dashboard/obreiro/meu-cadastro should match 'obreiro'
-      const categoryBasePath = category.path;
-
-      if (currentPath.startsWith(categoryBasePath)) {
-        setActiveCategory(category.id);
-        found = true;
-        break;
-      }
+    if (currentPath.startsWith('/dashboard/lodge-dashboard/obreiro')) {
+      setActiveCategory('obreiro');
+      return;
     }
 
-    if (!found) {
-      setActiveCategory(null);
+    if (currentPath.startsWith('/dashboard/lodge-dashboard/admin')) {
+      setActiveCategory('admin');
+      return;
     }
-  }, [location.pathname, filteredMenu]);
+
+    setActiveCategory(null);
+  }, [location.pathname]);
 
   const handleMainIconClick = (event: React.MouseEvent<HTMLElement>, category: typeof MENU_CONFIG[0]) => {
-    if (category.subItems.length === 0) {
-      setActiveCategory(null);
-      setMenuAnchorEl(null);
-      setHoveredMenuId(null);
-      navigate(category.path);
-      return;
-    }
-
-    setMenuAnchorEl(event.currentTarget);
-    setHoveredMenuId(category.id);
+    setActiveCategory(category.id);
+    navigate(category.path);
   };
 
   const renderSidebarContent = () => {
@@ -373,63 +255,7 @@ const LodgeDashboardLayout: React.FC = () => {
                   )}
                 </ListItemButton>
 
-                {/* Sub-menu Flyout for collapsed mode */}
-                <Menu
-                  anchorEl={menuAnchorEl}
-                  open={Boolean(menuAnchorEl) && hoveredMenuId === item.id}
-                  onClose={() => { setMenuAnchorEl(null); setHoveredMenuId(null); }}
-                  anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'center', horizontal: 'left' }}
-                  sx={{ '& .MuiPaper-root': { bgcolor: '#0B0F19', color: '#fff', border: `1px solid rgba(255,255,255,0.1)`, ml: 2, minWidth: 240, boxShadow: `0 8px 32px 0 rgba(0,0,0,0.6)` } }}
-                >
-                  <Box sx={{ px: 2, pt: 1, pb: 2, borderBottom: '1px solid rgba(255,255,255,0.05)', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>
-                      {item.label}
-                    </Typography>
-                  </Box>
-
-                  {item.subItems.map((sub: any, idx: number) => {
-                    if (sub.type === 'header') {
-                      return (
-                        <ListSubheader
-                          key={idx}
-                          disableSticky
-                          sx={{ bgcolor: 'transparent', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, lineHeight: '24px', mt: 1, mb: 0.5, px: 2 }}
-                        >
-                          {sub.text}
-                        </ListSubheader>
-                      );
-                    }
-
-                    const isDisabled = sub.disabled;
-                    const isActiveLink = location.pathname === sub.path;
-
-                    return (
-                      <MenuItem
-                        key={idx}
-                        disabled={isDisabled}
-                        onClick={() => {
-                          if (!isDisabled && sub.path) {
-                            navigate(sub.path);
-                            setActiveCategory(item.id);
-                            setMenuAnchorEl(null);
-                            setHoveredMenuId(null);
-                          }
-                        }}
-                        sx={{
-                          mb: 0.5, mx: 1, borderRadius: 1.5, py: 1,
-                          bgcolor: isActiveLink ? alpha(theme.palette.primary.main, 0.15) : 'transparent',
-                          color: isActiveLink ? theme.palette.primary.main : 'rgba(255,255,255,0.7)',
-                          display: 'flex', gap: 1.5,
-                          '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1), color: '#fff' }
-                        }}
-                      >
-                        {sub.icon && <Box sx={{ display: 'flex', color: 'inherit' }}>{sub.icon}</Box>}
-                        <ListItemText primary={sub.text} primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: isActiveLink ? 600 : 400 }} />
-                      </MenuItem>
-                    );
-                  })}
-                </Menu>
+                {/* No sub-menus in the sidebar anymore */}
               </React.Fragment>
             );
           })}
