@@ -18,7 +18,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
 
-from app.shared.base_model import BaseModel, DegreeEnum
+from app.shared.base_model import BaseModel
 
 
 class SessionTypeEnum(enum.StrEnum):
@@ -113,7 +113,7 @@ class MasonicSession(BaseModel):
 
     type = Column(SQLAlchemyEnum(SessionTypeEnum, name="session_type_enum"), nullable=True)
     subtype = Column(SQLAlchemyEnum(SessionSubtypeEnum, name="session_subtype_enum"), nullable=True)
-    degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum"), nullable=False, default=DegreeEnum.APPRENTICE)
+    degree = Column(Integer, nullable=False, default=1, comment="Grau da Sessão (1-33)")
 
     status = Column(
         SQLAlchemyEnum(
@@ -180,10 +180,8 @@ class Visitor(BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String(255), nullable=False)
     cim = Column(String(50), unique=True, nullable=False, index=True)
-    degree = Column(
-        SQLAlchemyEnum(DegreeEnum, name="visitor_degree_enum", values_callable=lambda x: [e.value for e in x]),
-        nullable=False,
-    )
+    degree = Column(Integer, nullable=False, default=1)
+    is_installed = Column(Boolean, nullable=False, default=False)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
     cpf = Column(String(14), unique=True, nullable=True)

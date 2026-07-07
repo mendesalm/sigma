@@ -16,7 +16,7 @@ import logoSigma from "../../../assets/logos/SigmaLogo.png";
 import api from '@/shared/services/api';
 import { motion } from 'framer-motion';
 
-const AnimatedBox = motion(Box);
+const AnimatedBox = motion.create(Box);
 
 interface Obedience {
   id: number;

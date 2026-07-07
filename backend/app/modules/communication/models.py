@@ -13,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy import Enum as SQLAlchemyEnum
 
-from app.shared.base_model import BaseModel, DegreeEnum
+from app.shared.base_model import BaseModel
 
 
 class Calendar(BaseModel):
@@ -100,7 +100,7 @@ class EntityMessage(BaseModel):
     subject = Column(String(255), nullable=False)
     body = Column(Text, nullable=False)
     status = Column(String(50), default="UNREAD") # UNREAD, READ, ARCHIVED
-    minimum_degree = Column(SQLAlchemyEnum(DegreeEnum, name="degree_enum", create_type=False), nullable=False, default=DegreeEnum.APPRENTICE)
+    minimum_degree = Column(Integer, nullable=False, default=1, comment="Grau mínimo (1-33)")
 
     sender_obedience = relationship("Obedience", foreign_keys=[sender_obedience_id])
     sender_lodge = relationship("Lodge", foreign_keys=[sender_lodge_id])

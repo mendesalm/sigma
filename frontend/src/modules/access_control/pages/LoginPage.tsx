@@ -20,7 +20,7 @@ import logoSigma from "../../../assets/logos/SigmaLogo.png";
 import FirstAccessWizard from '../components/FirstAccessWizard';
 import { motion } from 'framer-motion';
 
-const AnimatedBox = motion(Box);
+const AnimatedBox = motion.create(Box);
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -34,12 +34,12 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const tenantPotencia = localStorage.getItem('tenant_potencia');
-    if (!tenantPotencia) {
-      navigate('/onboarding');
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const tenantPotencia = localStorage.getItem('tenant_potencia');
+  //   if (!tenantPotencia) {
+  //     navigate('/onboarding');
+  //   }
+  // }, [navigate]);
 
   const handleResetPotencia = () => {
     if (window.confirm("Atenção: Redefinir a Potência apagará sua escolha atual e o levá-lo-á de volta à tela inicial. Deseja continuar?")) {

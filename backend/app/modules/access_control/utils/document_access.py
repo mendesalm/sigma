@@ -1,13 +1,3 @@
-from app.shared.base_model import DegreeEnum
-
-# Map degrees to integer hierarchy for comparison
-DEGREE_LEVELS = {
-    DegreeEnum.APPRENTICE: 1,
-    DegreeEnum.FELLOW: 2,
-    DegreeEnum.MASTER: 3,
-    DegreeEnum.INSTALLED_MASTER: 4,
-}
-
 GLOBAL_ACCESS_ROLES = [
     "Venerável Mestre",
     "Secretário",
@@ -18,7 +8,7 @@ GLOBAL_ACCESS_ROLES = [
     "2º Vigilante",
 ]
 
-def check_document_access(user_payload: dict, required_degree: str | DegreeEnum) -> bool:
+def check_document_access(user_payload: dict, required_degree: int | str) -> bool:
     """
     Check if the user has permission to access a document restricted by degree.
     """
@@ -42,14 +32,10 @@ def check_document_access(user_payload: dict, required_degree: str | DegreeEnum)
             return False # Assume lowest access if degree is somehow missing
         
         try:
-            # Handle string conversions if necessary
-            user_degree = DegreeEnum(user_degree_str)
-            req_degree = DegreeEnum(required_degree) if isinstance(required_degree, str) else required_degree
+            user_degree = int(user_degree_str)
+            req_degree = int(required_degree)
             
-            user_level = DEGREE_LEVELS.get(user_degree, 1)
-            req_level = DEGREE_LEVELS.get(req_degree, 1)
-            
-            return user_level >= req_level
+            return user_degree >= req_degree
         except ValueError:
             return False
 

@@ -45,8 +45,17 @@ class ReportService:
             )
             role_name = active_role_history.role.name if active_role_history else "Membro"
 
-            # Formatar Grau (Enum ou String)
-            degree_val = mem.degree.value if hasattr(mem.degree, "value") else str(mem.degree)
+            # Formatar Grau 
+            degree_val = "-"
+            if mem.degree:
+                if mem.degree == 1:
+                    degree_val = "Aprendiz"
+                elif mem.degree == 2:
+                    degree_val = "Companheiro"
+                elif mem.degree == 3:
+                    degree_val = "Mestre Instalado" if mem.is_installed else "Mestre"
+                else:
+                    degree_val = f"Grau {mem.degree}"
 
             member_data = {
                 "cim": mem.cim or "-",

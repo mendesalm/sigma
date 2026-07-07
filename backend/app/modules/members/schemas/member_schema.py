@@ -8,13 +8,6 @@ from app.modules.members.schemas.family_member_schema import FamilyMemberCreate,
 from app.modules.members.schemas.role_history_schema import RoleHistoryResponse
 
 
-# --- Enums ---
-class DegreeEnum(enum.StrEnum):
-    APPRENTICE = "Aprendiz"
-    FELLOW = "Companheiro"
-    MASTER = "Mestre"
-    INSTALLED_MASTER = "Mestre Instalado"
-
 
 class RegistrationStatusEnum(enum.StrEnum):
     PENDING = "Pendente"
@@ -88,17 +81,15 @@ class MemberBase(BaseModel):
     # Masonic Data
     cim: str | None = Field(None, max_length=50, description="CIM (Cadastro Individual Maçônico)")
     status: str | None = Field("Active", max_length=50)
-    degree: DegreeEnum | None = None
+    degree: int | None = Field(None, ge=1, le=33, description="Grau Maçônico (1-33)")
+    is_installed: bool | None = Field(False, description="Flag Mestre Instalado")
     initiation_date: date | None = Field(None, description="Data de iniciação")
     elevation_date: date | None = Field(None, description="Data de elevação")
     exaltation_date: date | None = Field(None, description="Data de exaltação")
     installation_date: date | None = Field(None, description="Data de instalação")
     affiliation_date: date | None = Field(None, description="Data de filiação")
-    regularization_date: date | None = None
-    philosophical_degree: str | None = Field(None, max_length=100)
-
-    # System Data
-    registration_status: RegistrationStatusEnum = RegistrationStatusEnum.PENDING
+    regularization_date: date | None = Field(None, description="Data de regularização")
+    registration_status: RegistrationStatusEnum = Field(RegistrationStatusEnum.PENDING)
 
     @field_validator("full_name")
     @classmethod
@@ -344,15 +335,15 @@ class MemberUpdate(BaseModel):
     workplace: str | None = Field(None, max_length=255)
     profile_picture_path: str | None = Field(None, max_length=255)
     cim: str | None = Field(None, max_length=50)
-    status: str | None = Field(None, max_length=50)
-    degree: DegreeEnum | None = None
+    status: MemberStatusEnum | None = None
+    degree: int | None = Field(None, ge=1, le=33)
+    is_installed: bool | None = None
     initiation_date: date | None = None
     elevation_date: date | None = None
     exaltation_date: date | None = None
     installation_date: date | None = None
     affiliation_date: date | None = None
     regularization_date: date | None = None
-    philosophical_degree: str | None = Field(None, max_length=100)
     registration_status: RegistrationStatusEnum | None = None
     password: str | None = Field(None, min_length=8)
 
@@ -375,9 +366,10 @@ class MemberListResponse(BaseModel):
     id: int = Field(..., description="ID interno")
     full_name: str = Field(..., description="Nome do irmão")
     email: str = Field(..., description="E-mail")
-    cim: str | None = Field(None, description="CIM")
-    degree: DegreeEnum | None = Field(None, description="Grau do irmão")
-    status: str | None = Field(None, description="Status do irmão")
+    status: MemberStatusEnum = Field(..., description="Status do irmão")
+    degree: int | None = Field(None, description="Grau do irmão (1-33)", ge=1, le=33)
+    is_installed: bool | None = Field(None, description="Flag Mestre Instalado")
+    initiation_date: date | None = Field(None, description="Data de iniciação")
     registration_status: RegistrationStatusEnum = Field(..., description="Status do cadastro")
     profile_picture_path: str | None = Field(None, description="Caminho foto perfil")
     phone: str | None = Field(None, description="Telefone")

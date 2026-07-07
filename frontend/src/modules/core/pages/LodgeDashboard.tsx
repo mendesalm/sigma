@@ -29,7 +29,8 @@ import {
     Cake as CakeIcon,
     Gavel as GavelIcon,
     AllInclusive as WeddingIcon,
-    Architecture as ArchitectureIcon
+    Architecture as ArchitectureIcon,
+    ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { getDashboardStats, getCalendarEvents, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '@/modules/core/services/dashboardService';
 import MinhaLojaWidget from '@/modules/core/components/MinhaLojaWidget';
@@ -303,6 +304,18 @@ const LodgeDashboard: React.FC = () => {
             p: 2,
             overflow: { xs: 'visible', md: 'hidden' }
         }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Button 
+                    startIcon={<ArrowBackIcon />} 
+                    onClick={() => navigate(-1)}
+                    sx={{ 
+                        color: 'rgba(255,255,255,0.7)',
+                        '&:hover': { color: '#fff', backgroundColor: 'rgba(255,255,255,0.1)' }
+                    }}
+                >
+                    Voltar
+                </Button>
+            </Box>
             <Grid container spacing={1.5} columns={10} sx={{ flexGrow: 1, height: '100%' }}>
                 {/* Left Column - Minha Loja, Membros, Datas Comemorativas */}
                 <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>

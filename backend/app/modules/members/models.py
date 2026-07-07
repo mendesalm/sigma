@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
 
-from app.shared.base_model import BaseModel, DegreeEnum
+from app.shared.base_model import BaseModel
 
 
 class RelationshipTypeEnum(enum.StrEnum):
@@ -72,16 +72,14 @@ class Member(BaseModel):
     profile_picture_path = Column(String(255), nullable=True)
     cim = Column(String(50), unique=False, nullable=True, index=True)
     status = Column(String(50), nullable=True, default="Active")
-    degree = Column(
-        SQLAlchemyEnum(DegreeEnum, name="degree_enum", values_callable=lambda x: [e.value for e in x]), nullable=True
-    )
+    degree = Column(Integer, nullable=False, default=1, comment="Grau Maçônico (1 a 33)")
+    is_installed = Column(Boolean, nullable=False, default=False, comment="Flag de Mestre Instalado")
     initiation_date = Column(Date, nullable=True)
     elevation_date = Column(Date, nullable=True)
     exaltation_date = Column(Date, nullable=True)
     installation_date = Column(Date, nullable=True)
     affiliation_date = Column(Date, nullable=True)
     regularization_date = Column(Date, nullable=True)
-    philosophical_degree = Column(String(100), nullable=True)
     registration_status = Column(
         SQLAlchemyEnum(
             RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]

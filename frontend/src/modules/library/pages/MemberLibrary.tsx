@@ -3,6 +3,7 @@ import {
   Box, Typography, Grid, Card, CardContent, CardMedia, Button, Chip, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Paper
 } from '@mui/material';
 import { libraryService, LibraryItem, Waitlist, Loan } from '@/modules/library/services/libraryService';
+import { formatDegree } from '@/shared/utils/formatters';
 import { useSnackbar } from 'notistack';
 
 export const MemberLibrary: React.FC = () => {
@@ -145,7 +146,7 @@ export const MemberLibrary: React.FC = () => {
         {catalog.map((entry) => {
           const availableItems = entry.items.filter(i => i.status === 'Disponível');
           const hasAvailable = availableItems.length > 0;
-          const grauLabel = entry.book.required_degree === 1 ? 'Aprendiz' : entry.book.required_degree === 2 ? 'Companheiro' : 'Mestre';
+          const grauLabel = formatDegree(entry.book.required_degree);
 
           return (
             <Grid

@@ -42,6 +42,7 @@ import {
   Fingerprint as FingerprintIcon
 } from '@mui/icons-material';
 import api from '@/shared/services/api';
+import { formatDegree } from '@/shared/utils/formatters';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import { MemberResponse, RelationshipTypeEnum } from '@/types';
@@ -650,7 +651,7 @@ const MeuCadastro: React.FC = () => {
               <CardContent sx={{ p: 4 }}>
                 <SectionTitle title="Registro" icon={FingerprintIcon} />
                 <TextField label="CIM" value={formState.cim} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                <TextField label="Grau Atual" value={formState.degree} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
+                <TextField label="Grau Atual" value={formatDegree(formState.degree, formState.is_installed)} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
                 <TextField
                   label="Filiação"
                   value={(() => {

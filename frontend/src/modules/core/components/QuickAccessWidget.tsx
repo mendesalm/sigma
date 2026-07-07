@@ -9,7 +9,8 @@ import {
     CardTravel, // for Visitações
     HowToReg,   // for Presenças
     Assignment, // for Solicitações
-    LocalLibrary // for Biblioteca
+    LocalLibrary, // for Biblioteca
+    FactCheck
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,7 +34,7 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
     // Define the actions array
     const actions = [
         {
-            icon: <EventAvailable fontSize="small" />,
+            icon: <FactCheck fontSize="small" />,
             label: 'Check-in Sessão',
             color: '#22c55e', // Greenish for presence
             onClick: () => {

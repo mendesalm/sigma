@@ -269,6 +269,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
             "email": lodge.email,
             "cnpj": lodge.cnpj,
             "id": lodge.id,
+            "logo_url": f"{lodge.logo_path}" if lodge.logo_path else None,
         }
 
     return {

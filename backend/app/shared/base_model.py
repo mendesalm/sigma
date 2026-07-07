@@ -22,8 +22,3 @@ class RiteEnum(enum.StrEnum):
     RER = "Rito Escocês Retificado"
 
 
-class DegreeEnum(enum.StrEnum):
-    APPRENTICE = "Aprendiz"
-    FELLOW = "Companheiro"
-    MASTER = "Mestre"
-    INSTALLED_MASTER = "Mestre Instalado"

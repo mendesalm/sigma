@@ -125,8 +125,12 @@ def validate_phone(phone: str) -> bool:
     Returns:
         True se o formato é válido, False caso contrário
     """
-    # Remove espaços, parênteses e hífens
-    clean_phone = re.sub(r"[\s\(\)-]", "", phone)
+    # Remove espaços, parênteses, hífens e o sinal de mais
+    clean_phone = re.sub(r"[\s\(\)\-\+]", "", phone)
+
+    # Se tiver 12 ou 13 dígitos e começar com 55 (código do Brasil), remove o 55 para validar
+    if len(clean_phone) in [12, 13] and clean_phone.startswith("55"):
+        clean_phone = clean_phone[2:]
 
     # Verifica se tem 10 (fixo) ou 11 (celular) dígitos
     if len(clean_phone) not in [10, 11]:

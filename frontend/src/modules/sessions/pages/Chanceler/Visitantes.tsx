@@ -13,9 +13,12 @@ import {
   MenuItem,
   Alert,
   CircularProgress,
-  Chip
+  Chip,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import { PersonAdd, Save, History as HistoryIcon } from '@mui/icons-material';
+import { formatDegree } from '@/shared/utils/formatters';
 import { getSessions, registerVisitorAttendance, getSessionAttendance } from '@/shared/services/api';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -40,7 +43,8 @@ const ChancelerVisitantes: React.FC = () => {
   const [formData, setFormData] = useState({
     full_name: '',
     cim: '',
-    degree: 'Mestre',
+    degree: 3,
+    is_installed: false,
     manual_lodge_name: '',
     manual_lodge_number: '',
     manual_lodge_obedience: '',
@@ -82,10 +86,6 @@ const ChancelerVisitantes: React.FC = () => {
   const fetchVisitors = async (sessionId: number) => {
       try {
           const response = await getSessionAttendance(sessionId);
-          // O backend retorna lista mista. Precisamos filtrar visitantes??
-          // O get_session_attendance retorna SessionAttendanceWithMemberResponse que tem 'member' ou 'visitor'.
-          // Precisamos ver a estrutura do response do backend em attendance_service.py
-          // O service retorna lista de SessionAttendance. O schema tem fields: member (MemberSchema) e visitor (VisitorSchema).
           
           if(response.data) {
               const visitors = response.data.filter((r: any) => r.visitor !== null);
@@ -118,7 +118,8 @@ const ChancelerVisitantes: React.FC = () => {
       setFormData({
         full_name: '',
         cim: '',
-        degree: 'Mestre',
+        degree: 3,
+        is_installed: false,
         manual_lodge_name: '',
         manual_lodge_number: '',
         manual_lodge_obedience: '',
@@ -169,11 +170,7 @@ const ChancelerVisitantes: React.FC = () => {
           </Card>
           <Grid container spacing={3}>
             {/* Formulário de Cadastro */}
-            <Grid
-                size={{
-                    xs: 12,
-                    md: 7
-                }}>
+            <Grid size={{ xs: 12, md: 7 }}>
                 <Card sx={{ bgcolor: '#1e293b', borderRadius: 2 }}>
                     <CardContent>
                         <Typography variant="h6" sx={{ color: '#fff', mb: 3 }}>Novo Registro de Visita</Typography>
@@ -183,10 +180,7 @@ const ChancelerVisitantes: React.FC = () => {
 
                         <form onSubmit={handleSubmit}>
                             <Grid container spacing={2}>
-                                <Grid
-                                    size={{
-                                        xs: 12
-                                    }}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Nome Completo do Irmão"
@@ -198,10 +192,7 @@ const ChancelerVisitantes: React.FC = () => {
                                         size="small"
                                     />
                                 </Grid>
-                                <Grid
-                                    size={{
-                                        xs: 6
-                                    }}>
+                                <Grid size={{ xs: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="CIM"
@@ -213,37 +204,38 @@ const ChancelerVisitantes: React.FC = () => {
                                         size="small"
                                     />
                                 </Grid>
-                                <Grid
-                                    size={{
-                                        xs: 6
-                                    }}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Grau</InputLabel>
-                                        <Select
-                                            name="degree"
-                                            value={formData.degree}
-                                            label="Grau"
-                                            onChange={handleChange}
-                                        >
-                                            <MenuItem value="Aprendiz">Aprendiz</MenuItem>
-                                            <MenuItem value="Companheiro">Companheiro</MenuItem>
-                                            <MenuItem value="Mestre">Mestre</MenuItem>
-                                            <MenuItem value="Mestre Instalado">Mestre Instalado</MenuItem>
-                                        </Select>
-                                    </FormControl>
+                                <Grid size={{ xs: 6 }}>
+                                    <TextField
+                                        fullWidth
+                                        label="Grau (1-33)"
+                                        name="degree"
+                                        type="number"
+                                        value={formData.degree}
+                                        onChange={handleChange}
+                                        required
+                                        size="small"
+                                        inputProps={{ min: 1, max: 33 }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 6 }}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={formData.is_installed}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, is_installed: e.target.checked }))}
+                                                disabled={formData.degree < 3}
+                                            />
+                                        }
+                                        label="Mestre Instalado"
+                                        sx={{ color: '#fff' }}
+                                    />
                                 </Grid>
                                 
-                                <Grid
-                                    size={{
-                                        xs: 12
-                                    }}>
+                                <Grid size={{ xs: 12 }}>
                                     <Typography variant="caption" sx={{ color: '#aaa', mt: 2, display: 'block' }}>Dados da Loja de Origem</Typography>
                                 </Grid>
                                 
-                                <Grid
-                                    size={{
-                                        xs: 8
-                                    }}>
+                                <Grid size={{ xs: 8 }}>
                                     <TextField
                                         fullWidth
                                         label="Nome da Loja"
@@ -256,10 +248,7 @@ const ChancelerVisitantes: React.FC = () => {
                                         placeholder="Ex: Estrela do Norte"
                                     />
                                 </Grid>
-                                <Grid
-                                    size={{
-                                        xs: 4
-                                    }}>
+                                <Grid size={{ xs: 4 }}>
                                     <TextField
                                         fullWidth
                                         label="Número"
@@ -271,10 +260,7 @@ const ChancelerVisitantes: React.FC = () => {
                                         size="small"
                                     />
                                 </Grid>
-                                <Grid
-                                    size={{
-                                        xs: 12
-                                    }}>
+                                <Grid size={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Obediência/Potência"
@@ -287,10 +273,7 @@ const ChancelerVisitantes: React.FC = () => {
                                     />
                                 </Grid>
                                 
-                                <Grid
-                                    size={{
-                                        xs: 12
-                                    }}>
+                                <Grid size={{ xs: 12 }}>
                                     <Button 
                                         type="submit" 
                                         variant="contained" 
@@ -309,11 +292,7 @@ const ChancelerVisitantes: React.FC = () => {
             </Grid>
 
             {/* Lista de Visitantes na Sessão */}
-            <Grid
-                size={{
-                    xs: 12,
-                    md: 5
-                }}>
+            <Grid size={{ xs: 12, md: 5 }}>
                 <Card sx={{ bgcolor: '#1e293b', borderRadius: 2, height: '100%' }}>
                     <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -334,7 +313,7 @@ const ChancelerVisitantes: React.FC = () => {
                                         </Typography>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
                                             <Typography variant="caption" sx={{ color: '#aaa' }}>
-                                                {att.visitor.cim} - {att.visitor.degree}
+                                                {att.visitor.cim} - {formatDegree(att.visitor.degree, att.visitor.is_installed)}
                                             </Typography>
                                             <Chip label="Presente" color="success" size="small" sx={{ height: 20, fontSize: '0.65rem' }} />
                                         </Box>

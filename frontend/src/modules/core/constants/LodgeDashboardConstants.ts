@@ -1,19 +1,21 @@
 export const LODGE_DASHBOARD_CONSTANTS = {
-  glassBgDark: 'rgba(21, 27, 38, 0.4)',
-  glassBgLight: 'rgba(255, 255, 255, 0.6)',
-  glassBorderDark: 'rgba(255, 255, 255, 0.08)',
-  glassBorderLight: 'rgba(0, 0, 0, 0.08)',
+  glassBgDark: '#151b26', // Updated to match paper background instead of overly transparent
+  glassBgLight: '#ffffff',
+  glassBorderDark: 'rgba(212, 175, 55, 0.4)', // Golden border
+  glassBorderLight: 'rgba(30, 136, 229, 0.2)', // Light blue border
 };
 
 export const getGlassStyles = (mode: 'light' | 'dark') => ({
   background: mode === 'dark' ? LODGE_DASHBOARD_CONSTANTS.glassBgDark : LODGE_DASHBOARD_CONSTANTS.glassBgLight,
-  backdropFilter: 'blur(12px)',
+  backdropFilter: 'none', // Removed blur as the new design is solid
   border: `1px solid ${mode === 'dark' ? LODGE_DASHBOARD_CONSTANTS.glassBorderDark : LODGE_DASHBOARD_CONSTANTS.glassBorderLight}`,
-  boxShadow: mode === 'dark' ? '0 4px 24px 0 rgba(0, 0, 0, 0.2)' : '0 4px 24px 0 rgba(0, 0, 0, 0.05)',
+  boxShadow: mode === 'dark' 
+    ? '0 0 15px rgba(212, 175, 55, 0.15), inset 0 0 20px rgba(212, 175, 55, 0.05)' // Glowing golden shadow
+    : '0 4px 20px rgba(0, 0, 0, 0.05)', // Soft drop shadow for light mode
   borderRadius: 3,
 });
 
-export const ACCENT_COLOR = '#A3B1C6'; // Silver/Slate tone replacing the vibrant gold
+export const ACCENT_COLOR = '#D4AF37'; // Gold tone replacing the silver
 
 export const EVENT_COLORS: Record<string, string> = {
   'sessao': '#5B8FB9', // Azul Suave

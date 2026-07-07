@@ -24,7 +24,7 @@ import {
 } from '@mui/icons-material';
 
 import api from '@/shared/services/api';
-import { MemberResponse, DegreeEnum, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum } from '@/types';
+import { MemberResponse, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum } from '@/types';
 import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
 import { validateCPF, validateEmail } from '@/shared/utils/validators';
 import { fetchAddressByCep } from '@/shared/services/cepService';
@@ -141,14 +141,14 @@ const MemberForm: React.FC = () => {
     cim: '',
     status: MemberStatusEnum.ACTIVE,
     member_class: MemberClassEnum.REGULAR,
-    degree: DegreeEnum.APPRENTICE,
+    degree: 1,
+    is_installed: false,
     initiation_date: '',
     elevation_date: '',
     exaltation_date: '',
     installation_date: '',
     affiliation_date: '',
     regularization_date: '',
-    philosophical_degree: '',
     registration_status: RegistrationStatusEnum.PENDING,
     password: '',
     confirmPassword: '',
@@ -722,15 +722,18 @@ const MemberForm: React.FC = () => {
                   xs: 12,
                   md: 3
                 }}>
-                <FormControl fullWidth sx={customTextFieldStyle}>
-                  <InputLabel shrink>Grau</InputLabel>
-                  <Select name="degree" value={formState.degree} onChange={handleChange} sx={{ color: '#fff', '.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.1)' } }}>
-                    <MenuItem value={DegreeEnum.APPRENTICE}>Aprendiz</MenuItem>
-                    <MenuItem value={DegreeEnum.FELLOW}>Companheiro</MenuItem>
-                    <MenuItem value={DegreeEnum.MASTER}>Mestre</MenuItem>
-                    <MenuItem value={DegreeEnum.INSTALLED_MASTER}>Mestre Instalado</MenuItem>
-                  </Select>
-                </FormControl>
+                <TextField fullWidth label="Grau (1-33)" name="degree" type="number" value={formState.degree} onChange={handleChange} InputLabelProps={{ shrink: true }} sx={customTextFieldStyle} inputProps={{ min: 1, max: 33 }} />
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 3
+                }}>
+                <FormControlLabel
+                  control={<Checkbox name="is_installed" checked={Boolean(formState.is_installed)} onChange={(e) => setFormState(prev => ({ ...prev, is_installed: e.target.checked }))} sx={{ color: 'rgba(255,255,255,0.7)', '&.Mui-checked': { color: '#00c6ff' } }} disabled={Number(formState.degree) < 3} />}
+                  label="Mestre Instalado"
+                  sx={{ color: '#fff', mt: 1 }}
+                />
               </Grid>
               <Grid
                 size={{

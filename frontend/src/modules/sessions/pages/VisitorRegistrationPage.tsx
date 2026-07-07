@@ -34,7 +34,8 @@ const VisitorRegistrationPage: React.FC = () => {
     // Form Data
     const [fullName, setFullName] = useState('');
     const [cim, setCim] = useState('');
-    const [degree, setDegree] = useState('');
+    const [degree, setDegree] = useState<number>(3);
+    const [isInstalled, setIsInstalled] = useState<boolean>(false);
 
     // Lodge Selection
     const [selectedLodge, setSelectedLodge] = useState<ExternalLodge | null>(null);
@@ -58,7 +59,7 @@ const VisitorRegistrationPage: React.FC = () => {
     const [checkInSuccess, setCheckInSuccess] = useState(false);
     const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
 
-    const degreeOptions = ['Aprendiz', 'Companheiro', 'Mestre', 'Mestre Instalado'];
+
 
     useEffect(() => {
         if (manualLodge) return; // Don't search if manual mode is on
@@ -111,6 +112,7 @@ const VisitorRegistrationPage: React.FC = () => {
                 full_name: fullName,
                 cim: cim,
                 degree: degree,
+                is_installed: isInstalled,
                 origin_lodge_id: manualLodge ? null : selectedLodge?.id,
                 manual_lodge_name: manualLodge ? manualLodgeName : null,
                 manual_lodge_number: manualLodge ? manualLodgeNumber : null,
@@ -128,6 +130,7 @@ const VisitorRegistrationPage: React.FC = () => {
                 id: vId,
                 full_name: fullName,
                 degree: degree,
+                is_installed: isInstalled,
                 lodge_name: manualLodge ? `${manualLodgeName} ${manualLodgeNumber}` : selectedLodge?.name
             };
 
@@ -232,12 +235,27 @@ const VisitorRegistrationPage: React.FC = () => {
                             helperText="Seu Cadastro Internacional Maçônico"
                         />
 
-                        <Autocomplete
-                            options={degreeOptions}
-                            value={degree}
-                            onChange={(_, newValue) => setDegree(newValue || '')}
-                            renderInput={(params) => <TextField {...params} label="Grau" required />}
-                        />
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                            <TextField
+                                label="Grau (1-33)"
+                                type="number"
+                                fullWidth
+                                required
+                                value={degree}
+                                onChange={(e) => setDegree(Number(e.target.value))}
+                                inputProps={{ min: 1, max: 33 }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={isInstalled}
+                                        onChange={(e) => setIsInstalled(e.target.checked)}
+                                        disabled={degree < 3}
+                                    />
+                                }
+                                label="Mestre Instalado"
+                            />
+                        </Box>
 
                         <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2 }}>
                             <Typography variant="subtitle1" gutterBottom>Sua Loja de Origem</Typography>

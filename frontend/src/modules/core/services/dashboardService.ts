@@ -58,6 +58,7 @@ export interface DashboardStats {
     address: string;
     email: string;
     cnpj: string;
+    logo_url?: string;
   };
 }
 

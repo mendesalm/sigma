@@ -32,8 +32,10 @@ import {
   Description as DescriptionIcon,
   Person as PersonIcon,
   Save as SaveIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
+import { formatDegree } from '@/shared/utils/formatters';
 import api from '@/shared/services/api';
 import { SessionTypeEnum, SessionSubtypeEnum, MemberResponse } from '@/types';
 
@@ -68,7 +70,7 @@ const SessionForm = () => {
   });
 
   // Novos estados para controle lógico do título
-  const [degree, setDegree] = useState<string>('Aprendiz');
+  const [degree, setDegree] = useState<number>(1);
   const [ingressType, setIngressType] = useState<string[]>([]);
 
   const [members, setMembers] = useState<MemberResponse[]>([]);
@@ -155,7 +157,7 @@ const SessionForm = () => {
             study_director_id: session.study_director_id || '',
           });
           if (session.degree) {
-            setDegree(session.degree);
+            setDegree(Number(session.degree) || 1);
           }
         } else {
           const token = localStorage.getItem('token');
@@ -194,7 +196,7 @@ const SessionForm = () => {
     if (type === 'Ordinária') {
       switch (subtype) {
         case 'Regular':
-          newTitle = `Sessão Ordinária no Grau de ${degree} Maçom`;
+          newTitle = `Sessão Ordinária no Grau de ${formatDegree(degree)} Maçom`;
           break;
         case 'Administrativa':
           newTitle = 'Sessão Ordinária Administrativa';
@@ -252,9 +254,6 @@ const SessionForm = () => {
     });
   };
 
-  const handleDegreeChange = (event: SelectChangeEvent) => {
-    setDegree(event.target.value);
-  };
 
   const handleIngressTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.name;
@@ -476,18 +475,14 @@ const SessionForm = () => {
                     xs: 12,
                     md: 6
                   }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Trabalho no Grau</InputLabel>
-                    <Select
-                      value={degree}
-                      label="Trabalho no Grau"
-                      onChange={handleDegreeChange}
-                    >
-                      <MenuItem value="Aprendiz">Aprendiz</MenuItem>
-                      <MenuItem value="Companheiro">Companheiro</MenuItem>
-                      <MenuItem value="Mestre">Mestre</MenuItem>
-                    </Select>
-                  </FormControl>
+                  <TextField
+                    fullWidth
+                    label="Trabalho no Grau (1-33)"
+                    type="number"
+                    value={degree}
+                    onChange={(e) => setDegree(Number(e.target.value))}
+                    inputProps={{ min: 1, max: 33 }}
+                  />
                 </Grid>
               )}
 

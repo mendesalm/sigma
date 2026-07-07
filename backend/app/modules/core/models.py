@@ -138,6 +138,7 @@ class Lodge(BaseModel):
     checkin_window_end_minutes = Column(Integer, default=120, nullable=False, comment="Minutos depois do início para fechar check-in")
     whatsapp_notifications_enabled = Column(Boolean, default=False, nullable=False, comment="Habilita/desabilita envios automáticos para o WhatsApp (Bumps/Aniversários)")
     whatsapp_settings = Column(JSON, nullable=True, comment="Configurações granulares (JSON) do Módulo de WhatsApp para a Loja")
+    logo_path = Column(String(255), nullable=True, comment="Caminho relativo para a imagem do logo da loja no storage")
 
     @property
     def formatted_affiliation(self) -> str:

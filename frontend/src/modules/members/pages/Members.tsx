@@ -29,7 +29,8 @@ import {
 import { Search, Download, Add } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import api from '@/shared/services/api';
-import { MemberResponse } from '@/types';
+import { MemberResponse, RegistrationStatusEnum, MemberStatusEnum } from '@/types';
+import { formatDegree } from '@/shared/utils/formatters';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import ImportMembersModal from '../components/ImportMembersModal';
 
@@ -305,7 +306,7 @@ const Members = () => {
                 </TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', fontWeight: 500, color: 'text.primary' }}>{member.cim || '-'}</TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', fontWeight: 500, color: 'text.primary' }}>{member.full_name}</TableCell>
-                <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>{member.degree || '-'}</TableCell>
+                <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>{formatDegree(member.degree, member.is_installed) || '-'}</TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
                   {member.active_role || 'Obreiro'}
                 </TableCell>

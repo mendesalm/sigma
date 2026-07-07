@@ -33,44 +33,44 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
       palette: {
         mode,
         primary: {
-          main: '#00B0FF',
-          light: '#33BFFF',
-          dark: '#007BB2',
-          contrastText: '#ffffff',
+          main: '#D4AF37', // Gold
+          light: '#F3C623',
+          dark: '#B08D28',
+          contrastText: '#000000',
         },
         secondary: {
-          main: '#f50057',
-          light: '#ff4081',
-          dark: '#c51162',
+          main: mode === 'dark' ? '#3b82f6' : '#1E88E5', // Blue for values
+          light: '#60a5fa',
+          dark: '#2563eb',
           contrastText: '#ffffff',
         },
         background: {
-          default: mode === 'dark' ? '#0b111b' : '#f5f7fa',
-          paper: mode === 'dark' ? '#131b29' : '#ffffff',
+          default: mode === 'dark' ? '#090B10' : '#f8fafc',
+          paper: mode === 'dark' ? '#151b26' : '#ffffff',
         },
         text: {
-          primary: mode === 'dark' ? '#e0e0e0' : '#1e293b',
+          primary: mode === 'dark' ? '#ffffff' : '#1e293b',
           secondary: mode === 'dark' ? '#a0a0a0' : '#64748b',
         },
-        divider: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)',
+        divider: mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)', // Gold/Blue divider
       },
       typography: {
         fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        h1: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        h2: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        h3: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        h4: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        h5: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        h6: { fontWeight: 600, color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
-        body1: { color: mode === 'dark' ? '#e0e0e0' : '#1e293b' },
+        h1: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        h2: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        h3: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        h4: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        h5: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        h6: { fontWeight: 600, color: mode === 'dark' ? '#ffffff' : '#1e293b' },
+        body1: { color: mode === 'dark' ? '#ffffff' : '#1e293b' },
         body2: { color: mode === 'dark' ? '#a0a0a0' : '#64748b' },
       },
       components: {
         MuiAppBar: {
           styleOverrides: {
             root: {
-              backgroundColor: mode === 'dark' ? '#0b111b' : '#ffffff',
-              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              backgroundColor: mode === 'dark' ? '#090B10' : '#ffffff',
+              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)'}`,
               color: mode === 'dark' ? '#ffffff' : '#1e293b',
               boxShadow: 'none',
               borderRadius: 0,
@@ -80,8 +80,8 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
         MuiDrawer: {
           styleOverrides: {
             paper: {
-              backgroundColor: mode === 'dark' ? '#0b111b' : '#ffffff',
-              borderRight: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              backgroundColor: mode === 'dark' ? '#090B10' : '#ffffff',
+              borderRight: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)'}`,
               borderRadius: 0,
             },
           },
@@ -94,27 +94,27 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
               fontWeight: 600,
             },
             containedPrimary: {
-              background: mode === 'dark' ? '#1e293b' : '#00B0FF',
-              color: '#ffffff',
-              border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'transparent'}`,
+              background: 'linear-gradient(135deg, #F3C623 0%, #D4AF37 100%)',
+              color: '#000000',
+              border: 'none',
               '&:hover': {
-                background: mode === 'dark' ? '#334155' : '#007BB2',
-                borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B08D28 100%)',
               },
             },
             containedSecondary: {
-              background: mode === 'dark' ? '#334155' : '#f50057',
-              color: '#ffffff',
+              background: mode === 'dark' ? '#151b26' : '#ffffff',
+              color: mode === 'dark' ? '#ffffff' : '#1E88E5',
+              border: `1px solid ${mode === 'dark' ? '#D4AF37' : '#1E88E5'}`,
               '&:hover': {
-                background: mode === 'dark' ? '#475569' : '#c51162',
+                background: mode === 'dark' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(30, 136, 229, 0.1)',
               },
             },
             outlined: {
-              borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.23)',
-              color: mode === 'dark' ? '#e0e0e0' : '#1e293b',
+              borderColor: mode === 'dark' ? 'rgba(212, 175, 55, 0.4)' : 'rgba(30, 136, 229, 0.4)',
+              color: mode === 'dark' ? '#D4AF37' : '#1E88E5',
               '&:hover': {
-                borderColor: mode === 'dark' ? '#e0e0e0' : '#1e293b',
-                backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: mode === 'dark' ? '#D4AF37' : '#1E88E5',
+                backgroundColor: mode === 'dark' ? 'rgba(212, 175, 55, 0.05)' : 'rgba(30, 136, 229, 0.05)',
               },
             },
           },
@@ -123,9 +123,9 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
           styleOverrides: {
             root: {
               backgroundImage: 'none',
-              backgroundColor: mode === 'dark' ? '#131b29' : '#ffffff',
+              backgroundColor: mode === 'dark' ? '#151b26' : '#ffffff',
               borderRadius: 12,
-              border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              border: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.2)' : 'rgba(30, 136, 229, 0.2)'}`,
             },
           },
         },
@@ -133,9 +133,10 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
           styleOverrides: {
             root: {
               backgroundImage: 'none',
-              backgroundColor: mode === 'dark' ? '#131b29' : '#ffffff',
+              backgroundColor: mode === 'dark' ? '#151b26' : '#ffffff',
               borderRadius: 12,
-              border: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              border: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.2)' : 'rgba(30, 136, 229, 0.2)'}`,
+              boxShadow: mode === 'dark' ? '0 4px 20px rgba(212, 175, 55, 0.05)' : '0 4px 20px rgba(0, 0, 0, 0.05)',
             },
           },
         },
@@ -143,13 +144,13 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
           styleOverrides: {
             head: {
               fontWeight: 600,
-              color: mode === 'dark' ? '#a0a0a0' : '#64748b',
-              backgroundColor: mode === 'dark' ? '#131b29' : '#f8fafc',
-              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              color: mode === 'dark' ? '#D4AF37' : '#1E88E5',
+              backgroundColor: mode === 'dark' ? '#151b26' : '#f8fafc',
+              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)'}`,
             },
             body: {
-              color: mode === 'dark' ? '#e0e0e0' : '#1e293b',
-              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.12)'}`,
+              color: mode === 'dark' ? '#ffffff' : '#1e293b',
+              borderBottom: `1px solid ${mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)'}`,
             },
           },
         },
@@ -163,21 +164,21 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
             root: {
               '& .MuiOutlinedInput-root': {
                 backgroundColor: mode === 'dark' ? '#0d1218' : '#ffffff',
-                color: mode === 'dark' ? '#e0e0e0' : '#1e293b',
+                color: mode === 'dark' ? '#ffffff' : '#1e293b',
                 '& fieldset': {
-                  borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.23)',
+                  borderColor: mode === 'dark' ? 'rgba(212, 175, 55, 0.3)' : 'rgba(30, 136, 229, 0.3)',
                 },
                 '&:hover fieldset': {
-                  borderColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : '#1e293b',
+                  borderColor: mode === 'dark' ? '#D4AF37' : '#1E88E5',
                 },
                 '&.Mui-focused fieldset': {
-                  borderColor: '#00B0FF',
+                  borderColor: mode === 'dark' ? '#F3C623' : '#1565C0',
                 },
               },
               '& .MuiInputLabel-root': {
                 color: mode === 'dark' ? '#a0a0a0' : '#64748b',
                 '&.Mui-focused': {
-                  color: '#00B0FF',
+                  color: mode === 'dark' ? '#F3C623' : '#1565C0',
                 },
               },
             },
@@ -205,7 +206,7 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
             root: {
               color: mode === 'dark' ? '#a0a0a0' : '#64748b',
               '&.Mui-focused': {
-                color: '#00B0FF',
+                color: mode === 'dark' ? '#F3C623' : '#1565C0',
               },
             },
           },
@@ -214,10 +215,10 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
           styleOverrides: {
             root: {
               '&.Mui-selected': {
-                backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-                borderLeft: `4px solid ${mode === 'dark' ? '#e0e0e0' : '#1e293b'}`,
+                backgroundColor: mode === 'dark' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(30, 136, 229, 0.1)',
+                borderLeft: `4px solid ${mode === 'dark' ? '#D4AF37' : '#1E88E5'}`,
                 '&:hover': {
-                  backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+                  backgroundColor: mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(30, 136, 229, 0.15)',
                 },
               },
             },
@@ -235,3 +236,4 @@ export const CustomThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </CustomThemeContext.Provider>
   );
 };
+

@@ -148,14 +148,14 @@ export const LibraryManage: React.FC = () => {
                   xs: 12,
                   sm: 4
                 }}>
-                <FormControl fullWidth>
-                  <InputLabel>Grau Exigido</InputLabel>
-                  <Select value={bookForm.required_degree || 1} onChange={e => setBookForm({ ...bookForm, required_degree: Number(e.target.value) })} label="Grau Exigido">
-                    <MenuItem value={1}>1 - Aprendiz</MenuItem>
-                    <MenuItem value={2}>2 - Companheiro</MenuItem>
-                    <MenuItem value={3}>3 - Mestre</MenuItem>
-                  </Select>
-                </FormControl>
+                <TextField
+                  fullWidth
+                  label="Grau Exigido (1-33)"
+                  type="number"
+                  value={bookForm.required_degree || 1}
+                  onChange={e => setBookForm({ ...bookForm, required_degree: Number(e.target.value) })}
+                  inputProps={{ min: 1, max: 33 }}
+                />
               </Grid>
             </Grid>
             <Box mt={3} display="flex" justifyContent="flex-end" gap={2}>

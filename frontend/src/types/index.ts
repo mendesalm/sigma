@@ -1,10 +1,3 @@
-export enum DegreeEnum {
-  APPRENTICE = "Aprendiz",
-  FELLOW = "Companheiro",
-  MASTER = "Mestre",
-  INSTALLED_MASTER = "Mestre Instalado",
-}
-
 export enum RegistrationStatusEnum {
   PENDING = "Pendente",
   APPROVED = "Aprovado",
@@ -152,7 +145,8 @@ export interface MemberResponse {
   profile_picture_path?: string;
   cim?: string;
   status?: string;
-  degree?: DegreeEnum;
+  degree?: number;
+  is_installed?: boolean;
   initiation_date?: string;
   elevation_date?: string;
   exaltation_date?: string;
@@ -160,6 +154,7 @@ export interface MemberResponse {
   affiliation_date?: string;
   regularization_date?: string;
   philosophical_degree?: string;
+  numeric_degree?: number;
   registration_status: RegistrationStatusEnum;
   created_at: string;
   updated_at?: string;

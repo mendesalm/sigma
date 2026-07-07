@@ -43,3 +43,11 @@ export const formatCEP = (value: string) => {
 export const formatState = (value: string) => {
   return value.toUpperCase().substring(0, 2);
 };
+
+export const formatDegree = (degree?: number | null, isInstalled?: boolean | null): string => {
+  if (!degree) return "Desconhecido";
+  if (degree === 1) return "Aprendiz";
+  if (degree === 2) return "Companheiro";
+  if (degree === 3) return isInstalled ? "Mestre Instalado" : "Mestre";
+  return isInstalled ? `Grau ${degree} - Mestre Instalado` : `Grau ${degree}`;
+};

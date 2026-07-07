@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
+import os
+import shutil
+from pathlib import Path
 
 import database
 import dependencies
 from app.modules.core.schemas import lodge_schema
 from app.modules.core.services import lodge_service
+from app.shared.utils.path_utils import get_tenant_path_for_lodge
 
 router = APIRouter(
     prefix="/lodges",
@@ -334,6 +338,202 @@ def confirm_lodge_import(
             technical_contact_name=row.technical_contact_name,
         )
         try:
+
+
+@router.post("/{lodge_id}/upload_asset", summary="Upload de Asset Genérico da Loja")
+async def upload_lodge_asset(
+    lodge_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Upload a generic asset file (image, etc) for the lodge.
+    Returns the URL to access the file.
+    """
+    # Verify Permissions
+    user_type = current_user.get("user_type")
+    user_lodge_id = current_user.get("lodge_id")
+
+    if user_type != "super_admin":
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to upload assets for this lodge"
+            )
+
+    # Sanitize filename
+    safe_filename = file.filename.replace(" ", "_").lower()
+
+    # Define storage path
+    storage_dir = get_tenant_path_for_lodge(db, lodge_id, "assets")
+    file_path = storage_dir / safe_filename
+
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}")
+
+    # Return Public URL
+    url_path = f"/{file_path.as_posix()}"
+
+    return {"url": url_path}
+
+
+
+
+
+@router.post("/{lodge_id}/settings/reset")
+def reset_lodge_settings(
+    lodge_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    """
+    Realiza o reset das configurações da Loja para os padrões de fábrica.
+    Faz backup do estado atual em 'previous_settings' para permitir reversão.
+    Acesso restrito a Webmaster da Loja e Super Admin.
+    """
+    lodge = lodge_service.get_lodge(db, lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+
+    user_type = current_user.get("user_type")
+    user_lodge_id = current_user.get("lodge_id")
+
+    if user_type != "super_admin":
+        if user_type != "webmaster" or str(user_lodge_id) != str(lodge_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso restrito: Apenas o Webmaster da loja pode realizar o reset.",
+            )
+
+    # Check if already at factory settings
+    factory_modules = {
+        "member_registration": True,
+        "session_management": True,
+        "session_attendance": True,
+        "chancellery": True,
+    }
+    
+    is_modules_factory = lodge.available_modules == factory_modules or lodge.available_modules is None
+    is_docs_factory = not lodge.document_settings or len(lodge.document_settings) == 0
+    
+    if is_modules_factory and is_docs_factory:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A loja já está com as configurações de fábrica. O reset foi cancelado para proteger o backup anterior."
+        )
+
+    # Backup current settings
+    backup = {
+        "document_settings": lodge.document_settings,
+        "available_modules": lodge.available_modules,
+    }
+    lodge.previous_settings = backup
+
+    # Reset settings
+    lodge.document_settings = None  # Or a default JSON
+    # available_modules usually not reset to None, but kept or set to minimal default
+    lodge.available_modules = {
+        "member_registration": True,
+        "session_management": True,
+        "session_attendance": True,
+        "chancellery": True,
+    }
+
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(lodge, "document_settings")
+    flag_modified(lodge, "available_modules")
+    flag_modified(lodge, "previous_settings")
+
+    db.commit()
+    return {"message": "Configurações resetadas com sucesso. Em caso de acidente, contate o Suporte para restaurar."}
+
+
+@router.post("/{lodge_id}/settings/restore_previous")
+def restore_previous_lodge_settings(
+    lodge_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_super_admin),
+):
+    """
+    Restaura as configurações de fábrica a partir do backup feito no último reset.
+    Acesso EXCLUSIVO a Super Admins.
+    """
+    lodge = lodge_service.get_lodge(db, lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+
+    if not lodge.previous_settings:
+        raise HTTPException(status_code=400, detail="Não há configurações anteriores para restaurar.")
+
+    previous = lodge.previous_settings
+    if "document_settings" in previous:
+        lodge.document_settings = previous["document_settings"]
+    if "available_modules" in previous:
+        lodge.available_modules = previous["available_modules"]
+
+    lodge.previous_settings = None # Clear backup after restore
+
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(lodge, "document_settings")
+    flag_modified(lodge, "available_modules")
+    flag_modified(lodge, "previous_settings")
+
+    db.commit()
+    return {"message": "Configurações restauradas para a versão anterior com sucesso."}
+
+
+from typing import List
+from app.modules.core.schemas.import_lodge_schema import ImportLodgePreviewResponse, ImportLodgeConfirmRequest
+from app.modules.core.services.import_lodge_service import process_lodge_upload_files
+
+@router.post(
+    "/import/preview",
+    response_model=ImportLodgePreviewResponse,
+    summary="Pré-visualizar Importação de Lojas",
+)
+async def preview_lodge_import(
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_super_admin),
+):
+    return await process_lodge_upload_files(db, files)
+
+@router.post(
+    "/import/confirm",
+    status_code=status.HTTP_200_OK,
+    summary="Confirmar Importação de Lojas",
+)
+def confirm_lodge_import(
+    request_data: ImportLodgeConfirmRequest,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_super_admin),
+):
+    saved_count = 0
+    from app.modules.core.models import Obedience
+    all_obediences = db.query(Obedience).all()
+    potency_map = {o.acronym.lower(): o.id for o in all_obediences if o.acronym and not o.parent_obedience_id}
+    subpotency_map = {o.acronym.lower(): o.id for o in all_obediences if o.acronym and o.parent_obedience_id}
+    
+    for row in request_data.rows:
+        if not row.is_valid:
+            continue
+            
+        potency_id = potency_map.get(row.potency_acronym.lower()) if row.potency_acronym else None
+        subpotency_id = subpotency_map.get(row.subpotency_acronym.lower()) if row.subpotency_acronym else None
+        
+        lodge_create = lodge_schema.LodgeCreate(
+            lodge_name=row.name,
+            lodge_number=row.number,
+            obedience_id=potency_id,
+            subobedience_id=subpotency_id,
+            cnpj=row.cnpj,
+            technical_contact_email=row.technical_contact_email,
+            technical_contact_name=row.technical_contact_name,
+        )
+        try:
             lodge_service.create_lodge(db=db, lodge=lodge_create)
             saved_count += 1
         except Exception as e:
@@ -341,3 +541,39 @@ def confirm_lodge_import(
             
     db.commit()
     return {"message": "Importação concluída.", "saved_count": saved_count}
+
+@router.post("/{lodge_id}/logo")
+def upload_lodge_logo(
+    lodge_id: int, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(database.get_db), 
+    current_user: dict = Depends(dependencies.get_current_user_payload)
+):
+    lodge = lodge_service.get_lodge(db, lodge_id=lodge_id)
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+    
+    # Basic permission check
+    if current_user.get("lodge_id") != lodge_id and current_user.get("role") != "SUPER_ADMIN":
+        raise HTTPException(status_code=403, detail="Not authorized to update this lodge logo")
+
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    storage_dir = Path(f"storage/lodges/loja_{lodge_id}")
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    
+    ext = os.path.splitext(file.filename)[1] if file.filename else ".png"
+    if not ext:
+        ext = ".png"
+    
+    filename = f"logo{ext}"
+    file_path = storage_dir / filename
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    db_path = f"/storage/lodges/loja_{lodge_id}/{filename}"
+    lodge.logo_path = db_path
+    db.commit()
+    return {"message": "Logo uploaded successfully", "logo_url": db_path}

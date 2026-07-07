@@ -8,7 +8,6 @@ from app.modules.library.schemas.loan_schema import LoanCreate
 from app.modules.library.schemas.waitlist_schema import WaitlistCreate
 from app.modules.library.services.library_item_service import LibraryItemService
 from models.models import (
-    DegreeEnum,
     ItemStatusEnum,
     LibraryItem,
     Loan,
@@ -17,16 +16,6 @@ from models.models import (
     Waitlist,
     WaitlistStatusEnum,
 )
-
-
-def get_member_degree_level(degree: DegreeEnum) -> int:
-    if degree == DegreeEnum.APPRENTICE:
-        return 1
-    elif degree == DegreeEnum.FELLOW:
-        return 2
-    elif degree in (DegreeEnum.MASTER, DegreeEnum.INSTALLED_MASTER):
-        return 3
-    return 1  # Default
 
 
 class WaitlistService:
@@ -154,7 +143,7 @@ class LoanService:
         if not member:
             raise ValueError("Membro não encontrado.")
 
-        member_degree_level = get_member_degree_level(member.degree)
+        member_degree_level = member.degree or 1
         book_degree_level = item.book.required_degree
 
         if member_degree_level < book_degree_level:
