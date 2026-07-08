@@ -1,26 +1,63 @@
-import React from 'react';
-import { Card, CardContent, Typography, Box, List, ListItem, ListItemText, Divider } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import React, { useEffect, useRef } from 'react';
+import { Card, CardContent, Typography, Box, List, ListItem, ListItemText, Divider, Button } from '@mui/material';
 import { Cake as CakeIcon, Gavel as GavelIcon, Event as EventIcon, AllInclusive as WeddingIcon, Architecture as ArchitectureIcon } from '@mui/icons-material';
 import { CalendarEvent } from '@/modules/core/services/dashboardService';
-import { getGlassStyles, EVENT_COLORS, normalizeEventType, ACCENT_COLOR } from '@/modules/core/constants/LodgeDashboardConstants';
+import { EVENT_COLORS, normalizeEventType } from '@/modules/core/constants/LodgeDashboardConstants';
 
 interface LodgeCommemorativeEventsWidgetProps {
   commemorativeEvents: CalendarEvent[];
   currentDate: Date;
+  canManageLodge?: boolean;
 }
 
-const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetProps> = ({ commemorativeEvents, currentDate }) => {
-  const theme = useTheme();
-  const glassStyles = getGlassStyles(theme.palette.mode);
+const COLORS = {
+    cardBg: '#242830',
+    gold: '#C49A45',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#A0AAB4',
+    borderColor: 'rgba(255,255,255,0.08)',
+    goldGradient: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
+};
+
+const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetProps> = ({ commemorativeEvents, currentDate, canManageLodge }) => {
   const monthName = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Find the index of the first event that is today or in the future (within the same month usually)
+  let targetIndex = -1;
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
+  
+  if (commemorativeEvents && commemorativeEvents.length > 0) {
+      for (let i = 0; i < commemorativeEvents.length; i++) {
+          const parts = commemorativeEvents[i].full_date.split('-');
+          const eventMonth = parseInt(parts[1], 10);
+          const eventDay = parseInt(parts[2], 10);
+          if (eventMonth > currentMonth || (eventMonth === currentMonth && eventDay >= currentDay)) {
+              targetIndex = i;
+              break;
+          }
+      }
+  }
+
+  useEffect(() => {
+      // Scroll to the target event after a brief delay to ensure rendering is complete
+      if (targetIndex >= 0 && itemRefs.current[targetIndex]) {
+          setTimeout(() => {
+              itemRefs.current[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+      }
+  }, [targetIndex, commemorativeEvents]);
 
   return (
     <Card sx={{
-      ...glassStyles,
-      color: theme.palette.text.primary,
-      borderRadius: '16px',
+      bgcolor: COLORS.cardBg,
+      color: '#fff',
+      borderRadius: '8px',
+      border: `1px solid ${COLORS.borderColor}`,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       flexGrow: 1,
       overflow: 'hidden',
       display: 'flex',
@@ -28,12 +65,27 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
       minHeight: 0
     }}>
       <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0 }}>
-        <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
-          <Typography variant="h6" sx={{ fontFamily: '"Inter", sans-serif', color: ACCENT_COLOR, fontWeight: 600, fontSize: '1rem', lineHeight: 1.2 }}>
-            Datas Comemorativas de {capitalizedMonth}
-          </Typography>
+        
+        <Box sx={{ p: 2.5, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Typography sx={{ fontFamily: '"Inter", sans-serif', color: COLORS.gold, fontSize: '1.2rem', fontWeight: 500 }}>
+                Datas Comemorativas
+            </Typography>
+            
+            <Box sx={{ 
+                width: 48, 
+                height: 48, 
+                border: `1px solid rgba(196, 154, 69, 0.3)`, 
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                <CakeIcon sx={{ color: COLORS.gold, fontSize: 28 }} />
+            </Box>
         </Box>
-        <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+        <List disablePadding sx={{ overflowY: 'auto', flexGrow: 1, px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {commemorativeEvents && commemorativeEvents.length > 0 ? (
             commemorativeEvents.map((event, idx) => {
               const dateParts = event.full_date.split('-'); // YYYY-MM-DD
@@ -43,7 +95,7 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
               const displayType = normalizeEventType(event.type);
 
               let IconComponent = EventIcon;
-              let typeColor = EVENT_COLORS[event.type] || ACCENT_COLOR;
+              let typeColor = EVENT_COLORS[event.type] || COLORS.gold;
 
               if (['Elevação', 'Iniciação', 'Exaltação'].includes(displayType)) {
                 IconComponent = ArchitectureIcon;
@@ -51,7 +103,7 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
                 IconComponent = CakeIcon;
               } else if (displayType === 'Casamento') {
                 IconComponent = WeddingIcon;
-                typeColor = 'secondary.main'; // Or any specific color mapping
+                typeColor = '#e81cff'; 
               } else if (displayType === 'Instalação') {
                 IconComponent = GavelIcon;
               }
@@ -59,45 +111,75 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
               let personName = event.title;
 
               return (
-                <Box key={idx} sx={{ width: '100%' }}>
+                <Box 
+                  key={idx} 
+                  sx={{ width: '100%' }}
+                  ref={(el) => (itemRefs.current[idx] = el)}
+                >
                   <ListItem disablePadding sx={{
                     alignItems: 'flex-start',
                     px: 1,
-                    py: 1.5,
+                    py: 1,
                     ...(isToday && {
-                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(163, 177, 198, 0.05)' : 'rgba(163, 177, 198, 0.1)',
+                      bgcolor: 'rgba(255,255,255,0.05)',
                       borderRadius: '8px',
-                      mb: 1
                     })
                   }}>
                     <Box sx={{ width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                        <Typography variant="body2" sx={{ color: typeColor, fontWeight: 700, minWidth: '40px', letterSpacing: 0.5 }}>
+                        <Typography sx={{ color: typeColor, fontWeight: 700, fontSize: '0.85rem', minWidth: '40px' }}>
                           {formattedDate}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20 }}>
-                          <IconComponent sx={{ fontSize: 18, color: typeColor }} />
+                          <IconComponent sx={{ fontSize: 16, color: typeColor }} />
                         </Box>
-                        <Typography variant="body2" sx={{ color: typeColor, fontWeight: 600 }}>
+                        <Typography sx={{ color: typeColor, fontWeight: 600, fontSize: '0.85rem' }}>
                           {displayType}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ fontFamily: '"Inter", sans-serif', color: theme.palette.text.primary, fontWeight: 400, fontSize: '0.9rem', lineHeight: 1.4, pl: 0 }}>
+                      <Typography sx={{ color: COLORS.textPrimary, fontSize: '0.85rem', pl: 0 }}>
                         {personName}
                       </Typography>
                     </Box>
                   </ListItem>
-                  <Divider sx={{ borderColor: theme.palette.divider, mx: 2 }} />
                 </Box>
               );
             })
           ) : (
-            <ListItem sx={{ p: 2 }}>
-              <ListItemText primary="Nenhuma data próxima" secondaryTypographyProps={{ color: theme.palette.text.secondary }} />
+            <ListItem sx={{ p: 1 }}>
+              <Typography sx={{ color: COLORS.textSecondary, fontSize: '0.85rem' }}>
+                Nenhuma data em {capitalizedMonth}
+              </Typography>
             </ListItem>
           )}
         </List>
       </CardContent>
+
+      {/* Buttons area */}
+      {canManageLodge && (
+          <Box sx={{ display: 'flex', gap: 1.5, p: 2.5, pt: 0, justifyContent: 'center' }}>
+              <Button 
+                  variant="contained" 
+                  onClick={() => {}}
+                  sx={{ 
+                      flex: 1, 
+                      background: COLORS.goldGradient,
+                      color: '#1A1D23',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontFamily: '"Inter", sans-serif',
+                      boxShadow: 'none',
+                      '&:hover': {
+                          background: COLORS.goldGradient,
+                          opacity: 0.9,
+                          boxShadow: '0 2px 10px rgba(196,154,69,0.3)'
+                      }
+                  }}
+              >
+                  Editar
+              </Button>
+          </Box>
+      )}
     </Card>
   );
 };

@@ -425,12 +425,30 @@ def refresh_token(request: Request, response: Response, db: Session = Depends(ge
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    # Recreate access token data (simplified for refresh)
-    access_token_data = {
+    import jwt
+    from app.core.config import settings
+    
+    old_payload = {}
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        old_token = auth_header.split(" ")[1]
+        try:
+            old_payload = jwt.decode(old_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options={"verify_exp": False})
+        except Exception:
+            pass
+
+    # Preserve old claims (loja_atual_id, roles, etc) and update essential ones
+    access_token_data = old_payload.copy()
+    
+    # Remove standard JWT claims so they get regenerated
+    for claim in ["exp", "iat", "nbf", "jti"]:
+        access_token_data.pop(claim, None)
+        
+    access_token_data.update({
         "sub": user.email if hasattr(user, 'email') else user.username,
         "user_id": user.id,
         "user_type": user_type,
-    }
+    })
     
     access_token = auth_utils.create_access_token(data=access_token_data)
     

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   CssBaseline,
@@ -8,27 +8,63 @@ import {
   useTheme,
   AppBar,
   Toolbar,
-  Skeleton,
   IconButton,
-  alpha
+  alpha,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  useMediaQuery,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import {
   Logout,
+  Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
+  AdminPanelSettings as AdminIcon,
+  Computer as WebmasterIcon,
+  QrCodeScanner as QrCodeScannerIcon,
 } from '@mui/icons-material';
 import { AuthContext } from '@/modules/access_control/context/AuthContext';
-
 import api from '@/shared/services/api';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import SessionCheckIn from '@/modules/sessions/components/SessionCheckIn';
 
-const HEADER_HEIGHT = 70; // Slightly taller for better logo fit
+import SecretariaSvg from '@/assets/icons/Secretaria.svg';
+import ChancelariaSvg from '@/assets/icons/chancelaria.svg';
+import TesourariaSvg from '@/assets/icons/Tesouraria.svg';
+import BibliotecaSvg from '@/assets/icons/Biblioteca.svg';
+import HarmoniaSvg from '@/assets/icons/Harmonia.svg';
+import ArquitetoSvg from '@/assets/icons/Arquiteto.svg';
+
+const HEADER_HEIGHT = 70;
+const DRAWER_WIDTH = 260;
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const adminRoles = [
+  'Venerável Mestre', '1º Vigilante', '2º Vigilante', 'Orador', 'Secretário', 'Tesoureiro', 'Chanceler', 'Hospitaleiro',
+  'Mestre de Cerimônias', 'Orador Adjunto', 'Secretário Adjunto', 'Tesoureiro Adjunto', 'Chanceler Adjunto', 'Hospitaleiro Adjunto', 'Mestre de Cerimônias Adjunto',
+  'Porta-Bandeira', 'Porta-Estandarte', 'Porta-Espada', 'Guarda do Templo', 'Cobridor', 'Arquiteto', 'Bibliotecário',
+  'Bibliotecário Adjunto', 'Mestre de Harmonia', 'Mestre de Harmonia Adjunto',
+  'Mestre de Banquetes', 'Mestre de Banquetes Adjunto'
+];
 
 const LodgeDashboardLayout: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const { user, logout } = useContext(AuthContext) || {};
   const [lodgeData, setLodgeData] = useState<any>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [openCheckIn, setOpenCheckIn] = useState(false);
+  const [adminAnchorEl, setAdminAnchorEl] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     const fetchLodgeData = async () => {
@@ -36,8 +72,14 @@ const LodgeDashboardLayout: React.FC = () => {
         try {
           const response = await api.get(`/lodges/${user.lodge_id}`);
           setLodgeData(response.data);
+          
+          const sessionRes = await api.get(`/sessions/active/${user.lodge_id}`);
+          if (sessionRes.data && sessionRes.data.id) {
+            setActiveSessionId(sessionRes.data.id);
+            // setOpenCheckIn(true); // Opcional se quiser abrir automaticamente ao logar
+          }
         } catch (error) {
-          console.error("Failed to fetch lodge data:", error);
+          console.error("Failed to fetch lodge/session data:", error);
         }
       }
     };
@@ -51,83 +93,265 @@ const LodgeDashboardLayout: React.FC = () => {
     }
   };
 
-  const getLogoUrl = () => {
-    if (!lodgeData) return undefined;
-
-    const sanitize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-    const safeNumber = lodgeData.lodge_number
-      ? lodgeData.lodge_number.replace(/[^a-zA-Z0-9 \-_]/g, '').trim().replace(/\s+/g, '_')
-      : `id_${lodgeData.id}`;
-
-    if (lodgeData.potencia) {
-      const safePotency = sanitize(lodgeData.potencia);
-      const safeSubpotency = lodgeData.subpotencia ? sanitize(lodgeData.subpotencia) : null;
-      const subpotencyPart = safeSubpotency ? `subpotencias/${safeSubpotency}/` : '';
-      return `${API_URL}/storage/potencias/${safePotency}/${subpotencyPart}lojas/loja${safeNumber}/assets/images/logo/logo_jpg.png`;
-    }
-
-    return `${API_URL}/storage/lodges/loja_${safeNumber}/assets/images/logo/logo_jpg.png`;
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
   };
 
-  const logoUrl = getLogoUrl();
+  const isWebmaster = user?.is_webmaster || false;
+  const isAdmin = isWebmaster || adminRoles.includes(user?.active_role_name || '');
+
+  const sidebarItems = [
+    { text: 'Início', path: '/dashboard/lodge-dashboard', icon: <DashboardIcon />, visible: true, endMatch: true },
+    { text: 'Painel do Obreiro', path: '/dashboard/lodge-dashboard/obreiro', icon: <PersonIcon />, visible: true },
+    { text: 'Administração', path: '#admin', icon: <AdminIcon />, visible: isAdmin },
+    { text: 'Webmaster', path: '/dashboard', icon: <WebmasterIcon />, visible: isWebmaster }
+  ];
+
+  if (activeSessionId) {
+    sidebarItems.splice(1, 0, {
+      text: 'Check-in Sessão',
+      path: '#checkin',
+      icon: <QrCodeScannerIcon />,
+      visible: true,
+      endMatch: false
+    });
+  }
+
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#0B0F19', borderRight: '1px solid rgba(255, 255, 255, 0.05)' }}>
+      {/* Sidebar Header Space */}
+      <Box sx={{ height: HEADER_HEIGHT, display: 'flex', alignItems: 'center', px: 3, borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 2 }}>Menu Principal</Typography>
+      </Box>
+
+      {/* Navigation List */}
+      <List sx={{ px: 2, pt: 3, flexGrow: 1 }}>
+        {sidebarItems.filter(item => item.visible).map((item) => {
+          // Check if active
+          const isActive = item.path.startsWith('#') ? false : (item.endMatch 
+            ? location.pathname === item.path
+            : location.pathname.startsWith(item.path));
+
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                component={item.path.startsWith('#') ? 'button' : RouterLink}
+                to={item.path.startsWith('#') ? undefined : item.path}
+                onClick={(e) => {
+                  if (item.path === '#checkin') {
+                    setOpenCheckIn(true);
+                  } else if (item.path === '#admin') {
+                    setAdminAnchorEl(e.currentTarget);
+                  } else {
+                    if (isMobile) setMobileOpen(false);
+                  }
+                }}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: isActive ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                  color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.7)',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: isActive ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    color: isActive ? '#D4AF37' : '#fff',
+                    transform: 'translateX(4px)'
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{ 
+                    fontSize: '0.9rem', 
+                    fontWeight: isActive ? 600 : 400,
+                    fontFamily: '"Inter", sans-serif'
+                  }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+      
+      {/* Sigma Footer */}
+      <Box sx={{ mt: 'auto', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          component="img"
+          src="/src/assets/images/logos/Sigma_Logo_PrataAzul_P.png"
+          alt="Sigma Logo"
+          sx={{
+            height: 48,
+            width: 'auto',
+            filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))",
+            mb: 1
+          }}
+        />
+        <Typography 
+          variant="h6" 
+          component="div" 
+          sx={{ 
+            fontFamily: "'Tektur', sans-serif",
+            textTransform: "uppercase",
+            fontWeight: 700, 
+            lineHeight: 1,
+            background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            color: "transparent",
+            letterSpacing: '-0.02em',
+            mb: 0.5
+          }}
+        >
+          SiGMa
+        </Typography>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: 'rgba(255,255,255,0.5)',
+            letterSpacing: '0.05em',
+            textAlign: 'center',
+            fontSize: '0.65rem',
+            textTransform: 'uppercase',
+            lineHeight: 1.2
+          }}
+        >
+          Sistema Integrado de Gerenciamento Maçônico
+        </Typography>
+      </Box>
+
+      {/* Admin Secondary Menu */}
+      <Menu
+        anchorEl={adminAnchorEl}
+        open={Boolean(adminAnchorEl)}
+        onClose={() => setAdminAnchorEl(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        PaperProps={{
+          sx: {
+            bgcolor: '#151B26',
+            color: '#fff',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            mt: 1,
+            ml: 1,
+            '& .MuiMenuItem-root': {
+              fontFamily: '"Inter", sans-serif',
+              fontSize: '0.9rem',
+              p: 1.5,
+              '&:hover': {
+                bgcolor: 'rgba(212, 175, 55, 0.1)',
+                color: '#D4AF37'
+              }
+            }
+          }
+        }}
+      >
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/secretaria" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={SecretariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Secretaria
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/chancelaria" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={ChancelariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Chancelaria
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/tesouraria" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={TesourariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Tesouraria
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/biblioteca" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={BibliotecaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Biblioteca
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/harmonia" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={HarmoniaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Harmonia
+        </MenuItem>
+        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/arquiteto" onClick={() => setAdminAnchorEl(null)}>
+          <Box component="img" src={ArquitetoSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
+          Arquiteto
+        </MenuItem>
+      </Menu>
+    </Box>
+  );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#090B10' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#090B10' }}>
       <CssBaseline />
 
-      <AppBar position="static" elevation={0} sx={{ height: HEADER_HEIGHT, bgcolor: '#0B0F19', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', backgroundImage: 'none', zIndex: 1300 }}>
-        <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
+      {/* Top Header */}
+      <AppBar 
+        position="fixed" 
+        elevation={0} 
+        sx={{ 
+          height: HEADER_HEIGHT, 
+          bgcolor: '#0B0F19', 
+          borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
+          backgroundImage: 'none', 
+          zIndex: theme.zIndex.drawer + 1,
+          width: '100%'
+        }}
+      >
+        <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 1, md: 4 } }}>
+          {/* Left: Hamburger & Lodge Info */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ display: { md: 'none' }, color: 'rgba(255,255,255,0.7)' }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          {/* Left: Sigma Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, pl: 1 }}>
-            <Box
-              component="img"
-              src="/src/assets/images/logos/Sigma_Logo_PrataAzul_P.png"
-              alt="Sigma Logo"
-              sx={{
-                height: { xs: 32, md: 45 },
-                width: 'auto',
-                filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))",
-              }}
-            />
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography 
-                variant="h6" 
-                component="div" 
-                sx={{ 
-                  fontFamily: "'Tektur', sans-serif",
-                  textTransform: "uppercase",
-                  fontWeight: 700, 
-                  lineHeight: 1,
-                  background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
-                  backgroundClip: "text",
-                  WebkitBackgroundClip: "text",
-                  color: "transparent",
-                  letterSpacing: '-0.02em',
-                  textShadow: '0 0 5px rgba(180, 180, 180, 0.2)'
-                }}
-              >
-                SiGMa
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: alpha(theme.palette.text.primary, 0.7),
-                  letterSpacing: '0.05em',
-                  display: 'block',
-                  mt: 0.5,
-                  fontSize: '0.7rem',
-                  textTransform: 'uppercase'
-                }}
-              >
-                Sistema Integrado de Gerenciamento Maçônico
-              </Typography>
-            </Box>
+            {lodgeData && (
+              <>
+                {lodgeData.logo_path && (
+                  <Box
+                    component="img"
+                    src={`${API_URL}${lodgeData.logo_path}`}
+                    alt="Lodge Logo"
+                    sx={{
+                      height: { xs: 32, md: 44 },
+                      width: 'auto',
+                      objectFit: 'contain'
+                    }}
+                  />
+                )}
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  <Typography 
+                    variant="h6" 
+                    component="div" 
+                    sx={{ 
+                      fontFamily: '"Inter", sans-serif',
+                      fontWeight: 700, 
+                      lineHeight: 1.2,
+                      color: '#C49A45', // Dourado do Sigma
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    Loja Maçônica {lodgeData.lodge_name}
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      letterSpacing: '0.05em',
+                      display: 'block',
+                      fontSize: '0.75rem',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    nº {lodgeData.lodge_number}
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Box>
 
           {/* Right: User Info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 3 } }}>
             {user && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
@@ -154,26 +378,75 @@ const LodgeDashboardLayout: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: 'flex', flexGrow: 1, height: `calc(100vh - ${HEADER_HEIGHT}px)`, overflow: 'hidden' }}>
-        {/* Main Content Area - Taking full width since sidebar is removed */}
-        <Box
-          component="main"
+      {/* Sidebar Navigation */}
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+      >
+        {/* Mobile Drawer */}
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
           sx={{
-            flexGrow: 1,
-            backgroundColor: '#090B10', // Deepest black/navy
-            backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
-            overflow: 'auto',
-            height: '100%',
-            pt: { xs: 1, md: 1.5 },
-            px: { xs: 2, md: 4 },
-            pb: { xs: 2, md: 4 }
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0B0F19', borderRight: 'none' },
           }}
         >
-          <Box sx={{ maxWidth: '100%', margin: '0 auto', height: '100%' }}>
-            <Outlet />
-          </Box>
+          {drawerContent}
+        </Drawer>
+        {/* Desktop Permanent Drawer */}
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0B0F19', borderRight: 'none', top: HEADER_HEIGHT, height: `calc(100vh - ${HEADER_HEIGHT}px)` },
+          }}
+          open
+        >
+          {drawerContent}
+        </Drawer>
+      </Box>
+
+      {/* Main Content Area */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          mt: `${HEADER_HEIGHT}px`,
+          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          backgroundColor: '#090B10',
+          backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
+          height: { xs: 'auto', md: `calc(100vh - ${HEADER_HEIGHT}px)` },
+          overflow: { xs: 'auto', md: 'hidden' },
+          pt: { xs: 1, md: 1 },
+          px: { xs: 1, md: 2 },
+          pb: { xs: 1, md: 1 }
+        }}
+      >
+        <Box sx={{ maxWidth: '100%', margin: '0 auto', height: '100%' }}>
+          <Outlet />
         </Box>
       </Box>
+
+      {/* Modal de Check-in */}
+      <Dialog open={openCheckIn} onClose={() => setOpenCheckIn(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#151B26', color: '#fff' }}}>
+        <DialogTitle sx={{ color: '#D4AF37' }}>Registrar Presença</DialogTitle>
+        <DialogContent>
+          {activeSessionId && (
+            <SessionCheckIn 
+              sessionId={activeSessionId} 
+              onSuccess={() => setOpenCheckIn(false)} 
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCheckIn(false)} sx={{ color: 'rgba(255,255,255,0.7)' }}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

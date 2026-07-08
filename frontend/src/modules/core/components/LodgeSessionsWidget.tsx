@@ -22,6 +22,7 @@ interface LodgeSessionsWidgetProps {
   onNextMonth: () => void;
   onToday: () => void;
   onDayClick: (day: number) => void;
+  canManageLodge?: boolean;
 }
 
 const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
@@ -34,7 +35,8 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
   onPrevMonth,
   onNextMonth,
   onToday,
-  onDayClick
+  onDayClick,
+  canManageLodge
 }) => {
   const theme = useTheme();
   const glassStyles = getGlassStyles(theme.palette.mode);
@@ -119,9 +121,11 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
 
   return (
     <Card sx={{
-      ...glassStyles,
+      bgcolor: '#242830',
       color: theme.palette.text.primary,
-      borderRadius: '16px',
+      borderRadius: '8px',
+      border: '1px solid rgba(255,255,255,0.08)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       flexGrow: 1,
       display: 'flex',
       flexDirection: 'column',
@@ -130,7 +134,7 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
       <CardContent sx={{ p: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
         <Box sx={{ pt: { xs: 1.5, md: 2 }, px: { xs: 1.5, md: 2 }, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
-            <Typography variant="h3" sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 800, color: ACCENT_COLOR, letterSpacing: -1, mb: 0 }}>
+            <Typography variant="h3" sx={{ fontFamily: '"Inter", sans-serif', fontWeight: 800, color: '#C49A45', letterSpacing: -1, mb: 0 }}>
               {currentDate.toLocaleDateString('pt-BR', { month: 'long' })}
             </Typography>
             <Typography variant="h6" sx={{ fontFamily: '"Inter", sans-serif', color: theme.palette.text.secondary, fontWeight: 300, letterSpacing: 1, mb: 1.5 }}>
@@ -194,6 +198,33 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', flexGrow: 1, bgcolor: theme.palette.mode === 'dark' ? '#090B10' : '#ffffff' }}>
           {renderCalendarDays}
         </Box>
+        
+        {canManageLodge && (
+          <Box sx={{ display: 'flex', gap: 1.5, p: 2.5, pt: 2, justifyContent: 'center', bgcolor: theme.palette.mode === 'dark' ? '#090B10' : '#ffffff' }}>
+              <Button 
+                  variant="contained" 
+                  onClick={() => {}}
+                  sx={{ 
+                      flex: 1, 
+                      maxWidth: '400px', // Prevents it from being too huge in the middle column
+                      background: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
+                      color: '#1A1D23',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontFamily: '"Inter", sans-serif',
+                      boxShadow: 'none',
+                      '&:hover': {
+                          background: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
+                          opacity: 0.9,
+                          boxShadow: '0 2px 10px rgba(196,154,69,0.3)'
+                      }
+                  }}
+              >
+                  Editar Agenda
+              </Button>
+          </Box>
+        )}
+
       </CardContent>
     </Card>
   );

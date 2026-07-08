@@ -30,3 +30,11 @@ Recentemente, o MÃ³dulo de NotificaÃ§Ãµes Inteligentes (WhatsApp) e o Motor de T
 2. **HomologaÃ§Ã£o GeogrÃ¡fica:** Testes das cercas virtuais de check-in (Lojas A a F).
 3. **Gateway Real:** Integrar de fato o SDK do Mercado Pago ao invÃ©s de webhooks mockados.
 4. **Testes Automatizados (Pytest):** Cobertura das transaÃ§Ãµes crÃ­ticas.
+
+
+## Sessão: 08/07/2026
+- Otimização do dashboard (Lazy Loading do Roster, Agrupamento SQL, Queries otimizadas)
+- Padronização de botões de 'Editar' com permissões (Flex Layout)
+- Modificação do Header: Logo do SiGMa e texto movidos para o rodapé do menu lateral, dando espaço para o Logo e Nome da Loja logada
+- Remoção do widget 'Minha Loja' desnecessário
+- Resolução de refresh token state preservation

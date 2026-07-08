@@ -338,6 +338,13 @@ def confirm_lodge_import(
             technical_contact_name=row.technical_contact_name,
         )
         try:
+            lodge_service.create_lodge(db=db, lodge=lodge_create)
+            saved_count += 1
+        except Exception as e:
+            print(f"Erro ao salvar loja {row.name}: {e}")
+            pass
+            
+    return {"message": f"{saved_count} lojas importadas com sucesso.", "imported_count": saved_count}
 
 
 @router.post("/{lodge_id}/upload_asset", summary="Upload de Asset Genérico da Loja")

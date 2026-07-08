@@ -32,13 +32,12 @@ import {
     Architecture as ArchitectureIcon,
     ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
-import { getDashboardStats, getCalendarEvents, getNotices, createNotice, updateNotice, deleteNotice, DashboardStats, CalendarEvent, Notice } from '@/modules/core/services/dashboardService';
-import MinhaLojaWidget from '@/modules/core/components/MinhaLojaWidget';
-
+import { getDashboardStats, getCalendarEvents, getNotices, createNotice, updateNotice, deleteNotice, getLodgeMembers, DashboardStats, CalendarEvent, Notice, LodgeMember } from '@/modules/core/services/dashboardService';
 import LodgeMembersWidget from '@/modules/core/components/LodgeMembersWidget';
 import LodgeCommemorativeEventsWidget from '@/modules/core/components/LodgeCommemorativeEventsWidget';
 import LodgeNoticesWidget from '@/modules/core/components/LodgeNoticesWidget';
 import LodgeSessionsWidget from '@/modules/core/components/LodgeSessionsWidget';
+import QuickAccessWidget from '@/modules/core/components/QuickAccessWidget';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -83,6 +82,23 @@ const LodgeDashboard: React.FC = () => {
     const [editingNoticeId, setEditingNoticeId] = useState<number | null>(null);
 
     const [membersModalOpen, setMembersModalOpen] = useState(false);
+    const [membersList, setMembersList] = useState<LodgeMember[]>([]);
+    const [loadingMembers, setLoadingMembers] = useState(false);
+
+    const handleOpenMembersModal = async () => {
+        setMembersModalOpen(true);
+        if (membersList.length === 0) {
+            setLoadingMembers(true);
+            try {
+                const list = await getLodgeMembers();
+                setMembersList(list);
+            } catch (error) {
+                console.error("Error fetching members list:", error);
+            } finally {
+                setLoadingMembers(false);
+            }
+        }
+    };
 
     const handleOpenClassifiedsModal = () => {
         navigate('/dashboard/lodge-dashboard/obreiro/classificados');
@@ -296,40 +312,25 @@ const LodgeDashboard: React.FC = () => {
             flexGrow: 1,
             display: 'flex',
             flexDirection: 'column',
-            height: { xs: 'auto', md: 'calc(100vh - 80px)' },
-            minHeight: { xs: 'calc(100vh - 80px)', md: 'auto' },
+            height: '100%',
+            minHeight: 0,
             bgcolor: theme.palette.background.default,
             color: theme.palette.text.primary,
             fontFamily: '"Inter", sans-serif',
-            p: 2,
             overflow: { xs: 'visible', md: 'hidden' }
         }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Button 
-                    startIcon={<ArrowBackIcon />} 
-                    onClick={() => navigate(-1)}
-                    sx={{ 
-                        color: 'rgba(255,255,255,0.7)',
-                        '&:hover': { color: '#fff', backgroundColor: 'rgba(255,255,255,0.1)' }
-                    }}
-                >
-                    Voltar
-                </Button>
-            </Box>
-            <Grid container spacing={1.5} columns={10} sx={{ flexGrow: 1, height: '100%' }}>
-                {/* Left Column - Minha Loja, Membros, Datas Comemorativas */}
-                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
+
+            <Grid container spacing={1.5} columns={10} sx={{ flexGrow: 1, height: '100%', minHeight: 0 }}>
+                <Grid size={{ xs: 10, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', md: '100%' }, overflowY: 'auto', pr: 0.5, minHeight: 0 }}>
                     <Box sx={{ flexShrink: 0 }}>
-                        <MinhaLojaWidget lodgeInfo={stats?.lodge_info} canManageLodge={canManageLodge} />
+                        <LodgeMembersWidget stats={stats?.lodge_members_stats} onClick={handleOpenMembersModal} canManageLodge={canManageLodge} />
                     </Box>
 
-                    <LodgeMembersWidget stats={stats} onClick={() => setMembersModalOpen(true)} />
-
-                    <LodgeCommemorativeEventsWidget commemorativeEvents={commemorativeEvents} currentDate={currentDate} />
+                    <LodgeCommemorativeEventsWidget commemorativeEvents={commemorativeEvents} currentDate={currentDate} canManageLodge={canManageLodge} />
                 </Grid>
 
                 {/* Core Column - Massive Calendar */}
-                <Grid size={{ xs: 10, lg: 6 }} sx={{ height: { xs: 'auto', lg: '100%' }, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <Grid size={{ xs: 10, md: 6 }} sx={{ height: { xs: 'auto', md: '100%' }, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                     <LodgeSessionsWidget
                         currentDate={currentDate}
                         daysInMonth={daysInMonth}
@@ -341,11 +342,12 @@ const LodgeDashboard: React.FC = () => {
                         onNextMonth={handleNextMonth}
                         onToday={handleToday}
                         onDayClick={handleDayClick}
+                        canManageLodge={canManageLodge}
                     />
                 </Grid>
 
                 {/* Right Column - Mural, QuickAccessWidget */}
-                <Grid size={{ xs: 10, lg: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', lg: '100%' }, overflowY: { xs: 'auto', lg: 'hidden' } }}>
+                <Grid size={{ xs: 10, md: 2 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: { xs: 'auto', md: '100%' }, overflowY: 'auto', pr: 0.5, minHeight: 0 }}>
                     <LodgeNoticesWidget
                         stats={stats}
                         canManageNotices={canManageNotices}
@@ -353,6 +355,10 @@ const LodgeDashboard: React.FC = () => {
                         onOpenAllNotices={handleOpenAllNotices}
                         onNoticeClick={handleNoticeClick}
                     />
+                    
+                    <Box sx={{ flexShrink: 0 }}>
+                        <QuickAccessWidget onOpenClassifieds={() => console.log('Classifieds')} />
+                    </Box>
 
 
                 </Grid>
@@ -439,8 +445,13 @@ const LodgeDashboard: React.FC = () => {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ mt: 2, pb: 4 }}>
-                    <Grid container spacing={2}>
-                        {stats?.lodge_members_stats?.members_list?.map((member) => (
+                    {loadingMembers ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+                            <CircularProgress sx={{ color: ACCENT_COLOR }} />
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {membersList.map((member) => (
                             <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={member.id}>
                                 <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${theme.palette.divider}`, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', p: 3, transition: 'all 0.2s', '&:hover': { transform: 'translateY(-4px)', borderColor: ACCENT_COLOR } }}>
                                     <Box sx={{ position: 'relative', mb: 2 }}>
@@ -485,6 +496,7 @@ const LodgeDashboard: React.FC = () => {
                             </Grid>
                         ))}
                     </Grid>
+                    )}
                 </DialogContent>
             </Dialog>
 

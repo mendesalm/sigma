@@ -42,14 +42,37 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
     )
 
     # 3. Upcoming Birthdays & Anniversaries (Next 30 days)
-    active_members = (
-        db.query(models.Member)
+    active_member_dates = (
+        db.query(
+            models.Member.full_name,
+            models.Member.birth_date,
+            models.Member.marriage_date,
+            models.Member.initiation_date,
+            models.Member.elevation_date,
+            models.Member.exaltation_date,
+        )
         .join(models.MemberLodgeAssociation)
         .filter(
             models.MemberLodgeAssociation.lodge_id == lodge_id,
             models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
         )
-        .options(joinedload(models.Member.family_members))
+        .all()
+    )
+
+    active_family_dates = (
+        db.query(
+            models.FamilyMember.full_name,
+            models.FamilyMember.birth_date,
+            models.FamilyMember.relationship_type,
+            models.Member.full_name.label("member_name"),
+        )
+        .join(models.Member)
+        .join(models.MemberLodgeAssociation)
+        .filter(
+            models.MemberLodgeAssociation.lodge_id == lodge_id,
+            models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
+            models.FamilyMember.is_deceased == False
+        )
         .all()
     )
 
@@ -71,46 +94,42 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
                 this_year = date_obj.replace(year=reference_date.year + 1, day=28)
         return this_year
 
-    for member in active_members:
+    for m in active_member_dates:
         # Member Birthday
-        bday = get_next_occurrence(member.birth_date, today)
+        bday = get_next_occurrence(m.birth_date, today)
         if bday and today <= bday <= limit_date:
-            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": bday, "type": "aniversario"})
+            upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": bday, "type": "aniversario"})
 
         # Wedding Anniversary
-        wedding_day = get_next_occurrence(member.marriage_date, today)
+        wedding_day = get_next_occurrence(m.marriage_date, today)
         if wedding_day and today <= wedding_day <= limit_date:
-            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": wedding_day, "type": "casamento"})
+            upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": wedding_day, "type": "casamento"})
 
         # Masonic Anniversaries
-        initiation = get_next_occurrence(member.initiation_date, today)
+        initiation = get_next_occurrence(m.initiation_date, today)
         if initiation and today <= initiation <= limit_date:
-            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": initiation, "type": "iniciacao"})
+            upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": initiation, "type": "iniciacao"})
 
-        elevation = get_next_occurrence(member.elevation_date, today)
+        elevation = get_next_occurrence(m.elevation_date, today)
         if elevation and today <= elevation <= limit_date:
-            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": elevation, "type": "elevacao"})
+            upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": elevation, "type": "elevacao"})
 
-        exaltation = get_next_occurrence(member.exaltation_date, today)
+        exaltation = get_next_occurrence(m.exaltation_date, today)
         if exaltation and today <= exaltation <= limit_date:
-            upcoming_birthdays.append({"name": f"Ir. {member.full_name}", "date": exaltation, "type": "exaltacao"})
+            upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": exaltation, "type": "exaltacao"})
 
-        # Family Birthdays
-        for fm in member.family_members:
-            if fm.is_deceased:
-                continue
-            fm_bday = get_next_occurrence(fm.birth_date, today)
-            if fm_bday and today <= fm_bday <= limit_date:
-                rel_type = (
-                    fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
-                )
-                upcoming_birthdays.append(
-                    {
-                        "name": f"{fm.full_name} ({rel_type} do Ir. {member.full_name})",
-                        "date": fm_bday,
-                        "type": "aniversario_familiar",
-                    }
-                )
+    # Family Birthdays
+    for fm in active_family_dates:
+        fm_bday = get_next_occurrence(fm.birth_date, today)
+        if fm_bday and today <= fm_bday <= limit_date:
+            rel_type = fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
+            upcoming_birthdays.append(
+                {
+                    "name": f"{fm.full_name} ({rel_type} do Ir. {fm.member_name})",
+                    "date": fm_bday,
+                    "type": "aniversario_familiar",
+                }
+            )
 
     upcoming_birthdays.sort(key=lambda x: x["date"])
 
@@ -174,44 +193,41 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
     for ds in dining_scale_records:
         dining_scale.append({"position": ds.position, "name": ds.member.full_name, "date": ds.date})
 
-    # 8. Lodge Members Stats (New Widget)
+    # 8. Lodge Members Stats (Optimized Widget)
+    degree_counts = (
+        db.query(
+            models.Member.degree,
+            models.Member.is_installed,
+            func.count(models.Member.id)
+        )
+        .join(models.MemberLodgeAssociation)
+        .filter(
+            models.MemberLodgeAssociation.lodge_id == lodge_id,
+            models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
+        )
+        .group_by(models.Member.degree, models.Member.is_installed)
+        .all()
+    )
+
     ms_apprentices = 0
     ms_fellows = 0
     ms_masters = 0
-    members_list_data = []
+    total_active_members = 0
 
-    for m in active_members:
-        # Count degrees
-        deg = m.degree.value if hasattr(m.degree, "value") else str(m.degree)
-        if deg == "Aprendiz":
-            ms_apprentices += 1
-        elif deg == "Companheiro":
-            ms_fellows += 1
-        elif deg in ["Mestre", "Mestre Instalado"]:
-            ms_masters += 1
-
-        # Prepare list item
-        members_list_data.append(
-            {
-                "id": m.id,
-                "full_name": m.full_name,
-                "cim": m.cim,
-                "email": m.email,
-                "phone": m.phone,
-                "profile_picture_path": m.profile_picture_path,
-                "degree": deg,
-            }
-        )
-
-    # Sort members list alphabetically
-    members_list_data.sort(key=lambda x: x["full_name"])
+    for degree, is_installed, count in degree_counts:
+        total_active_members += count
+        if degree == 1:
+            ms_apprentices += count
+        elif degree == 2:
+            ms_fellows += count
+        elif degree and degree >= 3:
+            ms_masters += count
 
     lodge_members_stats = {
-        "total": len(active_members),
+        "total": total_active_members,
         "masters": ms_masters,
         "fellows": ms_fellows,
         "apprentices": ms_apprentices,
-        "members_list": members_list_data,
     }
 
     # 9. Lodge Info (For "Minha Loja" Widget)
@@ -316,14 +332,37 @@ def get_calendar_events(
     )
 
     # 3. Birthdays and Masonic Dates (Initiation, Elevation, Exaltation)
-    active_members = (
-        db.query(models.Member)
+    active_member_dates = (
+        db.query(
+            models.Member.full_name,
+            models.Member.birth_date,
+            models.Member.marriage_date,
+            models.Member.initiation_date,
+            models.Member.elevation_date,
+            models.Member.exaltation_date,
+        )
         .join(models.MemberLodgeAssociation)
         .filter(
             models.MemberLodgeAssociation.lodge_id == lodge_id,
             models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
         )
-        .options(joinedload(models.Member.family_members))
+        .all()
+    )
+
+    active_family_dates = (
+        db.query(
+            models.FamilyMember.full_name,
+            models.FamilyMember.birth_date,
+            models.FamilyMember.relationship_type,
+            models.Member.full_name.label("member_name"),
+        )
+        .join(models.Member)
+        .join(models.MemberLodgeAssociation)
+        .filter(
+            models.MemberLodgeAssociation.lodge_id == lodge_id,
+            models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
+            models.FamilyMember.is_deceased == False
+        )
         .all()
     )
 
@@ -342,7 +381,7 @@ def get_calendar_events(
         )
 
     # Map Member Dates
-    for m in active_members:
+    for m in active_member_dates:
         # Birthday
         if m.birth_date and m.birth_date.month == month:
             day = m.birth_date.day
@@ -392,7 +431,7 @@ def get_calendar_events(
                 {
                     "date": m.initiation_date.day,
                     "title": f"Ir. {m.full_name}",
-                    "type": "iniciacao",  # Frontend can group this under 'maconico'
+                    "type": "iniciacao",
                     "full_date": date(year, month, m.initiation_date.day),
                 }
             )
@@ -402,7 +441,7 @@ def get_calendar_events(
                 {
                     "date": m.elevation_date.day,
                     "title": f"Ir. {m.full_name}",
-                    "type": "elevacao",  # Frontend can group this under 'maconico'
+                    "type": "elevacao",
                     "full_date": date(year, month, m.elevation_date.day),
                 }
             )
@@ -412,30 +451,77 @@ def get_calendar_events(
                 {
                     "date": m.exaltation_date.day,
                     "title": f"Ir. {m.full_name}",
-                    "type": "exaltacao",  # Frontend can group this under 'maconico'
+                    "type": "exaltacao",
                     "full_date": date(year, month, m.exaltation_date.day),
                 }
             )
 
-        # Family Birthdays
-        for fm in m.family_members:
-            if fm.is_deceased:
-                continue
-
-            if fm.birth_date and fm.birth_date.month == month:
-                rel_type = (
-                    fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
-                )
-                calendar_events.append(
-                    {
-                        "date": fm.birth_date.day,
-                        "title": f"{fm.full_name} ({rel_type} do Ir. {m.full_name})",
-                        "type": "aniversario_familiar",
-                        "full_date": date(year, month, fm.birth_date.day),
-                    }
-                )
+    # Family Birthdays
+    for fm in active_family_dates:
+        if fm.birth_date and fm.birth_date.month == month:
+            rel_type = (
+                fm.relationship_type.value if hasattr(fm.relationship_type, "value") else str(fm.relationship_type)
+            )
+            calendar_events.append(
+                {
+                    "date": fm.birth_date.day,
+                    "title": f"{fm.full_name} ({rel_type} do Ir. {fm.member_name})",
+                    "type": "aniversario_familiar",
+                    "full_date": date(year, month, fm.birth_date.day),
+                }
+            )
 
     # Sort by date
     calendar_events.sort(key=lambda x: x["date"])
 
     return calendar_events
+
+@router.get("/members")
+def get_lodge_members(db: Session = Depends(get_db), payload: dict = Depends(get_current_user_payload)):
+    lodge_id = payload.get("lodge_id")
+
+    if not lodge_id:
+        raise HTTPException(status_code=400, detail="User is not associated with any lodge context")
+
+    active_members = (
+        db.query(models.Member)
+        .join(models.MemberLodgeAssociation)
+        .filter(
+            models.MemberLodgeAssociation.lodge_id == lodge_id,
+            models.MemberLodgeAssociation.status == models.MemberStatusEnum.ACTIVE,
+        )
+        .all()
+    )
+
+    members_list_data = []
+
+    for m in active_members:
+        # Count degrees
+        deg_val = m.degree
+        
+        if deg_val == 1:
+            deg_str = "Aprendiz"
+        elif deg_val == 2:
+            deg_str = "Companheiro"
+        elif deg_val and deg_val >= 3:
+            deg_str = "Mestre Instalado" if getattr(m, 'is_installed', False) else "Mestre"
+        else:
+            deg_str = "Desconhecido"
+
+        # Prepare list item
+        members_list_data.append(
+            {
+                "id": m.id,
+                "full_name": m.full_name,
+                "cim": m.cim,
+                "email": m.email,
+                "phone": m.phone,
+                "profile_picture_path": m.profile_picture_path,
+                "degree": deg_str,
+            }
+        )
+
+    # Sort members list alphabetically
+    members_list_data.sort(key=lambda x: x["full_name"])
+
+    return members_list_data

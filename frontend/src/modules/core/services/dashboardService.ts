@@ -35,15 +35,6 @@ export interface DashboardStats {
     masters: number;
     fellows: number;
     apprentices: number;
-    members_list: Array<{
-      id: number;
-      full_name: string;
-      cim?: string;
-      email: string;
-      phone?: string;
-      profile_picture_path?: string;
-      degree?: string;
-    }>;
   };
   lodge_info: {
     id: number;
@@ -73,6 +64,21 @@ export interface CalendarEvent {
 
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   const response = await api.get('/dashboard/stats');
+  return response.data;
+};
+
+export interface LodgeMember {
+  id: number;
+  full_name: string;
+  cim?: string;
+  email: string;
+  phone?: string;
+  profile_picture_path?: string;
+  degree?: string;
+}
+
+export const getLodgeMembers = async (): Promise<LodgeMember[]> => {
+  const response = await api.get('/dashboard/members');
   return response.data;
 };
 
