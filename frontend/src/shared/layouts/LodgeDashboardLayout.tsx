@@ -97,7 +97,7 @@ const LodgeDashboardLayout: React.FC = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const isWebmaster = user?.is_webmaster || false;
+  const isWebmaster = user?.user_type === 'webmaster' || user?.is_webmaster || user?.role === 'Webmaster' || false;
   const isAdmin = isWebmaster || adminRoles.includes(user?.active_role_name || '');
 
   const sidebarItems = [
