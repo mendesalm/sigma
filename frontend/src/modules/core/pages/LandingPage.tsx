@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { People, Security, AccountBalance, Extension, AutoAwesome, Restaurant, MenuBook, MusicNote, Storefront, Campaign, ArrowForwardIos, ArrowBackIosNew } from '@mui/icons-material';
-import sigmaLogo from '@/assets/images/logos/Sigma_Logo_PrataAzul_G.png';
+import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
 import SecretariaIcon from '@/assets/icons/Secretaria.svg';
 import ChancelariaIcon from '@/assets/icons/chancelaria.svg';
 import TesourariaIcon from '@/assets/icons/Tesouraria.svg';
@@ -186,19 +186,9 @@ const LandingPage: React.FC = () => {
       <SectionContainer id="hero-section">
         <HeroBackground />
         <Box sx={{ textAlign: 'center', width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <img
-            id="hero-logo"
-            src={sigmaLogo}
-            alt="Sigma Logo"
-            style={{
-              maxWidth: '500px',
-              width: '100%',
-              maxHeight: '35vh',
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 0 30px rgba(0,176,255,0.4))',
-              marginTop: '40px'
-            }}
-          />
+          <Box id="hero-logo" sx={{ mt: 5, filter: 'drop-shadow(0 0 30px rgba(0,176,255,0.4))', display: 'flex', justifyContent: 'center' }}>
+            <SigmaAnimatedLogo theme="prata" width={220} height={220} showText={false} animated={false} />
+          </Box>
           <Box sx={{ mt: 3, mb: 5 }}>
             <Typography
               variant="h1"
@@ -563,7 +553,7 @@ const LandingPage: React.FC = () => {
             <Typography variant="h5" sx={{ color: '#fff', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
               Prepare sua Loja para o Futuro. Comece agora.
             </Typography>
-            <Button variant="contained" color="primary" size="large" onClick={() => navigate('/login')} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 0 15px rgba(0, 176, 255, 0.4)' }}>
+            <Button variant="contained" color="primary" size="large" onClick={() => navigate('/login', { viewTransition: true })} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 0 15px rgba(0, 176, 255, 0.4)' }}>
               INICIAR TESTE GRATUITO
             </Button>
           </Paper>

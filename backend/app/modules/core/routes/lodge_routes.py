@@ -121,27 +121,7 @@ from dependencies import get_current_user_payload
 
 from app.shared.utils.path_utils import get_tenant_path_for_lodge
 
-@router.post("/{lodge_id}/logo", summary="Upload do Logo da Loja")
-async def upload_lodge_logo(
-    lodge_id: int,
-    file: UploadFile = File(...),
-    db: Session = Depends(database.get_db),
-    current_user_payload: dict = Depends(get_current_user_payload),
-):
-    # Verifica permissões (apenas admin ou webmaster da loja)
-    # TODO: Implementar verificação de permissão mais robusta
 
-    # Define o caminho de armazenamento usando lazy loading
-    storage_dir = get_tenant_path_for_lodge(db, lodge_id, "assets/images")
-    file_path = storage_dir / "logo.png"
-
-    try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar logo: {str(e)}")
-
-    return {"message": "Logo atualizado com sucesso", "path": str(file_path)}
 
 
 @router.post("/{lodge_id}/upload_asset", summary="Upload de Asset Genérico da Loja")
@@ -549,7 +529,7 @@ def confirm_lodge_import(
     db.commit()
     return {"message": "Importação concluída.", "saved_count": saved_count}
 
-@router.post("/{lodge_id}/logo")
+@router.post("/{lodge_id}/logo", summary="Upload do Logo da Loja")
 def upload_lodge_logo(
     lodge_id: int, 
     file: UploadFile = File(...), 
@@ -564,21 +544,24 @@ def upload_lodge_logo(
     if current_user.get("lodge_id") != lodge_id and current_user.get("role") != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Not authorized to update this lodge logo")
 
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
+    if file.content_type != "image/png":
+        raise HTTPException(status_code=400, detail="O arquivo deve ser no formato PNG")
+
+    file_content = file.file.read()
+    if len(file_content) > 300 * 1024:
+        raise HTTPException(status_code=400, detail="O arquivo não pode ter mais de 300 KB")
+    
+    file.file.seek(0)
 
     storage_dir = Path(f"storage/lodges/loja_{lodge_id}")
     storage_dir.mkdir(parents=True, exist_ok=True)
     
-    ext = os.path.splitext(file.filename)[1] if file.filename else ".png"
-    if not ext:
-        ext = ".png"
-    
-    filename = f"logo{ext}"
+    lodge_number = lodge.lodge_number if lodge.lodge_number else str(lodge_id)
+    filename = f"loja{lodge_number}.png"
     file_path = storage_dir / filename
     
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(file_content)
 
     db_path = f"/storage/lodges/loja_{lodge_id}/{filename}"
     lodge.logo_path = db_path

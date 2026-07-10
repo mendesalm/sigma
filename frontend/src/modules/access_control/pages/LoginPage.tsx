@@ -16,9 +16,10 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import logoSigma from "../../../assets/logos/SigmaLogo.png";
+import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
 import FirstAccessWizard from '../components/FirstAccessWizard';
 import { motion } from 'framer-motion';
+import HeroBackground from '@/modules/core/components/HeroBackground';
 
 const AnimatedBox = motion.create(Box);
 
@@ -89,27 +90,9 @@ const LoginPage: React.FC = () => {
         bgcolor: '#0b111b',
       }}
     >
-      {/* Animated Gradient Background */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '-50%',
-          left: '-50%',
-          width: '200%',
-          height: '200%',
-          background: 'radial-gradient(circle at 50% 50%, rgba(0, 176, 255, 0.15) 0%, rgba(11, 17, 27, 1) 50%)',
-          animation: 'spin 30s linear infinite',
-          zIndex: 0,
-          '@keyframes spin': {
-            '0%': { transform: 'rotate(0deg)' },
-            '100%': { transform: 'rotate(360deg)' },
-          }
-        }}
-      />
-      
-      {/* Glow Orbs */}
-      <Box sx={{ position: 'absolute', top: '10%', left: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
-      <Box sx={{ position: 'absolute', bottom: '10%', right: '20%', width: '300px', height: '300px', background: '#00B0FF', filter: 'blur(150px)', opacity: 0.1, borderRadius: '50%', zIndex: 0 }} />
+      <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        <HeroBackground />
+      </Box>
 
       <Container component="main" maxWidth="sm" sx={{
         position: 'relative',
@@ -130,7 +113,7 @@ const LoginPage: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            backgroundColor: 'rgba(19, 27, 41, 0.6)', 
+            backgroundColor: 'rgba(19, 27, 41, 0.05)', 
             backdropFilter: 'blur(20px)', 
             border: '1px solid rgba(255, 255, 255, 0.08)', 
             p: { xs: 4, md: 6 },
@@ -139,17 +122,25 @@ const LoginPage: React.FC = () => {
             width: '100%',
           }}
         >
-          <Box sx={{ mb: 4, mt: 1 }}>
-            <img
-              src={logoSigma}
-              alt="Sigma Logo"
-              style={{ maxHeight: "100px", width: "auto" }}
-            />
+          <Box sx={{ mb: 1, mt: 1, display: 'flex', justifyContent: 'center' }}>
+            <SigmaAnimatedLogo theme="prata" width={100} height={100} showText={false} />
           </Box>
-          <Typography component="h1" variant="h5" sx={{ mb: 1, fontWeight: 700, letterSpacing: '0.5px' }}>
+          <Typography 
+            component="h1" 
+            variant="h4" 
+            sx={{ 
+              mb: 1, 
+              fontWeight: 700, 
+              fontFamily: "'Tektur', sans-serif",
+              background: 'linear-gradient(to right, #B4B4B4, #9F9F9F)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 10px rgba(180, 180, 180, 0.3))'
+            }}
+          >
             Acesso Restrito
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 4, fontFamily: "'Inter', sans-serif" }}>
             Insira suas credenciais para continuar
           </Typography>
 

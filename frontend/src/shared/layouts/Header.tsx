@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Brightness4, Brightness7 } from "@mui/icons-material";
 import { useCustomTheme } from "@/shared/contexts/ThemeContext";
-import logoSigma from "@/assets/images/logos/Sigma_Logo_PrataAzul_P.png";
+import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -103,6 +103,7 @@ const Header: React.FC = () => {
           >
             <RouterLink
               to="/"
+              viewTransition
               style={{
                 textDecoration: "none",
                 color: "inherit",
@@ -112,12 +113,12 @@ const Header: React.FC = () => {
               }}
             >
               <Box
-                component="img"
-                src={logoSigma}
-                alt="Sigma Logo"
                 sx={{
                   height: { xs: 32, md: 45 },
-                  width: 'auto',
+                  width: { xs: 32, md: 45 },
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))",
                   transition: "transform 0.3s ease",
                   "&:hover": {
@@ -125,7 +126,9 @@ const Header: React.FC = () => {
                     filter: "drop-shadow(0px 0px 12px rgba(0, 176, 255, 0.5))",
                   }
                 }}
-              />
+              >
+                <SigmaAnimatedLogo theme="prata" width="100%" height="100%" showText={false} animated={false} />
+              </Box>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <Typography 
                   variant="h6" 
@@ -189,8 +192,9 @@ const Header: React.FC = () => {
             </IconButton>
             <Button 
               component={RouterLink} 
-              to={isLoginPage ? "/" : "/login"}
-              variant="outlined"
+              to={isLoginPage ? "/" : "/login"} 
+              viewTransition
+              variant={isLoginPage ? "outlined" : "contained"} 
               color="primary"
               sx={{
                 borderRadius: '20px',

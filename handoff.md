@@ -1,12 +1,16 @@
-# Hand-off da Sessão (Contexto para a próxima interação)
+# Sessão de Encerramento (Handoff) - SIGMA
 
-## Estado Atual do Projeto (Últimas ações)
-- **Correção de Permissões do Webmaster**: Adicionado `user_type: "webmaster"` ao payload JWT (`auth_routes.py`) e reforçadas as checagens na interface `LodgeDashboard.tsx` e `LodgeDashboardLayout.tsx` (agora validam `user?.user_type === 'webmaster' || user?.role === 'Webmaster'`). Com isso, os menus administrativos e botões de edição carregam perfeitamente para este cargo.
-- **Correção do Widget de Membros**: O componente `LodgeMembersWidget` estava recebendo incorretamente o sub-objeto (`stats?.lodge_members_stats`) no lugar do objeto raiz, o que causava indefinição nos dados (0 aprendizes, 0 companheiros, 0 mestres). A passagem da prop `stats` foi corrigida no arquivo `LodgeDashboard.tsx` e agora renderiza corretamente as estatísticas no front-end. A interface TypeScript `DashboardStats` também foi atualizada.
+## Contexto Atual (Últimas Ações Realizadas)
+- **Refatoração Visual (Área Pública)**: Redesenhamos a **Página de Login** e a **Página de Onboarding** para manter a coesão visual e seguir a mesma identidade estética da Landing Page ("Glassmorphism").
+- **Componente Dinâmico**: O fundo estático e o gradiente radial foram substituídos pelo componente dinâmico animado `HeroBackground` nas telas de autenticação e embarque de Tenants.
+- **Micro-ajustes Estéticos**: A opacidade do fundo das caixas form foi calibrada iterativamente a pedido do usuário (iniciou em `0.3`, foi a `0.5`, e por fim estabilizada de forma mais agressiva em `0.05` para enfatizar o fundo).
+- **Tipografia**: Foi padronizada a fonte premium metálica **Tektur** para os cabeçalhos nestas telas.
+- **View Transitions API (Transições de Página)**: Removemos a transição por `framer-motion` no `PublicLayout` e implementamos a transição nativa via CSS (`@view-transition`), primeiramente em `main` e logo depois foi revertida para focar no `:root` a fim de melhorar a estabilidade da troca de telas em rotas de Single Page Applications (`React Router`). A meta tag no `index.html` foi atualizada. Além disso, a opção `{ viewTransition: true }` foi implementada nas âncoras da Header e Landing Page.
 
-## Próximos Passos (Ação Imediata para o Início da Sessão)
-- **Implementar a Opção 1**: O usuário informou que deseja seguir com a implementação da "Opção 1". 
-- Iniciar a sessão revisando o que compõe a Opção 1 (caso não esteja imediatamente claro) e seguir com sua respectiva implementação técnica no painel do Dashboard / Fluxo do usuário.
+## O Que Resta Fazer (Próximos Passos Sugeridos)
+1. **Verificação de Performance das Transições**: Continuar monitorando se o navegador não está "abortando" as transições de view ao saltar de páginas com o `<canvas>` animado em execução.
+2. **Gestão de Membros (Chancelaria - Backlog)**: Iniciar refinamento da tela de CRUD para membros (editar informações, alterar graus, emitir carteirinhas maçônicas/identidades).
+3. **Gestão de Eventos e Sessões (Secretaria - Backlog)**: Construir a feature para criação de novas sessões no calendário e o registro automático de atas para as Lojas.
 
-## Lembretes de Regras Ativas
-- Regra de encerramento (`.agent/rules/encerramento.md`) atualizada: Sempre que a sessão for encerrada, atualizar as documentações, gerar o handoff.md, realizar commit e push para o repositório.
+## Notas Adicionais
+- As regras de design em relação ao "SigmaAnimatedLogo" e ao "Glassmorphism" agora estão sedimentadas na área pública do sistema. Qualquer nova tela pública criada deve adotar o `HeroBackground` e caixas com backgroundColor no máximo de `0.05` ou de acordo com ajustes que facilitem a leitura.

@@ -10,7 +10,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Sending Authorization header with token:', token.substring(0, 30) + '...'); // Log first 30 chars
     } else {
       console.log('No token found in localStorage for Authorization header.');
     }

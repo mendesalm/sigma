@@ -62,3 +62,36 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* View Transitions for Public Pages */
+@view-transition {
+  navigation: auto;
+}
+
+:root {
+  view-transition-name: root;
+}
+
+@keyframes slideout {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slidein {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+::view-transition-group(root) {
+  animation-duration: 0.5s;
+}
+
+::view-transition-old(root) {
+  animation: slideout 0.5s ease-in-out both;
+}
+
+::view-transition-new(root) {
+  animation: slidein 0.5s ease-in-out both;
+}

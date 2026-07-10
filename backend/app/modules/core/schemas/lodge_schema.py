@@ -322,6 +322,23 @@ class LodgeResponse(LodgeBase):
     is_active: bool = Field(..., description="Status de ativação da loja")
 
     formatted_affiliation: str | None = Field(None, description="Texto formatado das federações")
+    obedience_name: str | None = Field(None, description="Nome da potência")
+    subobedience_name: str | None = Field(None, description="Nome da potência estadual")
+    obedience_acronym: str | None = Field(None, description="Sigla da potência")
+    subobedience_acronym: str | None = Field(None, description="Sigla da potência estadual")
+
+    @model_validator(mode='before')
+    @classmethod
+    def set_obedience_names(cls, data: any) -> any:
+        if isinstance(data, dict):
+            return data
+        if hasattr(data, 'obedience') and getattr(data, 'obedience'):
+            data.obedience_name = data.obedience.name
+            data.obedience_acronym = data.obedience.acronym
+        if hasattr(data, 'subobedience') and getattr(data, 'subobedience'):
+            data.subobedience_name = data.subobedience.name
+            data.subobedience_acronym = data.subobedience.acronym
+        return data
 
     model_config = {
         "from_attributes": True,

@@ -40,6 +40,8 @@ import TesourariaSvg from '@/assets/icons/Tesouraria.svg';
 import BibliotecaSvg from '@/assets/icons/Biblioteca.svg';
 import HarmoniaSvg from '@/assets/icons/Harmonia.svg';
 import ArquitetoSvg from '@/assets/icons/Arquiteto.svg';
+import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
+import LodgeDetailsModal from '../../modules/core/components/LodgeDetailsModal';
 
 const HEADER_HEIGHT = 70;
 const DRAWER_WIDTH = 260;
@@ -65,24 +67,26 @@ const LodgeDashboardLayout: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [openCheckIn, setOpenCheckIn] = useState(false);
   const [adminAnchorEl, setAdminAnchorEl] = useState<null | HTMLElement>(null);
+  const [lodgeDetailsOpen, setLodgeDetailsOpen] = useState(false);
+
+  const fetchLodgeData = async () => {
+    if (user?.lodge_id) {
+      try {
+        const response = await api.get(`/lodges/${user.lodge_id}`);
+        setLodgeData(response.data);
+        
+        // TODO: Backend não possui endpoint para buscar sessão ativa por lodge_id atualmente
+        // const sessionRes = await api.get(`/masonic-sessions/active/${user.lodge_id}`);
+        // if (sessionRes.data && sessionRes.data.id) {
+        //   setActiveSessionId(sessionRes.data.id);
+        // }
+      } catch (error) {
+        console.error("Failed to fetch lodge data:", error);
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchLodgeData = async () => {
-      if (user?.lodge_id) {
-        try {
-          const response = await api.get(`/lodges/${user.lodge_id}`);
-          setLodgeData(response.data);
-          
-          const sessionRes = await api.get(`/sessions/active/${user.lodge_id}`);
-          if (sessionRes.data && sessionRes.data.id) {
-            setActiveSessionId(sessionRes.data.id);
-            // setOpenCheckIn(true); // Opcional se quiser abrir automaticamente ao logar
-          }
-        } catch (error) {
-          console.error("Failed to fetch lodge/session data:", error);
-        }
-      }
-    };
     fetchLodgeData();
   }, [user]);
 
@@ -177,17 +181,9 @@ const LodgeDashboardLayout: React.FC = () => {
       
       {/* Sigma Footer */}
       <Box sx={{ mt: 'auto', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <Box
-          component="img"
-          src="/src/assets/images/logos/Sigma_Logo_PrataAzul_P.png"
-          alt="Sigma Logo"
-          sx={{
-            height: 48,
-            width: 'auto',
-            filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))",
-            mb: 1
-          }}
-        />
+        <Box sx={{ height: 48, width: 48, filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))", mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <SigmaAnimatedLogo theme="prata" width="100%" height="100%" showText={false} />
+        </Box>
         <Typography 
           variant="h6" 
           component="div" 
@@ -294,13 +290,22 @@ const LodgeDashboardLayout: React.FC = () => {
       >
         <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 1, md: 4 } }}>
           {/* Left: Hamburger & Lodge Info */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: { xs: 1, md: 2 },
+              cursor: lodgeData ? 'pointer' : 'default',
+              '&:hover': lodgeData ? { opacity: 0.8 } : {}
+            }}
+            onClick={() => lodgeData && setLodgeDetailsOpen(true)}
+          >
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ display: { md: 'none' }, color: 'rgba(255,255,255,0.7)' }}
+              sx={{ mr: 0, display: { md: 'none' } }}
             >
               <MenuIcon />
             </IconButton>
@@ -329,22 +334,31 @@ const LodgeDashboardLayout: React.FC = () => {
                       lineHeight: 1.2,
                       color: '#C49A45', // Dourado do Sigma
                       letterSpacing: '-0.01em',
-                    }}
-                  >
-                    Loja Maçônica {lodgeData.lodge_name}
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      letterSpacing: '0.05em',
-                      display: 'block',
-                      fontSize: '0.75rem',
                       textTransform: 'uppercase'
                     }}
                   >
-                    nº {lodgeData.lodge_number}
+                    Loja Maçônica {lodgeData.lodge_name} - Nº {lodgeData.lodge_number}
                   </Typography>
+                  {lodgeData.obedience_name && (
+                    <Box sx={{ mt: 0.5 }}>
+                      {lodgeData.obedience_name.includes('Grande Oriente do Brasil') || lodgeData.obedience_name.includes('GOB') ? (
+                        <>
+                          <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                            Federada ao Grande Oriente do Brasil
+                          </Typography>
+                          {lodgeData.subobedience_name && (
+                            <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                              Jurisdicionada ao {lodgeData.subobedience_name}
+                            </Typography>
+                          )}
+                        </>
+                      ) : (
+                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                          Confederada à {lodgeData.obedience_name}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
                 </Box>
               </>
             )}
@@ -447,6 +461,17 @@ const LodgeDashboardLayout: React.FC = () => {
           <Button onClick={() => setOpenCheckIn(false)} sx={{ color: 'rgba(255,255,255,0.7)' }}>Fechar</Button>
         </DialogActions>
       </Dialog>
+      {/* Modal de Detalhes da Loja */}
+      {lodgeData && (
+        <LodgeDetailsModal
+          open={lodgeDetailsOpen}
+          onClose={() => setLodgeDetailsOpen(false)}
+          lodgeData={lodgeData}
+          isAdmin={isAdmin}
+          isWebmaster={isWebmaster}
+          onUpdate={fetchLodgeData}
+        />
+      )}
     </Box>
   );
 };

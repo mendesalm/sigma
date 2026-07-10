@@ -96,9 +96,9 @@ const HeroBackground: React.FC = () => {
             ctx.stroke();
           }
         }
-        
+
         // Connect to focal point (Logo Center)
-        let focalPoint = { x: can.width / 2, y: (can.height / 2) - 95 };
+        let focalPoint = { x: can.width / 2, y: (can.height / 2) - 142 };
         let dxF = p.x - focalPoint.x;
         let dyF = p.y - focalPoint.y;
         let distF = Math.sqrt(dxF * dxF + dyF * dyF);
@@ -129,7 +129,7 @@ const HeroBackground: React.FC = () => {
       }
       animationFrameId = requestAnimationFrame(draw);
     }
-    
+
     // Performance: only animate if visible (Intersection Observer)
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -139,7 +139,7 @@ const HeroBackground: React.FC = () => {
         animationFrameId = 0;
       }
     }, { threshold: 0 });
-    
+
     observer.observe(can);
 
     return () => {
