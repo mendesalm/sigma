@@ -182,7 +182,7 @@ const LodgeDashboardLayout: React.FC = () => {
       {/* Sigma Footer */}
       <Box sx={{ mt: 'auto', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         <Box sx={{ height: 48, width: 48, filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))", mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <SigmaAnimatedLogo theme="prata" width="100%" height="100%" showText={false} />
+          <SigmaAnimatedLogo theme="cyber" width="100%" height="100%" showText={false} />
         </Box>
         <Typography 
           variant="h6" 

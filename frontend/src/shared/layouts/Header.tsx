@@ -127,7 +127,7 @@ const Header: React.FC = () => {
                   }
                 }}
               >
-                <SigmaAnimatedLogo theme="prata" width="100%" height="100%" showText={false} animated={false} />
+                <SigmaAnimatedLogo theme="cyber" width="100%" height="100%" showText={false} animated={false} />
               </Box>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <Typography 
@@ -197,22 +197,40 @@ const Header: React.FC = () => {
               variant={isLoginPage ? "outlined" : "contained"} 
               color="primary"
               sx={{
-                borderRadius: '20px',
+                borderRadius: '4px',
                 px: 3,
-                borderWidth: '1px',
-                backdropFilter: 'blur(4px)',
-                backgroundColor: alpha(theme.palette.background.paper, 0.1),
-                borderColor: alpha(theme.palette.primary.main, 0.5),
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  borderColor: theme.palette.primary.main,
-                  transform: 'translateY(-1px)',
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`
+                py: 1,
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                background: 'linear-gradient(135deg, rgba(8, 47, 73, 0.4) 0%, rgba(3, 105, 161, 0.1) 100%)',
+                color: '#e0f2fe',
+                backdropFilter: 'blur(8px)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0, left: '-100%', width: '50%', height: '100%',
+                  background: 'linear-gradient(to right, transparent, rgba(56, 189, 248, 0.4), transparent)',
+                  transform: 'skewX(-20deg)',
+                  transition: 'none',
                 },
-                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, rgba(8, 47, 73, 0.6) 0%, rgba(3, 105, 161, 0.3) 100%)',
+                  borderColor: '#38bdf8',
+                  boxShadow: '0 0 15px rgba(56, 189, 248, 0.5), inset 0 0 8px rgba(56, 189, 248, 0.3)',
+                  transform: 'translateY(-2px)',
+                  color: '#ffffff',
+                  '&::after': {
+                    left: '200%',
+                    transition: 'left 0.7s ease-in-out'
+                  }
+                },
+                transition: 'all 0.3s ease',
                 fontFamily: "'Tektur', sans-serif",
-                fontWeight: 400,
-                textTransform: 'uppercase'
+                fontWeight: 600,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                textShadow: '0 0 8px rgba(56, 189, 248, 0.5)'
               }}
             >
               {isLoginPage ? "Voltar ao Início" : "Acessar Sistema"}

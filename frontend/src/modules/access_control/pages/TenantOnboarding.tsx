@@ -101,7 +101,7 @@ const TenantOnboarding: React.FC = () => {
           }}
         >
           <Box sx={{ mb: 1, mt: 1, display: 'flex', justifyContent: 'center' }}>
-            <SigmaAnimatedLogo theme="prata" width={100} height={100} showText={false} />
+            <SigmaAnimatedLogo theme="cyber" width={100} height={100} showText={false} />
           </Box>
           <Typography 
             component="h1" 

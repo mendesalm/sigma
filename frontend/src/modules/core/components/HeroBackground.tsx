@@ -51,6 +51,17 @@ const HeroBackground: React.FC = () => {
       ctx.fillStyle = "#0B0F19"; // Base dark background
       ctx.fillRect(0, 0, can.width, can.height);
 
+      let focalPoint = { x: can.width / 2, y: (can.height / 2) - 120 };
+      const logoElement = document.getElementById('hero-logo');
+      if (logoElement) {
+        const rect = logoElement.getBoundingClientRect();
+        const canvasRect = can.getBoundingClientRect();
+        focalPoint = {
+          x: rect.left - canvasRect.left + rect.width / 2,
+          y: (rect.top - canvasRect.top + rect.height / 2) + 25
+        };
+      }
+
       for (let i = 0; i < particles.length; i++) {
         let p = particles[i];
         p.x += p.vx;
@@ -98,7 +109,6 @@ const HeroBackground: React.FC = () => {
         }
 
         // Connect to focal point (Logo Center)
-        let focalPoint = { x: can.width / 2, y: (can.height / 2) - 142 };
         let dxF = p.x - focalPoint.x;
         let dyF = p.y - focalPoint.y;
         let distF = Math.sqrt(dxF * dxF + dyF * dyF);

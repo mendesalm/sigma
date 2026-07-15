@@ -187,7 +187,7 @@ const LandingPage: React.FC = () => {
         <HeroBackground />
         <Box sx={{ textAlign: 'center', width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <Box id="hero-logo" sx={{ mt: 5, filter: 'drop-shadow(0 0 30px rgba(0,176,255,0.4))', display: 'flex', justifyContent: 'center' }}>
-            <SigmaAnimatedLogo theme="prata" width={220} height={220} showText={false} animated={false} />
+            <SigmaAnimatedLogo theme="cyber" width={220} height={220} showText={false} animated={false} />
           </Box>
           <Box sx={{ mt: 3, mb: 5 }}>
             <Typography
@@ -196,10 +196,10 @@ const LandingPage: React.FC = () => {
                 fontFamily: "'Tektur', sans-serif",
                 fontWeight: 600,
                 fontSize: { xs: '28px', sm: '38px', md: '50px' },
-                background: 'linear-gradient(to right, #B4B4B4, #9F9F9F)',
+                background: 'linear-gradient(to bottom, #e0f2fe 0%, #38bdf8 50%, #082f49 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 10px rgba(180, 180, 180, 0.3))',
+                filter: 'drop-shadow(0 0 15px rgba(56, 189, 248, 0.5))',
                 lineHeight: 1.2
               }}
             >
