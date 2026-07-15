@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "action": "membro:criar",
+    "description": "Criar novos membros",
+    "min_credential": 50,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 2,
+    "action": "membro:editar",
+    "description": "Editar dados de membros",
+    "min_credential": 50,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 3,
+    "action": "membro:visualizar",
+    "description": "Visualizar lista de membros",
+    "min_credential": 10,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 4,
+    "action": "membro:excluir",
+    "description": "Excluir membros",
+    "min_credential": 90,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 5,
+    "action": "financeiro:visualizar",
+    "description": "Visualizar dados financeiros",
+    "min_credential": 50,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 6,
+    "action": "financeiro:criar_lancamento",
+    "description": "Criar lançamentos financeiros",
+    "min_credential": 60,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 7,
+    "action": "financeiro:editar_lancamento",
+    "description": "Editar lançamentos financeiros",
+    "min_credential": 70,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 8,
+    "action": "sessao:criar",
+    "description": "Criar novas sessões",
+    "min_credential": 60,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 9,
+    "action": "ata:criar",
+    "description": "Criar e editar atas",
+    "min_credential": 60,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 10,
+    "action": "ata:visualizar",
+    "description": "Visualizar atas",
+    "min_credential": 10,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 11,
+    "action": "cargo:atribuir",
+    "description": "Atribuir cargos a membros",
+    "min_credential": 80,
+    "created_at": "2025-11-27T13:35:57+00:00",
+    "updated_at": null
+  }
+]

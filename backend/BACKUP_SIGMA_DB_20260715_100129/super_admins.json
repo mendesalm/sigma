@@ -1,0 +1,20 @@
+[
+  {
+    "id": 3,
+    "username": "superadmin",
+    "email": "sigma@sigma.com.br",
+    "password_hash": "$2b$12$KxQEkDf.7qp0gum5KNnHs.mWxmVZQQvoaE0nuXdFhdrcAUlGLioZq",
+    "is_active": true,
+    "created_at": "2025-11-25T12:02:59+00:00",
+    "updated_at": "2025-11-25T12:38:16+00:00"
+  },
+  {
+    "id": 4,
+    "username": "testadmin",
+    "email": "test@test.com",
+    "password_hash": "$2b$12$LnknS.99Nyl4ZPkEe6yXs.CD0S6YB64yu2/qgcmyG3chLGMNb5umW",
+    "is_active": true,
+    "created_at": "2025-11-25T12:17:00+00:00",
+    "updated_at": null
+  }
+]

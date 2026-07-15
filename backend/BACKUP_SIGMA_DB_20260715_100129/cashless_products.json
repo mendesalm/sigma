@@ -1,0 +1,112 @@
+[
+  {
+    "id": "5028e56b-a207-469d-b870-9d0844b4d5fa",
+    "name": "Cerveja Heineken 330ml",
+    "price": 12.0,
+    "stock": 100,
+    "min_stock": 20,
+    "is_active": true,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "09227b96-786e-4465-a5aa-7f616568d8e4",
+    "name": "Refrigerante Coca-Cola Lata",
+    "price": 6.0,
+    "stock": 150,
+    "min_stock": 30,
+    "is_active": true,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "7065da7e-72db-42c7-9fbd-67de87768b19",
+    "name": "Água Mineral Sem Gás 500ml",
+    "price": 4.0,
+    "stock": 200,
+    "min_stock": 50,
+    "is_active": true,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "d552a391-0b95-4b81-ac89-0c1554c8a1fe",
+    "name": "Porção de Batata Frita",
+    "price": 25.0,
+    "stock": 30,
+    "min_stock": 5,
+    "is_active": true,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "d73f32b2-7ab9-4b4e-9db2-468fa51cd484",
+    "name": "Espetinho de Carne",
+    "price": 15.0,
+    "stock": 50,
+    "min_stock": 10,
+    "is_active": true,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "3a2615e5-1b82-4daf-a654-52b7f1ce198e",
+    "name": "Cerveja Heineken 330ml",
+    "price": 12.0,
+    "stock": 100,
+    "min_stock": 20,
+    "is_active": true,
+    "created_at": "2026-06-29T13:03:16.669788+00:00",
+    "updated_at": null,
+    "lodge_id": 2
+  },
+  {
+    "id": "2d21fa09-a06f-4faa-884f-02f6a201e4a4",
+    "name": "Refrigerante Coca-Cola Lata",
+    "price": 6.0,
+    "stock": 150,
+    "min_stock": 30,
+    "is_active": true,
+    "created_at": "2026-06-29T13:03:16.669788+00:00",
+    "updated_at": null,
+    "lodge_id": 2
+  },
+  {
+    "id": "edce73ff-5f86-4f02-88bf-364c90d33549",
+    "name": "Água Mineral Sem Gás 500ml",
+    "price": 4.0,
+    "stock": 200,
+    "min_stock": 50,
+    "is_active": true,
+    "created_at": "2026-06-29T13:03:16.669788+00:00",
+    "updated_at": null,
+    "lodge_id": 2
+  },
+  {
+    "id": "10ac9c5d-f5f5-43ef-a68a-951516c45389",
+    "name": "Porção de Batata Frita",
+    "price": 25.0,
+    "stock": 30,
+    "min_stock": 5,
+    "is_active": true,
+    "created_at": "2026-06-29T13:03:16.669788+00:00",
+    "updated_at": null,
+    "lodge_id": 2
+  },
+  {
+    "id": "97dd24bf-8933-45a1-8616-b886d9da2bef",
+    "name": "Espetinho de Carne",
+    "price": 15.0,
+    "stock": 50,
+    "min_stock": 10,
+    "is_active": true,
+    "created_at": "2026-06-29T13:03:16.669788+00:00",
+    "updated_at": null,
+    "lodge_id": 2
+  }
+]

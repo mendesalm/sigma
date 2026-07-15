@@ -9,7 +9,8 @@ import {
   useTheme,
   Container,
   alpha,
-  IconButton
+  IconButton,
+  Switch
 } from "@mui/material";
 import { Brightness4, Brightness7 } from "@mui/icons-material";
 import { useCustomTheme } from "@/shared/contexts/ThemeContext";
@@ -119,11 +120,11 @@ const Header: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  filter: "drop-shadow(0px 0px 8px rgba(0, 176, 255, 0.3))",
+                  filter: theme.palette.mode === 'dark' ? "drop-shadow(0px 0px 8px rgba(56, 189, 248, 0.3))" : "drop-shadow(0px 0px 8px rgba(2, 132, 199, 0.3))",
                   transition: "transform 0.3s ease",
                   "&:hover": {
                     transform: "scale(1.05)",
-                    filter: "drop-shadow(0px 0px 12px rgba(0, 176, 255, 0.5))",
+                    filter: theme.palette.mode === 'dark' ? "drop-shadow(0px 0px 12px rgba(56, 189, 248, 0.5))" : "drop-shadow(0px 0px 12px rgba(2, 132, 199, 0.5))",
                   }
                 }}
               >
@@ -138,12 +139,12 @@ const Header: React.FC = () => {
                     textTransform: "uppercase",
                     fontWeight: 700, 
                     lineHeight: 1,
-                    background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
+                    background: theme.palette.mode === 'dark' ? `linear-gradient(45deg, #B4B4B4, #9F9F9F)` : `linear-gradient(45deg, #475569, #334155)`,
                     backgroundClip: "text",
                     WebkitBackgroundClip: "text",
                     color: "transparent",
                     letterSpacing: '-0.02em',
-                    textShadow: '0 0 5px rgba(180, 180, 180, 0.2)'
+                    textShadow: theme.palette.mode === 'dark' ? '0 0 5px rgba(180, 180, 180, 0.2)' : 'none'
                   }}
                 >
                   SiGMa
@@ -179,17 +180,40 @@ const Header: React.FC = () => {
                 pointerEvents: 'auto'
               }}
             >
-              <Button variant="text" onClick={() => scrollToSection('hero-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Home</Button>
-              <Button variant="text" onClick={() => scrollToSection('modules-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Funcionalidades</Button>
-              <Button variant="text" onClick={() => scrollToSection('planos-section')} sx={{ color: scrolled ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: scrolled ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textTransform: 'uppercase' }}>Planos</Button>
+              <Button variant="text" onClick={() => scrollToSection('hero-section')} sx={{ color: (scrolled || theme.palette.mode === 'light') ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: (scrolled || theme.palette.mode === 'light') ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: theme.palette.mode === 'light' ? 700 : 400, textTransform: 'uppercase' }}>Home</Button>
+              <Button variant="text" onClick={() => scrollToSection('modules-section')} sx={{ color: (scrolled || theme.palette.mode === 'light') ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: (scrolled || theme.palette.mode === 'light') ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: theme.palette.mode === 'light' ? 700 : 400, textTransform: 'uppercase' }}>Funcionalidades</Button>
+              <Button variant="text" onClick={() => scrollToSection('planos-section')} sx={{ color: (scrolled || theme.palette.mode === 'light') ? 'text.primary' : 'rgba(255,255,255,0.7)', '&:hover': { color: (scrolled || theme.palette.mode === 'light') ? 'primary.main' : '#fff' }, fontFamily: "'Tektur', sans-serif", fontWeight: theme.palette.mode === 'light' ? 700 : 400, textTransform: 'uppercase' }}>Planos</Button>
             </Box>
           </Box>
 
           {/* Navigation Section */}
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <IconButton onClick={toggleColorMode} color="inherit">
-              {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
+            <Switch 
+              checked={mode === 'dark'} 
+              onChange={toggleColorMode} 
+              color="primary" 
+              icon={<Brightness7 sx={{ fontSize: 16, color: '#f59e0b', m: 0.5 }} />}
+              checkedIcon={<Brightness4 sx={{ fontSize: 16, color: '#e0f2fe', m: 0.5 }} />}
+              sx={{
+                '& .MuiSwitch-switchBase': {
+                  padding: 1,
+                  '&.Mui-checked': {
+                    color: '#fff',
+                    transform: 'translateX(14px)',
+                    '& + .MuiSwitch-track': {
+                      backgroundColor: 'rgba(56, 189, 248, 0.5)',
+                      opacity: 1,
+                      border: 0,
+                    },
+                  },
+                },
+                '& .MuiSwitch-track': {
+                  borderRadius: 22 / 2,
+                  backgroundColor: 'rgba(217, 119, 6, 0.4)',
+                  opacity: 1,
+                },
+              }}
+            />
             <Button 
               component={RouterLink} 
               to={isLoginPage ? "/" : "/login"} 
@@ -200,9 +224,11 @@ const Header: React.FC = () => {
                 borderRadius: '4px',
                 px: 3,
                 py: 1,
-                border: '1px solid rgba(56, 189, 248, 0.4)',
-                background: 'linear-gradient(135deg, rgba(8, 47, 73, 0.4) 0%, rgba(3, 105, 161, 0.1) 100%)',
-                color: '#e0f2fe',
+                border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(2, 132, 199, 0.4)',
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(135deg, rgba(8, 47, 73, 0.4) 0%, rgba(3, 105, 161, 0.1) 100%)'
+                  : 'linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(14, 165, 233, 0.05) 100%)',
+                color: theme.palette.mode === 'dark' ? '#e0f2fe' : '#0369a1',
                 backdropFilter: 'blur(8px)',
                 position: 'relative',
                 overflow: 'hidden',
@@ -210,16 +236,22 @@ const Header: React.FC = () => {
                   content: '""',
                   position: 'absolute',
                   top: 0, left: '-100%', width: '50%', height: '100%',
-                  background: 'linear-gradient(to right, transparent, rgba(56, 189, 248, 0.4), transparent)',
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(to right, transparent, rgba(56, 189, 248, 0.4), transparent)'
+                    : 'linear-gradient(to right, transparent, rgba(2, 132, 199, 0.3), transparent)',
                   transform: 'skewX(-20deg)',
                   transition: 'none',
                 },
                 '&:hover': {
-                  background: 'linear-gradient(135deg, rgba(8, 47, 73, 0.6) 0%, rgba(3, 105, 161, 0.3) 100%)',
-                  borderColor: '#38bdf8',
-                  boxShadow: '0 0 15px rgba(56, 189, 248, 0.5), inset 0 0 8px rgba(56, 189, 248, 0.3)',
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(8, 47, 73, 0.6) 0%, rgba(3, 105, 161, 0.3) 100%)'
+                    : 'linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%)',
+                  borderColor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7',
+                  boxShadow: theme.palette.mode === 'dark' 
+                    ? '0 0 15px rgba(56, 189, 248, 0.5), inset 0 0 8px rgba(56, 189, 248, 0.3)'
+                    : '0 4px 6px rgba(2, 132, 199, 0.2)',
                   transform: 'translateY(-2px)',
-                  color: '#ffffff',
+                  color: theme.palette.mode === 'dark' ? '#ffffff' : '#0c4a6e',
                   '&::after': {
                     left: '200%',
                     transition: 'left 0.7s ease-in-out'
@@ -230,7 +262,7 @@ const Header: React.FC = () => {
                 fontWeight: 600,
                 letterSpacing: '1px',
                 textTransform: 'uppercase',
-                textShadow: '0 0 8px rgba(56, 189, 248, 0.5)'
+                textShadow: theme.palette.mode === 'dark' ? '0 0 8px rgba(56, 189, 248, 0.5)' : 'none'
               }}
             >
               {isLoginPage ? "Voltar ao Início" : "Acessar Sistema"}

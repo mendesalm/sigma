@@ -1,0 +1,25 @@
+[
+  {
+    "id": 22,
+    "title": "Sessão Ordinária no Grau de Aprendiz Maçom",
+    "session_number": 1,
+    "session_date": "2026-02-13",
+    "start_time": "19:30:00",
+    "end_time": "21:30:00",
+    "type": "ORDINARY",
+    "subtype": "REGULAR",
+    "status": "ENCERRADA",
+    "lodge_id": 1,
+    "administration_id": 1,
+    "temporary_role_assignments": null,
+    "agenda": "",
+    "sent_expedients": "",
+    "received_expedients": "",
+    "study_director_id": null,
+    "created_at": "2026-02-09T17:53:02+00:00",
+    "updated_at": "2026-03-02T18:27:34+00:00",
+    "balaustre_file_path": null,
+    "is_manually_modified": false,
+    "degree": 1
+  }
+]

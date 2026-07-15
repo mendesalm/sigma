@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { useTheme } from '@mui/material/styles';
 import './SigmaAnimatedLogo.css';
 
-export type SigmaTheme = 'prata' | 'ouro' | 'carbono' | 'cyber';
+export type SigmaTheme = 'prata' | 'ouro' | 'carbono' | 'cyber' | 'cyber-light';
 
 interface SigmaAnimatedLogoProps {
   theme?: SigmaTheme;
@@ -20,11 +21,15 @@ export const SigmaAnimatedLogo: React.FC<SigmaAnimatedLogoProps> = ({
   showText = true,
   animated = true
 }) => {
+  const muiTheme = useTheme();
   const track0Ref = useRef<SVGPathElement>(null);
   const track1Ref = useRef<SVGPathElement>(null);
   const track2Ref = useRef<SVGPathElement>(null);
   const glow1Ref = useRef<SVGEllipseElement>(null);
   const glow2Ref = useRef<SVGEllipseElement>(null);
+
+  // Auto-map cyber to cyber-light if MUI theme is in light mode
+  const resolvedTheme = (theme === 'cyber' && muiTheme.palette.mode === 'light') ? 'cyber-light' : theme;
 
   useEffect(() => {
     if (!animated) return;
@@ -105,7 +110,7 @@ export const SigmaAnimatedLogo: React.FC<SigmaAnimatedLogoProps> = ({
   }, [animated]);
 
   return (
-    <div className="sigma-logo-wrapper" data-theme={theme === 'prata' ? undefined : theme}>
+    <div className="sigma-logo-wrapper" data-theme={resolvedTheme === 'prata' ? undefined : resolvedTheme}>
       <div className="sigma-logo-container">
         <div className={`sigma-logo-symbol ${animated ? 'sigma-logo-animated' : ''}`} style={{ width, height, marginBottom: showText ? '20px' : '0' }}>
           <svg viewBox="500 5500 21000 18000" width="100%" height="100%">

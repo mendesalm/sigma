@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
 
 const FeaturesBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const theme = useTheme();
 
   useEffect(() => {
     const can = canvasRef.current;
@@ -9,6 +11,7 @@ const FeaturesBackground: React.FC = () => {
     const ctx = can.getContext("2d");
     if (!ctx) return;
 
+    const mode = theme.palette.mode;
     let animationFrameId: number;
 
     const setSize = () => {
@@ -21,7 +24,6 @@ const FeaturesBackground: React.FC = () => {
 
     // Data grid logic
     const gridSpacing = 80;
-    let time = 0;
     
     // Create random pulses that travel along the grid
     let pulses: any[] = [];
@@ -55,12 +57,12 @@ const FeaturesBackground: React.FC = () => {
     function draw() {
       if (!can || !ctx) return;
       ctx.clearRect(0, 0, can.width, can.height);
-      ctx.fillStyle = "#0B0F19";
+      ctx.fillStyle = mode === 'dark' ? "#0B0F19" : "#f8fafc";
       ctx.fillRect(0, 0, can.width, can.height);
 
       // Draw faint grid
       ctx.beginPath();
-      ctx.strokeStyle = "rgba(0, 176, 255, 0.03)";
+      ctx.strokeStyle = mode === 'dark' ? "rgba(56, 189, 248, 0.03)" : "rgba(2, 132, 199, 0.05)";
       ctx.lineWidth = 1;
       
       for (let x = 0; x <= can.width; x += gridSpacing) {
@@ -78,7 +80,8 @@ const FeaturesBackground: React.FC = () => {
         let p = pulses[i];
         
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(0, 176, 255, ${p.opacity})`;
+        const pulseColor = mode === 'dark' ? '56, 189, 248' : '2, 132, 199';
+        ctx.strokeStyle = `rgba(${pulseColor}, ${p.opacity})`;
         ctx.lineWidth = 2;
         
         if (p.isHorizontal) {
@@ -87,8 +90,8 @@ const FeaturesBackground: React.FC = () => {
           if (p.x < -p.length) p.x = can.width + p.length;
           
           const grad = ctx.createLinearGradient(p.x - p.length, 0, p.x, 0);
-          grad.addColorStop(0, "rgba(0, 176, 255, 0)");
-          grad.addColorStop(1, `rgba(0, 176, 255, ${p.opacity})`);
+          grad.addColorStop(0, `rgba(${pulseColor}, 0)`);
+          grad.addColorStop(1, `rgba(${pulseColor}, ${p.opacity})`);
           ctx.strokeStyle = grad;
           
           ctx.moveTo(p.x - (p.speed > 0 ? p.length : -p.length), p.y);
@@ -99,8 +102,8 @@ const FeaturesBackground: React.FC = () => {
           if (p.y < -p.length) p.y = can.height + p.length;
           
           const grad = ctx.createLinearGradient(0, p.y - p.length, 0, p.y);
-          grad.addColorStop(0, "rgba(0, 176, 255, 0)");
-          grad.addColorStop(1, `rgba(0, 176, 255, ${p.opacity})`);
+          grad.addColorStop(0, `rgba(${pulseColor}, 0)`);
+          grad.addColorStop(1, `rgba(${pulseColor}, ${p.opacity})`);
           ctx.strokeStyle = grad;
           
           ctx.moveTo(p.x, p.y - (p.speed > 0 ? p.length : -p.length));
@@ -129,7 +132,7 @@ const FeaturesBackground: React.FC = () => {
       observer.disconnect();
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [theme.palette.mode]);
 
   return (
     <canvas

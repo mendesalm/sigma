@@ -1,0 +1,101 @@
+[
+  {
+    "id": 2,
+    "username": "gob",
+    "email": "gob@sigma.com",
+    "password_hash": "$2b$12$ja7t4faSHOfz3LvwfKCQde9Txn3VU1FEFhxd7DXzCHvWi0YaNFWDq",
+    "is_active": true,
+    "lodge_id": null,
+    "obedience_id": 12,
+    "created_at": "2025-11-26T14:00:07+00:00",
+    "updated_at": "2026-06-21T16:51:20.807931+00:00"
+  },
+  {
+    "id": 3,
+    "username": "gobgo",
+    "email": "gobgo@sigma.com",
+    "password_hash": "$2b$12$ja7t4faSHOfz3LvwfKCQde9Txn3VU1FEFhxd7DXzCHvWi0YaNFWDq",
+    "is_active": true,
+    "lodge_id": null,
+    "obedience_id": 13,
+    "created_at": "2025-11-26T14:16:40+00:00",
+    "updated_at": "2026-06-21T16:51:20.807931+00:00"
+  },
+  {
+    "id": 5,
+    "username": "lojaa",
+    "email": "lojaA@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 266,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 6,
+    "username": "lojab",
+    "email": "lojaB@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 267,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 7,
+    "username": "lojac",
+    "email": "lojaC@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 268,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 8,
+    "username": "lojad",
+    "email": "lojaD@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 269,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 9,
+    "username": "lojae",
+    "email": "lojaE@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 270,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 10,
+    "username": "lojaf",
+    "email": "lojaF@sigma.local",
+    "password_hash": "$2b$12$lMZQeBQBrEgenWcYlmdD9.XmosjoQjpAEaNjAalH6W6wxj.CEFuPW",
+    "is_active": true,
+    "lodge_id": 271,
+    "obedience_id": null,
+    "created_at": "2026-06-26T14:34:22.951443+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 4,
+    "username": "loja2181",
+    "email": "loja2181@sigma.com",
+    "password_hash": "$2b$12$MBenBG22hXJWebUqqqstlOhr4jZn9RjjarqXinfVLS0M7i5u9O3g2",
+    "is_active": true,
+    "lodge_id": 1,
+    "obedience_id": null,
+    "created_at": "2025-11-26T20:39:33+00:00",
+    "updated_at": "2026-07-07T11:46:43.273573+00:00"
+  }
+]

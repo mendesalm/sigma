@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
 
 const HeroBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const theme = useTheme();
 
   useEffect(() => {
     const can = canvasRef.current;
@@ -9,6 +11,7 @@ const HeroBackground: React.FC = () => {
     const ctx = can.getContext("2d");
     if (!ctx) return;
 
+    const mode = theme.palette.mode;
     let animationFrameId: number;
 
     const setSize = () => {
@@ -48,7 +51,7 @@ const HeroBackground: React.FC = () => {
     function draw() {
       if (!can || !ctx) return;
       ctx.clearRect(0, 0, can.width, can.height);
-      ctx.fillStyle = "#0B0F19"; // Base dark background
+      ctx.fillStyle = mode === 'dark' ? "#0B0F19" : "#f8fafc";
       ctx.fillRect(0, 0, can.width, can.height);
 
       let focalPoint = { x: can.width / 2, y: (can.height / 2) - 120 };
@@ -73,11 +76,11 @@ const HeroBackground: React.FC = () => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         if (p.isGold) {
-          ctx.fillStyle = "rgba(255, 215, 0, 0.8)";
+          ctx.fillStyle = mode === 'dark' ? "rgba(56, 189, 248, 0.8)" : "rgba(2, 132, 199, 0.8)"; // Adapted to Tech theme (no longer gold)
         } else if (p.isBlue) {
-          ctx.fillStyle = "rgba(0, 176, 255, 0.6)";
+          ctx.fillStyle = mode === 'dark' ? "rgba(56, 189, 248, 0.6)" : "rgba(2, 132, 199, 0.6)";
         } else {
-          ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+          ctx.fillStyle = mode === 'dark' ? "rgba(255, 255, 255, 0.3)" : "rgba(15, 23, 42, 0.2)";
         }
         ctx.fill();
 
@@ -93,15 +96,12 @@ const HeroBackground: React.FC = () => {
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
 
-            let isConnectionGold = p.isGold || p2.isGold;
-            let isConnectionPurple = p.isBlue || p2.isBlue; // Using isBlue flag for purple now
+            let isConnectionSpecial = p.isGold || p2.isGold || p.isBlue || p2.isBlue;
 
-            if (isConnectionGold) {
-              ctx.strokeStyle = `rgba(255, 215, 0, ${opacity * 0.3})`;
-            } else if (isConnectionPurple) {
-              ctx.strokeStyle = `rgba(180, 50, 255, ${opacity * 0.3})`;
+            if (isConnectionSpecial) {
+              ctx.strokeStyle = mode === 'dark' ? `rgba(56, 189, 248, ${opacity * 0.3})` : `rgba(2, 132, 199, ${opacity * 0.4})`;
             } else {
-              ctx.strokeStyle = `rgba(100, 200, 255, ${opacity * 0.25})`;
+              ctx.strokeStyle = mode === 'dark' ? `rgba(100, 200, 255, ${opacity * 0.25})` : `rgba(15, 23, 42, ${opacity * 0.15})`;
             }
             ctx.lineWidth = 0.8;
             ctx.stroke();
@@ -120,14 +120,11 @@ const HeroBackground: React.FC = () => {
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(focalPoint.x, focalPoint.y);
 
-          if (p.isGold) {
-            ctx.strokeStyle = `rgba(255, 215, 0, ${opacityF * 0.5})`;
-            ctx.lineWidth = 1.5;
-          } else if (p.isBlue) { // isBlue acts as purple here
-            ctx.strokeStyle = `rgba(180, 50, 255, ${opacityF * 0.5})`;
+          if (p.isGold || p.isBlue) {
+            ctx.strokeStyle = mode === 'dark' ? `rgba(56, 189, 248, ${opacityF * 0.5})` : `rgba(2, 132, 199, ${opacityF * 0.6})`;
             ctx.lineWidth = 1.5;
           } else {
-            ctx.strokeStyle = `rgba(0, 85, 213, ${opacityF * 0.4})`;
+            ctx.strokeStyle = mode === 'dark' ? `rgba(0, 85, 213, ${opacityF * 0.4})` : `rgba(15, 23, 42, ${opacityF * 0.25})`;
             ctx.lineWidth = 1.2;
           }
           ctx.stroke();
@@ -157,7 +154,7 @@ const HeroBackground: React.FC = () => {
       observer.disconnect();
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [theme.palette.mode]);
 
   return (
     <canvas

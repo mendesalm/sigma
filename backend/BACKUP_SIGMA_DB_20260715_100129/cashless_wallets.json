@@ -1,0 +1,20 @@
+[
+  {
+    "id": "8ae3a2ae-5b0a-4789-bd68-1bdffd858037",
+    "cashless_user_id": "0e3d15cd-0bda-422d-95cb-669aab071e87",
+    "balance": 0.0,
+    "allow_negative_balance": false,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  },
+  {
+    "id": "552724f1-b965-43e6-a484-16de907c0880",
+    "cashless_user_id": "19907a0f-54a1-45c0-a77f-0abc664254ef",
+    "balance": 0.0,
+    "allow_negative_balance": false,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null,
+    "lodge_id": 1
+  }
+]

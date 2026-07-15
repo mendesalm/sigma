@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "title": "Trab",
+    "content": "",
+    "file_path": "/storage/lodges/loja_2181/publications/20251210092817_Trabalho_G18_AndreMendes.pdf",
+    "file_size": 142592,
+    "type": "Artigo",
+    "status": "Publicado",
+    "author_id": 18,
+    "lodge_id": 1,
+    "published_at": null,
+    "valid_until": null,
+    "created_at": "2025-12-10T12:28:17+00:00",
+    "updated_at": null,
+    "minimum_degree": 1
+  }
+]

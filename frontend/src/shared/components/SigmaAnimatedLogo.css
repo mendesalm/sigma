@@ -34,6 +34,15 @@
   --m-accent: #7dd3fc;
 }
 
+/* Tema: Cyber Light */
+.sigma-logo-wrapper[data-theme="cyber-light"] {
+  --m-light: #082f49;
+  --m-mid: #0284c7;
+  --m-dark: #38bdf8;
+  --m-deep: #e0f2fe;
+  --m-accent: #0284c7;
+}
+
 .sigma-logo-container {
   display: flex;
   flex-direction: column;

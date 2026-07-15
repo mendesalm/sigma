@@ -1,0 +1,24 @@
+[
+  {
+    "id": "0e3d15cd-0bda-422d-95cb-669aab071e87",
+    "name": "João Gerente (Teste)",
+    "identification_key": "GERENTE_001",
+    "type": "Membro",
+    "profile_type": "Gerente",
+    "pin": "$2b$12$eImiTXuWVxfM37uY4JANjQ==.P1xM3z6fT8m9Mv4Gv0qTz9Qe",
+    "responsible_member_id": null,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null
+  },
+  {
+    "id": "19907a0f-54a1-45c0-a77f-0abc664254ef",
+    "name": "Maria Visitante (Teste)",
+    "identification_key": "000.000.000-00",
+    "type": "Externo",
+    "profile_type": "Cliente",
+    "pin": null,
+    "responsible_member_id": null,
+    "created_at": "2026-06-27T14:17:22.301556+00:00",
+    "updated_at": null
+  }
+]

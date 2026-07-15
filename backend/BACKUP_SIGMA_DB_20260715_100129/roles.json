@@ -1,0 +1,302 @@
+[
+  {
+    "id": 1,
+    "name": "Venerável Mestre",
+    "role_type": "Loja",
+    "level": 9,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:00:05+00:00",
+    "updated_at": "2025-11-27T13:57:15+00:00"
+  },
+  {
+    "id": 2,
+    "name": "Primeiro Vigilante",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:00:43+00:00",
+    "updated_at": "2025-11-27T14:05:39+00:00"
+  },
+  {
+    "id": 3,
+    "name": "Segundo Vigilante",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:01:00+00:00",
+    "updated_at": "2025-11-27T14:05:47+00:00"
+  },
+  {
+    "id": 4,
+    "name": "Orador",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:01:39+00:00",
+    "updated_at": "2025-11-27T14:05:54+00:00"
+  },
+  {
+    "id": 5,
+    "name": "Secretário",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:02:04+00:00",
+    "updated_at": "2025-11-27T14:04:46+00:00"
+  },
+  {
+    "id": 6,
+    "name": "Chanceler",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:02:32+00:00",
+    "updated_at": "2025-11-27T14:06:15+00:00"
+  },
+  {
+    "id": 7,
+    "name": "Tesoureiro",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 90,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:06:52+00:00",
+    "updated_at": "2025-11-27T14:06:25+00:00"
+  },
+  {
+    "id": 8,
+    "name": "Arquiteto",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:14:41+00:00",
+    "updated_at": "2025-11-27T13:29:16+00:00"
+  },
+  {
+    "id": 9,
+    "name": "Mestre de Harmonia",
+    "role_type": "Loja",
+    "level": 4,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:15:56+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 10,
+    "name": "Mestre de Cerimônias",
+    "role_type": "Loja",
+    "level": 4,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:17:02+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 11,
+    "name": "Primeiro Diácono",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:17:16+00:00",
+    "updated_at": "2025-11-27T13:20:04+00:00"
+  },
+  {
+    "id": 12,
+    "name": "Segundo Diácono",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:17:30+00:00",
+    "updated_at": "2025-11-27T13:20:08+00:00"
+  },
+  {
+    "id": 13,
+    "name": "Mestre de Banquetes",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:17:59+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 14,
+    "name": "Bibliotecário",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:18:53+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 15,
+    "name": "Primeiro Experto",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:19:44+00:00",
+    "updated_at": "2025-11-27T13:20:15+00:00"
+  },
+  {
+    "id": 16,
+    "name": "Hospitaleiro",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:20:31+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 17,
+    "name": "Segundo Experto",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:21:01+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 18,
+    "name": "Cobridor Interno",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:21:43+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 19,
+    "name": "Cobridor Externo",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:21:53+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 20,
+    "name": "Porta Bandeira",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:22:49+00:00",
+    "updated_at": "2025-11-27T13:23:22+00:00"
+  },
+  {
+    "id": 21,
+    "name": "Porta Estandarte",
+    "role_type": "Loja",
+    "level": 3,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:23:01+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 22,
+    "name": "Deputado Federal",
+    "role_type": "Loja",
+    "level": 7,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:24:08+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 23,
+    "name": "Deputado Estadual",
+    "role_type": "Loja",
+    "level": 7,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:24:20+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 24,
+    "name": "Orador Adjunto",
+    "role_type": "Loja",
+    "level": 7,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:26:46+00:00",
+    "updated_at": "2025-11-27T13:27:06+00:00"
+  },
+  {
+    "id": 25,
+    "name": "Secretário Adjunto",
+    "role_type": "Loja",
+    "level": 7,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:27:00+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 26,
+    "name": "Chanceler Adjunto",
+    "role_type": "Loja",
+    "level": 7,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:27:23+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 27,
+    "name": "Tesoureiro Adjunto",
+    "role_type": "Loja",
+    "level": 8,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:27:38+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 28,
+    "name": "Mestre de Harmonia Adjunto",
+    "role_type": "Loja",
+    "level": 4,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:28:05+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 29,
+    "name": "Arquiteto Adjunto",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:29:05+00:00",
+    "updated_at": null
+  },
+  {
+    "id": 30,
+    "name": "Hospitaleiro Adjunto",
+    "role_type": "Loja",
+    "level": 5,
+    "base_credential": 10,
+    "applicable_rites": "",
+    "created_at": "2025-11-27T13:29:44+00:00",
+    "updated_at": null
+  }
+]

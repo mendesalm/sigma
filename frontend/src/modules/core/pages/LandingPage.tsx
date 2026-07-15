@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Box, Button, Typography, Grid, Paper, IconButton, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, TextField, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { People, Security, AccountBalance, Extension, AutoAwesome, Restaurant, MenuBook, MusicNote, Storefront, Campaign, ArrowForwardIos, ArrowBackIosNew } from '@mui/icons-material';
 import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
@@ -17,25 +17,6 @@ import seloIcon from '@/assets/icons/selo.png';
 import Footer from '@/shared/layouts/Footer';
 import HeroBackground from '../components/HeroBackground';
 import FeaturesBackground from '../components/FeaturesBackground';
-
-// Premium Glassmorphism style for cards
-const glassStyle = {
-  backgroundColor: 'rgba(19, 27, 41, 0.3)',
-  backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
-  borderRadius: 4,
-  p: 4,
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100%',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: '0 12px 40px 0 rgba(0, 176, 255, 0.2)',
-    borderColor: 'rgba(0, 176, 255, 0.3)',
-  }
-};
 
 const SectionContainer: React.FC<{ children: React.ReactNode, id?: string }> = ({ children, id }) => (
   <Box
@@ -61,6 +42,26 @@ const SectionContainer: React.FC<{ children: React.ReactNode, id?: string }> = (
 );
 
 const LandingPage: React.FC = () => {
+  const theme = useTheme();
+
+  const glassStyle = {
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(19, 27, 41, 0.5)' : 'rgba(255, 255, 255, 0.6)',
+    backdropFilter: 'blur(20px)',
+    border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.15)' : '1px solid rgba(2, 132, 199, 0.15)',
+    boxShadow: theme.palette.mode === 'dark' ? '0 8px 32px 0 rgba(0, 0, 0, 0.3)' : '0 8px 32px 0 rgba(2, 132, 199, 0.1)',
+    borderRadius: 4,
+    p: 4,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: theme.palette.mode === 'dark' ? '0 12px 40px 0 rgba(56, 189, 248, 0.2)' : '0 12px 40px 0 rgba(2, 132, 199, 0.2)',
+      borderColor: theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.4)' : 'rgba(2, 132, 199, 0.4)',
+    }
+  };
+
   const [showSelo, setShowSelo] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -159,7 +160,7 @@ const LandingPage: React.FC = () => {
         scrollBehavior: 'smooth',
         m: 0,
         p: 0,
-        bgcolor: '#0b111b'
+        bgcolor: 'background.default'
       }}
       onScroll={(e) => {
         const target = e.target as HTMLElement;
@@ -190,25 +191,29 @@ const LandingPage: React.FC = () => {
             <SigmaAnimatedLogo theme="cyber" width={220} height={220} showText={false} animated={false} />
           </Box>
           <Box sx={{ mt: 3, mb: 5 }}>
-            <Typography
-              variant="h1"
-              sx={{
-                fontFamily: "'Tektur', sans-serif",
-                fontWeight: 600,
-                fontSize: { xs: '28px', sm: '38px', md: '50px' },
-                background: 'linear-gradient(to bottom, #e0f2fe 0%, #38bdf8 50%, #082f49 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 15px rgba(56, 189, 248, 0.5))',
-                lineHeight: 1.2
-              }}
-            >
-              Sistema Integrado de<br />Gerenciamento Maçônico
-            </Typography>
+              <Typography
+                variant="h1"
+                sx={{
+                  fontFamily: "'Tektur', sans-serif",
+                  fontWeight: 600,
+                  fontSize: { xs: '28px', sm: '38px', md: '50px' },
+                  background: theme.palette.mode === 'dark' 
+                    ? 'linear-gradient(to bottom, #e0f2fe 0%, #38bdf8 50%, #082f49 100%)'
+                    : 'linear-gradient(to bottom, #0f172a 0%, #0284c7 60%, #0ea5e9 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  filter: theme.palette.mode === 'dark' 
+                    ? 'drop-shadow(0 0 15px rgba(56, 189, 248, 0.5))' 
+                    : 'drop-shadow(0 4px 6px rgba(2, 132, 199, 0.2))',
+                  lineHeight: 1.2
+                }}
+              >
+                Sistema Integrado de<br />Gerenciamento Maçônico
+              </Typography>
             <Typography 
               variant="h6" 
               sx={{ 
-                color: '#00B0FF', 
+                color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', 
                 mt: 3, 
                 fontFamily: "'Inter', sans-serif", 
                 fontWeight: 400,
@@ -238,8 +243,8 @@ const LandingPage: React.FC = () => {
             fontWeight: 600,
             mb: { xs: 4, md: 8 },
             fontSize: { xs: '1.8rem', md: '3rem' },
-            color: '#fff',
-            textShadow: '0 0 10px rgba(0, 176, 255, 0.5)',
+            color: 'text.primary',
+            textShadow: theme.palette.mode === 'dark' ? '0 0 10px rgba(56, 189, 248, 0.5)' : '0 0 10px rgba(2, 132, 199, 0.3)',
             textAlign: 'center'
           }}
         >
@@ -256,10 +261,10 @@ const LandingPage: React.FC = () => {
             {/* Secretaria */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
-                <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={SecretariaIcon} alt="Secretaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
+                <Box sx={{ color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                  <Box component="img" src={SecretariaIcon} alt="Secretaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 4px rgba(2, 132, 199, 0.4))' }} />
                 </Box>
-                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Secretaria
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
@@ -271,10 +276,10 @@ const LandingPage: React.FC = () => {
             {/* Chancelaria */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
-                <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={ChancelariaIcon} alt="Chancelaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
+                <Box sx={{ color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                  <Box component="img" src={ChancelariaIcon} alt="Chancelaria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 4px rgba(2, 132, 199, 0.4))' }} />
                 </Box>
-                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Chancelaria
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
@@ -286,10 +291,10 @@ const LandingPage: React.FC = () => {
             {/* Tesouraria */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={glassStyle}>
-                <Box sx={{ color: '#00B0FF', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box component="img" src={TesourariaIcon} alt="Tesouraria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: 'drop-shadow(0 0 8px rgba(0, 176, 255, 0.5))' }} />
+                <Box sx={{ color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', mb: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                  <Box component="img" src={TesourariaIcon} alt="Tesouraria" sx={{ width: 50, height: 50, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 4px rgba(2, 132, 199, 0.4))' }} />
                 </Box>
-                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Tesouraria
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
@@ -301,7 +306,7 @@ const LandingPage: React.FC = () => {
           
           {/* Módulos Opcionais Carrossel */}
           <Box sx={{ mt: 6, position: 'relative' }}>
-            <Typography variant="h5" sx={{ color: '#fff', mb: 3, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 1, display: 'inline-block' }}>
+            <Typography variant="h5" sx={{ color: 'text.primary', mb: 3, fontFamily: "'Tektur', sans-serif", fontWeight: 400, textAlign: 'left', borderBottom: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', pb: 1, display: 'inline-block' }}>
               Módulos Opcionais
             </Typography>
             
@@ -312,9 +317,9 @@ const LandingPage: React.FC = () => {
                   position: 'absolute',
                   left: { xs: 8, md: -24 },
                   zIndex: 10,
-                  color: '#fff', 
-                  bgcolor: 'rgba(255,255,255,0.1)', 
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } 
+                  color: 'text.primary', 
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', 
+                  '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' } 
                 }}
               >
                 <ArrowBackIosNew />
@@ -343,13 +348,13 @@ const LandingPage: React.FC = () => {
                 }}
               >
                 {Array(15).fill([
-                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <Box component="img" src={ArquitetoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Bar', desc: 'Gestão dos ágapes.', icon: <Box component="img" src={BarIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Orador Virtual', desc: 'Gestão de leis e regulamentos da Ordem.', icon: <Box component="img" src={OradorIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <Box component="img" src={BibliotecaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Box component="img" src={ClassificadosIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> },
-                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Box component="img" src={ComunicacaoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: 'drop-shadow(0 0 5px rgba(0, 176, 255, 0.5))', pointerEvents: 'none' }}/> }
+                  { title: 'Arquitetura', desc: 'Gestão de patrimônio.', icon: <Box component="img" src={ArquitetoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Bar', desc: 'Gestão dos ágapes.', icon: <Box component="img" src={BarIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Orador Virtual', desc: 'Gestão de leis e regulamentos da Ordem.', icon: <Box component="img" src={OradorIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Biblioteca', desc: 'Acervo de livros e artigos.', icon: <Box component="img" src={BibliotecaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Harmonia', desc: 'Músicas para as sessões.', icon: <Box component="img" src={HarmoniaIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Classificados', desc: 'Anúncios multi-lojas.', icon: <Box component="img" src={ClassificadosIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> },
+                  { title: 'Comunicação', desc: 'Avisos e WhatsApp.', icon: <Box component="img" src={ComunicacaoIcon} sx={{ width: 48, height: 48, objectFit: 'contain', filter: theme.palette.mode === 'dark' ? 'drop-shadow(0 0 5px rgba(56, 189, 248, 0.5))' : 'brightness(0.6) drop-shadow(0 0 3px rgba(2, 132, 199, 0.4))', pointerEvents: 'none' }}/> }
                 ]).flat().map((modulo, idx) => (
                   <Paper 
                     key={idx} 
@@ -357,14 +362,14 @@ const LandingPage: React.FC = () => {
                       ...glassStyle, 
                       flex: { xs: '0 0 100%', md: '0 0 calc((100% - 64px) / 3)' }, // 3 por vez no desktop (64px = 2 * gap de 32px)
                       scrollSnapAlign: 'start',
-                      border: '1px solid rgba(0, 176, 255, 0.2)',
-                      background: 'linear-gradient(135deg, rgba(19, 27, 41, 0.3) 0%, rgba(0, 85, 213, 0.1) 100%)'
+                      border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid rgba(2, 132, 199, 0.2)',
+                      background: theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(19, 27, 41, 0.5) 0%, rgba(3, 105, 161, 0.2) 100%)' : 'linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(2, 132, 199, 0.1) 100%)'
                     }}
                   >
-                    <Box sx={{ color: '#00B0FF', mb: 2 }}>
+                    <Box sx={{ color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', mb: 2 }}>
                       {modulo.icon}
                     </Box>
-                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600, mb: 1, fontFamily: "'Inter', sans-serif" }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 1, fontFamily: "'Inter', sans-serif" }}>
                       {modulo.title}
                     </Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif" }}>
@@ -380,9 +385,9 @@ const LandingPage: React.FC = () => {
                   position: 'absolute',
                   right: { xs: 8, md: -24 },
                   zIndex: 10,
-                  color: '#fff', 
-                  bgcolor: 'rgba(255,255,255,0.1)', 
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } 
+                  color: 'text.primary', 
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', 
+                  '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' } 
                 }}
               >
                 <ArrowForwardIos />
@@ -402,8 +407,8 @@ const LandingPage: React.FC = () => {
             fontWeight: 600,
             mb: { xs: 4, md: 8 },
             fontSize: { xs: '1.8rem', md: '3rem' },
-            color: '#fff',
-            textShadow: '0 0 10px rgba(0, 176, 255, 0.5)',
+            color: 'text.primary',
+            textShadow: theme.palette.mode === 'dark' ? '0 0 10px rgba(56, 189, 248, 0.5)' : '0 0 10px rgba(2, 132, 199, 0.3)',
             textAlign: 'center'
           }}
         >
@@ -419,7 +424,7 @@ const LandingPage: React.FC = () => {
           >
             <Grid item xs={12} md={6} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={{ ...glassStyle, p: 5 }}>
-                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Gestão de Arquivos
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif", lineHeight: 1.7 }}>
@@ -429,7 +434,7 @@ const LandingPage: React.FC = () => {
             </Grid>
             <Grid item xs={12} md={6} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
               <Paper sx={{ ...glassStyle, p: 5 }}>
-                <Typography variant="h5" sx={{ color: '#fff', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 2, fontFamily: "'Inter', sans-serif" }}>
                   Controle de Acesso
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontFamily: "'Inter', sans-serif", lineHeight: 1.7 }}>
@@ -451,8 +456,8 @@ const LandingPage: React.FC = () => {
             fontWeight: 600,
             mb: { xs: 4, md: 6 },
             fontSize: { xs: '1.8rem', md: '3rem' },
-            color: '#fff',
-            textShadow: '0 0 10px rgba(0, 176, 255, 0.5)',
+            color: 'text.primary',
+            textShadow: theme.palette.mode === 'dark' ? '0 0 10px rgba(56, 189, 248, 0.5)' : '0 0 10px rgba(2, 132, 199, 0.3)',
             textAlign: 'center'
           }}
         >
@@ -469,8 +474,8 @@ const LandingPage: React.FC = () => {
             
             {/* PLANO BÁSICO */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
-              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(0, 176, 255, 0.3)' }}>
-                <Typography variant="h5" sx={{ color: '#00B0FF', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
+              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(2, 132, 199, 0.3)' }}>
+                <Typography variant="h5" sx={{ color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   BÁSICO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
@@ -479,7 +484,7 @@ const LandingPage: React.FC = () => {
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Acesso a Documentos</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Suporte por E-mail</Typography>
                 </Box>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold', mb: 3 }}>
+                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold', mb: 3 }}>
                   R$ 75<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
                 </Typography>
                 <Button variant="outlined" color="primary" fullWidth sx={{ borderRadius: '20px', py: 1 }} onClick={() => handleOpenContact('Básico')}>
@@ -494,24 +499,24 @@ const LandingPage: React.FC = () => {
                 ...glassStyle, 
                 p: 4, 
                 textAlign: 'center', 
-                border: '2px solid rgba(255, 215, 0, 0.5)',
-                boxShadow: '0 0 20px rgba(255, 215, 0, 0.15)',
+                border: theme.palette.mode === 'dark' ? '2px solid rgba(255, 215, 0, 0.5)' : '2px solid rgba(217, 119, 6, 0.5)',
+                boxShadow: theme.palette.mode === 'dark' ? '0 0 20px rgba(255, 215, 0, 0.15)' : '0 6px 20px rgba(217, 119, 6, 0.2)',
                 transform: { md: 'scale(1.05)' } 
               }}>
-                <Typography variant="h5" sx={{ color: '#FFD700', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
+                <Typography variant="h5" sx={{ color: theme.palette.mode === 'dark' ? '#FFD700' : '#d97706', fontWeight: 600, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   INTERMEDIÁRIO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
-                  <Typography variant="body2" sx={{ color: '#fff', mb: 1.5 }}>• Todos os recursos do Básico</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.primary', mb: 1.5, fontWeight: 500 }}>• Todos os recursos do Básico</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Controle Financeiro</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Biblioteca de Rituais</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Fórum de Discussão</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Suporte Prioritário</Typography>
                 </Box>
-                <Typography variant="h4" sx={{ color: '#FFD700', fontWeight: 'bold', mb: 3 }}>
+                <Typography variant="h4" sx={{ color: theme.palette.mode === 'dark' ? '#FFD700' : '#d97706', fontWeight: 'bold', mb: 3 }}>
                   R$ 90<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
                 </Typography>
-                <Button variant="contained" sx={{ bgcolor: '#FFD700', color: '#000', fontWeight: 'bold', borderRadius: '20px', py: 1, '&:hover': { bgcolor: '#F0C800' } }} fullWidth onClick={() => handleOpenContact('Intermediário')}>
+                <Button variant="contained" sx={{ bgcolor: theme.palette.mode === 'dark' ? '#FFD700' : '#d97706', color: theme.palette.mode === 'dark' ? '#000' : '#fff', fontWeight: 'bold', borderRadius: '20px', py: 1, '&:hover': { bgcolor: theme.palette.mode === 'dark' ? '#F0C800' : '#b45309' } }} fullWidth onClick={() => handleOpenContact('Intermediário')}>
                   ASSINAR AGORA
                 </Button>
               </Paper>
@@ -519,22 +524,22 @@ const LandingPage: React.FC = () => {
 
             {/* PLANO AVANÇADO */}
             <Grid item xs={12} md={4} sx={{ flex: { md: 1 }, minWidth: { md: 0 } }}>
-              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                <Typography variant="h5" sx={{ color: '#E0E0E0', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
+              <Paper sx={{ ...glassStyle, p: 4, textAlign: 'center', border: theme.palette.mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(0, 0, 0, 0.1)' }}>
+                <Typography variant="h5" sx={{ color: theme.palette.mode === 'dark' ? '#E0E0E0' : '#475569', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
                   AVANÇADO
                 </Typography>
                 <Box sx={{ textAlign: 'left', mb: 4, minHeight: '180px' }}>
-                  <Typography variant="body2" sx={{ color: '#fff', mb: 1.5 }}>• Todos os recursos do Intermediário</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.primary', mb: 1.5 }}>• Todos os recursos do Intermediário</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Análise de Dados Avançada</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Relatórios Personalizados</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Módulos de Treinamento</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Integrações de API</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>• Gestão de Graus Superiores</Typography>
                 </Box>
-                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 'bold', mb: 3 }}>
+                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 'bold', mb: 3 }}>
                   R$ 120<Typography component="span" variant="body1" sx={{ color: 'text.secondary' }}>/mês</Typography>
                 </Typography>
-                <Button variant="outlined" sx={{ color: '#E0E0E0', borderColor: '#E0E0E0', borderRadius: '20px', py: 1, '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.05)' } }} fullWidth onClick={() => handleOpenContact('Avançado')}>
+                <Button variant="outlined" sx={{ color: theme.palette.mode === 'dark' ? '#E0E0E0' : '#475569', borderColor: theme.palette.mode === 'dark' ? '#E0E0E0' : '#94a3b8', borderRadius: '20px', py: 1, '&:hover': { borderColor: theme.palette.mode === 'dark' ? '#fff' : '#334155', backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }} fullWidth onClick={() => handleOpenContact('Avançado')}>
                   Assinar
                 </Button>
               </Paper>
@@ -547,13 +552,15 @@ const LandingPage: React.FC = () => {
             mt: 6, 
             p: { xs: 3, md: 4 }, 
             textAlign: 'center',
-            background: 'linear-gradient(90deg, rgba(0, 176, 255, 0.1) 0%, rgba(19, 27, 41, 0.8) 50%, rgba(0, 176, 255, 0.1) 100%)',
-            border: '1px solid rgba(0, 176, 255, 0.3)'
+            background: theme.palette.mode === 'dark' 
+              ? 'linear-gradient(90deg, rgba(56, 189, 248, 0.1) 0%, rgba(19, 27, 41, 0.8) 50%, rgba(56, 189, 248, 0.1) 100%)'
+              : 'linear-gradient(90deg, rgba(2, 132, 199, 0.05) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(2, 132, 199, 0.05) 100%)',
+            border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(2, 132, 199, 0.3)'
           }}>
-            <Typography variant="h5" sx={{ color: '#fff', fontWeight: 400, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
+            <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600, mb: 3, fontFamily: "'Tektur', sans-serif" }}>
               Prepare sua Loja para o Futuro. Comece agora.
             </Typography>
-            <Button variant="contained" color="primary" size="large" onClick={() => navigate('/login', { viewTransition: true })} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', boxShadow: '0 0 15px rgba(0, 176, 255, 0.4)' }}>
+            <Button variant="contained" color="primary" size="large" onClick={() => navigate('/login', { viewTransition: true })} sx={{ borderRadius: '30px', px: 5, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', boxShadow: theme.palette.mode === 'dark' ? '0 0 15px rgba(56, 189, 248, 0.4)' : '0 4px 10px rgba(2, 132, 199, 0.3)' }}>
               INICIAR TESTE GRATUITO
             </Button>
           </Paper>
@@ -585,22 +592,22 @@ const LandingPage: React.FC = () => {
         }}
       />
       {/* CONTACT DIALOG */}
-      <Dialog open={openContact} onClose={() => setOpenContact(false)} PaperProps={{ sx: { background: 'rgba(19, 27, 41, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0, 176, 255, 0.3)', color: '#fff', minWidth: { xs: '90vw', md: '500px' } } }}>
-        <DialogTitle sx={{ fontFamily: "'Tektur', sans-serif", color: '#00B0FF' }}>
+      <Dialog open={openContact} onClose={() => setOpenContact(false)} PaperProps={{ sx: { background: theme.palette.mode === 'dark' ? 'rgba(19, 27, 41, 0.95)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: theme.palette.mode === 'dark' ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(2, 132, 199, 0.3)', color: 'text.primary', minWidth: { xs: '90vw', md: '500px' } } }}>
+        <DialogTitle sx={{ fontFamily: "'Tektur', sans-serif", color: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7' }}>
           Solicitar Plano {selectedPlan}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ color: '#E0E0E0', mb: 3, mt: 1 }}>
+          <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? '#E0E0E0' : '#475569', mb: 3, mt: 1 }}>
             Preencha os dados abaixo e entraremos em contato para finalizar a assinatura.
           </Typography>
-          <TextField fullWidth label="Nome do Responsável" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.name} onChange={(e) => setContactForm({...contactForm, name: e.target.value})} />
-          <TextField fullWidth label="Email de Contato" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.email} onChange={(e) => setContactForm({...contactForm, email: e.target.value})} />
-          <TextField fullWidth label="Telefone / WhatsApp" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.phone} onChange={(e) => setContactForm({...contactForm, phone: e.target.value})} />
-          <TextField fullWidth label="Mensagem Opcional" variant="outlined" multiline rows={3} sx={{ '& .MuiOutlinedInput-root': { color: '#fff', '& fieldset': { borderColor: 'rgba(255,255,255,0.2)' }, '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' }, '&.Mui-focused fieldset': { borderColor: '#00B0FF' } }, '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.5)' } }} value={contactForm.message} onChange={(e) => setContactForm({...contactForm, message: e.target.value})} />
+          <TextField fullWidth label="Nome do Responsável" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: 'text.primary', '& fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }, '&:hover fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }, '&.Mui-focused fieldset': { borderColor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7' } }, '& .MuiInputLabel-root': { color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' } }} value={contactForm.name} onChange={(e) => setContactForm({...contactForm, name: e.target.value})} />
+          <TextField fullWidth label="Email de Contato" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: 'text.primary', '& fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }, '&:hover fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }, '&.Mui-focused fieldset': { borderColor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7' } }, '& .MuiInputLabel-root': { color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' } }} value={contactForm.email} onChange={(e) => setContactForm({...contactForm, email: e.target.value})} />
+          <TextField fullWidth label="Telefone / WhatsApp" variant="outlined" sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: 'text.primary', '& fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }, '&:hover fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }, '&.Mui-focused fieldset': { borderColor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7' } }, '& .MuiInputLabel-root': { color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' } }} value={contactForm.phone} onChange={(e) => setContactForm({...contactForm, phone: e.target.value})} />
+          <TextField fullWidth label="Mensagem Opcional" variant="outlined" multiline rows={3} sx={{ '& .MuiOutlinedInput-root': { color: 'text.primary', '& fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }, '&:hover fieldset': { borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }, '&.Mui-focused fieldset': { borderColor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7' } }, '& .MuiInputLabel-root': { color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' } }} value={contactForm.message} onChange={(e) => setContactForm({...contactForm, message: e.target.value})} />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button onClick={() => setOpenContact(false)} sx={{ color: 'rgba(255,255,255,0.5)' }}>Cancelar</Button>
-          <Button variant="contained" onClick={handleContactSubmit} sx={{ bgcolor: '#00B0FF', '&:hover': { bgcolor: '#0081CB' } }}>Enviar Solicitação</Button>
+          <Button onClick={() => setOpenContact(false)} sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleContactSubmit} sx={{ bgcolor: theme.palette.mode === 'dark' ? '#38bdf8' : '#0284c7', '&:hover': { bgcolor: '#0081CB' } }}>Enviar Solicitação</Button>
         </DialogActions>
       </Dialog>
     </Box>

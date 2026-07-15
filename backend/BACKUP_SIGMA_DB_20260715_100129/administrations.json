@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "identifier": "Biênio 2025-2027",
+    "start_date": "2025-06-06",
+    "end_date": "2027-06-11",
+    "is_current": true,
+    "lodge_id": 1,
+    "created_at": "2026-06-11T11:40:17.748830+00:00",
+    "updated_at": null
+  }
+]
