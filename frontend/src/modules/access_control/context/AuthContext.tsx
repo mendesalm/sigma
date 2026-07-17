@@ -1,6 +1,7 @@
 import { createContext, useState, ReactNode, useEffect } from 'react';
 import api from '@/shared/services/api';
 import { jwtDecode } from 'jwt-decode';
+import { useSnackbar } from 'notistack';
 
 interface Association {
   id: number;
@@ -21,6 +22,8 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  
   const [user, setUser] = useState<any>(() => {
     const token = localStorage.getItem('token');
     return token ? jwtDecode(token) : null;
@@ -46,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Escutar evento de logout forçado (vindo do Axios Interceptor)
     const handleForceLogout = () => {
+      enqueueSnackbar('Sua sessão expirou por segurança. Faça login novamente.', { variant: 'warning', autoHideDuration: 6000 });
       logout();
     };
     

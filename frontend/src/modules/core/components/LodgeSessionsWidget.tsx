@@ -121,10 +121,10 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
 
   return (
     <Card sx={{
-      bgcolor: '#242830',
+      bgcolor: theme.palette.background.paper,
       color: theme.palette.text.primary,
       borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: `1px solid ${theme.palette.divider}`,
       boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
       flexGrow: 1,
       display: 'flex',
@@ -187,7 +187,7 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
           </Box>
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: theme.palette.mode === 'dark' ? '#0B0F19' : '#f8fafc', py: 1, borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: theme.palette.background.paper, py: 1, borderTop: `1px solid ${theme.palette.divider}`, borderBottom: `1px solid ${theme.palette.divider}` }}>
           {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(d => (
             <Typography key={d} variant="caption" sx={{ textAlign: 'center', color: ACCENT_COLOR, fontWeight: 800, letterSpacing: 2 }}>
               {d}
@@ -195,12 +195,12 @@ const LodgeSessionsWidget: React.FC<LodgeSessionsWidgetProps> = ({
           ))}
         </Box>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', flexGrow: 1, bgcolor: theme.palette.mode === 'dark' ? '#090B10' : '#ffffff' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', flexGrow: 1, bgcolor: theme.palette.background.paper }}>
           {renderCalendarDays}
         </Box>
         
         {canManageLodge && (
-          <Box sx={{ display: 'flex', gap: 1.5, p: 2.5, pt: 2, justifyContent: 'center', bgcolor: theme.palette.mode === 'dark' ? '#090B10' : '#ffffff' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, p: 2.5, pt: 2, justifyContent: 'center', bgcolor: theme.palette.background.paper }}>
               <Button 
                   variant="contained" 
                   onClick={() => {}}

@@ -14,7 +14,8 @@ import {
   Divider,
   useTheme,
   AppBar,
-  Toolbar
+  Toolbar,
+  Switch
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -26,9 +27,12 @@ import {
   Event as EventIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  Description as DescriptionIcon
+  Description as DescriptionIcon,
+  Brightness4,
+  Brightness7
 } from '@mui/icons-material';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
+import { useCustomTheme } from '@/shared/contexts/ThemeContext';
 
 const drawerWidth = 260;
 
@@ -48,6 +52,7 @@ const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { mode, toggleColorMode } = useCustomTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -73,11 +78,11 @@ const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#090B10' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: theme.palette.background.default }}>
       <CssBaseline />
 
       {/* Brutalist Sharp Header (Global Admin) */}
-      <AppBar position="static" elevation={0} sx={{ height: 70, bgcolor: '#0B0F19', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', backgroundImage: 'none', zIndex: 1300 }}>
+      <AppBar position="static" elevation={0} sx={{ height: 70, bgcolor: theme.palette.background.paper, borderBottom: `1px solid ${theme.palette.divider}`, backgroundImage: 'none', zIndex: 1300 }}>
         <Toolbar sx={{ height: '100%', display: 'flex', justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
 
           {/* Left: Global Title */}
@@ -90,7 +95,7 @@ const DashboardLayout: React.FC = () => {
                 <AdminIcon sx={{ color: theme.palette.primary.main, fontSize: 32 }} />
               </Avatar>
               <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700, color: '#fff', fontFamily: '"Playfair Display", serif', letterSpacing: 1 }}>
+                <Typography variant="subtitle1" sx={{ lineHeight: 1.2, fontWeight: 700, color: theme.palette.text.primary, fontFamily: '"Playfair Display", serif', letterSpacing: 1 }}>
                   Sigma Global
                 </Typography>
                 <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
@@ -102,19 +107,45 @@ const DashboardLayout: React.FC = () => {
 
           {/* Right: User Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Switch 
+              checked={mode === 'dark'} 
+              onChange={toggleColorMode} 
+              color="primary" 
+              icon={<Brightness7 sx={{ fontSize: 16, color: '#f59e0b', m: 0.5 }} />}
+              checkedIcon={<Brightness4 sx={{ fontSize: 16, color: '#e0f2fe', m: 0.5 }} />}
+              sx={{
+                '& .MuiSwitch-switchBase': {
+                  padding: 1,
+                  '&.Mui-checked': {
+                    color: '#fff',
+                    transform: 'translateX(14px)',
+                    '& + .MuiSwitch-track': {
+                      backgroundColor: 'rgba(56, 189, 248, 0.5)',
+                      opacity: 1,
+                      border: 0,
+                    },
+                  },
+                },
+                '& .MuiSwitch-track': {
+                  borderRadius: 22 / 2,
+                  backgroundColor: 'rgba(217, 119, 6, 0.4)',
+                  opacity: 1,
+                },
+              }}
+            />
             {user && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }} onClick={handleMenu}>
                 <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
-                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
                     {user.name || user.sub || 'Usuário'}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary, letterSpacing: 0.5, textTransform: 'uppercase' }}>
                     {user.user_type.replace('_', ' ')}
                   </Typography>
                 </Box>
-                <Avatar
+              <Avatar
                   src={user.profile_picture_path ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${user.profile_picture_path}` : undefined}
-                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1 }}
+                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}
                   variant="rounded"
                 >
                   {user?.[0]?.toUpperCase() || <PersonIcon />}
@@ -129,15 +160,15 @@ const DashboardLayout: React.FC = () => {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               open={Boolean(anchorEl)}
               onClose={handleClose}
-              sx={{ '& .MuiPaper-root': { bgcolor: '#121826', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', mt: 1.5 } }}
+              sx={{ '& .MuiPaper-root': { bgcolor: theme.palette.background.paper, color: theme.palette.text.primary, border: `1px solid ${theme.palette.divider}`, mt: 1.5 } }}
             >
-              <MenuItem onClick={handleClose} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
-                <ListItemIcon><PersonIcon fontSize="small" sx={{ color: 'rgba(255,255,255,0.7)' }} /></ListItemIcon>
+              <MenuItem onClick={handleClose} sx={{ '&:hover': { bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}>
+                <ListItemIcon><PersonIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} /></ListItemIcon>
                 Perfil
               </MenuItem>
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-              <MenuItem onClick={handleLogout} sx={{ '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' } }}>
-                <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: 'theme.palette.error.main' }} /></ListItemIcon>
+              <Divider sx={{ borderColor: theme.palette.divider }} />
+              <MenuItem onClick={handleLogout} sx={{ '&:hover': { bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }}>
+                <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: 'error.main' }} /></ListItemIcon>
                 Sair
               </MenuItem>
             </Menu>
@@ -147,13 +178,13 @@ const DashboardLayout: React.FC = () => {
 
       <Box sx={{ display: 'flex', flexGrow: 1, height: `calc(100vh - 70px)`, overflow: 'hidden' }}>
 
-        {/* Dark Sidebar matches LodgeDashboardLayout */}
+        {/* Sidebar matches LodgeDashboardLayout */}
         <Box
           sx={{
             width: drawerWidth, // keep original admin width since titles are long
             flexShrink: 0,
-            backgroundColor: '#0B0F19',
-            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            backgroundColor: theme.palette.background.paper,
+            borderRight: `1px solid ${theme.palette.divider}`,
             overflowY: 'auto',
             overflowX: 'hidden',
             display: 'flex',
@@ -185,15 +216,15 @@ const DashboardLayout: React.FC = () => {
                       px: 2,
                       mb: 1,
                       borderRadius: 2,
-                      backgroundColor: isActive ? 'rgba(0, 176, 255, 0.1)' : 'transparent',
-                      color: isActive ? theme.palette.primary.light : 'rgba(255,255,255,0.6)',
+                      backgroundColor: isActive ? (mode === 'dark' ? 'rgba(0, 176, 255, 0.1)' : 'rgba(2, 132, 199, 0.1)') : 'transparent',
+                      color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
                       borderLeft: isActive ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
                       '&:hover': {
-                        backgroundColor: 'rgba(0, 176, 255, 0.05)',
-                        color: '#fff',
+                        backgroundColor: mode === 'dark' ? 'rgba(0, 176, 255, 0.05)' : 'rgba(2, 132, 199, 0.05)',
+                        color: theme.palette.text.primary,
                       },
                       '&.Mui-selected:hover': {
-                        backgroundColor: 'rgba(0, 176, 255, 0.15)',
+                        backgroundColor: mode === 'dark' ? 'rgba(0, 176, 255, 0.15)' : 'rgba(2, 132, 199, 0.15)',
                       }
                     }}
                   >
@@ -228,13 +259,13 @@ const DashboardLayout: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Main Content Area - Dark matched */}
+        {/* Main Content Area */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            backgroundColor: '#090B10',
-            backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
+            backgroundColor: theme.palette.background.default,
+            backgroundImage: mode === 'dark' ? 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)' : 'none',
             overflow: 'auto',
             height: '100%',
             pt: { xs: 2, md: 3 },

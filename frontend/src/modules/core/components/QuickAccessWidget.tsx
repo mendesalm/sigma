@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, Grid, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
     Restaurant,
     Storefront,
@@ -19,15 +20,20 @@ interface QuickAccessWidgetProps {
     onOpenDiningScale?: () => void;
 }
 
-const COLORS = {
-    cardBg: '#242830',
-    gold: '#C49A45',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#A0AAB4',
-    borderColor: 'rgba(255,255,255,0.08)'
-};
+
 
 const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds, onOpenDiningScale }) => {
+    const theme = useTheme();
+    const COLORS = {
+        cardBg: theme.palette.background.paper,
+        gold: theme.palette.mode === 'dark' ? '#C49A45' : '#B8860B',
+        goldGradient: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)' : 'linear-gradient(180deg, #F2D06B 0%, #D4AF37 100%)',
+        textPrimary: theme.palette.text.primary,
+        textSecondary: theme.palette.text.secondary,
+        borderColor: theme.palette.divider,
+        blueHighlight: theme.palette.mode === 'dark' ? '#528BC2' : '#1976d2'
+    };
+
     const navigate = useNavigate();
 
     const actions = [
@@ -93,7 +99,7 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
         <Card
             sx={{
                 bgcolor: COLORS.cardBg,
-                color: '#fff',
+                color: theme.palette.text.primary,
                 borderRadius: '8px',
                 border: `1px solid ${COLORS.borderColor}`,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -139,14 +145,14 @@ const QuickAccessWidget: React.FC<QuickAccessWidgetProps> = ({ onOpenClassifieds
                                         gap: 1,
                                         p: 1.5,
                                         height: '100%',
-                                        bgcolor: 'rgba(255,255,255,0.03)',
+                                        bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
                                         border: `1px solid ${COLORS.borderColor}`,
                                         borderRadius: '8px',
                                         textTransform: 'none',
                                         color: COLORS.textPrimary,
                                         transition: 'all 0.2s',
                                         '&:hover': {
-                                            bgcolor: 'rgba(255,255,255,0.08)',
+                                            bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                                             borderColor: action.color,
                                             transform: 'translateY(-2px)'
                                         }

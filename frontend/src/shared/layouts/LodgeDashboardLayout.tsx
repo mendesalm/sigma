@@ -18,18 +18,21 @@ import {
   ListItemText,
   useMediaQuery,
   Menu,
-  MenuItem
+  MenuItem,
+  Switch
 } from '@mui/material';
 import {
   Logout,
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
-  AdminPanelSettings as AdminIcon,
   Computer as WebmasterIcon,
   QrCodeScanner as QrCodeScannerIcon,
+  Brightness4,
+  Brightness7,
 } from '@mui/icons-material';
 import { AuthContext } from '@/modules/access_control/context/AuthContext';
+import { useCustomTheme } from '@/shared/contexts/ThemeContext';
 import api from '@/shared/services/api';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import SessionCheckIn from '@/modules/sessions/components/SessionCheckIn';
@@ -42,6 +45,9 @@ import HarmoniaSvg from '@/assets/icons/Harmonia.svg';
 import ArquitetoSvg from '@/assets/icons/Arquiteto.svg';
 import { SigmaAnimatedLogo } from '@/shared/components/SigmaAnimatedLogo';
 import LodgeDetailsModal from '../../modules/core/components/LodgeDetailsModal';
+import { LodgeIcon } from '@/assets/icons/LodgeIcon';
+import { MemberPanelIcon } from '@/assets/icons/MemberPanelIcon';
+import { AdminIcon } from '@/assets/icons/AdminIcon';
 
 const HEADER_HEIGHT = 70;
 const DRAWER_WIDTH = 260;
@@ -57,6 +63,7 @@ const adminRoles = [
 
 const LodgeDashboardLayout: React.FC = () => {
   const theme = useTheme();
+  const { mode, toggleColorMode } = useCustomTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -69,7 +76,7 @@ const LodgeDashboardLayout: React.FC = () => {
   const [adminAnchorEl, setAdminAnchorEl] = useState<null | HTMLElement>(null);
   const [lodgeDetailsOpen, setLodgeDetailsOpen] = useState(false);
 
-  const fetchLodgeData = async () => {
+  const fetchLodgeData = React.useCallback(async () => {
     if (user?.lodge_id) {
       try {
         const response = await api.get(`/lodges/${user.lodge_id}`);
@@ -84,11 +91,12 @@ const LodgeDashboardLayout: React.FC = () => {
         console.error("Failed to fetch lodge data:", error);
       }
     }
-  };
+  }, [user]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLodgeData();
-  }, [user]);
+  }, [fetchLodgeData]);
 
   const handleLogout = () => {
     if (logout) {
@@ -105,36 +113,41 @@ const LodgeDashboardLayout: React.FC = () => {
   const isAdmin = isWebmaster || adminRoles.includes(user?.active_role_name || '');
 
   const sidebarItems = [
-    { text: 'Início', path: '/dashboard/lodge-dashboard', icon: <DashboardIcon />, visible: true, endMatch: true },
-    { text: 'Painel do Obreiro', path: '/dashboard/lodge-dashboard/obreiro', icon: <PersonIcon />, visible: true },
-    { text: 'Administração', path: '#admin', icon: <AdminIcon />, visible: isAdmin },
-    { text: 'Webmaster', path: '/dashboard', icon: <WebmasterIcon />, visible: isWebmaster }
+    { text: 'Início', path: '/dashboard/lodge-dashboard', renderIcon: (active: boolean) => <LodgeIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: true, endMatch: true },
+    { text: 'Painel do Obreiro', path: '/dashboard/lodge-dashboard/obreiro', renderIcon: (active: boolean) => <MemberPanelIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: true },
+    { text: 'Administração', path: '#admin', renderIcon: (active: boolean) => <AdminIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: isAdmin },
+    { text: 'Webmaster', path: '/dashboard', renderIcon: () => <WebmasterIcon sx={{ height: 28, width: 'auto' }} />, visible: isWebmaster }
   ];
 
   if (activeSessionId) {
     sidebarItems.splice(1, 0, {
       text: 'Check-in Sessão',
       path: '#checkin',
-      icon: <QrCodeScannerIcon />,
+      renderIcon: () => <QrCodeScannerIcon sx={{ fontSize: 28 }} />,
       visible: true,
       endMatch: false
     });
   }
 
   const drawerContent = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#0B0F19', borderRight: '1px solid rgba(255, 255, 255, 0.05)' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: theme.palette.background.paper, borderRight: `1px solid ${theme.palette.divider}` }}>
       {/* Sidebar Header Space */}
-      <Box sx={{ height: HEADER_HEIGHT, display: 'flex', alignItems: 'center', px: 3, borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-        <Typography variant="overline" sx={{ color: 'rgba(255,255,255,0.4)', letterSpacing: 2 }}>Menu Principal</Typography>
+      <Box sx={{ height: HEADER_HEIGHT, display: 'flex', alignItems: 'center', px: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+        <Typography variant="overline" sx={{ color: theme.palette.text.secondary, letterSpacing: 2 }}>Menu Principal</Typography>
       </Box>
 
       {/* Navigation List */}
       <List sx={{ px: 2, pt: 3, flexGrow: 1 }}>
         {sidebarItems.filter(item => item.visible).map((item) => {
           // Check if active
-          const isActive = item.path.startsWith('#') ? false : (item.endMatch 
-            ? location.pathname === item.path
-            : location.pathname.startsWith(item.path));
+          let isActive = false;
+          if (item.path === '#admin') {
+            isActive = Boolean(adminAnchorEl);
+          } else if (!item.path.startsWith('#')) {
+            isActive = item.endMatch 
+              ? location.pathname === item.path
+              : location.pathname.startsWith(item.path);
+          }
 
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
@@ -152,18 +165,27 @@ const LodgeDashboardLayout: React.FC = () => {
                 }}
                 sx={{
                   borderRadius: 2,
-                  bgcolor: isActive ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
-                  color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.7)',
+                  bgcolor: isActive ? (mode === 'dark' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(212, 175, 55, 0.15)') : 'transparent',
+                  color: isActive ? (mode === 'dark' ? '#D4AF37' : '#B8860B') : theme.palette.text.secondary,
                   transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: isActive ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    color: isActive ? '#D4AF37' : '#fff',
+                    bgcolor: isActive ? (mode === 'dark' ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.25)') : (mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0,0,0,0.05)'),
+                    color: isActive ? (mode === 'dark' ? '#D4AF37' : '#B8860B') : theme.palette.text.primary,
                     transform: 'translateX(4px)'
                   }
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                  {item.icon}
+                <ListItemIcon sx={{ 
+                  minWidth: 48, 
+                  width: 48,
+                  height: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'inherit',
+                  mr: 1
+                }}>
+                  {item.renderIcon(isActive)}
                 </ListItemIcon>
                 <ListItemText 
                   primary={item.text} 
@@ -192,7 +214,7 @@ const LodgeDashboardLayout: React.FC = () => {
             textTransform: "uppercase",
             fontWeight: 700, 
             lineHeight: 1,
-            background: `linear-gradient(45deg, #B4B4B4, #9F9F9F)`,
+            background: mode === 'dark' ? `linear-gradient(45deg, #B4B4B4, #9F9F9F)` : `linear-gradient(45deg, #475569, #334155)`,
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             color: "transparent",
@@ -205,7 +227,7 @@ const LodgeDashboardLayout: React.FC = () => {
         <Typography 
           variant="caption" 
           sx={{ 
-            color: 'rgba(255,255,255,0.5)',
+            color: theme.palette.text.secondary,
             letterSpacing: '0.05em',
             textAlign: 'center',
             fontSize: '0.65rem',
@@ -226,9 +248,9 @@ const LodgeDashboardLayout: React.FC = () => {
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         PaperProps={{
           sx: {
-            bgcolor: '#151B26',
-            color: '#fff',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            border: `1px solid ${theme.palette.divider}`,
             mt: 1,
             ml: 1,
             '& .MuiMenuItem-root': {
@@ -236,8 +258,8 @@ const LodgeDashboardLayout: React.FC = () => {
               fontSize: '0.9rem',
               p: 1.5,
               '&:hover': {
-                bgcolor: 'rgba(212, 175, 55, 0.1)',
-                color: '#D4AF37'
+                bgcolor: mode === 'dark' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(212, 175, 55, 0.15)',
+                color: mode === 'dark' ? '#D4AF37' : '#B8860B'
               }
             }
           }
@@ -272,7 +294,7 @@ const LodgeDashboardLayout: React.FC = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#090B10' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: theme.palette.background.default }}>
       <CssBaseline />
 
       {/* Top Header */}
@@ -281,8 +303,8 @@ const LodgeDashboardLayout: React.FC = () => {
         elevation={0} 
         sx={{ 
           height: HEADER_HEIGHT, 
-          bgcolor: '#0B0F19', 
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)', 
+          bgcolor: theme.palette.background.paper, 
+          borderBottom: `1px solid ${theme.palette.divider}`, 
           backgroundImage: 'none', 
           zIndex: theme.zIndex.drawer + 1,
           width: '100%'
@@ -332,7 +354,7 @@ const LodgeDashboardLayout: React.FC = () => {
                       fontFamily: '"Inter", sans-serif',
                       fontWeight: 700, 
                       lineHeight: 1.2,
-                      color: '#C49A45', // Dourado do Sigma
+                      color: mode === 'dark' ? '#C49A45' : '#B8860B', // Dourado do Sigma
                       letterSpacing: '-0.01em',
                       textTransform: 'uppercase'
                     }}
@@ -343,17 +365,17 @@ const LodgeDashboardLayout: React.FC = () => {
                     <Box sx={{ mt: 0.5 }}>
                       {lodgeData.obedience_name.includes('Grande Oriente do Brasil') || lodgeData.obedience_name.includes('GOB') ? (
                         <>
-                          <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                          <Typography variant="caption" sx={{ display: 'block', fontStyle: 'italic', fontSize: '0.65rem', color: theme.palette.text.secondary, lineHeight: 1.1 }}>
                             Federada ao Grande Oriente do Brasil
                           </Typography>
                           {lodgeData.subobedience_name && (
-                            <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                            <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: theme.palette.text.secondary, lineHeight: 1.1 }}>
                               Jurisdicionada ao {lodgeData.subobedience_name}
                             </Typography>
                           )}
                         </>
                       ) : (
-                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.1 }}>
+                        <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', color: theme.palette.text.secondary, lineHeight: 1.1 }}>
                           Confederada à {lodgeData.obedience_name}
                         </Typography>
                       )}
@@ -366,26 +388,52 @@ const LodgeDashboardLayout: React.FC = () => {
 
           {/* Right: User Info */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 3 } }}>
+            <Switch 
+              checked={mode === 'dark'} 
+              onChange={toggleColorMode} 
+              color="primary" 
+              icon={<Brightness7 sx={{ fontSize: 16, color: '#f59e0b', m: 0.5 }} />}
+              checkedIcon={<Brightness4 sx={{ fontSize: 16, color: '#e0f2fe', m: 0.5 }} />}
+              sx={{
+                '& .MuiSwitch-switchBase': {
+                  padding: 1,
+                  '&.Mui-checked': {
+                    color: '#fff',
+                    transform: 'translateX(14px)',
+                    '& + .MuiSwitch-track': {
+                      backgroundColor: 'rgba(56, 189, 248, 0.5)',
+                      opacity: 1,
+                      border: 0,
+                    },
+                  },
+                },
+                '& .MuiSwitch-track': {
+                  borderRadius: 22 / 2,
+                  backgroundColor: 'rgba(217, 119, 6, 0.4)',
+                  opacity: 1,
+                },
+              }}
+            />
             {user && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ textAlign: 'right', display: { xs: 'none', md: 'block' } }}>
-                  <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
                     {user.name || user.sub || 'Usuário'}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', letterSpacing: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: theme.palette.text.secondary, letterSpacing: 0.5 }}>
                     {user.active_role_name || (user.user_type === 'member' ? 'Obreiro' : user.role)}
                   </Typography>
                 </Box>
                 <Avatar
                   src={user.profile_picture_path ? `${API_URL}${user.profile_picture_path}` : undefined}
-                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 1 }}
+                  sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.dark, border: `1px solid ${theme.palette.divider}`, borderRadius: 1 }}
                   variant="rounded"
                 >
                   {user.name ? user.name.charAt(0).toUpperCase() : <PersonIcon />}
                 </Avatar>
               </Box>
             )}
-            <IconButton onClick={handleLogout} sx={{ color: 'rgba(255,255,255,0.4)', '&:hover': { color: theme.palette.error.main } }}>
+            <IconButton onClick={handleLogout} sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.error.main } }}>
               <Logout fontSize="small" />
             </IconButton>
           </Box>
@@ -407,7 +455,7 @@ const LodgeDashboardLayout: React.FC = () => {
           }}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0B0F19', borderRight: 'none' },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: theme.palette.background.paper, borderRight: 'none' },
           }}
         >
           {drawerContent}
@@ -417,7 +465,7 @@ const LodgeDashboardLayout: React.FC = () => {
           variant="permanent"
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0B0F19', borderRight: 'none', top: HEADER_HEIGHT, height: `calc(100vh - ${HEADER_HEIGHT}px)` },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: theme.palette.background.paper, borderRight: 'none', top: HEADER_HEIGHT, height: `calc(100vh - ${HEADER_HEIGHT}px)` },
           }}
           open
         >
@@ -432,8 +480,8 @@ const LodgeDashboardLayout: React.FC = () => {
           flexGrow: 1,
           mt: `${HEADER_HEIGHT}px`,
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          backgroundColor: '#090B10',
-          backgroundImage: 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)',
+          backgroundColor: theme.palette.background.default,
+          backgroundImage: mode === 'dark' ? 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)' : 'none',
           height: { xs: 'auto', md: `calc(100vh - ${HEADER_HEIGHT}px)` },
           overflow: { xs: 'auto', md: 'hidden' },
           pt: { xs: 1, md: 1 },
@@ -447,8 +495,8 @@ const LodgeDashboardLayout: React.FC = () => {
       </Box>
 
       {/* Modal de Check-in */}
-      <Dialog open={openCheckIn} onClose={() => setOpenCheckIn(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: '#151B26', color: '#fff' }}}>
-        <DialogTitle sx={{ color: '#D4AF37' }}>Registrar Presença</DialogTitle>
+      <Dialog open={openCheckIn} onClose={() => setOpenCheckIn(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: theme.palette.background.paper, color: theme.palette.text.primary }}}>
+        <DialogTitle sx={{ color: mode === 'dark' ? '#D4AF37' : '#B8860B' }}>Registrar Presença</DialogTitle>
         <DialogContent>
           {activeSessionId && (
             <SessionCheckIn 
@@ -458,7 +506,7 @@ const LodgeDashboardLayout: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenCheckIn(false)} sx={{ color: 'rgba(255,255,255,0.7)' }}>Fechar</Button>
+          <Button onClick={() => setOpenCheckIn(false)} sx={{ color: theme.palette.text.secondary }}>Fechar</Button>
         </DialogActions>
       </Dialog>
       {/* Modal de Detalhes da Loja */}

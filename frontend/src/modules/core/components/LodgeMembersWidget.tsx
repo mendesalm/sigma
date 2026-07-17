@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { PersonOutline } from '@mui/icons-material';
 import { DashboardStats } from '@/modules/core/services/dashboardService';
 
@@ -9,22 +10,25 @@ interface LodgeMembersWidgetProps {
     canManageLodge?: boolean;
 }
 
-const COLORS = {
-    cardBg: '#242830',
-    gold: '#C49A45',
-    goldGradient: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#A0AAB4',
-    borderColor: 'rgba(255,255,255,0.08)',
-    blueHighlight: '#528BC2'
-};
+
 
 const LodgeMembersWidget: React.FC<LodgeMembersWidgetProps> = ({ stats, onClick, canManageLodge }) => {
+    const theme = useTheme();
+    const COLORS = {
+        cardBg: theme.palette.background.paper,
+        gold: theme.palette.mode === 'dark' ? '#C49A45' : '#B8860B',
+        goldGradient: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)' : 'linear-gradient(180deg, #F2D06B 0%, #D4AF37 100%)',
+        textPrimary: theme.palette.text.primary,
+        textSecondary: theme.palette.text.secondary,
+        borderColor: theme.palette.divider,
+        blueHighlight: theme.palette.mode === 'dark' ? '#528BC2' : '#1976d2'
+    };
+
     return (
         <Card
             sx={{
                 bgcolor: COLORS.cardBg,
-                color: '#fff',
+                color: theme.palette.text.primary,
                 borderRadius: '8px',
                 border: `1px solid ${COLORS.borderColor}`,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -91,7 +95,7 @@ const LodgeMembersWidget: React.FC<LodgeMembersWidgetProps> = ({ stats, onClick,
                     sx={{ 
                         flex: 1, 
                         color: COLORS.textPrimary, 
-                        borderColor: 'rgba(255,255,255,0.2)',
+                        borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                         textTransform: 'none',
                         fontFamily: '"Inter", sans-serif',
                         '&:hover': { borderColor: COLORS.gold, bgcolor: 'rgba(196,154,69,0.05)' }

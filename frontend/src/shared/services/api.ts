@@ -5,6 +5,18 @@ const api = axios.create({
   withCredentials: true,
 });
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -30,8 +42,6 @@ api.interceptors.response.use(
     
     // Check if it's 401 Unauthorized and not already retrying
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
       // If we are already logging out, just reject the error to avoid loop
       if (originalRequest.url?.includes('/auth/logout')) {
          return Promise.reject(error);
@@ -45,7 +55,20 @@ api.interceptors.response.use(
         window.dispatchEvent(new Event('force_logout'));
         return Promise.reject(error);
       }
-      
+
+      if (isRefreshing) {
+        // Se já está atualizando o token, enfileira a requisição para tentar novamente depois
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
         // Try to get a new token
         const response = await api.post('/auth/refresh');
@@ -56,9 +79,15 @@ api.interceptors.response.use(
         
         // Retry original request
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        
+        // Notifica as requisições em espera
+        isRefreshing = false;
+        onRefreshed(access_token);
+        
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh token failed (expired or revoked), force logout
+        isRefreshing = false;
         console.error('Session expired or revoked.');
         window.dispatchEvent(new Event('force_logout'));
         return Promise.reject(refreshError);

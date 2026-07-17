@@ -43,6 +43,7 @@ const Members = () => {
   const canEdit = user?.user_type === 'webmaster' || user?.user_type === 'super_admin' || (user?.credential && user.credential >= 100);
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('Todos');
   const [openExportDialog, setOpenExportDialog] = useState(false);
   const [exportColumns, setExportColumns] = useState({
     cim: true,
@@ -84,11 +85,21 @@ const Members = () => {
     fetchMembers();
   }, []);
 
-  const filteredMembers = members.filter(member => 
-    member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (member.cim && member.cim.includes(searchTerm))
-  );
+  const filteredMembers = members.filter(member => {
+    const matchesSearch = member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (member.cim && member.cim.includes(searchTerm));
+    
+    if (!matchesSearch) return false;
+
+    if (filterStatus === 'Ativos') return member.status === MemberStatusEnum.ACTIVE;
+    if (filterStatus === 'Inativos') return member.status === MemberStatusEnum.INACTIVE;
+    if (filterStatus === 'Aprendizes') return member.degree === 1;
+    if (filterStatus === 'Companheiros') return member.degree === 2;
+    if (filterStatus === 'Mestres') return member.degree >= 3;
+
+    return true;
+  });
 
   const handleExport = () => {
     const headers = [];
@@ -232,6 +243,25 @@ const Members = () => {
             ),
           }}
         />
+
+        <Box sx={{ display: 'flex', gap: 1, mt: 3, flexWrap: 'wrap' }}>
+          {['Todos', 'Ativos', 'Inativos', 'Aprendizes', 'Companheiros', 'Mestres'].map((status) => (
+            <Chip
+              key={status}
+              label={status}
+              onClick={() => setFilterStatus(status)}
+              sx={{
+                fontWeight: filterStatus === status ? 700 : 500,
+                backgroundColor: filterStatus === status ? alpha(theme.palette.primary.main, 0.2) : 'transparent',
+                color: filterStatus === status ? theme.palette.primary.main : theme.palette.text.secondary,
+                border: `1px solid ${filterStatus === status ? theme.palette.primary.main : alpha(theme.palette.divider, 0.2)}`,
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                }
+              }}
+            />
+          ))}
+        </Box>
       </Paper>
 
       {/* Container com fundo mais claro para a tabela */}

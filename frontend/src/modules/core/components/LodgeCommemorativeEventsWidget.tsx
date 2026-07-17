@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent, Typography, Box, List, ListItem, ListItemText, Divider, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { Cake as CakeIcon, Gavel as GavelIcon, Event as EventIcon, AllInclusive as WeddingIcon, Architecture as ArchitectureIcon } from '@mui/icons-material';
 import { CalendarEvent } from '@/modules/core/services/dashboardService';
 import { EVENT_COLORS, normalizeEventType } from '@/modules/core/constants/LodgeDashboardConstants';
@@ -10,16 +11,20 @@ interface LodgeCommemorativeEventsWidgetProps {
   canManageLodge?: boolean;
 }
 
-const COLORS = {
-    cardBg: '#242830',
-    gold: '#C49A45',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#A0AAB4',
-    borderColor: 'rgba(255,255,255,0.08)',
-    goldGradient: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
-};
+
 
 const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetProps> = ({ commemorativeEvents, currentDate, canManageLodge }) => {
+    const theme = useTheme();
+    const COLORS = {
+        cardBg: theme.palette.background.paper,
+        gold: theme.palette.mode === 'dark' ? '#C49A45' : '#B8860B',
+        goldGradient: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)' : 'linear-gradient(180deg, #F2D06B 0%, #D4AF37 100%)',
+        textPrimary: theme.palette.text.primary,
+        textSecondary: theme.palette.text.secondary,
+        borderColor: theme.palette.divider,
+        blueHighlight: theme.palette.mode === 'dark' ? '#528BC2' : '#1976d2'
+    };
+
   const monthName = currentDate.toLocaleDateString('pt-BR', { month: 'long' });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -54,7 +59,7 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
   return (
     <Card sx={{
       bgcolor: COLORS.cardBg,
-      color: '#fff',
+      color: theme.palette.text.primary,
       borderRadius: '8px',
       border: `1px solid ${COLORS.borderColor}`,
       boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -121,7 +126,7 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
                     px: 1,
                     py: 1,
                     ...(isToday && {
-                      bgcolor: 'rgba(255,255,255,0.05)',
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
                       borderRadius: '8px',
                     })
                   }}>

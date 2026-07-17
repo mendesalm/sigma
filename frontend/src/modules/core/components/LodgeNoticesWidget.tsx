@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, List, ListItem, ListItemButton, ListItemText, IconButton, Button } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { NotificationsActive, Add as AddIcon, Castle } from '@mui/icons-material';
 import { DashboardStats } from '@/modules/core/services/dashboardService';
 
@@ -11,20 +12,24 @@ interface LodgeNoticesWidgetProps {
   onNoticeClick: (title: string, content: string) => void;
 }
 
-const COLORS = {
-    cardBg: '#242830',
-    gold: '#C49A45',
-    textPrimary: '#FFFFFF',
-    textSecondary: '#A0AAB4',
-    borderColor: 'rgba(255,255,255,0.08)',
-    goldGradient: 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)',
-};
+
 
 const LodgeNoticesWidget: React.FC<LodgeNoticesWidgetProps> = ({ stats, canManageNotices, onOpenAddNotice, onOpenAllNotices, onNoticeClick }) => {
+    const theme = useTheme();
+    const COLORS = {
+        cardBg: theme.palette.background.paper,
+        gold: theme.palette.mode === 'dark' ? '#C49A45' : '#B8860B',
+        goldGradient: theme.palette.mode === 'dark' ? 'linear-gradient(180deg, #DDB96B 0%, #B8862D 100%)' : 'linear-gradient(180deg, #F2D06B 0%, #D4AF37 100%)',
+        textPrimary: theme.palette.text.primary,
+        textSecondary: theme.palette.text.secondary,
+        borderColor: theme.palette.divider,
+        blueHighlight: theme.palette.mode === 'dark' ? '#528BC2' : '#1976d2'
+    };
+
   return (
     <Card sx={{
       bgcolor: COLORS.cardBg,
-      color: '#fff',
+      color: theme.palette.text.primary,
       borderRadius: '8px',
       border: `1px solid ${COLORS.borderColor}`,
       boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
@@ -81,7 +86,7 @@ const LodgeNoticesWidget: React.FC<LodgeNoticesWidgetProps> = ({ stats, canManag
                 bgcolor: 'transparent',
                 mb: 1.5,
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
               }}
             >
               <Castle sx={{ color: COLORS.gold, fontSize: 20, mt: 0.5, mr: 1.5 }} />
@@ -124,7 +129,7 @@ const LodgeNoticesWidget: React.FC<LodgeNoticesWidgetProps> = ({ stats, canManag
                   borderRadius: '8px',
                   bgcolor: 'transparent',
                   transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
+                  '&:hover': { bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
                 }}
               >
                 <ListItemText
@@ -158,7 +163,7 @@ const LodgeNoticesWidget: React.FC<LodgeNoticesWidgetProps> = ({ stats, canManag
               sx={{ 
                   flex: 1,
                   color: COLORS.textPrimary, 
-                  borderColor: 'rgba(255,255,255,0.2)',
+                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                   textTransform: 'none',
                   fontFamily: '"Inter", sans-serif',
                   '&:hover': { borderColor: COLORS.gold, bgcolor: 'rgba(196,154,69,0.05)' }
