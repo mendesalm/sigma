@@ -77,7 +77,7 @@ const FeaturesBackground: React.FC = () => {
 
       // Draw active pulses
       for (let i = 0; i < pulses.length; i++) {
-        let p = pulses[i];
+        const p = pulses[i];
         
         ctx.beginPath();
         const pulseColor = mode === 'dark' ? '56, 189, 248' : '2, 132, 199';

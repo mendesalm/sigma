@@ -113,12 +113,19 @@ export interface RoleHistoryResponse {
   };
 }
 
+export interface MemberLodgeSimple {
+  id: number;
+  lodge_name: string;
+  lodge_number?: string;
+}
+
 export interface MemberLodgeAssociationResponse {
   lodge_id: number;
   start_date?: string;
   end_date?: string;
   status?: MemberStatusEnum;
   member_class?: MemberClassEnum;
+  lodge?: MemberLodgeSimple;
 }
 
 export interface MemberResponse {

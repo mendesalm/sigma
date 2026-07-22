@@ -29,7 +29,7 @@ const HeroBackground: React.FC = () => {
       particles = [];
       const numParticles = Math.min(100, Math.floor(can.width / 15));
       for (let i = 0; i < numParticles; i++) {
-        let rand = Math.random();
+        const rand = Math.random();
         let isGold = false;
         let isBlue = false;
         if (rand > 0.95) isGold = true;
@@ -66,7 +66,7 @@ const HeroBackground: React.FC = () => {
       }
 
       for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
+        const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
 
@@ -85,18 +85,18 @@ const HeroBackground: React.FC = () => {
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
-          let p2 = particles[j];
-          let dx = p.x - p2.x;
-          let dy = p.y - p2.y;
-          let dist = Math.sqrt(dx * dx + dy * dy);
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < 150) {
-            let opacity = 1 - (dist / 150);
+            const opacity = 1 - (dist / 150);
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
 
-            let isConnectionSpecial = p.isGold || p2.isGold || p.isBlue || p2.isBlue;
+            const isConnectionSpecial = p.isGold || p2.isGold || p.isBlue || p2.isBlue;
 
             if (isConnectionSpecial) {
               ctx.strokeStyle = mode === 'dark' ? `rgba(56, 189, 248, ${opacity * 0.3})` : `rgba(2, 132, 199, ${opacity * 0.4})`;
@@ -109,13 +109,13 @@ const HeroBackground: React.FC = () => {
         }
 
         // Connect to focal point (Logo Center)
-        let dxF = p.x - focalPoint.x;
-        let dyF = p.y - focalPoint.y;
-        let distF = Math.sqrt(dxF * dxF + dyF * dyF);
-        let logoPullDistance = 350;
+        const dxF = p.x - focalPoint.x;
+        const dyF = p.y - focalPoint.y;
+        const distF = Math.sqrt(dxF * dxF + dyF * dyF);
+        const logoPullDistance = 350;
 
         if (distF < logoPullDistance) {
-          let opacityF = 1 - (distF / logoPullDistance);
+          const opacityF = 1 - (distF / logoPullDistance);
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(focalPoint.x, focalPoint.y);

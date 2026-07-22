@@ -22,7 +22,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Cadastro',
       subValue: 'Ficha individual e atualização',
       icon: <PersonIcon fontSize="large" />,
-      colSpan: 6,
       buttons: [
         { label: 'Acessar', primary: true, onClick: () => navigate('/dashboard/lodge-dashboard/obreiro/meu-cadastro') }
       ]
@@ -32,7 +31,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Presenças',
       subValue: 'Relatório de presença individual',
       icon: <PresenceIcon fontSize="large" />,
-      colSpan: 6,
       buttons: [
         { label: 'Visualizar', primary: true, onClick: () => navigate('/dashboard/lodge-dashboard/obreiro/minhas-presencas') }
       ]
@@ -42,7 +40,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Visitas',
       subValue: 'Relatório de visitações',
       icon: <VisitationIcon fontSize="large" />,
-      colSpan: 6,
       buttons: [
         { label: 'Visualizar', primary: true, onClick: () => navigate('/dashboard/lodge-dashboard/obreiro/minhas-visitacoes') }
       ]
@@ -52,7 +49,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Finanças',
       subValue: 'Em Breve',
       icon: <FinanceIcon fontSize="large" />,
-      colSpan: 6,
       buttons: [
         { label: 'Indisponível', onClick: () => {} }
       ]
@@ -62,7 +58,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Classificados',
       subValue: 'Consulta e anúncios',
       icon: <ClassifiedsIcon fontSize="large" />,
-      colSpan: 4,
       buttons: [
         { label: 'Acessar', primary: true, onClick: () => navigate('/dashboard/lodge-dashboard/obreiro/classificados') }
       ]
@@ -72,7 +67,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Empréstimos',
       subValue: 'Itens do patrimônio',
       icon: <PatrimonyIcon fontSize="large" />,
-      colSpan: 4,
       buttons: [
         { label: 'Acessar', primary: true, onClick: () => navigate('/dashboard/lodge-dashboard/obreiro/meus-emprestimos') }
       ]
@@ -82,7 +76,6 @@ const ObreiroPanelPage: React.FC = () => {
       title: 'Biblioteca',
       subValue: 'Em Breve',
       icon: <LibraryIcon fontSize="large" />,
-      colSpan: 4,
       buttons: [
         { label: 'Indisponível', onClick: () => {} }
       ]

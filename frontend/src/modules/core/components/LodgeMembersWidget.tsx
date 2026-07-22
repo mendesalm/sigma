@@ -1,8 +1,8 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box, Button } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { PersonOutline } from '@mui/icons-material';
 import { DashboardStats } from '@/modules/core/services/dashboardService';
+import MembersSvg from '@/assets/icons/members.svg';
 
 interface LodgeMembersWidgetProps {
     stats: DashboardStats | null;
@@ -55,7 +55,7 @@ const LodgeMembersWidget: React.FC<LodgeMembersWidgetProps> = ({ stats, onClick,
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <PersonOutline sx={{ color: COLORS.gold, fontSize: 28 }} />
+                        <img src={MembersSvg} alt="Membros" style={{ height: 28, width: 'auto' }} />
                     </Box>
                 </Box>
 

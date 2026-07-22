@@ -31,10 +31,6 @@ const Sent: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
   const fetchMessages = async () => {
     try {
       const response = await api.get('/messages/sent');
@@ -43,6 +39,13 @@ const Sent: React.FC = () => {
       console.error('Error fetching sent messages:', error);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      await fetchMessages();
+    };
+    void load();
+  }, []);
 
   const getBasePath = () => {
     if (window.location.pathname.includes('/webmaster')) {

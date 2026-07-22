@@ -182,7 +182,31 @@ def read_members(
             .limit(limit)
             .all()
         )
-    elif user_type in ["webmaster", "member"]:
+    elif user_type == "webmaster":
+        obedience_id = current_user.get("obedience_id") or current_user.get("potencia_id")
+        lodge_id = current_user.get("lodge_id")
+        
+        if obedience_id:
+            members = (
+                db.query(Member)
+                .join(models.MemberObedienceAssociation, Member.id == models.MemberObedienceAssociation.member_id)
+                .filter(models.MemberObedienceAssociation.obedience_id == obedience_id)
+                .options(joinedload(Member.role_history).joinedload(RoleHistory.role))
+                .offset(skip)
+                .limit(limit)
+                .all()
+            )
+        elif lodge_id:
+            members = member_service.get_members_by_lodge(db, lodge_id=lodge_id, skip=skip, limit=limit)
+        else:
+            members = (
+                db.query(Member)
+                .options(joinedload(Member.role_history).joinedload(RoleHistory.role))
+                .offset(skip)
+                .limit(limit)
+                .all()
+            )
+    elif user_type == "member":
         lodge_id = current_user.get("lodge_id")
         if not lodge_id:
             raise HTTPException(status_code=403, detail="Usuário não associado a um contexto de loja.")
@@ -239,12 +263,29 @@ def read_member(
             raise HTTPException(status_code=404, detail="Member not found")
         return db_member
     elif user_type == "webmaster":
+        obedience_id = current_user.get("obedience_id") or current_user.get("potencia_id")
         lodge_id = current_user.get("lodge_id")
-        if not lodge_id:
-            raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
-        db_member = member_service.get_member_in_lodge(db, member_id=member_id, lodge_id=lodge_id)
-        if db_member is None:
-            raise HTTPException(status_code=404, detail="Member not found in this lodge")
+        
+        db_member = db.query(Member).filter(Member.id == member_id).first()
+        if not db_member:
+            raise HTTPException(status_code=404, detail="Member not found")
+            
+        if obedience_id:
+            # For obedience level, just verify the member belongs to the obedience
+            assoc = db.query(models.MemberObedienceAssociation).filter(
+                models.MemberObedienceAssociation.member_id == member_id,
+                models.MemberObedienceAssociation.obedience_id == obedience_id
+            ).first()
+            if not assoc:
+                raise HTTPException(status_code=404, detail="Member not found in this obedience")
+        elif lodge_id:
+            db_member_lodge = member_service.get_member_in_lodge(db, member_id=member_id, lodge_id=lodge_id)
+            if db_member_lodge is None:
+                raise HTTPException(status_code=404, detail="Member not found in this lodge")
+        else:
+            # If a generic global webmaster, allow viewing any member (or enforce something else)
+            pass
+            
         return db_member
     elif user_type == "member":
         # ABAC Ownership verification
@@ -304,14 +345,37 @@ def update_member(
         return db_member
 
     elif user_type == "webmaster":
+        obedience_id = current_user.get("obedience_id") or current_user.get("potencia_id")
         lodge_id = current_user.get("lodge_id")
-        if not lodge_id:
-            raise HTTPException(status_code=403, detail="Webmaster not associated with a lodge")
-        db_member = member_service.update_member_in_lodge(
-            db, member_id=member_id, lodge_id=lodge_id, member_update=member
-        )
-        if db_member is None:
-            raise HTTPException(status_code=404, detail="Member not found in this lodge")
+        
+        db_member = db.query(Member).filter(Member.id == member_id).first()
+        if not db_member:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        if obedience_id:
+            assoc = db.query(models.MemberObedienceAssociation).filter(
+                models.MemberObedienceAssociation.member_id == member_id,
+                models.MemberObedienceAssociation.obedience_id == obedience_id
+            ).first()
+            if not assoc:
+                raise HTTPException(status_code=404, detail="Member not found in this obedience")
+        elif lodge_id:
+            db_member_lodge = member_service.get_member_in_lodge(db, member_id=member_id, lodge_id=lodge_id)
+            if db_member_lodge is None:
+                raise HTTPException(status_code=404, detail="Member not found in this lodge")
+                
+        # Apply updates
+        from app.modules.access_control.utils.password_utils import hash_password
+
+        update_data = member.model_dump(exclude_unset=True)
+        if "password" in update_data:
+            db_member.password_hash = hash_password(update_data.pop("password"))
+
+        for key, value in update_data.items():
+            setattr(db_member, key, value)
+
+        db.commit()
+        db.refresh(db_member)
             
         log_action(
             db=db,
@@ -741,8 +805,16 @@ async def preview_import(
     db: Session = Depends(database.get_db),
     current_user: dict = Depends(dependencies.get_current_user_payload),
 ):
-    if current_user.get("user_type") not in ["super_admin", "webmaster"]:
-        raise HTTPException(status_code=403, detail="Não autorizado")
+    user_type = current_user.get("user_type")
+    allowed_roles = ["Secretário", "Secretário Adjunto", "Chanceler", "Chanceler Adjunto", "Venerável Mestre"]
+    
+    if user_type not in ["super_admin", "webmaster"]:
+        if user_type == "member":
+            active_role = current_user.get("active_role_name")
+            if active_role not in allowed_roles:
+                raise HTTPException(status_code=403, detail="Não autorizado")
+        else:
+            raise HTTPException(status_code=403, detail="Não autorizado")
         
     return await process_upload_files(db, files)
 
@@ -771,30 +843,210 @@ def confirm_import(
     
     for row in request_data.rows:
         if row.is_valid:
-            existing = member_service.get_member_by_cim(db, row.cim)
+            existing = None
+            if row.cim:
+                existing = member_service.get_member_by_cim(db, row.cim)
             if not existing and row.email:
-                existing_email = db.query(Member).filter(Member.email == row.email).first()
-                if not existing_email:
-                    new_member = Member(
-                        cim=row.cim,
-                        full_name=row.name,
-                        email=row.email,
-                        degree=row.degree,
-                        password_hash=hash_password(secrets.token_urlsafe(16)), 
-                        registration_status=RegistrationStatusEnum.PENDING
-                    )
-                    db.add(new_member)
-                    db.commit()
-                    db.refresh(new_member)
+                existing = db.query(Member).filter(Member.email == row.email).first()
+
+            if existing:
+                # Update existing member
+                if row.name:
+                    existing.full_name = row.name
+                if row.email:
+                    existing.email = row.email
+                if row.degree:
+                    existing.degree = row.degree
+                if row.cpf:
+                    existing.cpf = row.cpf
+                if row.marital_status:
+                    existing.marital_status = row.marital_status
+                if row.father_name:
+                    existing.father_name = row.father_name
+                if row.mother_name:
+                    existing.mother_name = row.mother_name
+                if row.blood_type:
+                    existing.blood_type = row.blood_type
+                if row.mother_lodge:
+                    existing.mother_lodge = row.mother_lodge
+                if row.collecting_lodge:
+                    existing.collecting_lodge = row.collecting_lodge
+                if row.initiation_certificate:
+                    existing.initiation_certificate = row.initiation_certificate
+                if row.initiation_data:
+                    existing.initiation_data = row.initiation_data
+                if row.elevation_data:
+                    existing.elevation_data = row.elevation_data
+                if row.exaltation_data:
+                    existing.exaltation_data = row.exaltation_data
+                if row.installation_data:
+                    existing.installation_data = row.installation_data
+                if row.affiliation_data:
+                    existing.affiliation_data = row.affiliation_data
+                if row.regularization_data:
+                    existing.regularization_data = row.regularization_data
+                if row.dismissal_data:
+                    existing.dismissal_data = row.dismissal_data
                     
-                    if lodge_id:
-                        assoc = MemberLodgeAssociation(
-                            member_id=new_member.id,
+                # Ensure the member is associated with the lodge
+                if lodge_id:
+                    assoc = db.query(models.MemberLodgeAssociation).filter(
+                        models.MemberLodgeAssociation.member_id == existing.id,
+                        models.MemberLodgeAssociation.lodge_id == lodge_id
+                    ).first()
+                    if not assoc:
+                        new_assoc = models.MemberLodgeAssociation(
+                            member_id=existing.id,
                             lodge_id=lodge_id,
                         )
-                        db.add(assoc)
-                        db.commit()
-                        
-                    saved_count += 1
+                        db.add(new_assoc)
+                db.commit()
+                saved_count += 1
+            else:
+                # Create new member
+                new_member = Member(
+                    cim=row.cim,
+                    full_name=row.name,
+                    email=row.email,
+                    cpf=row.cpf,
+                    degree=row.degree,
+                    marital_status=row.marital_status,
+                    father_name=row.father_name,
+                    mother_name=row.mother_name,
+                    blood_type=row.blood_type,
+                    mother_lodge=row.mother_lodge,
+                    collecting_lodge=row.collecting_lodge,
+                    initiation_certificate=row.initiation_certificate,
+                    initiation_data=row.initiation_data,
+                    elevation_data=row.elevation_data,
+                    exaltation_data=row.exaltation_data,
+                    installation_data=row.installation_data,
+                    affiliation_data=row.affiliation_data,
+                    regularization_data=row.regularization_data,
+                    dismissal_data=row.dismissal_data,
+                    password_hash=hash_password(secrets.token_urlsafe(16)), 
+                    registration_status=RegistrationStatusEnum.PENDING
+                )
+                db.add(new_member)
+                db.commit()
+                db.refresh(new_member)
+                
+                if lodge_id:
+                    assoc = models.MemberLodgeAssociation(
+                        member_id=new_member.id,
+                        lodge_id=lodge_id,
+                    )
+                    db.add(assoc)
+                    db.commit()
+                
+                saved_count += 1
                     
     return {"message": f"{saved_count} membros importados com sucesso."}
+
+
+@router.post(
+    "/{member_id}/lodge-associations",
+    response_model=member_schema.MemberLodgeAssociationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Adicionar Associação de Loja",
+)
+def add_lodge_association(
+    member_id: int,
+    assoc_data: member_schema.MemberLodgeAssociationCreate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    if current_user.get("user_type") not in ["super_admin", "webmaster"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    member = db.query(Member).filter(Member.id == member_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+        
+    # Check if lodge exists
+    from app.modules.core.models import Lodge
+    lodge = db.query(Lodge).filter(Lodge.id == assoc_data.lodge_id).first()
+    if not lodge:
+        raise HTTPException(status_code=404, detail="Lodge not found")
+        
+    # Check if association already exists
+    existing = db.query(MemberLodgeAssociation).filter(
+        MemberLodgeAssociation.member_id == member_id,
+        MemberLodgeAssociation.lodge_id == assoc_data.lodge_id
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Member is already associated with this lodge")
+        
+    new_assoc = MemberLodgeAssociation(
+        member_id=member_id,
+        lodge_id=assoc_data.lodge_id,
+        start_date=assoc_data.start_date,
+        end_date=assoc_data.end_date,
+        status=assoc_data.status,
+        member_class=assoc_data.member_class
+    )
+    
+    db.add(new_assoc)
+    db.commit()
+    db.refresh(new_assoc)
+    return new_assoc
+
+
+@router.put(
+    "/{member_id}/lodge-associations/{lodge_id}",
+    response_model=member_schema.MemberLodgeAssociationResponse,
+    summary="Atualizar Associação de Loja",
+)
+def update_lodge_association(
+    member_id: int,
+    lodge_id: int,
+    assoc_data: member_schema.MemberLodgeAssociationUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    if current_user.get("user_type") not in ["super_admin", "webmaster"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    assoc = db.query(MemberLodgeAssociation).filter(
+        MemberLodgeAssociation.member_id == member_id,
+        MemberLodgeAssociation.lodge_id == lodge_id
+    ).first()
+    
+    if not assoc:
+        raise HTTPException(status_code=404, detail="Association not found")
+        
+    update_data = assoc_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(assoc, key, value)
+        
+    db.commit()
+    db.refresh(assoc)
+    return assoc
+
+
+@router.delete(
+    "/{member_id}/lodge-associations/{lodge_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remover Associação de Loja",
+)
+def remove_lodge_association(
+    member_id: int,
+    lodge_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: dict = Depends(dependencies.get_current_user_payload),
+):
+    if current_user.get("user_type") not in ["super_admin", "webmaster"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    assoc = db.query(MemberLodgeAssociation).filter(
+        MemberLodgeAssociation.member_id == member_id,
+        MemberLodgeAssociation.lodge_id == lodge_id
+    ).first()
+    
+    if not assoc:
+        raise HTTPException(status_code=404, detail="Association not found")
+        
+    db.delete(assoc)
+    db.commit()
+    return

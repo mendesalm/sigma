@@ -47,9 +47,9 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
             models.Member.full_name,
             models.Member.birth_date,
             models.Member.marriage_date,
-            models.Member.initiation_date,
-            models.Member.elevation_date,
-            models.Member.exaltation_date,
+            models.Member.initiation_data,
+            models.Member.elevation_data,
+            models.Member.exaltation_data,
         )
         .join(models.MemberLodgeAssociation)
         .filter(
@@ -106,15 +106,15 @@ def get_dashboard_stats(db: Session = Depends(get_db), payload: dict = Depends(g
             upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": wedding_day, "type": "casamento"})
 
         # Masonic Anniversaries
-        initiation = get_next_occurrence(m.initiation_date, today)
+        initiation = get_next_occurrence(extract_masonic_date(m.initiation_data), today)
         if initiation and today <= initiation <= limit_date:
             upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": initiation, "type": "iniciacao"})
 
-        elevation = get_next_occurrence(m.elevation_date, today)
+        elevation = get_next_occurrence(extract_masonic_date(m.elevation_data), today)
         if elevation and today <= elevation <= limit_date:
             upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": elevation, "type": "elevacao"})
 
-        exaltation = get_next_occurrence(m.exaltation_date, today)
+        exaltation = get_next_occurrence(extract_masonic_date(m.exaltation_data), today)
         if exaltation and today <= exaltation <= limit_date:
             upcoming_birthdays.append({"name": f"Ir. {m.full_name}", "date": exaltation, "type": "exaltacao"})
 
@@ -337,9 +337,9 @@ def get_calendar_events(
             models.Member.full_name,
             models.Member.birth_date,
             models.Member.marriage_date,
-            models.Member.initiation_date,
-            models.Member.elevation_date,
-            models.Member.exaltation_date,
+            models.Member.initiation_data,
+            models.Member.elevation_data,
+            models.Member.exaltation_data,
         )
         .join(models.MemberLodgeAssociation)
         .filter(
@@ -426,33 +426,36 @@ def get_calendar_events(
                     )
 
         # Masonic Birthdays (Initiation, Elevation, Exaltation)
-        if m.initiation_date and m.initiation_date.month == month:
+        initiation_dt = extract_masonic_date(m.initiation_data)
+        if initiation_dt and initiation_dt.month == month:
             calendar_events.append(
                 {
-                    "date": m.initiation_date.day,
+                    "date": initiation_dt.day,
                     "title": f"Ir. {m.full_name}",
                     "type": "iniciacao",
-                    "full_date": date(year, month, m.initiation_date.day),
+                    "full_date": date(year, month, initiation_dt.day),
                 }
             )
 
-        if m.elevation_date and m.elevation_date.month == month:
+        elevation_dt = extract_masonic_date(m.elevation_data)
+        if elevation_dt and elevation_dt.month == month:
             calendar_events.append(
                 {
-                    "date": m.elevation_date.day,
+                    "date": elevation_dt.day,
                     "title": f"Ir. {m.full_name}",
                     "type": "elevacao",
-                    "full_date": date(year, month, m.elevation_date.day),
+                    "full_date": date(year, month, elevation_dt.day),
                 }
             )
 
-        if m.exaltation_date and m.exaltation_date.month == month:
+        exaltation_dt = extract_masonic_date(m.exaltation_data)
+        if exaltation_dt and exaltation_dt.month == month:
             calendar_events.append(
                 {
-                    "date": m.exaltation_date.day,
+                    "date": exaltation_dt.day,
                     "title": f"Ir. {m.full_name}",
                     "type": "exaltacao",
-                    "full_date": date(year, month, m.exaltation_date.day),
+                    "full_date": date(year, month, exaltation_dt.day),
                 }
             )
 

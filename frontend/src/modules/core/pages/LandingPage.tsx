@@ -83,7 +83,7 @@ const LandingPage: React.FC = () => {
   };
 
   const scrollCarousel = (direction: 'left' | 'right') => {
-    setLastInteraction(Date.now());
+    setLastInteraction(prev => prev + 1);
     if (carouselRef.current) {
       const isDesktop = window.innerWidth > 900;
       const scrollAmount = isDesktop ? carouselRef.current.clientWidth / 3 : carouselRef.current.clientWidth;
@@ -95,7 +95,7 @@ const LandingPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [lastInteraction, setLastInteraction] = useState(Date.now());
+  const [lastInteraction, setLastInteraction] = useState(0);
 
   // Auto-scroll loop
   useEffect(() => {
@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
         const isDesktop = window.innerWidth > 900;
         const scrollAmount = isDesktop ? carouselRef.current.clientWidth / 3 : carouselRef.current.clientWidth;
         carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        setLastInteraction(Date.now());
+        setLastInteraction(prev => prev + 1);
       }
     }, 5000);
     return () => clearTimeout(timer);

@@ -13,10 +13,6 @@ const ImportTemplates = () => {
   const [currentTemplate, setCurrentTemplate] = useState<ImportTemplate | null>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-  useEffect(() => {
-    loadTemplates();
-  }, []);
-
   const loadTemplates = async () => {
     try {
       const data = await ImportTemplateService.getTemplates();
@@ -25,6 +21,13 @@ const ImportTemplates = () => {
       setSnackbar({ open: true, message: 'Erro ao carregar templates', severity: 'error' });
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      await loadTemplates();
+    };
+    void load();
+  }, []);
 
   const handleOpen = (template?: ImportTemplate) => {
     if (template) {

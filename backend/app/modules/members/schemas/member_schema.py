@@ -31,14 +31,49 @@ class MemberClassEnum(enum.StrEnum):
 
 # --- Schemas ---
 
+class MasonicHistoricalData(BaseModel):
+    data_sessao: date | str | None = None
+    data_entrada: date | str | None = None
+    processo: str | None = None
+    registro: str | None = None
+    loja: str | None = None
 
-class MemberLodgeAssociationResponse(BaseModel):
+class InitiationHistoricalData(MasonicHistoricalData):
+    placet: str | None = None
+
+class DismissalHistoricalData(MasonicHistoricalData):
+    quit_placet: str | None = None
+
+class MemberLodgeSimple(BaseModel):
+    id: int
+    lodge_name: str
+    lodge_number: str | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class MemberLodgeAssociationBase(BaseModel):
     lodge_id: int
+    start_date: date | None = None
+    end_date: date | None = None
+    status: MemberStatusEnum = MemberStatusEnum.ACTIVE
+    member_class: MemberClassEnum = MemberClassEnum.REGULAR
 
-    start_date: date | None
-    end_date: date | None
-    status: MemberStatusEnum
-    member_class: MemberClassEnum
+
+class MemberLodgeAssociationCreate(MemberLodgeAssociationBase):
+    pass
+
+
+class MemberLodgeAssociationUpdate(BaseModel):
+    start_date: date | None = None
+    end_date: date | None = None
+    status: MemberStatusEnum | None = None
+    member_class: MemberClassEnum | None = None
+
+
+class MemberLodgeAssociationResponse(MemberLodgeAssociationBase):
+    lodge: MemberLodgeSimple | None = None
 
     class Config:
         from_attributes = True
@@ -72,7 +107,11 @@ class MemberBase(BaseModel):
     place_of_birth: str | None = Field(None, max_length=100)
     nationality: str | None = Field(None, max_length=100)
     religion: str | None = Field(None, max_length=100)
-
+    marital_status: str | None = Field(None, max_length=50)
+    father_name: str | None = Field(None, max_length=255)
+    mother_name: str | None = Field(None, max_length=255)
+    blood_type: str | None = Field(None, max_length=10)
+    
     education_level: str | None = Field(None, max_length=255)
     occupation: str | None = Field(None, max_length=255)
     workplace: str | None = Field(None, max_length=255)
@@ -83,12 +122,18 @@ class MemberBase(BaseModel):
     status: str | None = Field("Active", max_length=50)
     degree: int | None = Field(None, ge=1, le=33, description="Grau Maçônico (1-33)")
     is_installed: bool | None = Field(False, description="Flag Mestre Instalado")
-    initiation_date: date | None = Field(None, description="Data de iniciação")
-    elevation_date: date | None = Field(None, description="Data de elevação")
-    exaltation_date: date | None = Field(None, description="Data de exaltação")
-    installation_date: date | None = Field(None, description="Data de instalação")
-    affiliation_date: date | None = Field(None, description="Data de filiação")
-    regularization_date: date | None = Field(None, description="Data de regularização")
+    
+    mother_lodge: str | None = Field(None, max_length=255)
+    collecting_lodge: str | None = Field(None, max_length=255)
+    initiation_certificate: str | None = Field(None, max_length=100)
+
+    initiation_data: InitiationHistoricalData | dict | None = None
+    elevation_data: MasonicHistoricalData | dict | None = None
+    exaltation_data: MasonicHistoricalData | dict | None = None
+    installation_data: MasonicHistoricalData | dict | None = None
+    affiliation_data: MasonicHistoricalData | dict | None = None
+    regularization_data: MasonicHistoricalData | dict | None = None
+    dismissal_data: DismissalHistoricalData | dict | None = None
     registration_status: RegistrationStatusEnum = Field(RegistrationStatusEnum.PENDING)
 
     @field_validator("full_name")
@@ -199,32 +244,11 @@ class MemberBase(BaseModel):
         """Valida consistência entre datas."""
         birth_date = self.birth_date
         marriage_date = self.marriage_date
-        initiation_date = self.initiation_date
-        elevation_date = self.elevation_date
-        exaltation_date = self.exaltation_date
 
         # Data de casamento deve ser posterior ao nascimento
         if birth_date and marriage_date:
             if marriage_date < birth_date:
                 raise ValueError("Data de casamento deve ser posterior à data de nascimento")
-
-        # Data de iniciação deve ser posterior ao nascimento
-        if birth_date and initiation_date:
-            if initiation_date < birth_date:
-                raise ValueError("Data de iniciação deve ser posterior à data de nascimento")
-
-        # Progressão de graus: iniciação < elevação < exaltação
-        if initiation_date and elevation_date:
-            if elevation_date < initiation_date:
-                raise ValueError("Data de elevação deve ser posterior à data de iniciação")
-
-        if elevation_date and exaltation_date:
-            if exaltation_date < elevation_date:
-                raise ValueError("Data de exaltação deve ser posterior à data de elevação")
-
-        if initiation_date and exaltation_date and not elevation_date:
-            if exaltation_date < initiation_date:
-                raise ValueError("Data de exaltação deve ser posterior à data de iniciação")
 
         return self
 
@@ -338,12 +362,19 @@ class MemberUpdate(BaseModel):
     status: MemberStatusEnum | None = None
     degree: int | None = Field(None, ge=1, le=33)
     is_installed: bool | None = None
-    initiation_date: date | None = None
-    elevation_date: date | None = None
-    exaltation_date: date | None = None
-    installation_date: date | None = None
-    affiliation_date: date | None = None
-    regularization_date: date | None = None
+    
+    mother_lodge: str | None = Field(None, max_length=255)
+    collecting_lodge: str | None = Field(None, max_length=255)
+    initiation_certificate: str | None = Field(None, max_length=100)
+
+    initiation_data: InitiationHistoricalData | dict | None = None
+    elevation_data: MasonicHistoricalData | dict | None = None
+    exaltation_data: MasonicHistoricalData | dict | None = None
+    installation_data: MasonicHistoricalData | dict | None = None
+    affiliation_data: MasonicHistoricalData | dict | None = None
+    regularization_data: MasonicHistoricalData | dict | None = None
+    dismissal_data: DismissalHistoricalData | dict | None = None
+    
     registration_status: RegistrationStatusEnum | None = None
     password: str | None = Field(None, min_length=8)
 
@@ -369,7 +400,6 @@ class MemberListResponse(BaseModel):
     status: MemberStatusEnum = Field(..., description="Status do irmão")
     degree: int | None = Field(None, description="Grau do irmão (1-33)", ge=1, le=33)
     is_installed: bool | None = Field(None, description="Flag Mestre Instalado")
-    initiation_date: date | None = Field(None, description="Data de iniciação")
     registration_status: RegistrationStatusEnum = Field(..., description="Status do cadastro")
     profile_picture_path: str | None = Field(None, description="Caminho foto perfil")
     phone: str | None = Field(None, description="Telefone")

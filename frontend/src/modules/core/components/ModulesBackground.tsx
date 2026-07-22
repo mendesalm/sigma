@@ -49,7 +49,7 @@ const ModulesBackground: React.FC = () => {
       ctx.fillRect(0, 0, can.width, can.height);
 
       for (let i = 0; i < shapes.length; i++) {
-        let s = shapes[i];
+        const s = shapes[i];
         s.x += s.vx;
         s.y += s.vy;
         s.rotation += s.rotationSpeed;

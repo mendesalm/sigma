@@ -24,9 +24,7 @@ import {
 import {
   Logout,
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   Person as PersonIcon,
-  Computer as WebmasterIcon,
   QrCodeScanner as QrCodeScannerIcon,
   Brightness4,
   Brightness7,
@@ -48,6 +46,7 @@ import LodgeDetailsModal from '../../modules/core/components/LodgeDetailsModal';
 import { LodgeIcon } from '@/assets/icons/LodgeIcon';
 import { MemberPanelIcon } from '@/assets/icons/MemberPanelIcon';
 import { AdminIcon } from '@/assets/icons/AdminIcon';
+import { WebmasterIcon } from '@/assets/icons/WebmasterIcon';
 
 const HEADER_HEIGHT = 70;
 const DRAWER_WIDTH = 260;
@@ -112,11 +111,25 @@ const LodgeDashboardLayout: React.FC = () => {
   const isWebmaster = user?.user_type === 'webmaster' || user?.is_webmaster || user?.role === 'Webmaster' || false;
   const isAdmin = isWebmaster || adminRoles.includes(user?.active_role_name || '');
 
+  const renderSvgIcon = (src: string, active: boolean, customSx?: any) => (
+    <Box 
+      component="img" 
+      src={src} 
+      sx={{ 
+        height: 28, 
+        width: 'auto',
+        filter: active ? 'drop-shadow(0px 0px 8px rgba(212, 175, 55, 0.8))' : 'none',
+        transition: 'all 0.3s',
+        ...customSx
+      }} 
+    />
+  );
+
   const sidebarItems = [
     { text: 'Início', path: '/dashboard/lodge-dashboard', renderIcon: (active: boolean) => <LodgeIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: true, endMatch: true },
     { text: 'Painel do Obreiro', path: '/dashboard/lodge-dashboard/obreiro', renderIcon: (active: boolean) => <MemberPanelIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: true },
-    { text: 'Administração', path: '#admin', renderIcon: (active: boolean) => <AdminIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: isAdmin },
-    { text: 'Webmaster', path: '/dashboard', renderIcon: () => <WebmasterIcon sx={{ height: 28, width: 'auto' }} />, visible: isWebmaster }
+    { text: 'Administração', path: '/dashboard/lodge-dashboard/admin', renderIcon: (active: boolean) => <AdminIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: isAdmin },
+    { text: 'Webmaster', path: '/dashboard', renderIcon: (active: boolean) => <WebmasterIcon active={active} sx={{ height: 28, width: 'auto' }} />, visible: isWebmaster }
   ];
 
   if (activeSessionId) {
@@ -238,58 +251,6 @@ const LodgeDashboardLayout: React.FC = () => {
           Sistema Integrado de Gerenciamento Maçônico
         </Typography>
       </Box>
-
-      {/* Admin Secondary Menu */}
-      <Menu
-        anchorEl={adminAnchorEl}
-        open={Boolean(adminAnchorEl)}
-        onClose={() => setAdminAnchorEl(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        PaperProps={{
-          sx: {
-            bgcolor: theme.palette.background.paper,
-            color: theme.palette.text.primary,
-            border: `1px solid ${theme.palette.divider}`,
-            mt: 1,
-            ml: 1,
-            '& .MuiMenuItem-root': {
-              fontFamily: '"Inter", sans-serif',
-              fontSize: '0.9rem',
-              p: 1.5,
-              '&:hover': {
-                bgcolor: mode === 'dark' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(212, 175, 55, 0.15)',
-                color: mode === 'dark' ? '#D4AF37' : '#B8860B'
-              }
-            }
-          }
-        }}
-      >
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/secretaria" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={SecretariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Secretaria
-        </MenuItem>
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/chancelaria" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={ChancelariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Chancelaria
-        </MenuItem>
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/tesouraria" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={TesourariaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Tesouraria
-        </MenuItem>
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/biblioteca" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={BibliotecaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Biblioteca
-        </MenuItem>
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/harmonia" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={HarmoniaSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Harmonia
-        </MenuItem>
-        <MenuItem component={RouterLink} to="/dashboard/lodge-dashboard/admin/arquiteto" onClick={() => setAdminAnchorEl(null)}>
-          <Box component="img" src={ArquitetoSvg} sx={{ width: 22, height: 22, mr: 1.5 }} />
-          Arquiteto
-        </MenuItem>
-      </Menu>
     </Box>
   );
 
@@ -483,7 +444,7 @@ const LodgeDashboardLayout: React.FC = () => {
           backgroundColor: theme.palette.background.default,
           backgroundImage: mode === 'dark' ? 'radial-gradient(circle at 100% 0%, rgba(0, 176, 255, 0.03) 0%, transparent 40%)' : 'none',
           height: { xs: 'auto', md: `calc(100vh - ${HEADER_HEIGHT}px)` },
-          overflow: { xs: 'auto', md: 'hidden' },
+          overflow: 'auto',
           pt: { xs: 1, md: 1 },
           px: { xs: 1, md: 2 },
           pb: { xs: 1, md: 1 }

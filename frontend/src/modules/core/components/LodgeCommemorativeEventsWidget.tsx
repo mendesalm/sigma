@@ -112,8 +112,7 @@ const LodgeCommemorativeEventsWidget: React.FC<LodgeCommemorativeEventsWidgetPro
               } else if (displayType === 'Instalação') {
                 IconComponent = GavelIcon;
               }
-
-              let personName = event.title;
+              const personName = event.title;
 
               return (
                 <Box 

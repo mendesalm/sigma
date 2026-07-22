@@ -110,7 +110,6 @@ const AdminPanelPage: React.FC = () => {
             title: item.title,
             subValue: `[${section.title}] ${item.description}`,
             icon: item.icon,
-            colSpan: 4,
             buttons: [
               {
                 label: item.isComingSoon ? 'Em Breve' : 'Acessar',
@@ -128,7 +127,7 @@ const AdminPanelPage: React.FC = () => {
     });
 
     return flattenedCards;
-  }, [activeRole, isSuperAdminOrWebmaster, navigate]);
+  }, [activeRole, isSuperAdminOrWebmaster, navigate, hasPermission]);
 
   return (
     <QuickAccessHub 

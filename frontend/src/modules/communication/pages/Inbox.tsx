@@ -31,10 +31,6 @@ const Inbox: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
   const fetchMessages = async () => {
     try {
       const response = await api.get('/messages/inbox');
@@ -43,6 +39,13 @@ const Inbox: React.FC = () => {
       console.error('Error fetching messages:', error);
     }
   };
+
+  useEffect(() => {
+    const load = async () => {
+      await fetchMessages();
+    };
+    void load();
+  }, []);
 
   // Determinar a base do path dependendo de onde o usuário está navegando
   // Se for webmaster -> /dashboard/lodge-dashboard/webmaster/comunicacoes/new

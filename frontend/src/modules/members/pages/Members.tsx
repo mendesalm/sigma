@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Button, 
@@ -29,7 +29,7 @@ import {
 import { Search, Download, Add } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import api from '@/shared/services/api';
-import { MemberResponse, RegistrationStatusEnum, MemberStatusEnum } from '@/types';
+import { MemberResponse, MemberStatusEnum } from '@/types';
 import { formatDegree } from '@/shared/utils/formatters';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import ImportMembersModal from '../components/ImportMembersModal';
@@ -40,7 +40,7 @@ const Members = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
-  const canEdit = user?.user_type === 'webmaster' || user?.user_type === 'super_admin' || (user?.credential && user.credential >= 100);
+  const canEdit = user?.user_type === 'webmaster' || user?.user_type === 'super_admin' || (user?.credential && user.credential >= 100) || ['Venerável Mestre', 'Secretário', 'Secretário Adjunto', 'Chanceler', 'Chanceler Adjunto'].includes(user?.active_role_name || '');
   const [members, setMembers] = useState<MemberResponse[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('Todos');
@@ -71,19 +71,22 @@ const Members = () => {
 
   const basePath = getBasePath();
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
-      const response = await api.get('/members');
+      const response = await api.get('/members/');
       setMembers(response.data);
     } catch (error: any) {
       const msg = error.response?.data?.detail || 'Falha ao buscar membros';
       enqueueSnackbar(msg, { variant: 'error' });
     }
-  };
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
-    fetchMembers();
-  }, []);
+    const load = async () => {
+      await fetchMembers();
+    };
+    void load();
+  }, [fetchMembers]);
 
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -96,7 +99,7 @@ const Members = () => {
     if (filterStatus === 'Inativos') return member.status === MemberStatusEnum.INACTIVE;
     if (filterStatus === 'Aprendizes') return member.degree === 1;
     if (filterStatus === 'Companheiros') return member.degree === 2;
-    if (filterStatus === 'Mestres') return member.degree >= 3;
+    if (filterStatus === 'Mestres') return member.degree !== undefined && member.degree >= 3;
 
     return true;
   });
@@ -293,11 +296,12 @@ const Members = () => {
             <TableRow>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1, pl: 3 }}>FOTO</TableCell>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>CIM</TableCell>
-              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>NOME</TableCell>
-              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>GRAU</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>NOME COMPLETO</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>GRAU SIMBÓLICO</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>GRAU FILOSÓFICO</TableCell>
               <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>CARGO</TableCell>
-              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>STATUS CADASTRO</TableCell>
-              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1, textAlign: 'right', pr: 3 }}>AÇÕES</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1 }}>STATUS</TableCell>
+              <TableCell sx={{ color: 'text.secondary', fontWeight: '700', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: 'none', py: 1, textAlign: 'right', pr: 3 }}>AÇÃO</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -336,7 +340,12 @@ const Members = () => {
                 </TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', fontWeight: 500, color: 'text.primary' }}>{member.cim || '-'}</TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', fontWeight: 500, color: 'text.primary' }}>{member.full_name}</TableCell>
-                <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>{formatDegree(member.degree, member.is_installed) || '-'}</TableCell>
+                <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
+                  {(member.degree ?? 0) === 1 ? 'Aprendiz' : (member.degree ?? 0) === 2 ? 'Companheiro' : (member.degree ?? 0) >= 3 ? 'Mestre' : '-'}
+                </TableCell>
+                <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
+                  {(member.degree ?? 0) > 3 ? member.degree : '-'}
+                </TableCell>
                 <TableCell sx={{ borderBottom: 'none', py: 1, fontSize: '0.8rem', color: 'text.secondary' }}>
                   {member.active_role || 'Obreiro'}
                 </TableCell>

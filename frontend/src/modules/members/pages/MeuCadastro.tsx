@@ -21,7 +21,8 @@ import {
   Chip,
   Fade,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  CircularProgress
 } from '@mui/material';
 import {
   Person,
@@ -43,6 +44,10 @@ import {
 } from '@mui/icons-material';
 import api from '@/shared/services/api';
 import { formatDegree } from '@/shared/utils/formatters';
+import { RoleHistoryWidget } from '../components/RoleHistoryWidget';
+import { SymbolicHistoryWidget } from '../components/SymbolicHistoryWidget';
+import { PhilosophicalHistoryWidget } from '../components/PhilosophicalHistoryWidget';
+import { RegistryWidget } from '../components/RegistryWidget';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import { MemberResponse, RelationshipTypeEnum } from '@/types';
@@ -210,7 +215,7 @@ const MeuCadastro: React.FC = () => {
     };
 
     fetchMyData();
-  }, [user]);
+  }, [user, enqueueSnackbar]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -352,7 +357,7 @@ const MeuCadastro: React.FC = () => {
       {/* 1. Hero / Header Section */}
       <Paper elevation={0} sx={{
         p: 0,
-        mb: 3,
+        mb: 2,
         borderRadius: 2,
         bgcolor: COLORS.cardBg,
         border: `1px solid ${COLORS.cardBorder}`,
@@ -361,7 +366,7 @@ const MeuCadastro: React.FC = () => {
       }}>
         {/* Banner Background */}
         <Box sx={{
-          height: 80,
+          height: 60,
           background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`,
           position: 'relative'
         }}>
@@ -375,19 +380,19 @@ const MeuCadastro: React.FC = () => {
         </Box>
 
         {/* Profile Info Row */}
-        <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'flex-end', px: 4, pb: 4, mt: -6 }}>
+        <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'center' : 'flex-end', px: 3, pb: 2, mt: 0 }}>
           {/* Avatar */}
-          <Box sx={{ position: 'relative' }}>
+          <Box sx={{ position: 'relative', mt: -4 }}>
             <Avatar
               variant="rounded"
               sx={{
-                width: 100,
-                height: 120,
-                border: `4px solid ${COLORS.cardBg}`,
-                borderRadius: 4,
+                width: 80,
+                height: 80,
+                border: `3px solid ${COLORS.cardBg}`,
+                borderRadius: 3,
                 bgcolor: COLORS.background,
                 color: COLORS.gold,
-                fontSize: '3rem',
+                fontSize: '2.5rem',
                 fontFamily: '"Playfair Display", serif',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
               }}
@@ -418,9 +423,9 @@ const MeuCadastro: React.FC = () => {
           </Box>
 
           {/* Text Info */}
-          <Box sx={{ ml: isMobile ? 0 : 3, mt: isMobile ? 2 : 0, textAlign: isMobile ? 'center' : 'left', flexGrow: 1 }}>
+          <Box sx={{ ml: isMobile ? 0 : 3, mt: isMobile ? 2 : 0, textAlign: isMobile ? 'center' : 'left', flexGrow: 1, pb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-              <Typography variant="h4" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: COLORS.text }}>
+              <Typography variant="h5" sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 700, color: COLORS.text }}>
                 {formState.full_name || 'Irmão Desconhecido'}
               </Typography>
               {formState.degree && (
@@ -438,7 +443,7 @@ const MeuCadastro: React.FC = () => {
           </Box>
 
           {/* Actions */}
-          <Box sx={{ mt: isMobile ? 3 : 0 }}>
+          <Box sx={{ mt: isMobile ? 2 : 0 }}>
             <Button
               variant="contained"
               startIcon={<SaveIcon />}
@@ -593,79 +598,41 @@ const MeuCadastro: React.FC = () => {
       {/* Tab 2: Vida Maçônica */}
       <TabPanel value={tabValue} index={2}>
         <Grid container spacing={3}>
-          {/* Timeline / Dates */}
-          <Grid
-            size={{
-              xs: 12,
-              md: 8
-            }}>
-            <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-              <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Datas Históricas" icon={CalendarIcon} />
-                <Alert severity="info" sx={{ mb: 3, bgcolor: 'rgba(14, 165, 233, 0.1)', color: '#fff', border: `1px solid ${COLORS.blue}` }}>
-                  Estes dados são gerenciados pela Secretaria. Contate o secretário em caso de divergências.
-                </Alert>
-                <Grid container spacing={3}>
-                  {[
-                    { label: "Iniciação", date: formState.initiation_date, color: COLORS.gold },
-                    { label: "Elevação", date: formState.elevation_date, color: COLORS.goldLight },
-                    { label: "Exaltação", date: formState.exaltation_date, color: COLORS.text },
-                    { label: "Instalação", date: formState.installation_date, color: COLORS.blue }
-                  ].map((d, i) => {
-                    let formattedDate = '-';
-                    if (d.date) {
-                      const parts = d.date.toString().split('-');
-                      if (parts.length === 3) {
-                        formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                      }
-                    }
-
-                    return (
-                      <Grid
-                        key={i}
-                        size={{
-                          xs: 12,
-                          sm: 6,
-                          md: 3
-                        }}>
-                        <Paper sx={{ p: 2, textAlign: 'center', bgcolor: COLORS.background, border: `1px solid ${d.color}`, borderRadius: 2 }}>
-                          <Typography variant="overline" sx={{ color: d.color, fontWeight: 700 }}>{d.label}</Typography>
-                          <Typography variant="h6" sx={{ color: '#fff', mt: 1 }}>
-                            {formattedDate}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
-              </CardContent>
-            </Card>
+          {/* 1. Registro */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <RegistryWidget 
+              affiliationDate={formState.affiliation_date}
+              regularizationDate={formState.regularization_date}
+              initiationDate={formState.initiation_date}
+              lodgeAssociations={formState.lodge_associations}
+              currentLodgeId={user?.lodge_id}
+            />
           </Grid>
-          {/* Details */}
-          <Grid
-            size={{
-              xs: 12,
-              md: 4
-            }}>
-            <Card sx={{ bgcolor: COLORS.cardBg, border: `1px solid ${COLORS.cardBorder}`, borderRadius: 2 }}>
-              <CardContent sx={{ p: 4 }}>
-                <SectionTitle title="Registro" icon={FingerprintIcon} />
-                <TextField label="CIM" value={formState.cim} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                <TextField label="Grau Atual" value={formatDegree(formState.degree, formState.is_installed)} fullWidth disabled sx={customTextFieldStyle} InputLabelProps={{ shrink: true }} />
-                <TextField
-                  label="Filiação"
-                  value={(() => {
-                    if (!formState.affiliation_date) return '';
-                    const parts = formState.affiliation_date.toString().split('-');
-                    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : formState.affiliation_date;
-                  })()}
-                  fullWidth
-                  disabled
-                  sx={customTextFieldStyle}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </CardContent>
-            </Card>
+          
+          {/* 2. Histórico Simbólico */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <SymbolicHistoryWidget 
+              degree={formState.degree}
+              isInstalled={formState.is_installed}
+              initiationDate={formState.initiation_date}
+              elevationDate={formState.elevation_date}
+              exaltationDate={formState.exaltation_date}
+              installationDate={formState.installation_date}
+            />
+          </Grid>
+
+          {/* 3. Histórico Filosófico */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <PhilosophicalHistoryWidget 
+              philosophicalDegree={formState.philosophical_degree}
+            />
+          </Grid>
+
+          {/* 4. Histórico de Cargos */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <RoleHistoryWidget 
+              roleHistory={formState.role_history} 
+            />
           </Grid>
         </Grid>
       </TabPanel>

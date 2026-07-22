@@ -4,7 +4,9 @@ import {
   Button, Container, TextField, Typography, Select, MenuItem, FormControl,
   InputLabel, Grid, SelectChangeEvent, Paper, Box, 
   Avatar, IconButton, CircularProgress,
-  Tabs, Tab, Fade, Card, CardContent, useTheme, useMediaQuery, Chip
+  Tabs, Tab, Fade, Card, CardContent, useTheme, useMediaQuery, Chip, alpha,
+  FormControlLabel, Checkbox, Accordion, AccordionSummary, AccordionDetails,
+  Dialog, DialogTitle, DialogContent, DialogActions, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
 import {
   PhotoCamera,
@@ -20,11 +22,13 @@ import {
   Save as SaveIcon,
   Badge as BadgeIcon,
   Lock as LockIcon,
-  Work as WorkIcon
+  Work as WorkIcon,
+  ExpandMore as ExpandMoreIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 
 import api from '@/shared/services/api';
-import { MemberResponse, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum } from '@/types';
+import { MemberResponse, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum, MemberLodgeAssociationResponse } from '@/types';
 import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
 import { validateCPF, validateEmail } from '@/shared/utils/validators';
 import { fetchAddressByCep } from '@/shared/services/cepService';
@@ -109,6 +113,10 @@ const MemberForm: React.FC = () => {
     place_of_birth: '',
     nationality: '',
     religion: '',
+    marital_status: '',
+    father_name: '',
+    mother_name: '',
+    blood_type: '',
     education_level: '',
     occupation: '',
     workplace: '',
@@ -118,12 +126,16 @@ const MemberForm: React.FC = () => {
     member_class: MemberClassEnum.REGULAR,
     degree: 1,
     is_installed: false,
-    initiation_date: '',
-    elevation_date: '',
-    exaltation_date: '',
-    installation_date: '',
-    affiliation_date: '',
-    regularization_date: '',
+    mother_lodge: '',
+    collecting_lodge: '',
+    initiation_certificate: '',
+    initiation_data: { placet: '', data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    elevation_data: { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    exaltation_data: { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    installation_data: { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    affiliation_data: { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    regularization_data: { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
+    dismissal_data: { quit_placet: '', data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' },
     registration_status: RegistrationStatusEnum.PENDING,
     password: '',
     confirmPassword: '',
@@ -134,9 +146,16 @@ const MemberForm: React.FC = () => {
 
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberLocal[]>([]);
   const [roleHistory, setRoleHistory] = useState<RoleHistoryResponse[]>([]);
+  const [lodgeAssociations, setLodgeAssociations] = useState<MemberLodgeAssociationResponse[]>([]);
+  const [newLodgeAssoc, setNewLodgeAssoc] = useState({ lodge_id: '', start_date: '', end_date: '', status: MemberStatusEnum.ACTIVE, member_class: MemberClassEnum.REGULAR });
   const [newRole, setNewRole] = useState({ role_id: '', start_date: '', end_date: '' });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [importFileLoading, setImportFileLoading] = useState(false);
+  const [importDiffModalOpen, setImportDiffModalOpen] = useState(false);
+  const [extractedData, setExtractedData] = useState<any>(null);
+  const [selectedDiffFields, setSelectedDiffFields] = useState<Record<string, boolean>>({});
   const [roles, setRoles] = useState<Role[]>([]);
+  const [lodges, setLodges] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { enqueueSnackbar } = useSnackbar();
 
@@ -160,7 +179,16 @@ const MemberForm: React.FC = () => {
         console.error('Failed to fetch roles', error);
       }
     };
+    const fetchLodges = async () => {
+      try {
+        const response = await api.get('/lodges');
+        setLodges(response.data);
+      } catch (error) {
+        console.error('Failed to fetch lodges', error);
+      }
+    };
     fetchRoles();
+    fetchLodges();
 
     if (id) {
       setIsCimVerified(true);
@@ -201,6 +229,10 @@ const MemberForm: React.FC = () => {
 
           if (memberData.role_history) {
             setRoleHistory(memberData.role_history);
+          }
+
+          if (memberData.lodge_associations) {
+            setLodgeAssociations(memberData.lodge_associations);
           }
 
         } catch (error) {
@@ -255,6 +287,16 @@ const MemberForm: React.FC = () => {
     setFormState((prevState: any) => ({
       ...prevState,
       [name as string]: formattedValue,
+    }));
+  };
+
+  const handleNestedChange = (category: string, field: string, value: string) => {
+    setFormState((prevState: any) => ({
+      ...prevState,
+      [category]: {
+        ...(prevState[category] || {}),
+        [field]: value
+      }
     }));
   };
 
@@ -345,30 +387,58 @@ const MemberForm: React.FC = () => {
         enqueueSnackbar('Erro ao adicionar cargo.', { variant: 'error' });
       }
     } else {
-      const newHistoryItem: RoleHistoryResponse = {
-        id: Date.now() * -1,
-        role_id: Number(newRole.role_id),
-        start_date: newRole.start_date,
-        end_date: newRole.end_date || undefined,
-        member_id: 0,
-        lodge_id: Number(formState.lodge_id)
-      };
-      setRoleHistory([...roleHistory, newHistoryItem]);
-      setNewRole({ role_id: '', start_date: '', end_date: '' });
+      enqueueSnackbar('Salve o membro primeiro antes de adicionar cargos.', { variant: 'warning' });
     }
   };
 
-  const handleDeleteRole = async (roleHistoryId: number) => {
-    if (id && roleHistoryId > 0) {
+  const handleRemoveRole = async (roleHistoryId: number) => {
+    if (id) {
       try {
         await api.delete(`/members/${id}/roles/${roleHistoryId}`);
         setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
-        enqueueSnackbar('Cargo removido!', { variant: 'success' });
+        enqueueSnackbar('Cargo removido.', { variant: 'success' });
       } catch {
         enqueueSnackbar('Erro ao remover cargo.', { variant: 'error' });
       }
     } else {
       setRoleHistory(roleHistory.filter(h => h.id !== roleHistoryId));
+    }
+  };
+
+  const handleAddLodgeAssoc = async () => {
+    if (!newLodgeAssoc.lodge_id || !newLodgeAssoc.start_date) {
+      enqueueSnackbar('Preencha a loja e a data de início.', { variant: 'error' });
+      return;
+    }
+    if (id) {
+      try {
+        const response = await api.post(`/members/${id}/lodge-associations`, {
+          lodge_id: Number(newLodgeAssoc.lodge_id),
+          start_date: newLodgeAssoc.start_date,
+          end_date: newLodgeAssoc.end_date || null,
+          status: newLodgeAssoc.status,
+          member_class: newLodgeAssoc.member_class
+        });
+        setLodgeAssociations([...lodgeAssociations, response.data]);
+        setNewLodgeAssoc({ lodge_id: '', start_date: '', end_date: '', status: MemberStatusEnum.ACTIVE, member_class: MemberClassEnum.REGULAR });
+        enqueueSnackbar('Associação de loja adicionada!', { variant: 'success' });
+      } catch (error: any) {
+        enqueueSnackbar(error.response?.data?.detail || 'Erro ao adicionar loja.', { variant: 'error' });
+      }
+    } else {
+      enqueueSnackbar('Salve o membro primeiro antes de adicionar histórico de lojas.', { variant: 'warning' });
+    }
+  };
+
+  const handleRemoveLodgeAssoc = async (lodgeId: number) => {
+    if (id) {
+      try {
+        await api.delete(`/members/${id}/lodge-associations/${lodgeId}`);
+        setLodgeAssociations(lodgeAssociations.filter(a => a.lodge_id !== lodgeId));
+        enqueueSnackbar('Associação removida.', { variant: 'success' });
+      } catch {
+        enqueueSnackbar('Erro ao remover loja.', { variant: 'error' });
+      }
     }
   };
 
@@ -421,7 +491,7 @@ const MemberForm: React.FC = () => {
         await api.put(`/members/${id}`, memberData);
         enqueueSnackbar('Membro atualizado!', { variant: 'success' });
       } else {
-        const response = await api.post('/members', memberData);
+        const response = await api.post('/members/', memberData);
         targetId = response.data.id;
         if (roleHistory.length > 0) {
           for (const role of roleHistory) {
@@ -447,6 +517,72 @@ const MemberForm: React.FC = () => {
       const msg = error.response?.data?.detail || 'Erro ao salvar. Verifique dados.';
       enqueueSnackbar(msg, { variant: 'error' });
     }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFileLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('files', file);
+      const res = await api.post('/members/import/preview', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data?.rows?.length > 0) {
+        const row = res.data.rows[0];
+        setExtractedData(row);
+        
+        // Setup default selected fields (all true if there is a value)
+        const initialSelected: Record<string, boolean> = {};
+        Object.keys(row).forEach(key => {
+          if (row[key] !== null && row[key] !== undefined && row[key] !== '' && key !== 'is_valid' && key !== 'errors' && key !== 'warnings') {
+            initialSelected[key] = true;
+          }
+        });
+        setSelectedDiffFields(initialSelected);
+        setImportDiffModalOpen(true);
+      } else {
+        enqueueSnackbar('Nenhum dado encontrado no arquivo.', { variant: 'warning' });
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Erro ao extrair arquivo.', { variant: 'error' });
+    } finally {
+      setImportFileLoading(false);
+      e.target.value = ''; // reset
+    }
+  };
+
+  const applyExtractedData = () => {
+    setFormState(prev => {
+      const updated = { ...prev };
+      Object.keys(selectedDiffFields).forEach(key => {
+        if (selectedDiffFields[key] && extractedData[key] !== null && extractedData[key] !== undefined) {
+          if (key === 'degree') {
+            updated[key] = parseInt(extractedData[key]);
+          } else if (key === 'name') {
+            updated['full_name'] = extractedData[key];
+          } else {
+            updated[key] = extractedData[key];
+          }
+        }
+      });
+      return updated;
+    });
+    setImportDiffModalOpen(false);
+    enqueueSnackbar('Dados aplicados. Revise e salve o formulário.', { variant: 'success' });
+  };
+
+  const diffFieldNames: Record<string, string> = {
+    cim: 'CIM', name: 'Nome', email: 'E-mail', cpf: 'CPF', rg: 'RG',
+    degree: 'Grau', marital_status: 'Estado Civil', father_name: 'Nome do Pai',
+    mother_name: 'Nome da Mãe', mother_lodge: 'Loja Mãe', collecting_lodge: 'Loja de Recolhimento',
+    initiation_certificate: 'Placet de Iniciação',
+    initiation_data: 'Dados Iniciação', elevation_data: 'Dados Elevação',
+    exaltation_data: 'Dados Exaltação', installation_data: 'Dados Instalação',
+    affiliation_data: 'Dados Filiação', regularization_data: 'Dados Regularização',
+    dismissal_data: 'Dados Desligamento'
   };
 
   // --- CIM SEARCH STEP ---
@@ -550,7 +686,17 @@ const MemberForm: React.FC = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ mt: isMobile ? 3 : 0, display: 'flex', gap: 2 }}>
+          <Box sx={{ mt: isMobile ? 3 : 0, display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: isMobile ? 'center' : 'flex-end' }}>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={importFileLoading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+              disabled={importFileLoading}
+              sx={{ color: theme.palette.primary.main, borderColor: theme.palette.primary.main, fontWeight: 600 }}
+            >
+              {importFileLoading ? 'Importando...' : 'Importar Arquivo'}
+              <input type="file" hidden accept=".pdf,.xlsx,.csv" onChange={handleImportFile} />
+            </Button>
             <Button
               variant="outlined"
               startIcon={<ArrowBackIcon />}
@@ -636,7 +782,39 @@ const MemberForm: React.FC = () => {
                 size={{
                   xs: 12,
                   md: 6
+                }}>
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel shrink>Estado Civil</InputLabel>
+                  <Select name="marital_status" value={formState.marital_status || ''} onChange={handleChange} sx={{ color: theme.palette.text.primary, '.MuiOutlinedInput-notchedOutline': { borderColor: alpha(theme.palette.divider, 0.1) } }}>
+                    <MenuItem value=""><em>Nenhum</em></MenuItem>
+                    <MenuItem value="Solteiro">Solteiro</MenuItem>
+                    <MenuItem value="Casado">Casado</MenuItem>
+                    <MenuItem value="Divorciado">Divorciado</MenuItem>
+                    <MenuItem value="Viúvo">Viúvo</MenuItem>
+                    <MenuItem value="União Estável">União Estável</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
                 }}><TextField label="Religião" name="religion" value={formState.religion} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Tipo Sanguíneo" name="blood_type" value={formState.blood_type || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Nome do Pai" name="father_name" value={formState.father_name || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 6
+                }}><TextField label="Nome da Mãe" name="mother_name" value={formState.mother_name || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
             </Grid>
           </CardContent>
         </Card>
@@ -705,7 +883,7 @@ const MemberForm: React.FC = () => {
                   md: 3
                 }}>
                 <FormControlLabel
-                  control={<Checkbox name="is_installed" checked={Boolean(formState.is_installed)} onChange={(e) => setFormState(prev => ({ ...prev, is_installed: e.target.checked }))} sx={{ color: theme.palette.text.secondary, '&.Mui-checked': { color: '#00c6ff' } }} disabled={Number(formState.degree) < 3} />}
+                  control={<Checkbox name="is_installed" checked={Boolean(formState.is_installed)} onChange={(e) => setFormState((prev: any) => ({ ...prev, is_installed: e.target.checked }))} sx={{ color: theme.palette.text.secondary, '&.Mui-checked': { color: '#00c6ff' } }} disabled={Number(formState.degree) < 3} />}
                   label="Mestre Instalado"
                   sx={{ color: theme.palette.text.primary, mt: 1 }}
                 />
@@ -727,36 +905,75 @@ const MemberForm: React.FC = () => {
               <Grid
                 size={{
                   xs: 12,
-                  md: 3
+                  md: 4
                 }}>
-                <TextField label="Data Filiação" type="date" name="affiliation_date" value={formState.affiliation_date || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
+                <TextField label="Loja Mãe" name="mother_lodge" value={formState.mother_lodge || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
+                <TextField label="Loja de Recolhimento" name="collecting_lodge" value={formState.collecting_lodge || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
+              </Grid>
+              <Grid
+                size={{
+                  xs: 12,
+                  md: 4
+                }}>
+                <TextField label="Placet de Iniciação" name="initiation_certificate" value={formState.initiation_certificate || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
               </Grid>
             </Grid>
 
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, mb: 2 }}>Datas Históricas</Typography>
-              <Grid container spacing={2}>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 3
-                  }}><TextField label="Iniciação" type="date" name="initiation_date" value={formState.initiation_date || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 3
-                  }}><TextField label="Elevação" type="date" name="elevation_date" value={formState.elevation_date || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 3
-                  }}><TextField label="Exaltação" type="date" name="exaltation_date" value={formState.exaltation_date || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 3
-                  }}><TextField label="Instalação" type="date" name="installation_date" value={formState.installation_date || ''} onChange={handleChange} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
-              </Grid>
+              <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, mb: 2 }}>Registro Histórico</Typography>
+              {['initiation_data', 'elevation_data', 'exaltation_data', 'installation_data', 'affiliation_data', 'regularization_data', 'dismissal_data'].map((category) => {
+                const labels: any = {
+                  initiation_data: 'Iniciação',
+                  elevation_data: 'Elevação',
+                  exaltation_data: 'Exaltação',
+                  installation_data: 'Instalação',
+                  affiliation_data: 'Filiação',
+                  regularization_data: 'Regularização',
+                  dismissal_data: 'Desligamento'
+                };
+                return (
+                  <Accordion key={category} sx={{ mb: 1, bgcolor: alpha(theme.palette.background.paper, 0.5), border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, boxShadow: 'none', '&:before': { display: 'none' } }} disableGutters>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: theme.palette.primary.main }} />}>
+                      <Typography variant="subtitle2" sx={{ color: theme.palette.text.primary, fontWeight: 500 }}>{labels[category]}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Grid container spacing={2}>
+                        {category === 'initiation_data' && (
+                          <Grid size={{ xs: 12, md: 4 }}>
+                            <TextField label="Placet" value={formState[category]?.placet || ''} onChange={e => handleNestedChange(category, 'placet', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                          </Grid>
+                        )}
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <TextField label="Data Sessão" type="date" value={formState[category]?.data_sessao || ''} onChange={e => handleNestedChange(category, 'data_sessao', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <TextField label="Data Entrada" type="date" value={formState[category]?.data_entrada || ''} onChange={e => handleNestedChange(category, 'data_entrada', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <TextField label="Processo" value={formState[category]?.processo || ''} onChange={e => handleNestedChange(category, 'processo', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <TextField label="Registro" value={formState[category]?.registro || ''} onChange={e => handleNestedChange(category, 'registro', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <TextField label="Loja" value={formState[category]?.loja || ''} onChange={e => handleNestedChange(category, 'loja', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                        </Grid>
+                        {category === 'dismissal_data' && (
+                          <Grid size={{ xs: 12, md: 4 }}>
+                            <TextField label="Quit Placet" value={formState[category]?.quit_placet || ''} onChange={e => handleNestedChange(category, 'quit_placet', e.target.value)} fullWidth size="small" InputLabelProps={{ shrink: true }} />
+                          </Grid>
+                        )}
+                      </Grid>
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
             </Box>
           </CardContent>
         </Card>
@@ -788,9 +1005,59 @@ const MemberForm: React.FC = () => {
                       {role.start_date ? new Date(role.start_date).toLocaleDateString() : ''} até {role.end_date ? new Date(role.end_date).toLocaleDateString() : 'Atual'}
                     </Typography>
                   </Box>
-                  <IconButton size="small" color="error" onClick={() => handleDeleteRole(role.id)}><DeleteIcon /></IconButton>
+                  <IconButton size="small" color="error" onClick={() => handleRemoveRole(role.id)}><DeleteIcon /></IconButton>
                 </Box>
               ))}
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Lojas (Histórico) */}
+        <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2, mt: 3 }}>
+          <CardContent sx={{ p: 4 }}>
+            <SectionTitle title="Histórico de Lojas (Iniciação e Filiação)" icon={HistoryIcon} theme={theme} />
+
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', mb: 3, p: 2, bgcolor: alpha(theme.palette.divider, 0.05), borderRadius: 1, flexWrap: 'wrap' }}>
+              <FormControl sx={{ minWidth: 250, flexGrow: 1 }} size="small">
+                <InputLabel shrink>Loja</InputLabel>
+                <Select value={newLodgeAssoc.lodge_id} onChange={(e) => setNewLodgeAssoc({ ...newLodgeAssoc, lodge_id: e.target.value })} sx={{ color: theme.palette.text.primary }}>
+                  {lodges.map(l => <MenuItem key={l.id} value={l.id}>{l.lodge_name} nº {l.lodge_number || 'S/N'}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <TextField label="Ingresso" type="date" size="small" value={newLodgeAssoc.start_date} onChange={(e) => setNewLodgeAssoc({ ...newLodgeAssoc, start_date: e.target.value })} InputLabelProps={{ shrink: true }} />
+              <TextField label="Saída (Quite Placet)" type="date" size="small" value={newLodgeAssoc.end_date} onChange={(e) => setNewLodgeAssoc({ ...newLodgeAssoc, end_date: e.target.value })} InputLabelProps={{ shrink: true }} />
+              <FormControl size="small" sx={{ width: 120 }}>
+                <InputLabel shrink>Status</InputLabel>
+                <Select value={newLodgeAssoc.status} onChange={(e) => setNewLodgeAssoc({ ...newLodgeAssoc, status: e.target.value as MemberStatusEnum })}>
+                  <MenuItem value={MemberStatusEnum.ACTIVE}>Ativo</MenuItem>
+                  <MenuItem value={MemberStatusEnum.INACTIVE}>Desligado</MenuItem>
+                </Select>
+              </FormControl>
+              <Button variant="contained" onClick={handleAddLodgeAssoc} sx={{ height: 40, bgcolor: theme.palette.primary.main, color: theme.palette.primary.contrastText, mt: '2px' }}>Vincular</Button>
+            </Box>
+
+            <Box>
+              {lodgeAssociations.map((assoc, i) => {
+                const lodge = lodges.find(l => l.id === assoc.lodge_id) || assoc.lodge;
+                const lodgeName = lodge ? `${lodge.lodge_name} nº ${lodge.lodge_number || 'S/N'}` : `Loja #${assoc.lodge_id}`;
+                return (
+                  <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Box>
+                      <Typography sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>{lodgeName}</Typography>
+                      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        {assoc.start_date ? new Date(assoc.start_date).toLocaleDateString() : ''} até {assoc.end_date ? new Date(assoc.end_date).toLocaleDateString() : 'Atual'} - {assoc.status}
+                      </Typography>
+                    </Box>
+                    <IconButton size="small" color="error" onClick={() => handleRemoveLodgeAssoc(assoc.lodge_id)}><DeleteIcon /></IconButton>
+                  </Box>
+                );
+              })}
+            </Box>
+            
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-start' }}>
+              <Typography variant="body2" color="text.secondary">
+                * Para lojas não cadastradas (Visitantes ou Histórico Externo), utilize o menu Lojas &gt; Nova Loja para cadastrar uma Loja Inativa e integrá-la ao sistema.
+              </Typography>
             </Box>
           </CardContent>
         </Card>
@@ -800,7 +1067,7 @@ const MemberForm: React.FC = () => {
         <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2 }}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-              <SectionTitle title="Familiares" icon={FamilyIcon} />
+              <SectionTitle title="Familiares" icon={FamilyIcon} theme={theme} />
               <Button variant="outlined" startIcon={<AddIcon />} onClick={addFamilyMember} sx={{ color: theme.palette.primary.main, borderColor: theme.palette.primary.main }}>Adicionar</Button>
             </Box>
             <Grid container spacing={2}>
@@ -854,7 +1121,7 @@ const MemberForm: React.FC = () => {
       <TabPanel value={tabValue} index={4}>
         <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2 }}>
           <CardContent sx={{ p: 4 }}>
-            <SectionTitle title="Dados Profissionais" icon={WorkIcon} />
+            <SectionTitle title="Dados Profissionais" icon={WorkIcon} theme={theme} />
             <Grid container spacing={2}>
               <Grid
                 size={{
@@ -878,7 +1145,7 @@ const MemberForm: React.FC = () => {
       <TabPanel value={tabValue} index={5}>
         <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2 }}>
           <CardContent sx={{ p: 4 }}>
-            <SectionTitle title="Credenciais de Acesso" icon={LockIcon} />
+            <SectionTitle title="Credenciais de Acesso" icon={LockIcon} theme={theme} />
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 3 }}>
               Defina uma senha caso o membro ainda não possua acesso ou precise de redefinição.
             </Typography>
@@ -899,6 +1166,89 @@ const MemberForm: React.FC = () => {
       </TabPanel>
       {/* SNACKBAR */}
       
+      {/* 3. DIFF MODAL */}
+      <Dialog 
+        open={importDiffModalOpen} 
+        onClose={() => setImportDiffModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontFamily: '"Playfair Display", serif' }}>
+          Revisão de Dados Importados
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+            O sistema encontrou as seguintes informações no arquivo. Marque os campos que deseja aplicar ao formulário.
+          </Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={Object.values(selectedDiffFields).every(Boolean) && Object.keys(selectedDiffFields).length > 0}
+                      onChange={(e) => {
+                        const allSelected = e.target.checked;
+                        const newSelected: Record<string, boolean> = {};
+                        Object.keys(selectedDiffFields).forEach(k => { newSelected[k] = allSelected; });
+                        setSelectedDiffFields(newSelected);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: theme.palette.text.secondary, textTransform: 'uppercase', fontSize: '0.75rem' }}>Campo</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: theme.palette.text.secondary, textTransform: 'uppercase', fontSize: '0.75rem' }}>Valor Atual</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: theme.palette.text.secondary, textTransform: 'uppercase', fontSize: '0.75rem' }}>Valor Extraído</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {extractedData && Object.keys(selectedDiffFields).map(key => {
+                  const currentValue = key === 'name' ? formState['full_name'] : formState[key as keyof typeof formState];
+                  const extractedValue = extractedData[key];
+                  
+                  const formatObj = (val: any) => {
+                    if (!val) return '-';
+                    if (typeof val !== 'object') return String(val);
+                    return Object.entries(val)
+                      .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+                      .map(([k, v]) => `${k.replace('data_', 'Data ').replace('sessao', 'Sessão').replace('entrada', 'Entrada').replace('loja', 'Loja').replace('processo', 'Processo').replace('registro', 'Registro')}: ${v}`)
+                      .join(' | ');
+                  };
+                  
+                  const displayExtracted = formatObj(extractedValue);
+                  const displayCurrent = formatObj(currentValue);
+                  
+                  return (
+                    <TableRow key={key} hover>
+                      <TableCell padding="checkbox">
+                        <Checkbox 
+                          checked={!!selectedDiffFields[key]} 
+                          onChange={(e) => setSelectedDiffFields({ ...selectedDiffFields, [key]: e.target.checked })}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 500, color: theme.palette.primary.main }}>{diffFieldNames[key] || key}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{displayCurrent.split(' | ').join('\n')}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary', fontSize: '0.85rem', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{displayExtracted.split(' | ').join('\n')}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          {extractedData?.warnings?.length > 0 && (
+            <Box sx={{ mt: 3, p: 2, bgcolor: alpha(theme.palette.warning.main, 0.1), borderRadius: 2, border: `1px solid ${alpha(theme.palette.warning.main, 0.3)}` }}>
+              <Typography variant="subtitle2" color="warning.dark" sx={{ fontWeight: 700, mb: 1 }}>Avisos da Importação:</Typography>
+              <ul style={{ margin: 0, paddingLeft: '1.5rem', color: theme.palette.warning.dark, fontSize: '0.85rem' }}>
+                {extractedData.warnings.map((w: string, i: number) => <li key={i}>{w}</li>)}
+              </ul>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, px: 3 }}>
+          <Button onClick={() => setImportDiffModalOpen(false)} color="inherit" sx={{ fontWeight: 600 }}>Cancelar</Button>
+          <Button onClick={applyExtractedData} variant="contained" sx={{ fontWeight: 700, borderRadius: 2 }}>Aplicar Selecionados</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

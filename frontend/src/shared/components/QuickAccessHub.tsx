@@ -71,7 +71,7 @@ const QuickAccessHub: React.FC<QuickAccessHubProps> = ({ title, cards, bottomNav
       {/* Grid of Cards */}
       <Grid container spacing={2}>
         {cards.map((card) => (
-          <Grid size={{ xs: 12, sm: card.colSpan === 3 ? 6 : 12, md: card.colSpan || 6 }} key={card.id}>
+          <Grid size={{ xs: 12, sm: 6, md: card.colSpan || 3, lg: card.colSpan || 3 }} key={card.id}>
             <Card
               onClick={card.onClick}
               sx={{

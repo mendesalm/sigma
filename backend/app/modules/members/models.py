@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Boolean, Enum, JSON
 
 from app.shared.base_model import BaseModel
 
@@ -74,12 +75,21 @@ class Member(BaseModel):
     status = Column(String(50), nullable=True, default="Active")
     degree = Column(Integer, nullable=False, default=1, comment="Grau Maçônico (1 a 33)")
     is_installed = Column(Boolean, nullable=False, default=False, comment="Flag de Mestre Instalado")
-    initiation_date = Column(Date, nullable=True)
-    elevation_date = Column(Date, nullable=True)
-    exaltation_date = Column(Date, nullable=True)
-    installation_date = Column(Date, nullable=True)
-    affiliation_date = Column(Date, nullable=True)
-    regularization_date = Column(Date, nullable=True)
+    marital_status = Column(String(50), nullable=True)
+    father_name = Column(String(255), nullable=True)
+    mother_name = Column(String(255), nullable=True)
+    blood_type = Column(String(10), nullable=True)
+    mother_lodge = Column(String(255), nullable=True)
+    collecting_lodge = Column(String(255), nullable=True)
+    initiation_certificate = Column(String(100), nullable=True)
+
+    initiation_data = Column(JSON, nullable=True)
+    elevation_data = Column(JSON, nullable=True)
+    exaltation_data = Column(JSON, nullable=True)
+    installation_data = Column(JSON, nullable=True)
+    affiliation_data = Column(JSON, nullable=True)
+    regularization_data = Column(JSON, nullable=True)
+    dismissal_data = Column(JSON, nullable=True)
     registration_status = Column(
         SQLAlchemyEnum(
             RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]

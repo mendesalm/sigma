@@ -112,7 +112,7 @@ const AdministrationPage: React.FC = () => {
 
   const fetchMembers = async () => {
     try {
-      const response = await api.get('/members?limit=1000');
+      const response = await api.get('/members/?limit=1000');
       // Ensure we have an array
       if (Array.isArray(response.data)) {
           setMembers(response.data);
