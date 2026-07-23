@@ -15,7 +15,7 @@ def test_create_member_success(client, webmaster_token, sample_lodge):
             "password": "StrongPassword123",
             "lodge_id": sample_lodge.id,
             "cim": "123456",
-            "degree": "Aprendiz",
+            "degree": 1,
             "registration_status": "Aprovado",
         },
         headers={"Authorization": f"Bearer {webmaster_token}"},
@@ -46,7 +46,7 @@ def test_create_member_duplicate_email(client, webmaster_token, sample_lodge, sa
         headers={"Authorization": f"Bearer {webmaster_token}"},
     )
     assert response.status_code == status.HTTP_409_CONFLICT
-    assert "Email already registered" in response.json()["detail"]
+    assert "E-mail já cadastrado." in response.json()["detail"]
 
 
 @pytest.mark.integration
@@ -77,13 +77,13 @@ def test_update_member(client, webmaster_token, sample_member):
     """Testa atualização de dados do membro."""
     response = client.put(
         f"/members/{sample_member.id}",
-        json={"phone": "(11) 98888-7777", "degree": "Companheiro"},
+        json={"phone": "(11) 98888-7777", "degree": 3},
         headers={"Authorization": f"Bearer {webmaster_token}"},
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
-    assert data["phone"] == "(11) 98888-7777"
-    assert data["degree"] == "Companheiro"
+    assert data["phone"] == "5511988887777"
+    assert data["degree"] == 3
 
 
 @pytest.mark.integration
@@ -120,13 +120,13 @@ def test_create_member_invalid_cpf(client, webmaster_token, sample_lodge):
 def test_member_self_update_privilege_escalation(client, standard_member_token, sample_member):
     """Testa que um membro comum NÃO pode alterar seu grau ou status (Mass Assignment Blocked)."""
     # Verify initial degree
-    assert sample_member.degree != "Mestre Instalado"
+    assert sample_member.degree != 33
     
     response = client.put(
         f"/members/{sample_member.id}",
         json={
             "phone": "(11) 99999-9999", 
-            "degree": "Mestre Instalado", 
+            "degree": 33, 
             "status": "Inativo"
         },
         headers={"Authorization": f"Bearer {standard_member_token}"},
@@ -136,10 +136,10 @@ def test_member_self_update_privilege_escalation(client, standard_member_token, 
     data = response.json()
     
     # Phone should be updated (allowed in MemberSelfUpdate)
-    assert data["phone"] == "(11) 99999-9999"
+    assert data["phone"] == "5511999999999"
     
     # Degree and Status should NOT be updated (ignored by MemberSelfUpdate filter)
-    assert data["degree"] != "Mestre Instalado"
+    assert data["degree"] != 33
     assert data["status"] != "Inativo"
 
 

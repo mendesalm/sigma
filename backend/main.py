@@ -219,12 +219,19 @@ def shutdown_event():
     shutdown_scheduler()
 
 
-# Configure CORS
+# Adiciona o middleware de Logging para capturar trace_id e medir tempo
+app.add_middleware(LoggingMiddleware)
+
+# Adiciona o middleware de Tenant para limpar o contexto após cada requisição
+app.add_middleware(TenantMiddleware)
+
+# Configure CORS (Must be added last so it's the outermost middleware in Starlette)
 # IMPORTANT: In production, you should restrict the origins.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://localhost:8081",
         "http://localhost:19006",
@@ -236,12 +243,6 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
-
-# Adiciona o middleware de Logging para capturar trace_id e medir tempo
-app.add_middleware(LoggingMiddleware)
-
-# Adiciona o middleware de Tenant para limpar o contexto após cada requisição
-app.add_middleware(TenantMiddleware)
 
 # Include routers (BEFORE mounting static files)
 app.include_router(auth_routes.router)

@@ -72,7 +72,7 @@ class Member(BaseModel):
     workplace = Column(String(255), nullable=True)
     profile_picture_path = Column(String(255), nullable=True)
     cim = Column(String(50), unique=False, nullable=True, index=True)
-    status = Column(String(50), nullable=True, default="Active")
+    status = Column(String(50), nullable=True, default="Ativo")
     degree = Column(Integer, nullable=False, default=1, comment="Grau Maçônico (1 a 33)")
     is_installed = Column(Boolean, nullable=False, default=False, comment="Flag de Mestre Instalado")
     marital_status = Column(String(50), nullable=True)

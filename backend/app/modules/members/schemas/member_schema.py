@@ -119,7 +119,7 @@ class MemberBase(BaseModel):
 
     # Masonic Data
     cim: str | None = Field(None, max_length=50, description="CIM (Cadastro Individual Maçônico)")
-    status: str | None = Field("Active", max_length=50)
+    status: str | None = Field("Ativo", max_length=50)
     degree: int | None = Field(None, ge=1, le=33, description="Grau Maçônico (1-33)")
     is_installed: bool | None = Field(False, description="Flag Mestre Instalado")
     
@@ -319,6 +319,10 @@ class MemberSelfUpdate(BaseModel):
     identity_document: str | None = Field(None, max_length=50)
     birth_date: date | None = None
     marriage_date: date | None = None
+    marital_status: str | None = Field(None, max_length=50)
+    father_name: str | None = Field(None, max_length=255)
+    mother_name: str | None = Field(None, max_length=255)
+    blood_type: str | None = Field(None, max_length=10)
     street_address: str | None = Field(None, max_length=255)
     street_number: str | None = Field(None, max_length=50)
     neighborhood: str | None = Field(None, max_length=100)
@@ -343,6 +347,10 @@ class MemberUpdate(BaseModel):
     identity_document: str | None = Field(None, max_length=50)
     birth_date: date | None = None
     marriage_date: date | None = None
+    marital_status: str | None = Field(None, max_length=50)
+    father_name: str | None = Field(None, max_length=255)
+    mother_name: str | None = Field(None, max_length=255)
+    blood_type: str | None = Field(None, max_length=10)
     street_address: str | None = Field(None, max_length=255)
     street_number: str | None = Field(None, max_length=50)
     neighborhood: str | None = Field(None, max_length=100)

@@ -174,7 +174,7 @@ def sample_member(db_session, sample_lodge):
         phone="(61) 99999-9999",
         cim="272875",
         birth_date=date(1990, 1, 1),
-        degree="Mestre",
+        degree=3,
         password_hash=password_utils.hash_password("TestPassword123"),
     )
     db_session.add(member)

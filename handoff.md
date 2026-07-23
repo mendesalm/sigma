@@ -1,27 +1,15 @@
-# Handoff - Sistema Sigma
+# Status de Desenvolvimento - Sigma
 
-## Última Sessão (Atual)
-Na sessão atual, trabalhamos na conversão e padronização dos ícones do dashboard (CorelDRAW SVGs para componentes nativos React do Material UI) e na correção de alguns erros de linter relacionados ao React Compiler (Hooks e useEffects).
+## Contexto Atual
+O backend agora lida corretamente com a persistência de todos os dados históricos de membros (`initiation_data`, `elevation_data`, `exaltation_data`, etc.) no formato `JSON` dentro da model `Member`. A extração do PDF da "Ficha GOB-GO" está com a funcionalidade plenamente ativa, formatando as palavras em Title Case, transformando os nomes das Lojas e extraindo os dados maçônicos de Iniciação, Elevação, Exaltação, Instalação (Datas, Processo, Registro, Placet/Certificado).
+O Painel da Administração para o Secretário e Webmaster tem total acesso ao Cadastro e exibição das opções de upload, permitindo pré-visualizar as diferenças e atualizá-las diretamente no banco de dados.
+O bug onde os dados sumiam após confirmação (campos ficavam em branco) foi integralmente corrigido (causado pela falta dos schemas no `MemberUpdate` e por um comportamento do parser em `import_service.py` que anulava a `is_valid` temporariamente).
+O bug de quebra no frontend ao carregar o dashboard devido aos "aniversários maçônicos" da `initiation_date` que não existiam mais, foi igualmente corrigido acessando diretamente o JSON de `initiation_data`.
 
-### O que foi feito:
-1. **LodgeDashboardLayout.tsx**:
-   - Correção do erro de dependência do `useCallback` (`fetchLodgeData`) exigido pelo React Compiler.
-   - Correção de erro no linter (`setState synchronously within an effect`) adicionando exceções/correções pontuais.
-   - Ajuste na lógica do menu `Administração` (`#admin`) para torná-lo ativo (dourado) quando o submenu estiver aberto (`adminAnchorEl`).
+## Problemas Pendentes
+- Realizar validação em larga escala de diversos PDFs de importação.
+- Revisar módulos financeiros que possam não ter testes atualizados, já que houveram falhas isoladas de testes no módulo financeiro (nenhuma relação direta com as atualizações recentes de membros, mas precisam ser observadas no futuro).
 
-2. **Ícones (Padronização Nativa)**:
-   - **MemberPanelIcon** (`member_panel.svg`): Convertido com sucesso. Os gradientes foram removidos e o estilo adotado usa `fill="currentColor"` (responsivo ao modo claro/escuro) com recortes de detalhes (`stroke={theme.palette.background.paper}`). A silhueta, o gráfico e o quadro de fundo foram enquadrados corretamente (`viewBox`).
-   - **AdminIcon** (`admin.svg`): Convertido com a mesma técnica (monocromático responsivo + recortes). Integrado com sucesso no Layout.
-
-## Problemas Pendentes e Próximos Passos
-Para a próxima sessão, sugerem-se as seguintes ações:
-
-1. **Continuar a Padronização dos Ícones**:
-   - Verificar se há outros ícones na barra lateral (como Webmaster, etc.) que ainda precisam passar pela mesma conversão de SVG para o padrão de recortes vazados (`currentColor` + `background.paper`).
-   
-2. **Resolver Erros Restantes do Linter**:
-   - O arquivo `src/modules/members/pages/Members.tsx` ainda apresenta um erro crítico do React Compiler na linha 85 (`Calling setState synchronously within an effect can trigger cascading renders`), bem como missing dependencies (`fetchMembers`). Isso precisa ser limpo para manter a performance do build e otimizações do React 19 / Compiler.
-   - Outros warnings espalhados por variáveis não utilizadas.
-
-3. **Validação Geral UI**:
-   - Verificar se a altura padronizada de 28px está funcionando bem em todas as telas responsivas para os novos ícones injetados no menu.
+## Próximos Passos
+- Receber a confirmação do usuário a respeito do upload no frontend para atestar se todos os dados aparecem devidamente no `ImportDiffModal`.
+- Continuar melhorando outras seções de acordo com as necessidades do cliente.

@@ -135,7 +135,7 @@ def create_member(
         new_member = member_service.create_member_for_lodge(db=db, member_data=member)
         log_action(
             db=db,
-            user_id=context.user_id,
+            user_id=context.user.id,
             user_type=context.user_type,
             action="CREATE_MEMBER",
             resource_type="MEMBER",
@@ -803,15 +803,20 @@ from app.modules.members.services.import_service import process_upload_files
 async def preview_import(
     files: List[UploadFile] = File(...),
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(dependencies.get_current_user_payload),
+    context: dependencies.UserContext = Depends(dependencies.get_current_active_user_with_permissions),
 ):
-    user_type = current_user.get("user_type")
+    user_type = context.user_type
     allowed_roles = ["Secretário", "Secretário Adjunto", "Chanceler", "Chanceler Adjunto", "Venerável Mestre"]
     
     if user_type not in ["super_admin", "webmaster"]:
         if user_type == "member":
-            active_role = current_user.get("active_role_name")
-            if active_role not in allowed_roles:
+            # Check active roles from DB
+            from datetime import date
+            active_roles = [
+                rh.role.name for rh in context.user.role_history 
+                if (rh.end_date is None or rh.end_date >= date.today()) and rh.role
+            ]
+            if not any(role in allowed_roles for role in active_roles):
                 raise HTTPException(status_code=403, detail="Não autorizado")
         else:
             raise HTTPException(status_code=403, detail="Não autorizado")
@@ -828,13 +833,24 @@ def confirm_import(
     request_data: ImportConfirmRequest,
     request: Request,
     db: Session = Depends(database.get_db),
-    current_user: dict = Depends(dependencies.get_current_user_payload),
+    context: dependencies.UserContext = Depends(dependencies.get_current_active_user_with_permissions),
 ):
-    user_type = current_user.get("user_type")
+    user_type = context.user_type
+    allowed_roles = ["Secretário", "Secretário Adjunto", "Chanceler", "Chanceler Adjunto", "Venerável Mestre"]
+    
     if user_type not in ["super_admin", "webmaster"]:
-        raise HTTPException(status_code=403, detail="Não autorizado")
+        if user_type == "member":
+            from datetime import date
+            active_roles = [
+                rh.role.name for rh in context.user.role_history 
+                if (rh.end_date is None or rh.end_date >= date.today()) and rh.role
+            ]
+            if not any(role in allowed_roles for role in active_roles):
+                raise HTTPException(status_code=403, detail="Não autorizado")
+        else:
+            raise HTTPException(status_code=403, detail="Não autorizado")
         
-    lodge_id = current_user.get("lodge_id")
+    lodge_id = context.lodge_id
     
     saved_count = 0
     from app.modules.members.models import RegistrationStatusEnum

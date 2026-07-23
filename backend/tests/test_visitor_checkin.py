@@ -69,7 +69,7 @@ def test_perform_visitor_check_in_success(db_session, active_session):
     user_lon = -47.8823
 
     # Cria um Visitor local
-    visitor = models.Visitor(full_name="Visitante Teste", cim="999888", degree="Mestre")
+    visitor = models.Visitor(full_name="Visitante Teste", cim="999888", degree=3)
     db_session.add(visitor)
     db_session.commit()
     db_session.refresh(visitor)
@@ -102,7 +102,7 @@ def test_perform_visitor_check_in_geofence_fail(db_session, active_session):
     user_lon = -47.9000
 
     # Cria um Visitor local
-    visitor = models.Visitor(full_name="Visitante Teste", cim="999888", degree="Mestre")
+    visitor = models.Visitor(full_name="Visitante Teste", cim="999888", degree=3)
     db_session.add(visitor)
     db_session.commit()
 
