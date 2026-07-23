@@ -47,6 +47,16 @@ class MemberClassEnum(enum.StrEnum):
     HONORARY = "Honorário"
 
 
+class EventTypeEnum(enum.StrEnum):
+    INITIATION = "Iniciação"
+    ELEVATION = "Elevação"
+    EXALTATION = "Exaltação"
+    INSTALLATION = "Instalação"
+    AFFILIATION = "Filiação"
+    REGULARIZATION = "Regularização"
+    DISMISSAL = "Desligamento"
+
+
 class Member(BaseModel):
     __tablename__ = "members"
     id = Column(Integer, primary_key=True, index=True)
@@ -79,17 +89,7 @@ class Member(BaseModel):
     father_name = Column(String(255), nullable=True)
     mother_name = Column(String(255), nullable=True)
     blood_type = Column(String(10), nullable=True)
-    mother_lodge = Column(String(255), nullable=True)
-    collecting_lodge = Column(String(255), nullable=True)
-    initiation_certificate = Column(String(100), nullable=True)
-
-    initiation_data = Column(JSON, nullable=True)
-    elevation_data = Column(JSON, nullable=True)
-    exaltation_data = Column(JSON, nullable=True)
-    installation_data = Column(JSON, nullable=True)
-    affiliation_data = Column(JSON, nullable=True)
-    regularization_data = Column(JSON, nullable=True)
-    dismissal_data = Column(JSON, nullable=True)
+    collecting_lodge_id = Column(Integer, ForeignKey("lodges.id", ondelete="SET NULL"), nullable=True)
     registration_status = Column(
         SQLAlchemyEnum(
             RegistrationStatusEnum, name="registration_status_enum", values_callable=lambda x: [e.value for e in x]
@@ -106,6 +106,9 @@ class Member(BaseModel):
     family_members = relationship("FamilyMember", back_populates="member", cascade="all, delete-orphan")
     decorations = relationship("Decoration", back_populates="member", cascade="all, delete-orphan")
     role_history = relationship("RoleHistory", back_populates="member", cascade="all, delete-orphan")
+    masonic_history = relationship("MasonicEvent", back_populates="member", cascade="all, delete-orphan")
+    diplomas = relationship("Diploma", back_populates="member", cascade="all, delete-orphan")
+    collecting_lodge = relationship("Lodge", foreign_keys=[collecting_lodge_id])
 
 
 class MemberLodgeAssociation(BaseModel):
@@ -206,3 +209,37 @@ class RoleHistory(BaseModel):
     administration = relationship("Administration", backref="role_histories")
 
     __table_args__ = (CheckConstraint("end_date IS NULL OR end_date >= start_date", name="chk_role_history_dates"),)
+
+
+class Diploma(BaseModel):
+    __tablename__ = "diplomas"
+    id = Column(Integer, primary_key=True, index=True)
+    masonic_event_id = Column(Integer, ForeignKey("masonic_events.id", ondelete="CASCADE"), nullable=False)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
+    
+    diploma_type = Column(String(50), nullable=False) 
+    issue_date = Column(Date, nullable=False)
+    registry_number = Column(String(100), nullable=False)
+    
+    masonic_event = relationship("MasonicEvent", back_populates="diploma")
+    member = relationship("Member", back_populates="diplomas")
+
+class MasonicEvent(BaseModel):
+    __tablename__ = "masonic_events"
+    id = Column(Integer, primary_key=True, index=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
+    lodge_id = Column(Integer, ForeignKey("lodges.id", ondelete="SET NULL"), nullable=True)
+    
+    event_type = Column(SQLAlchemyEnum(EventTypeEnum, name="event_type_enum"), nullable=False)
+    
+    session_date = Column(Date, nullable=True)
+    entry_date = Column(Date, nullable=True)
+    process_number = Column(String(100), nullable=True)
+    registry_number = Column(String(100), nullable=True)
+    
+    placet_number = Column(String(50), nullable=True)
+    quit_placet_number = Column(String(50), nullable=True)
+    
+    diploma = relationship("Diploma", back_populates="masonic_event", uselist=False, cascade="all, delete-orphan")
+    member = relationship("Member", back_populates="masonic_history")
+    lodge = relationship("Lodge")

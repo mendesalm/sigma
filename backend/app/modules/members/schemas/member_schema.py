@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator
 
 from app.modules.members.schemas.decoration_schema import DecorationResponse
 from app.modules.members.schemas.family_member_schema import FamilyMemberCreate, FamilyMemberResponse
@@ -123,17 +123,9 @@ class MemberBase(BaseModel):
     degree: int | None = Field(None, ge=1, le=33, description="Grau Maçônico (1-33)")
     is_installed: bool | None = Field(False, description="Flag Mestre Instalado")
     
-    mother_lodge: str | None = Field(None, max_length=255)
-    collecting_lodge: str | None = Field(None, max_length=255)
-    initiation_certificate: str | None = Field(None, max_length=100)
+    collecting_lodge_id: int | None = None
 
-    initiation_data: InitiationHistoricalData | dict | None = None
-    elevation_data: MasonicHistoricalData | dict | None = None
-    exaltation_data: MasonicHistoricalData | dict | None = None
-    installation_data: MasonicHistoricalData | dict | None = None
-    affiliation_data: MasonicHistoricalData | dict | None = None
-    regularization_data: MasonicHistoricalData | dict | None = None
-    dismissal_data: DismissalHistoricalData | dict | None = None
+    masonic_history: list[MasonicEventCreate] | None = None
     registration_status: RegistrationStatusEnum = Field(RegistrationStatusEnum.PENDING)
 
     @field_validator("full_name")
@@ -371,17 +363,9 @@ class MemberUpdate(BaseModel):
     degree: int | None = Field(None, ge=1, le=33)
     is_installed: bool | None = None
     
-    mother_lodge: str | None = Field(None, max_length=255)
-    collecting_lodge: str | None = Field(None, max_length=255)
-    initiation_certificate: str | None = Field(None, max_length=100)
+    collecting_lodge_id: int | None = None
 
-    initiation_data: InitiationHistoricalData | dict | None = None
-    elevation_data: MasonicHistoricalData | dict | None = None
-    exaltation_data: MasonicHistoricalData | dict | None = None
-    installation_data: MasonicHistoricalData | dict | None = None
-    affiliation_data: MasonicHistoricalData | dict | None = None
-    regularization_data: MasonicHistoricalData | dict | None = None
-    dismissal_data: DismissalHistoricalData | dict | None = None
+    masonic_history: list[MasonicEventCreate] | None = None
     
     registration_status: RegistrationStatusEnum | None = None
     password: str | None = Field(None, min_length=8)
@@ -439,7 +423,7 @@ class MemberResponse(MemberBase):
     updated_at: datetime | None = Field(None, description="Data de alteração")
     last_login: datetime | None = Field(None, description="Último login")
     family_members: list[FamilyMemberResponse] = []
-    decorations: list[DecorationResponse] = []
+    masonic_history: list[MasonicEventResponse] = []
     role_history: list[RoleHistoryResponse] = []
     lodge_associations: list[MemberLodgeAssociationResponse] = []
     obedience_associations: list[MemberObedienceAssociationResponse] = []

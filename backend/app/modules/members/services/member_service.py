@@ -66,12 +66,20 @@ def create_member_for_lodge(db: Session, member_data: member_schema.MemberCreate
                 raise ValueError("CIM já cadastrado nesta Potência.")
 
     member_dict = member_data.model_dump(
-        exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class"}
+        exclude={"password", "lodge_id", "role_id", "family_members", "status", "member_class", "masonic_history", "diplomas"}
     )
 
+    masonic_history_data = getattr(member_data, "masonic_history", None) or []
+    
     db_member = models.Member(**member_dict, password_hash=hash_password(password))
     db.add(db_member)
     db.flush()
+    
+    for event_data in masonic_history_data:
+        ev_dict = event_data.model_dump(exclude={"diploma"}) if hasattr(event_data, "model_dump") else event_data
+        db_ev = models.MasonicEvent(**ev_dict, member_id=db_member.id)
+        db.add(db_ev)
+
 
     association = models.MemberLodgeAssociation(
         member_id=db_member.id, lodge_id=lodge_id, status=status, member_class=member_class, start_date=date.today()

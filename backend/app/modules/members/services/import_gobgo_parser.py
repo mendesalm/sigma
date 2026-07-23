@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 from app.modules.members.schemas.import_schemas import ImportMemberRow
 
 def sanitize_masked_data(value: str) -> Optional[str]:
@@ -29,8 +29,8 @@ def to_title_case(text: str) -> str:
             result.append(w)
         else:
             def cap_match(m):
-                return m.group(1) + m.group(2).upper() + m.group(3).lower()
-            w = re.sub(r'(^|[\(\)\-—])([a-z])(.*)', cap_match, w)
+                return m.group(1) + m.group(2).upper()
+            w = re.sub(r'(^|[\(\)-])([a-z])', cap_match, w)
             result.append(w)
             
     res = "".join(result)
@@ -50,26 +50,13 @@ def clean_garbage(val: str) -> str:
 def format_lodge_string(lodge: str) -> str:
     if not lodge:
         return lodge
-    lodge = lodge.strip()
-    
-    # Remove any footer garbage like "CIM 272875 (CIM: 272875) | 22/07/2026..."
-    if "CIM" in lodge and "|" in lodge:
-        lodge = lodge.split("CIM")[0].strip()
-        if not lodge:
-            return ""
-
-    # Remove generic "Loja " prefix if present to normalize
-    if lodge.lower().startswith("loja "):
-        lodge = lodge[5:].strip()
-
-    # Try matching: <number> [separator or spaces] <name>
-    match = re.match(r'^(\d+)\s*(?:[^\w\s]+)?\s*(.+)$', lodge)
+    # Examples: "4027 - Moderna Olavo Bilac", "2181  Joo Pedro Junqueira"
+    match = re.match(r'^(\d+)\s*[^\w\s]+\s*(.+)$', lodge)
     if match:
         numero = match.group(1).strip()
         nome = match.group(2).strip()
-        return f"Loja {to_title_case(nome)}, nº {numero}"
-    
-    return to_title_case(lodge)
+        return f"Loja {nome}, nº {numero}"
+    return lodge
 
 def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     # Check if it is a GOB-GO form
@@ -133,21 +120,20 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     # Lodge info
     mother_lodge_match = re.search(r'Loja M.e:\s*(.*?)(?:\n|$)', text)
     if mother_lodge_match:
-        row.mother_lodge = format_lodge_string(clean_garbage(mother_lodge_match.group(1)))
+        row.mother_lodge = format_lodge_string(to_title_case(clean_garbage(mother_lodge_match.group(1))))
     
     collect_lodge_match = re.search(r'Loja de Recolhimento:\s*(.*?)(?:\n|$)', text)
     if collect_lodge_match:
-        row.collecting_lodge = format_lodge_string(clean_garbage(collect_lodge_match.group(1)))
+        row.collecting_lodge = format_lodge_string(to_title_case(clean_garbage(collect_lodge_match.group(1))))
         
-    placet_match = re.search(r'Placet(?:e)? Inicia..o\s+(.*?)(?:\n|$)', text)
+    placet_match = re.search(r'Placete Inicia..o\s+(.*?)(?:\n|$)', text)
     if placet_match:
         row.initiation_certificate = placet_match.group(1).strip()
         
     # JSON DATA BLOCK (Iniciação, Elevação, Exaltação, Instalação)
     def extract_masonic_block(block_name: str, regex_name: str) -> Optional[Dict[str, Any]]:
-        # Delimiters can be other blocks that follow
-        delimiters = r'Eleva..o \(Grau 2\)|Exalta..o \(Grau 3\)|Instala..o|FILIA..ES|REGULARIZA..ES|DESLIGAMENTOS'
-        pattern = rf'{regex_name}.*?(?={delimiters}|\Z)'
+        # Regex to find the block and extract fields until the next empty line or known block
+        pattern = rf'{regex_name}.*?(?=\n\s*\n|\n[A-Z][a-z]+ \(Grau|\nFILIA.ES|\nDESLIGAMENTOS|\Z)'
         block_match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         if not block_match:
             return None
@@ -155,39 +141,47 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
         block_text = block_match.group(0)
         data = {}
         
-        ds_match = re.search(r'Data Sess.o\s+([\d/]{10})', block_text, re.IGNORECASE)
+        ds_match = re.search(r'Data\s+S[\s\S]{0,15}?o\s+([\d/]{10})', block_text, re.IGNORECASE)
         if ds_match: data['data_sessao'] = parse_date(ds_match.group(1))
         
-        de_match = re.search(r'Data Entrada\s+([\d/]{10})', block_text, re.IGNORECASE)
+        de_match = re.search(r'Data\s+E[\s\S]{0,15}?a\s+([\d/]{10})', block_text, re.IGNORECASE)
         if de_match: data['data_entrada'] = parse_date(de_match.group(1))
         
-        proc_match = re.search(r'Processo\s+(.+?)(?=\n|Registro|Loja|$)', block_text, re.IGNORECASE)
-        if proc_match: data['processo'] = proc_match.group(1).strip()
+        proc_match = re.search(r'Processo\s+(.*?)(?=\n|Registro|Loja|Data|$)', block_text, re.IGNORECASE)
+        if proc_match: data['processo'] = clean_garbage(proc_match.group(1).strip())
         
-        reg_match = re.search(r'Registro\s+(.+?)(?=\n|Loja|$)', block_text, re.IGNORECASE)
-        if reg_match: data['registro'] = reg_match.group(1).strip()
+        reg_match = re.search(r'Registro\s+(.*?)(?=\n|Loja|Data|Processo|$)', block_text, re.IGNORECASE)
+        if reg_match: data['registro'] = clean_garbage(reg_match.group(1).strip())
         
-        loja_match = re.search(r'Loja\s+(.+?)(?=\n|$)', block_text, re.IGNORECASE)
-        if loja_match:
-            data['loja'] = format_lodge_string(clean_garbage(loja_match.group(1).strip()))
+        loja_match = re.search(r'Loja\s+(.*?)(?=\n|Data|Processo|Registro|CIM|$)', block_text, re.IGNORECASE)
+        if loja_match: data['loja'] = to_title_case(clean_garbage(loja_match.group(1).strip()))
         
         if data:
             return data
         return None
 
-    row.initiation_data = extract_masonic_block("Iniciação", r'Inicia..o \(Grau 1\)')
-    if row.initiation_data and row.initiation_certificate:
-        row.initiation_data['placet'] = row.initiation_certificate
-        
-    row.elevation_data = extract_masonic_block("Elevação", r'Eleva..o \(Grau 2\)')
-    row.exaltation_data = extract_masonic_block("Exaltação", r'Exalta..o \(Grau 3\)')
-    row.installation_data = extract_masonic_block("Instalação", r'Instala..o \(Grau')
-    row.affiliation_data = extract_masonic_block("Filiação", r'FILIA..ES')
-    row.regularization_data = extract_masonic_block("Regularização", r'REGULARIZA..ES')
-    row.dismissal_data = extract_masonic_block("Desligamento", r'DESLIGAMENTOS')
+    def add_event(event_type_enum: str, regex: str):
+        block = extract_masonic_block(event_type_enum, regex)
+        if not block: return
+            
+        # Map keys to match MasonicEventCreate
+        mapped = {
+            "event_type": event_type_enum,
+            "session_date": block.get("data_sessao"),
+            "entry_date": block.get("data_entrada"),
+            "process_number": block.get("processo"),
+            "registry_number": block.get("registro"),
+            # Extract lodge as a raw string for now, we'll try to match it in import_service
+            "raw_lodge_name": block.get("loja") 
+        }
+        if event_type_enum == "INITIATION" and row.initiation_certificate:
+            mapped["placet_number"] = row.initiation_certificate
+        row.masonic_history.append(mapped)
 
-    if row.cim or row.name:
-        row.is_valid = True
+    add_event("INITIATION", r'Inicia..o \(Grau 1\)')
+    add_event("ELEVATION", r'Eleva..o \(Grau 2\)')
+    add_event("EXALTATION", r'Exalta..o \(Grau 3\)')
+    add_event("INSTALLATION", r'Instala..o \(Grau')
 
     row.warnings = warnings
     return row

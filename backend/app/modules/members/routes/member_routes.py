@@ -837,26 +837,26 @@ def confirm_import(
 ):
     user_type = context.user_type
     allowed_roles = ["Secretário", "Secretário Adjunto", "Chanceler", "Chanceler Adjunto", "Venerável Mestre"]
-    
+
     if user_type not in ["super_admin", "webmaster"]:
         if user_type == "member":
             from datetime import date
             active_roles = [
-                rh.role.name for rh in context.user.role_history 
+                rh.role.name for rh in context.user.role_history
                 if (rh.end_date is None or rh.end_date >= date.today()) and rh.role
             ]
             if not any(role in allowed_roles for role in active_roles):
                 raise HTTPException(status_code=403, detail="Não autorizado")
         else:
             raise HTTPException(status_code=403, detail="Não autorizado")
-        
+
     lodge_id = context.lodge_id
-    
+
     saved_count = 0
-    from app.modules.members.models import RegistrationStatusEnum
+    from app.modules.members.models import RegistrationStatusEnum, MasonicEvent, MemberLodgeAssociation, Member
     from app.modules.access_control.utils.password_utils import hash_password
     import secrets
-    
+
     for row in request_data.rows:
         if row.is_valid:
             existing = None
@@ -867,51 +867,41 @@ def confirm_import(
 
             if existing:
                 # Update existing member
-                if row.name:
-                    existing.full_name = row.name
-                if row.email:
-                    existing.email = row.email
-                if row.degree:
-                    existing.degree = row.degree
-                if row.cpf:
-                    existing.cpf = row.cpf
-                if row.marital_status:
-                    existing.marital_status = row.marital_status
-                if row.father_name:
-                    existing.father_name = row.father_name
-                if row.mother_name:
-                    existing.mother_name = row.mother_name
-                if row.blood_type:
-                    existing.blood_type = row.blood_type
-                if row.mother_lodge:
-                    existing.mother_lodge = row.mother_lodge
-                if row.collecting_lodge:
-                    existing.collecting_lodge = row.collecting_lodge
-                if row.initiation_certificate:
-                    existing.initiation_certificate = row.initiation_certificate
-                if row.initiation_data:
-                    existing.initiation_data = row.initiation_data
-                if row.elevation_data:
-                    existing.elevation_data = row.elevation_data
-                if row.exaltation_data:
-                    existing.exaltation_data = row.exaltation_data
-                if row.installation_data:
-                    existing.installation_data = row.installation_data
-                if row.affiliation_data:
-                    existing.affiliation_data = row.affiliation_data
-                if row.regularization_data:
-                    existing.regularization_data = row.regularization_data
-                if row.dismissal_data:
-                    existing.dismissal_data = row.dismissal_data
-                    
+                if row.name: existing.full_name = row.name
+                if row.email: existing.email = row.email
+                if row.degree: existing.degree = row.degree
+                if row.cpf: existing.cpf = row.cpf
+                if row.marital_status: existing.marital_status = row.marital_status
+                if row.father_name: existing.father_name = row.father_name
+                if row.mother_name: existing.mother_name = row.mother_name
+                if row.blood_type: existing.blood_type = row.blood_type
+                
+                db.flush()
+                # Recreate masonic history
+                if row.masonic_history:
+                    db.query(MasonicEvent).filter(MasonicEvent.member_id == existing.id).delete()
+                    for ev in row.masonic_history:
+                        db_ev = MasonicEvent(
+                            member_id=existing.id,
+                            event_type=ev.get("event_type"),
+                            session_date=ev.get("session_date"),
+                            entry_date=ev.get("entry_date"),
+                            process_number=ev.get("process_number"),
+                            registry_number=ev.get("registry_number"),
+                            placet_number=ev.get("placet_number"),
+                            quit_placet_number=ev.get("quit_placet_number"),
+                            # Missing lodge_id mapping, but we don't strictly need it right now for raw import
+                        )
+                        db.add(db_ev)
+
                 # Ensure the member is associated with the lodge
                 if lodge_id:
-                    assoc = db.query(models.MemberLodgeAssociation).filter(
-                        models.MemberLodgeAssociation.member_id == existing.id,
-                        models.MemberLodgeAssociation.lodge_id == lodge_id
+                    assoc = db.query(MemberLodgeAssociation).filter(
+                        MemberLodgeAssociation.member_id == existing.id,
+                        MemberLodgeAssociation.lodge_id == lodge_id
                     ).first()
                     if not assoc:
-                        new_assoc = models.MemberLodgeAssociation(
+                        new_assoc = MemberLodgeAssociation(
                             member_id=existing.id,
                             lodge_id=lodge_id,
                         )
@@ -921,6 +911,7 @@ def confirm_import(
             else:
                 # Create new member
                 new_member = Member(
+                    tenant_id=context.tenant_id,
                     cim=row.cim,
                     full_name=row.name,
                     email=row.email,
@@ -930,36 +921,38 @@ def confirm_import(
                     father_name=row.father_name,
                     mother_name=row.mother_name,
                     blood_type=row.blood_type,
-                    mother_lodge=row.mother_lodge,
-                    collecting_lodge=row.collecting_lodge,
-                    initiation_certificate=row.initiation_certificate,
-                    initiation_data=row.initiation_data,
-                    elevation_data=row.elevation_data,
-                    exaltation_data=row.exaltation_data,
-                    installation_data=row.installation_data,
-                    affiliation_data=row.affiliation_data,
-                    regularization_data=row.regularization_data,
-                    dismissal_data=row.dismissal_data,
-                    password_hash=hash_password(secrets.token_urlsafe(16)), 
+                    password_hash=hash_password(secrets.token_urlsafe(16)),
                     registration_status=RegistrationStatusEnum.PENDING
                 )
                 db.add(new_member)
-                db.commit()
-                db.refresh(new_member)
+                db.flush()
                 
+                if row.masonic_history:
+                    for ev in row.masonic_history:
+                        db_ev = MasonicEvent(
+                            member_id=new_member.id,
+                            event_type=ev.get("event_type"),
+                            session_date=ev.get("session_date"),
+                            entry_date=ev.get("entry_date"),
+                            process_number=ev.get("process_number"),
+                            registry_number=ev.get("registry_number"),
+                            placet_number=ev.get("placet_number"),
+                            quit_placet_number=ev.get("quit_placet_number"),
+                        )
+                        db.add(db_ev)
+
                 if lodge_id:
-                    assoc = models.MemberLodgeAssociation(
+                    new_assoc = MemberLodgeAssociation(
                         member_id=new_member.id,
                         lodge_id=lodge_id,
                     )
-                    db.add(assoc)
-                    db.commit()
-                
+                    db.add(new_assoc)
+
+                db.commit()
+                db.refresh(new_member)
                 saved_count += 1
-                    
-    return {"message": f"{saved_count} membros importados com sucesso."}
 
-
+    return {"message": f"{saved_count} membros importados/atualizados com sucesso."}
 @router.post(
     "/{member_id}/lodge-associations",
     response_model=member_schema.MemberLodgeAssociationResponse,
