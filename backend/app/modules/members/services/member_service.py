@@ -251,7 +251,7 @@ def update_member_in_lodge(
         for mh in masonic_history_data:
             mh_dict = mh.copy()
             mh_dict.pop('diploma', None)
-                mh_dict.pop('raw_lodge_name', None)
+            mh_dict.pop('raw_lodge_name', None)
             db.add(members_models.MasonicEvent(**mh_dict, member_id=db_member.id))
             
     if decorations_data is not None:
