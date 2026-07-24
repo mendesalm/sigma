@@ -1337,16 +1337,15 @@ const MemberForm: React.FC = () => {
                   const currentValue = key === 'name' ? formState['full_name'] : formState[key as keyof typeof formState];
                   const extractedValue = extractedData[key];
                   
-                  const formatObj = (val: any) => {
-                    if (!val) return '-';
-                    if (Array.isArray(val)) return val.map((item, i) => [] ).join('
-');
-                    if (typeof val !== 'object') return String(val);
-                    return Object.entries(val)
-                      .filter(([_, v]) => v !== null && v !== undefined && v !== '')
-                      .map(([k, v]) => `${k.replace('data_', 'Data ').replace('sessao', 'Sessão').replace('entrada', 'Entrada').replace('loja', 'Loja').replace('processo', 'Processo').replace('registro', 'Registro')}: ${v}`)
-                      .join(' | ');
-                  };
+                  const formatObj = (val: any): string => {
+    if (!val) return '-';
+    if (Array.isArray(val)) return val.map((item, i) => [] ).join('\n');
+    if (typeof val !== 'object') return String(val);
+    return Object.entries(val)
+      .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+      .map(([k, v]) => ${k.replace('data_', 'Data ').replace('sessao', 'Sessão').replace('entrada', 'Entrada').replace('loja', 'Loja').replace('processo', 'Processo').replace('registro', 'Registro')}: )
+      .join(' | ');
+  };
                   
                   const displayExtracted = formatObj(extractedValue);
                   const displayCurrent = formatObj(currentValue);
