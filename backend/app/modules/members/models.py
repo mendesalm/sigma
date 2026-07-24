@@ -236,6 +236,7 @@ class MasonicEvent(BaseModel):
     entry_date = Column(Date, nullable=True)
     process_number = Column(String(100), nullable=True)
     registry_number = Column(String(100), nullable=True)
+    raw_lodge_name = Column(String(255), nullable=True)
     
     placet_number = Column(String(50), nullable=True)
     quit_placet_number = Column(String(50), nullable=True)
