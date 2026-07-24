@@ -233,6 +233,7 @@ const MemberForm: React.FC = () => {
             role_id: activeRole?.role_id || '',
             status: association?.status || MemberStatusEnum.ACTIVE,
             member_class: association?.member_class || MemberClassEnum.REGULAR,
+            phone: formatPhone(memberData.phone || ''),
             password: '',
             confirmPassword: ''
           });
@@ -243,7 +244,7 @@ const MemberForm: React.FC = () => {
               full_name: fm.full_name,
               relationship_type: fm.relationship_type,
               birth_date: fm.birth_date || '',
-              phone: fm.phone || '',
+              phone: formatPhone(fm.phone || ''),
               email: fm.email || '',
               is_deceased: fm.is_deceased
             })));
@@ -524,11 +525,25 @@ const MemberForm: React.FC = () => {
     delete sanitizedFormState.regularization_data;
     delete sanitizedFormState.dismissal_data;
 
+    const toE164 = (phone: string | undefined) => {
+      if (!phone) return undefined;
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length >= 10 && !digits.startsWith('55')) return '+55' + digits;
+      if (digits.length >= 12 && digits.startsWith('55')) return '+' + digits;
+      return phone;
+    };
+
+    const formattedFamilyMembers = familyMembers.map(fm => ({
+      ...fm,
+      phone: toE164(fm.phone)
+    }));
+
     const memberData = {
       ...sanitizedFormState,
+      phone: toE164(sanitizedFormState.phone),
       role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
       lodge_id: Number(sanitizedFormState.lodge_id),
-      family_members: familyMembers,
+      family_members: formattedFamilyMembers,
       masonic_history: masonic_history.length > 0 ? masonic_history : undefined
     };
 

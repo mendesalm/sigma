@@ -34,12 +34,16 @@ def to_title_case(text: str) -> str:
 
 def clean_garbage(val: str) -> str:
     if not val: return val
-    val = val.strip()
-    prev = ""
-    while val != prev:
-        prev = val
-        val = re.sub(r'\s+(?:\d\.?|[A-Z]:|\d{1,2}(?:\s+\d{1,2})+)$', '', val)
-    return val.strip()
+    return re.sub(r'[^a-zA-Z0-9À-Úà-ú\s/\-.,ºª()]', '', val).strip()
+
+def format_international_phone(phone_str: str) -> Optional[str]:
+    if not phone_str or phone_str == 'ù': return None
+    digits = re.sub(r'\D', '', phone_str)
+    if len(digits) >= 10:
+        if not digits.startswith('55'):
+            digits = '55' + digits
+        return '+' + digits
+    return phone_str
 
 def format_lodge_string(lodge: str) -> str:
     if not lodge: return lodge
@@ -112,10 +116,10 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     if edu_match: row.education_level = to_title_case(clean_garbage(edu_match.group(1)))
     
     phone_match = re.search(r'Celular\s+([\d\(\)\s\-]+)', text)
-    if phone_match: row.phone = phone_match.group(1).strip()
+    if phone_match: row.phone = format_international_phone(phone_match.group(1).strip())
     else:
         phone_alt = re.search(r'Telefone\s+([\d\(\)\s\-]+)', text)
-        if phone_alt: row.phone = phone_alt.group(1).strip()
+        if phone_alt: row.phone = format_international_phone(phone_alt.group(1).strip())
         
     cep_match = re.search(r'CEP\s+([\d\-]+)', text)
     if cep_match: row.zip_code = cep_match.group(1).strip()
@@ -217,29 +221,37 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
             if dec.get("title"): row.decorations.append(dec)
 
     # FAMILY MEMBERS
-    fam_match = re.search(r'DADOS FAMILIARES\n(.*?)\Z', text, re.DOTALL | re.IGNORECASE)
+    fam_match = re.search(r'FAM.LIA\n(.*?)(?=\nEmitido em|\Z)', text, re.DOTALL | re.IGNORECASE)
     if fam_match:
-        block = fam_match.group(1).strip()
-        c_match = re.search(r'C.njuge\s+(.*?)(?:\n|$)', block, re.IGNORECASE)
-        if c_match:
-            c = {"relationship_type": "Esposa", "full_name": to_title_case(clean_garbage(c_match.group(1)))}
-            cn = re.search(r'Nascimento\s+([\d/]{10})', block, re.IGNORECASE)
-            if cn: c["birth_date"] = parse_date(cn.group(1))
-            ct = re.search(r'Telefone\s+([\d\(\)\s\-]+)', block, re.IGNORECASE)
-            if ct: c["phone"] = ct.group(1).strip()
-            row.family_members.append(c)
+        block = fam_match.group(1)
         
-        filhos_match = re.search(r'Filhos\n(.*)', block, re.DOTALL | re.IGNORECASE)
-        if filhos_match:
-            chunks = re.split(r'\n(?=Nome)', filhos_match.group(1).strip(), flags=re.IGNORECASE)
-            for chunk in chunks:
-                if not chunk.strip(): continue
-                f = {"relationship_type": "Filho"}
-                fn = re.search(r'^Nome\s+(.*?)(?:\n|$)', chunk, re.IGNORECASE)
-                if fn: f["full_name"] = to_title_case(clean_garbage(fn.group(1)))
-                fnasc = re.search(r'Nascimento\s+([\d/]{10})', chunk, re.IGNORECASE)
-                if fnasc: f["birth_date"] = parse_date(fnasc.group(1))
-                if f.get("full_name"): row.family_members.append(f)
+        # Spouse
+        c_match = re.search(r'C.njuge\s+(.*?)(?:\n|$)', block, re.IGNORECASE)
+        if c_match and c_match.group(1).strip() and not c_match.group(1).strip().startswith('ù'):
+            spouse = {"relationship_type": "Esposa", "full_name": to_title_case(clean_garbage(c_match.group(1)))}
+            
+            b_match = re.search(r'C.njuge.*?Nascimento\s+([\d/]{10})', block, re.DOTALL | re.IGNORECASE)
+            if b_match: spouse["birth_date"] = parse_date(b_match.group(1))
+            
+            t_match = re.search(r'C.njuge.*?Telefone\s+(.*?)(?:\n|$)', block, re.DOTALL | re.IGNORECASE)
+            if t_match and t_match.group(1).strip() and not t_match.group(1).strip().startswith('ù'):
+                spouse["phone"] = format_international_phone(t_match.group(1).strip())
+                
+            row.family_members.append(spouse)
+            
+        # Children
+        child_split = re.split(r'Filho\(a\)\s+Nascimento\s+Status', block, flags=re.IGNORECASE)
+        if len(child_split) > 1:
+            child_text = child_split[1]
+            for match in re.finditer(r'^([A-ZÀ-Ú ]+?)\s+([\d/]{10})', child_text, re.MULTILINE):
+                name = match.group(1).strip()
+                bdate = match.group(2)
+                if name and name != 'C': # Ignore random single letter C from PDF formatting
+                    row.family_members.append({
+                        "relationship_type": "Filho",
+                        "full_name": to_title_case(clean_garbage(name)),
+                        "birth_date": parse_date(bdate)
+                    })
 
     row.warnings = warnings
     return row

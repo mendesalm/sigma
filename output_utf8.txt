@@ -1,0 +1,261 @@
+﻿--- RAW TEXT ---
+5 5
+7 7
+8 8
+2 2
+7 7
+2 2
+M M
+GRANDE ORIENTE DO BRASIL ù GOI┴S
+I I
+C C
+FICHA CADASTRAL DO IRM├O
+ALAN DIVINO MONTEIRO DA ROCHA
+6 6
+5. CIM 333786 | Mestre | Status: Ativo 5.
+5 5
+2 2
+0. Loja de Recolhimento: 2181 ù JO├O PEDRO JUNQUEIRA 0.
+3. 3.
+4 4
+1 Loja MÒe: 4027 ù MODERNA OLAVO BILAC 1
+P: P:
+4
+|
+I
+DADOS PESSOAIS 4
+|
+I
+1 1
+5: 5:
+1 1
+9: 9:
+0 0
+6 6
+0 2 Nome ALAN DIVINO MONTEIRO DA ROCHA 0 2
+2 2
+7/ 7/
+0 0
+2/ CIM 333786 2/
+2 2
+7
+5)
+|
+Email
+5
+alanmonteiro13@gmail.com 7
+5)
+| 5
+8 8
+2 7 2 7
+7 7
+2 CPF 694.***.***.***-04 2
+M: M:
+CI 8 CI8
+5
+( RG 34***51 ù SSP GO
+5
+(
+28 7 28 7
+7 2 Data Nascimento 13/09/1980 7 2
+2 2
+7M 7M
+CI Naturalidade GOI┬NIA - GO CI
+2 2
+Estado Civil UNI├O ESTAVEL
+ProfissÒo EMPRES┴RIO
+M M
+Escolaridade 2o. GRAU COMPLETO
+I I
+Pai L┴ZARO FABIANO DOS REIS
+C C
+MÒe OSVALDINA MONTEIRO DA ROCHA REIS
+CONTATO E ENDEREÃO
+Telefone (62) 3976-0925
+Celular (62) 98110-5899
+CEP 74080-370
+Rua RUA F QD 29 LT 6 N░ 10154 APTO 401
+Bairro CIDADE JARDIM
+Cidade GOI┬NIA - GO
+VIDA M5AÃÈNICA 5
+7 7
+8CIM 333786 8
+2Grau Mestre 2
+7 Status Ativo 7
+2 Data de Entrada 03/03/2022 2
+Placete IniciaþÒo 4864
+M M
+Loja de Recolhimento 2181 ù JO├O PEDRO JUNQUEIRA
+I Loja MÒe 4027 ù MODERNA OLAVO BILAC I
+C C
+IniciaþÒo (Grau 1)
+Data SessÒo 03/06/2022
+Data Entrada 10/11/2022
+Emitido em 22/07/2026, 09:15:14 ù IP: 143.0.255.6 ù CIM 272875 Pßgina 1 de 2
+5 5
+7 7
+8 8
+2 2
+7 7
+2 2
+M M
+I I
+Processo 091122.2741.4027
+C C
+Registro 157781
+Loja MODERNA OLAVO BILAC (N║ 4027)
+ElevaþÒo (Grau 2)
+6 6
+5
+5.
+Data SessÒo 26/11/2023 5
+5.
+2 2
+0. 0.
+4
+3.
+Data Entrada 12/12/2023 4
+3.
+1 1
+P: P:
+4
+|
+I Processo GSGO - 16034
+4
+|
+I
+1 1
+1
+5:
+Registro 161306 1
+5:
+9: 9:
+0 0
+6 Loja MODERNA OLAVO BILAC (N║ 4027) 6
+2 2
+0 0
+2 2
+0 7/ ExaltaþÒo (Grau 3) 0 7/
+2/ 2/
+5)
+|
+2 Data S
+5
+essÒo 26/09/2024
+5)
+|
+2
+5
+7 7
+2 8 7 Data Entrada 03/10/2024 2 8 7
+7 7
+2 2
+M: Processo GSGO - 17860 M:
+CI 8 CI8
+28 7 5
+(
+Registro 163974 28 7 5
+(
+2 2
+7 7
+7M
+2 Loja MODERNA OLAVO BILAC (N║ 4027)
+7M
+2
+CI CI
+FILIAÃıES
+2 2
+M Loja Data Entrada Processo ReMgistro Status
+JO├O PEDRO JUNQUEIRA (N║ 2181) 08/11/2024 GSGO - 18116 164462
+I I
+C DESLIGAMENTOS C
+Loja Data Processo Registro
+MODERNA OLAVO BILAC (N║ 4027) 16/12/2024 GSGO - 18458 164905
+T═TULOS E DIPLOMAS
+TÝtulo Loja Data Registro
+DIPLOMA DE APRENDIZ MODERNA OLAVO BILAC (N║ 4027) 07/02/2023 158302
+DIPLOMA DE COMPANHEIRO MODERNA OLAVO BILAC (N║ 4027) 26/11/2023 161318
+DIPLOM5A DE MESTRE MAÃOM GRANDE ORIENTE DO BRASIL (N║ 222222) 26/09/2024 164508 5
+FAM═LIA
+7 7
+8 8
+C¶njuge ANA LUIZA APARECIDA BERNARDES
+2 2
+Nascimento 11/09/1989
+7 7
+Telefone ù
+2 2
+ProfissÒo ù
+M Data Casamento 05/04/2019 M
+I I
+Filho(a) Nascimento Status
+C C
+ANA MONTEIRO MENDES 13/08/2007 ù
+MARIA CLARA MONTEIRO DA FONSECA 24/09/2012 ù
+Emitido em 22/07/2026, 09:15:14 ù IP: 143.0.255.6 ù CIM 272875 Pßgina 2 de 2
+
+--- EXTRACTED DATA ---
+{
+  "cim": "333786",
+  "name": "Alan Divino Monteiro da Rocha",
+  "email": null,
+  "cpf": null,
+  "rg": null,
+  "degree": "3",
+  "marital_status": "UNI├O ESTAVEL",
+  "father_name": "Lßzaro Fabiano dos Reis",
+  "mother_name": "Osvaldina Monteiro da Rocha Reis",
+  "blood_type": null,
+  "mother_lodge": "Loja Moderna Olavo Bilac, n║ 4027",
+  "collecting_lodge": "Loja JoÒo Pedro Junqueira, n║ 2181",
+  "initiation_certificate": "4864",
+  "birth_date": "1980-09-13",
+  "place_of_birth": "GoiÔnia - Go Ci",
+  "education_level": "2o. Grau Completo",
+  "occupation": "Empresßrio",
+  "phone": "(62) 98110-5899",
+  "zip_code": "74080-370",
+  "street_address": "RUA F QD 29 LT 6 N░ 10154 APTO 401",
+  "neighborhood": "Cidade Jardim",
+  "city": "GoiÔnia - Go",
+  "masonic_history": [
+    {
+      "event_type": "INITIATION",
+      "session_date": "2022-06-03",
+      "entry_date": "2022-11-10",
+      "process_number": null,
+      "registry_number": null,
+      "raw_lodge_name": null,
+      "placet_number": "4864"
+    },
+    {
+      "event_type": "ELEVATION",
+      "session_date": "2023-11-26",
+      "entry_date": "2023-12-12",
+      "process_number": "GSGO - 16034",
+      "registry_number": null,
+      "raw_lodge_name": null
+    },
+    {
+      "event_type": "EXALTATION",
+      "session_date": "2024-09-26",
+      "entry_date": "2024-10-03",
+      "process_number": "GSGO - 17860",
+      "registry_number": "163974",
+      "raw_lodge_name": "Moderna Olavo Bilac (N║ 4027)"
+    }
+  ],
+  "family_members": [],
+  "decorations": [
+    {
+      "title": "Loja Data Registro",
+      "remarks": "Registro: DIPLOMA DE APRENDIZ MODERNA OLAVO BILAC (N║ 4027) 07/02/2023 158302"
+    }
+  ],
+  "is_valid": false,
+  "errors": [],
+  "warnings": [
+    "CPF continha mßscara (***) e nÒo foi importado.",
+    "RG continha mßscara (***) e nÒo foi importado."
+  ]
+}
