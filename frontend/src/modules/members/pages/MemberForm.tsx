@@ -576,6 +576,7 @@ const MemberForm: React.FC = () => {
       role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
       lodge_id: Number(sanitizedFormState.lodge_id),
       family_members: formattedFamilyMembers,
+      decorations: decorations.length > 0 ? decorations : undefined,
       masonic_history: masonic_history.length > 0 ? masonic_history : undefined
     };
 
@@ -659,7 +660,7 @@ const MemberForm: React.FC = () => {
   };
 
   const applyExtractedData = () => {
-    setFormState(prev => {
+    setFormState((prev: any) => {
       const updated = { ...prev };
       Object.keys(selectedDiffFields).forEach(key => {
         if (selectedDiffFields[key] && extractedData[key] !== null && extractedData[key] !== undefined) {
@@ -667,6 +668,35 @@ const MemberForm: React.FC = () => {
             updated[key] = parseInt(extractedData[key]);
           } else if (key === 'name') {
             updated['full_name'] = extractedData[key];
+          } else if (key === 'masonic_history') {
+            // Mapeia de volta o array para os sub-objetos do formulário
+            extractedData.masonic_history.forEach((ev: any) => {
+              const eventMap: any = {
+                'INITIATION': 'initiation_data',
+                'ELEVATION': 'elevation_data',
+                'EXALTATION': 'exaltation_data',
+                'INSTALLATION': 'installation_data',
+                'AFFILIATION': 'affiliation_data',
+                'REGULARIZATION': 'regularization_data',
+                'DISMISSAL': 'dismissal_data'
+              };
+              const target = eventMap[ev.event_type];
+              if (target) {
+                updated[target] = {
+                  data_sessao: ev.session_date || '',
+                  data_entrada: ev.entry_date || '',
+                  processo: ev.process_number || '',
+                  registro: ev.registry_number || '',
+                  loja: ev.raw_lodge_name || '',
+                  placet: ev.placet_number || '',
+                  quit_placet: ev.quit_placet_number || ''
+                };
+              }
+            });
+          } else if (key === 'family_members') {
+            setFamilyMembers(extractedData.family_members);
+          } else if (key === 'decorations') {
+            setDecorations(extractedData.decorations);
           } else {
             updated[key] = extractedData[key];
           }
