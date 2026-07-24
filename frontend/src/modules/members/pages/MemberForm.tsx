@@ -52,6 +52,13 @@ interface FamilyMemberLocal {
   is_deceased: boolean;
 }
 
+interface DecorationLocal {
+  id?: number;
+  title: string;
+  award_date: string;
+  remarks: string;
+}
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -145,6 +152,7 @@ const MemberForm: React.FC = () => {
   });
 
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberLocal[]>([]);
+  const [decorations, setDecorations] = useState<DecorationLocal[]>([]);
   const [roleHistory, setRoleHistory] = useState<RoleHistoryResponse[]>([]);
   const [lodgeAssociations, setLodgeAssociations] = useState<MemberLodgeAssociationResponse[]>([]);
   const [newLodgeAssoc, setNewLodgeAssoc] = useState({ lodge_id: '', start_date: '', end_date: '', status: MemberStatusEnum.ACTIVE, member_class: MemberClassEnum.REGULAR });
@@ -247,6 +255,15 @@ const MemberForm: React.FC = () => {
               phone: formatPhone(fm.phone || ''),
               email: fm.email || '',
               is_deceased: fm.is_deceased
+            })));
+          }
+
+          if (memberData.decorations) {
+            setDecorations(memberData.decorations.map(d => ({
+              id: d.id,
+              title: d.title,
+              award_date: d.award_date || '',
+              remarks: d.remarks || ''
             })));
           }
 
@@ -389,6 +406,20 @@ const MemberForm: React.FC = () => {
     const updatedMembers = [...familyMembers];
     updatedMembers.splice(index, 1);
     setFamilyMembers(updatedMembers);
+  };
+
+  const handleDecorationChange = (index: number, field: keyof DecorationLocal, value: any) => {
+    const updated = [...decorations];
+    updated[index] = { ...updated[index], [field]: value };
+    setDecorations(updated);
+  };
+  const addDecoration = () => {
+    setDecorations([...decorations, { title: '', award_date: '', remarks: '' }]);
+  };
+  const removeDecoration = (index: number) => {
+    const updated = [...decorations];
+    updated.splice(index, 1);
+    setDecorations(updated);
   };
 
   const handleAddRole = async () => {
@@ -1134,6 +1165,33 @@ const MemberForm: React.FC = () => {
           </CardContent>
         </Card>
       </TabPanel>
+      {/* DECORATIONS */}
+      <Card sx={{ bgcolor: alpha(theme.palette.background.paper, 0.4), backdropFilter: 'blur(10px)', border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2, mb: 3 }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+            <SectionTitle title="Títulos e Diplomas" icon={WorkspacePremiumIcon} theme={theme} />
+            <Button variant="outlined" startIcon={<AddIcon />} onClick={addDecoration} sx={{ color: theme.palette.primary.main, borderColor: theme.palette.primary.main }}>Adicionar</Button>
+          </Box>
+          <Grid container spacing={2}>
+            {decorations.map((dec, index) => (
+              <Grid key={index} size={{ xs: 12, xl: 6 }}>
+                <Paper sx={{ p: 2, bgcolor: theme.palette.background.default, border: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main }}>Título #{index + 1}</Typography>
+                    <IconButton size="small" color="error" onClick={() => removeDecoration(index)}><DeleteIcon fontSize="small" /></IconButton>
+                  </Box>
+                  <Grid container spacing={1}>
+                    <Grid size={{ xs: 12, sm: 8 }}><TextField label="Título" size="small" value={dec.title} onChange={(e) => handleDecorationChange(index, 'title', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}><TextField label="Data" type="date" size="small" value={dec.award_date} onChange={(e) => handleDecorationChange(index, 'award_date', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid size={{ xs: 12 }}><TextField label="Observações (Loja, Registro)" size="small" value={dec.remarks} onChange={(e) => handleDecorationChange(index, 'remarks', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </CardContent>
+      </Card>
+
       {/* FAMILY */}
       <TabPanel value={tabValue} index={3}>
         <Card sx={{ bgcolor: theme.palette.background.paper, border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2 }}>

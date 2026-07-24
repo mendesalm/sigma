@@ -456,6 +456,7 @@ class MemberResponse(MemberBase):
     role_history: list[RoleHistoryResponse] = []
     lodge_associations: list[MemberLodgeAssociationResponse] = []
     obedience_associations: list[MemberObedienceAssociationResponse] = []
+    decorations: list[DecorationResponse] = []
 
     model_config = {
         "from_attributes": True,
