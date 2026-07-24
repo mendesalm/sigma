@@ -64,6 +64,10 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     if "FICHA CADASTRAL" not in text and "GRANDE ORIENTE" not in text:
         return None
         
+    # Remove watermarks/single characters separated by spaces (e.g. "M M", "C C")
+    import re
+    text = re.sub(r'^(?:\d\s+)+\d\s*$|^(?:[A-ZÀ-Ÿ]\s+)+[A-ZÀ-Ÿ]\s*$', '', text, flags=re.MULTILINE)
+
     row = ImportMemberRow()
     warnings = []
     
@@ -151,7 +155,7 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
         
     # MASONIC HISTORY BLOCKS
     def extract_masonic_block(regex_name: str) -> Optional[Dict[str, Any]]:
-        pattern = rf'{regex_name}.*?(?=\n\s*\n|\n[A-ZÀ-Ú ]+\s*\(Grau|\nFILIA.ES|\nDESLIGAMENTOS|\n[A-ZÀ-Ú ]+$|\Z)'
+        pattern = rf'{regex_name}.*?(?=\n[A-ZÀ-Ÿa-z ]+\s*\(Grau|\nFILIA.ES|\nDESLIGAMENTOS|\nOCORR.NCIAS|\nT.TULOS E CONDECORA.ES|\n\s*Página|\Z)'
         block_match = re.search(pattern, text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
         if not block_match: return None
         block_text = block_match.group(0)
