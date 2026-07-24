@@ -31,18 +31,47 @@ class MemberClassEnum(enum.StrEnum):
 
 # --- Schemas ---
 
-class MasonicHistoricalData(BaseModel):
-    data_sessao: date | str | None = None
-    data_entrada: date | str | None = None
-    processo: str | None = None
-    registro: str | None = None
-    loja: str | None = None
+class EventTypeEnum(enum.StrEnum):
+    INITIATION = "INITIATION"
+    ELEVATION = "ELEVATION"
+    EXALTATION = "EXALTATION"
+    INSTALLATION = "INSTALLATION"
+    AFFILIATION = "AFFILIATION"
+    REGULARIZATION = "REGULARIZATION"
+    DISMISSAL = "DISMISSAL"
 
-class InitiationHistoricalData(MasonicHistoricalData):
-    placet: str | None = None
+class MasonicEventBase(BaseModel):
+    event_type: EventTypeEnum | str
+    session_date: date | None = None
+    entry_date: date | None = None
+    process_number: str | None = None
+    registry_number: str | None = None
+    placet_number: str | None = None
+    quit_placet_number: str | None = None
+    raw_lodge_name: str | None = None
+    lodge_id: int | None = None
 
-class DismissalHistoricalData(MasonicHistoricalData):
-    quit_placet: str | None = None
+class MasonicEventCreate(MasonicEventBase):
+    pass
+
+class MasonicEventUpdate(BaseModel):
+    event_type: EventTypeEnum | str | None = None
+    session_date: date | None = None
+    entry_date: date | None = None
+    process_number: str | None = None
+    registry_number: str | None = None
+    placet_number: str | None = None
+    quit_placet_number: str | None = None
+    raw_lodge_name: str | None = None
+    lodge_id: int | None = None
+
+class MasonicEventResponse(MasonicEventBase):
+    id: int
+    member_id: int
+    created_at: datetime
+    updated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class MemberLodgeSimple(BaseModel):
     id: int

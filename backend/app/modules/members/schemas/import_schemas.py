@@ -15,7 +15,21 @@ class ImportMemberRow(BaseModel):
     mother_lodge: Optional[str] = None
     collecting_lodge: Optional[str] = None
     initiation_certificate: Optional[str] = None
+    
+    # New Fields
+    birth_date: Optional[str] = None
+    place_of_birth: Optional[str] = None
+    education_level: Optional[str] = None
+    occupation: Optional[str] = None
+    phone: Optional[str] = None
+    zip_code: Optional[str] = None
+    street_address: Optional[str] = None
+    neighborhood: Optional[str] = None
+    city: Optional[str] = None
+    
     masonic_history: List[dict] = []
+    family_members: List[dict] = []
+    decorations: List[dict] = []
     
     is_valid: bool = False
     errors: List[str] = []

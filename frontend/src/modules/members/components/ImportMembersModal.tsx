@@ -12,9 +12,31 @@ interface ImportMemberRow {
   cim?: string;
   name?: string;
   email?: string;
+  cpf?: string;
+  rg?: string;
   degree?: string;
+  marital_status?: string;
+  father_name?: string;
+  mother_name?: string;
+  blood_type?: string;
+  mother_lodge?: string;
+  collecting_lodge?: string;
+  initiation_certificate?: string;
+  birth_date?: string;
+  place_of_birth?: string;
+  education_level?: string;
+  occupation?: string;
+  phone?: string;
+  zip_code?: string;
+  street_address?: string;
+  neighborhood?: string;
+  city?: string;
+  masonic_history?: any[];
+  family_members?: any[];
+  decorations?: any[];
   is_valid: boolean;
   errors: string[];
+  warnings?: string[];
 }
 
 interface ImportPreviewResponse {

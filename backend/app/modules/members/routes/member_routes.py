@@ -853,7 +853,7 @@ def confirm_import(
     lodge_id = context.lodge_id
 
     saved_count = 0
-    from app.modules.members.models import RegistrationStatusEnum, MasonicEvent, MemberLodgeAssociation, Member
+    from app.modules.members.models import RegistrationStatusEnum, MasonicEvent, MemberLodgeAssociation, Member, FamilyMember, Decoration
     from app.modules.access_control.utils.password_utils import hash_password
     import secrets
 
@@ -875,6 +875,15 @@ def confirm_import(
                 if row.father_name: existing.father_name = row.father_name
                 if row.mother_name: existing.mother_name = row.mother_name
                 if row.blood_type: existing.blood_type = row.blood_type
+                if getattr(row, "birth_date", None): existing.birth_date = row.birth_date
+                if getattr(row, "place_of_birth", None): existing.place_of_birth = row.place_of_birth
+                if getattr(row, "education_level", None): existing.education_level = row.education_level
+                if getattr(row, "occupation", None): existing.occupation = row.occupation
+                if getattr(row, "phone", None): existing.phone = row.phone
+                if getattr(row, "zip_code", None): existing.zip_code = row.zip_code
+                if getattr(row, "street_address", None): existing.street_address = row.street_address
+                if getattr(row, "neighborhood", None): existing.neighborhood = row.neighborhood
+                if getattr(row, "city", None): existing.city = row.city
                 
                 db.flush()
                 # Recreate masonic history
@@ -906,6 +915,34 @@ def confirm_import(
                             lodge_id=lodge_id,
                         )
                         db.add(new_assoc)
+                        
+                m_id = existing.id
+                
+                # Save Family Members
+                if hasattr(row, 'family_members') and row.family_members:
+                    db.query(FamilyMember).filter(FamilyMember.member_id == m_id).delete()
+                    for fm in row.family_members:
+                        db_fm = FamilyMember(
+                            member_id=m_id,
+                            relationship_type=fm.get("relationship_type"),
+                            full_name=fm.get("full_name"),
+                            birth_date=fm.get("birth_date"),
+                            phone=fm.get("phone")
+                        )
+                        db.add(db_fm)
+
+                # Save Decorations
+                if hasattr(row, 'decorations') and row.decorations:
+                    db.query(Decoration).filter(Decoration.member_id == m_id).delete()
+                    for dec in row.decorations:
+                        db_dec = Decoration(
+                            member_id=m_id,
+                            title=dec.get("title"),
+                            award_date=dec.get("award_date"),
+                            remarks=dec.get("remarks")
+                        )
+                        db.add(db_dec)
+                        
                 db.commit()
                 saved_count += 1
             else:
@@ -921,6 +958,15 @@ def confirm_import(
                     father_name=row.father_name,
                     mother_name=row.mother_name,
                     blood_type=row.blood_type,
+                    birth_date=getattr(row, "birth_date", None),
+                    place_of_birth=getattr(row, "place_of_birth", None),
+                    education_level=getattr(row, "education_level", None),
+                    occupation=getattr(row, "occupation", None),
+                    phone=getattr(row, "phone", None),
+                    zip_code=getattr(row, "zip_code", None),
+                    street_address=getattr(row, "street_address", None),
+                    neighborhood=getattr(row, "neighborhood", None),
+                    city=getattr(row, "city", None),
                     password_hash=hash_password(secrets.token_urlsafe(16)),
                     registration_status=RegistrationStatusEnum.PENDING
                 )
@@ -947,6 +993,31 @@ def confirm_import(
                         lodge_id=lodge_id,
                     )
                     db.add(new_assoc)
+
+                m_id = new_member.id
+                
+                # Save Family Members
+                if hasattr(row, 'family_members') and row.family_members:
+                    for fm in row.family_members:
+                        db_fm = FamilyMember(
+                            member_id=m_id,
+                            relationship_type=fm.get("relationship_type"),
+                            full_name=fm.get("full_name"),
+                            birth_date=fm.get("birth_date"),
+                            phone=fm.get("phone")
+                        )
+                        db.add(db_fm)
+
+                # Save Decorations
+                if hasattr(row, 'decorations') and row.decorations:
+                    for dec in row.decorations:
+                        db_dec = Decoration(
+                            member_id=m_id,
+                            title=dec.get("title"),
+                            award_date=dec.get("award_date"),
+                            remarks=dec.get("remarks")
+                        )
+                        db.add(db_dec)
 
                 db.commit()
                 db.refresh(new_member)

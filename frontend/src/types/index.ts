@@ -128,6 +128,20 @@ export interface MemberLodgeAssociationResponse {
   lodge?: MemberLodgeSimple;
 }
 
+export interface MasonicEventResponse {
+  id?: number;
+  member_id?: number;
+  event_type: 'INITIATION' | 'ELEVATION' | 'EXALTATION' | 'INSTALLATION' | 'AFFILIATION' | 'REGULARIZATION' | 'DISMISSAL';
+  session_date?: string;
+  entry_date?: string;
+  process_number?: string;
+  registry_number?: string;
+  placet_number?: string;
+  quit_placet_number?: string;
+  raw_lodge_name?: string;
+  lodge_id?: number;
+}
+
 export interface MemberResponse {
   id: number;
   full_name: string;
@@ -171,6 +185,7 @@ export interface MemberResponse {
   active_role?: string;
   
   // Full response relationships (optional for list view)
+  masonic_history?: MasonicEventResponse[];
   family_members?: FamilyMemberResponse[];
   decorations?: DecorationResponse[];
   role_history?: RoleHistoryResponse[];

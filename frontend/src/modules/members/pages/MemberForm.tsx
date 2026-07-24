@@ -205,8 +205,30 @@ const MemberForm: React.FC = () => {
           const association = memberData.lodge_associations?.find(a => a.lodge_id === targetLodgeId);
           const activeRole = memberData.role_history?.find(h => !h.end_date && h.lodge_id === targetLodgeId);
 
+          // Map masonic_history back to local form states
+          const mapEvent = (type: string) => {
+            const ev = memberData.masonic_history?.find(e => e.event_type === type);
+            if (!ev) return { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' };
+            return {
+              data_sessao: ev.session_date || '',
+              data_entrada: ev.entry_date || '',
+              processo: ev.process_number || '',
+              registro: ev.registry_number || '',
+              loja: ev.raw_lodge_name || '',
+              ...(type === 'INITIATION' ? { placet: ev.placet_number || '' } : {}),
+              ...(type === 'DISMISSAL' ? { quit_placet: ev.quit_placet_number || '' } : {})
+            };
+          };
+
           setFormState({
             ...memberData,
+            initiation_data: mapEvent('INITIATION'),
+            elevation_data: mapEvent('ELEVATION'),
+            exaltation_data: mapEvent('EXALTATION'),
+            installation_data: mapEvent('INSTALLATION'),
+            affiliation_data: mapEvent('AFFILIATION'), // Just grabs the first one for now
+            regularization_data: mapEvent('REGULARIZATION'),
+            dismissal_data: mapEvent('DISMISSAL'),
             lodge_id: targetLodgeId || '',
             role_id: activeRole?.role_id || '',
             status: association?.status || MemberStatusEnum.ACTIVE,
@@ -468,11 +490,46 @@ const MemberForm: React.FC = () => {
       return acc;
     }, {} as any);
 
+    // Map local history state back to masonic_history payload
+    const unmapEvent = (data: any, type: string) => {
+      if (!data || (!data.data_sessao && !data.data_entrada && !data.processo && !data.registro && !data.loja)) return null;
+      return {
+        event_type: type,
+        session_date: data.data_sessao || null,
+        entry_date: data.data_entrada || null,
+        process_number: data.processo || null,
+        registry_number: data.registro || null,
+        raw_lodge_name: data.loja || null,
+        ...(type === 'INITIATION' ? { placet_number: data.placet || null } : {}),
+        ...(type === 'DISMISSAL' ? { quit_placet_number: data.quit_placet || null } : {})
+      };
+    };
+
+    const masonic_history = [
+      unmapEvent(sanitizedFormState.initiation_data, 'INITIATION'),
+      unmapEvent(sanitizedFormState.elevation_data, 'ELEVATION'),
+      unmapEvent(sanitizedFormState.exaltation_data, 'EXALTATION'),
+      unmapEvent(sanitizedFormState.installation_data, 'INSTALLATION'),
+      unmapEvent(sanitizedFormState.affiliation_data, 'AFFILIATION'),
+      unmapEvent(sanitizedFormState.regularization_data, 'REGULARIZATION'),
+      unmapEvent(sanitizedFormState.dismissal_data, 'DISMISSAL')
+    ].filter(Boolean);
+
+    // Remove legacy properties
+    delete sanitizedFormState.initiation_data;
+    delete sanitizedFormState.elevation_data;
+    delete sanitizedFormState.exaltation_data;
+    delete sanitizedFormState.installation_data;
+    delete sanitizedFormState.affiliation_data;
+    delete sanitizedFormState.regularization_data;
+    delete sanitizedFormState.dismissal_data;
+
     const memberData = {
       ...sanitizedFormState,
       role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
       lodge_id: Number(sanitizedFormState.lodge_id),
-      family_members: familyMembers
+      family_members: familyMembers,
+      masonic_history: masonic_history.length > 0 ? masonic_history : undefined
     };
 
     try {
