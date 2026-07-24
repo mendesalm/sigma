@@ -17,3 +17,8 @@ Concluímos a integração completa do novo fluxo de importação das fichas GOB
 2. **Dados Legados**: Verificar se a importação em massa pelo modal se comporta bem ao vivo.
 
 Tudo testado e documentado!
+
+## Atualização Extra (Família e Telefones)
+- O parser foi ajustado para extrair corretamente os dados familiares em formato de tabela, distinguindo Cônjuge (Data de Casamento, Profissão, Telefone) de Filhos.
+- Incluída formatação internacional E.164 (+55) no backend e UI para persistência de números de telefone.
+- Ajustado o carregamento e salvamento no MemberForm.tsx para apresentar a máscara local (XX) XXXXX-XXXX no frontend e re-injetar o +55 invisivelmente no submit.

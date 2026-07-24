@@ -34,7 +34,13 @@ def to_title_case(text: str) -> str:
 
 def clean_garbage(val: str) -> str:
     if not val: return val
-    return re.sub(r'[^a-zA-Z0-9À-Úà-ú\s/\-.,ºª()]', '', val).strip()
+    val = re.sub(r'[^a-zA-Z0-9À-Úà-ú\s/\-.,ºª()]', '', val).strip()
+    prev = ""
+    while val != prev:
+        prev = val
+        val = re.sub(r'\s+(?:\d\.?|[A-Z]:|\d{1,2}(?:\s+\d{1,2})+)$', '', val)
+        val = re.sub(r'^\d+\s+', '', val) # Strip leading digits like '0 2 '
+    return val.strip()
 
 def format_international_phone(phone_str: str) -> Optional[str]:
     if not phone_str or phone_str == 'ù': return None
