@@ -74,7 +74,7 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     name_match = re.search(r'Nome\s+(.*?)(?:\n|$)', text, re.IGNORECASE)
     if name_match: row.name = to_title_case(clean_garbage(name_match.group(1)))
         
-    email_match = re.search(r'Email\s+([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', text, re.IGNORECASE)
+    email_match = re.search(r'Email[\s\S]{0,30}?([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)', text, re.IGNORECASE)
     if email_match: row.email = email_match.group(1).strip()
         
     cpf_match = re.search(r'CPF\s+([\d\.\-\*]+)', text)
@@ -214,17 +214,26 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     dip_match = re.search(r'T.TULOS E DIPLOMAS\n(.*?)(?=\n[A-ZÀ-Ú ]+$|\Z)', text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
     if dip_match:
         block = dip_match.group(1).strip()
-        chunks = re.split(r'\n(?=T.tulo)', block, flags=re.IGNORECASE)
-        for chunk in chunks:
-            if not chunk.strip(): continue
-            dec = {}
-            ti = re.search(r'^T.tulo\s+(.*?)(?:\n|$)', chunk, re.IGNORECASE)
-            if ti: dec["title"] = clean_garbage(ti.group(1))
-            dt = re.search(r'Data\s+([\d/]{10})', chunk, re.IGNORECASE)
-            if dt: dec["award_date"] = parse_date(dt.group(1))
-            rm = re.search(r'Registro\s+(.*?)(?:\n|$)', chunk, re.IGNORECASE)
-            if rm: dec["remarks"] = f"Registro: {clean_garbage(rm.group(1))}"
-            if dec.get("title"): row.decorations.append(dec)
+        lines = [ln.strip() for ln in block.split('\n') if ln.strip()]
+        for line in lines:
+            if re.match(r'^(?:T.tulo|Loja|Data|Registro|Nenhuma(?:\s+informa..o.*)?)$', line, re.IGNORECASE):
+                continue
+            if re.match(r'^(?:Loja\s+Data\s+Registro)$', line, re.IGNORECASE):
+                continue
+            
+            date_match = re.search(r'(\d{2}/\d{2}/\d{4})', line)
+            if date_match:
+                date_str = date_match.group(1)
+                parts = line.split(date_str)
+                title_and_lodge = parts[0].strip()
+                registry = parts[1].strip() if len(parts) > 1 else ""
+                
+                dec = {}
+                dec["title"] = clean_garbage(title_and_lodge)
+                dec["award_date"] = parse_date(date_str)
+                if registry:
+                    dec["remarks"] = f"Registro: {clean_garbage(registry)}"
+                row.decorations.append(dec)
 
     # FAMILY MEMBERS
     fam_match = re.search(r'FAM.LIA\n(.*?)(?=\nEmitido em|\Z)', text, re.DOTALL | re.IGNORECASE)

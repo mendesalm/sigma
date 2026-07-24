@@ -1,0 +1,92 @@
+{
+  "cim": "333786",
+  "name": "Alan Divino Monteiro da Rocha",
+  "email": "alanmonteiro13@gmail.com",
+  "cpf": null,
+  "rg": null,
+  "degree": "3",
+  "marital_status": "UNI├O ESTAVEL",
+  "father_name": "Lßzaro Fabiano dos Reis",
+  "mother_name": "Osvaldina Monteiro da Rocha Reis",
+  "blood_type": null,
+  "mother_lodge": "Moderna Olavo Bilac",
+  "collecting_lodge": "JoÒo Pedro Junqueira",
+  "initiation_certificate": "4864",
+  "birth_date": "1980-09-13",
+  "place_of_birth": "GoiÔnia - Go Ci",
+  "education_level": "2o. Grau Completo",
+  "occupation": "Empresßrio",
+  "phone": "+5562981105899",
+  "zip_code": "74080-370",
+  "street_address": "RUA F QD 29 LT 6 N 10154 APTO 401",
+  "neighborhood": "Cidade Jardim",
+  "city": "GoiÔnia - Go",
+  "masonic_history": [
+    {
+      "event_type": "INITIATION",
+      "session_date": "2022-06-03",
+      "entry_date": "2022-11-10",
+      "process_number": null,
+      "registry_number": null,
+      "raw_lodge_name": null,
+      "placet_number": "4864"
+    },
+    {
+      "event_type": "ELEVATION",
+      "session_date": "2023-11-26",
+      "entry_date": "2023-12-12",
+      "process_number": "GSGO - 16034",
+      "registry_number": null,
+      "raw_lodge_name": null
+    },
+    {
+      "event_type": "EXALTATION",
+      "session_date": "2024-09-26",
+      "entry_date": "2024-10-03",
+      "process_number": "GSGO - 17860 M",
+      "registry_number": "163974",
+      "raw_lodge_name": "Moderna Olavo Bilac (N║ 4027)"
+    }
+  ],
+  "family_members": [
+    {
+      "relationship_type": "Esposa",
+      "full_name": "Ana Luiza Aparecida Bernardes",
+      "birth_date": "1989-09-11",
+      "phone": "ù"
+    },
+    {
+      "relationship_type": "Filho",
+      "full_name": "Ana Monteiro Mendes",
+      "birth_date": "2007-08-13"
+    },
+    {
+      "relationship_type": "Filho",
+      "full_name": "Maria Clara Monteiro da Fonseca",
+      "birth_date": "2012-09-24"
+    }
+  ],
+  "decorations": [
+    {
+      "title": "DIPLOMA DE APRENDIZ MODERNA OLAVO BILAC (N║ 4027)",
+      "award_date": "2023-02-07",
+      "remarks": "Registro: 158302"
+    },
+    {
+      "title": "DIPLOMA DE COMPANHEIRO MODERNA OLAVO BILAC (N║ 4027)",
+      "award_date": "2023-11-26",
+      "remarks": "Registro: 161318"
+    },
+    {
+      "title": "DIPLOM5A DE MESTRE MAÃOM GRANDE ORIENTE DO BRASIL (N║ 222222)",
+      "award_date": "2024-09-26",
+      "remarks": "Registro: 164508"
+    }
+  ],
+  "is_valid": true,
+  "errors": [],
+  "warnings": [
+    "CPF continha mßscara (***) e nÒo foi importado.",
+    "RG continha mßscara (***) e nÒo foi importado."
+  ]
+}
