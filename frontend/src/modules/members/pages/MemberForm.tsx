@@ -219,6 +219,7 @@ const MemberForm: React.FC = () => {
             const ev = memberData.masonic_history?.find(e => e.event_type === type);
             if (!ev) return { data_sessao: '', data_entrada: '', processo: '', registro: '', loja: '' };
             return {
+              id: ev.id,
               data_sessao: ev.session_date || '',
               data_entrada: ev.entry_date || '',
               processo: ev.process_number || '',
@@ -527,6 +528,7 @@ const MemberForm: React.FC = () => {
     const unmapEvent = (data: any, type: string) => {
       if (!data || (!data.data_sessao && !data.data_entrada && !data.processo && !data.registro && !data.loja)) return null;
       return {
+        id: data.id || undefined,
         event_type: type,
         session_date: data.data_sessao || null,
         entry_date: data.data_entrada || null,

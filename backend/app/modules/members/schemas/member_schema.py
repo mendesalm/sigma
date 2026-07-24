@@ -52,7 +52,7 @@ class MasonicEventBase(BaseModel):
     lodge_id: int | None = None
 
 class MasonicEventCreate(MasonicEventBase):
-    pass
+    id: int | None = None
 
 class MasonicEventUpdate(BaseModel):
     event_type: EventTypeEnum | str | None = None

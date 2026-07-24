@@ -22,7 +22,7 @@ class FamilyMemberBase(BaseModel):
 
 # Schema for creating a new family member (requires member ID)
 class FamilyMemberCreate(FamilyMemberBase):
-    pass
+    id: int | None = None
 
 
 # Schema for update (all fields are optional)

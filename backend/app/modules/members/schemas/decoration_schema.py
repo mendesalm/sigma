@@ -12,7 +12,7 @@ class DecorationBase(BaseModel):
 
 # Schema for creation (requires member ID)
 class DecorationCreate(DecorationBase):
-    pass
+    id: int | None = None
 
 
 # Schema for update (all fields are optional)
