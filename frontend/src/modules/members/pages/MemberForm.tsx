@@ -27,6 +27,7 @@ import {
   CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 
+import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import api from '@/shared/services/api';
 import { MemberResponse, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum, MemberLodgeAssociationResponse } from '@/types';
 import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
