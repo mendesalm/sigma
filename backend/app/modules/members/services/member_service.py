@@ -162,8 +162,29 @@ def associate_member_to_lodge(
             else:
                 update_data.pop("password")
 
+        family_members_data = update_data.pop('family_members', None)
+        masonic_history_data = update_data.pop('masonic_history', None)
+        decorations_data = update_data.pop('decorations', None)
+
         for key, value in update_data.items():
             setattr(db_member, key, value)
+
+        if family_members_data is not None:
+            db.query(models.FamilyMember).filter(models.FamilyMember.member_id == db_member.id).delete()
+            for fm in family_members_data:
+                db.add(models.FamilyMember(**fm, member_id=db_member.id))
+
+        if masonic_history_data is not None:
+            db.query(models.MasonicEvent).filter(models.MasonicEvent.member_id == db_member.id).delete()
+            for mh in masonic_history_data:
+                mh_dict = mh.copy()
+                mh_dict.pop('diploma', None)
+                db.add(models.MasonicEvent(**mh_dict, member_id=db_member.id))
+                
+        if decorations_data is not None:
+            db.query(models.Decoration).filter(models.Decoration.member_id == db_member.id).delete()
+            for dec in decorations_data:
+                db.add(models.Decoration(**dec, member_id=db_member.id))
 
     if association_data.role_id:
         active_role = (
@@ -212,8 +233,29 @@ def update_member_in_lodge(
     if "password" in update_data:
         db_member.password_hash = hash_password(update_data.pop("password"))
 
+    family_members_data = update_data.pop('family_members', None)
+    masonic_history_data = update_data.pop('masonic_history', None)
+    decorations_data = update_data.pop('decorations', None)
+
     for key, value in update_data.items():
         setattr(db_member, key, value)
+
+    if family_members_data is not None:
+        db.query(models.FamilyMember).filter(models.FamilyMember.member_id == db_member.id).delete()
+        for fm in family_members_data:
+            db.add(models.FamilyMember(**fm, member_id=db_member.id))
+
+    if masonic_history_data is not None:
+        db.query(models.MasonicEvent).filter(models.MasonicEvent.member_id == db_member.id).delete()
+        for mh in masonic_history_data:
+            mh_dict = mh.copy()
+            mh_dict.pop('diploma', None)
+            db.add(models.MasonicEvent(**mh_dict, member_id=db_member.id))
+            
+    if decorations_data is not None:
+        db.query(models.Decoration).filter(models.Decoration.member_id == db_member.id).delete()
+        for dec in decorations_data:
+            db.add(models.Decoration(**dec, member_id=db_member.id))
 
     db.commit()
     db.refresh(db_member)

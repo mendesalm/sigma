@@ -1339,6 +1339,8 @@ const MemberForm: React.FC = () => {
                   
                   const formatObj = (val: any) => {
                     if (!val) return '-';
+                    if (Array.isArray(val)) return val.map((item, i) => [] ).join('
+');
                     if (typeof val !== 'object') return String(val);
                     return Object.entries(val)
                       .filter(([_, v]) => v !== null && v !== undefined && v !== '')

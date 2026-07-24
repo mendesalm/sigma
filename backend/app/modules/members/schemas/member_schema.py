@@ -395,6 +395,8 @@ class MemberUpdate(BaseModel):
     collecting_lodge_id: int | None = None
 
     masonic_history: list[MasonicEventCreate] | None = None
+    family_members: list[FamilyMemberCreate] | None = None
+    decorations: list[DecorationCreate] | None = None
     
     registration_status: RegistrationStatusEnum | None = None
     password: str | None = Field(None, min_length=8)
