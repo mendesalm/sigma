@@ -169,7 +169,7 @@ def associate_member_to_lodge(
         for key, value in update_data.items():
             setattr(db_member, key, value)
 
-if family_members_data is not None:
+        if family_members_data is not None:
             existing_fms = {fm.id: fm for fm in db_member.family_members}
             incoming_fms = []
             for fm in family_members_data:
