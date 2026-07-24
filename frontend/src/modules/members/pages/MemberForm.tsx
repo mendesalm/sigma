@@ -567,7 +567,15 @@ const MemberForm: React.FC = () => {
 
     const formattedFamilyMembers = familyMembers.map(fm => ({
       ...fm,
-      phone: toE164(fm.phone)
+      birth_date: fm.birth_date || undefined,
+      email: fm.email || undefined,
+      phone: toE164(fm.phone) || undefined
+    }));
+
+    const formattedDecorations = decorations.map(d => ({
+      ...d,
+      award_date: d.award_date || undefined,
+      remarks: d.remarks || undefined
     }));
 
     const memberData = {
@@ -576,7 +584,7 @@ const MemberForm: React.FC = () => {
       role_id: sanitizedFormState.role_id ? Number(sanitizedFormState.role_id) : undefined,
       lodge_id: Number(sanitizedFormState.lodge_id),
       family_members: formattedFamilyMembers,
-      decorations: decorations.length > 0 ? decorations : undefined,
+      decorations: formattedDecorations.length > 0 ? formattedDecorations : undefined,
       masonic_history: masonic_history.length > 0 ? masonic_history : undefined
     };
 
