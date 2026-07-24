@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator
 
-from app.modules.members.schemas.decoration_schema import DecorationResponse
+from app.modules.members.schemas.decoration_schema import DecorationCreate, DecorationResponse
 from app.modules.members.schemas.family_member_schema import FamilyMemberCreate, FamilyMemberResponse
 from app.modules.members.schemas.role_history_schema import RoleHistoryResponse
 
