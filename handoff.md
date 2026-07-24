@@ -1,24 +1,22 @@
-# Handoff - Integração Parser GOB-GO e Frontend
+# Handoff da Sessão
 
 ## Contexto Atual
-Concluímos a integração completa do novo fluxo de importação das fichas GOB-GO (Backend) e a persistência/exibição no frontend:
-- **Backend**: O \import_gobgo_parser.py\ foi totalmente reescrito para utilizar RegEx para varrer blocos textuais. Conseguimos extrair Dados Pessoais faltantes, Familiares (Cônjuge e Filhos), Filiações, Desligamentos e Diplomas de forma confiável.
-- **Backend (Rotas)**: O serviço de confirmação de importação (\member_routes.py\) agora processa ativamente os campos injetados pelo parser e salva os registros de \FamilyMember\ e \Decoration\ associados, atualizando os dados do membro se já existir ou criando-o.
-- **Frontend**: O formulário do membro (\MemberForm.tsx\) agora possui duas rotinas de intercepção vitais:
-  1. No \etchMember\, os dados relacionais de \masonic_history\ (vindo do backend) são lidos e mapeados de volta para os campos isolados do frontend visual (Ex: \initiation_data\, \elevation_data\, etc).
-  2. No \onSubmit\ (salvamento), o frontend comprime novamente os campos da UI em um \rray\ unificado de \masonic_history\ para satisfazer a nova arquitetura do schema.
+- A funcionalidade de **Importação de Ficha Maçônica (PDF)** foi implementada e refinada.
+- O parser de PDF extrai com sucesso os dados (informações pessoais, histórico maçônico, familiares, decorações).
+- O backend (`member_routes.py` e `member_service.py`) foi ajustado para salvar corretamente as entidades relacionadas (`MasonicEvent`, `FamilyMember`, `Decoration`) recebidas no payload, apagando os registros antigos e recriando-os (para espelhar a ficha).
+- Foram corrigidos bugs críticos no backend:
+  - Erro 500 por importação errada (`app.modules.members.models` corrigido).
+  - Erro 500 (`TypeError`) causado por um campo fantasma (`raw_lodge_name`) que o frontend enviava, mas que o banco não aceitava.
+  - Correções de indentação no `member_service.py` que impediam a inicialização do `uvicorn`.
+- O frontend (`MemberForm.tsx`) foi refatorado para preencher corretamente o formulário com os dados extraídos, distribuindo o array `masonic_history` para os sub-campos do estado, e atualizando os estados independentes de `family_members` e `decorations`. O payload submetido agora envia todos esses arrays corretamente.
 
-## Status da Validação
-- Os testes unitários do Backend (\pytest\) passaram sem falhas (\	est_members.py\).
-- A compilação do Frontend (pm run build\) foi concluída sem problemas de tipagem.
+## O que testar / observar na próxima sessão
+1. **Validar a Persistência de Ponta a Ponta**: Fazer o upload de uma ficha (ex: Ficha CIM 333786), aceitar os dados no Modal de visualização (garantindo que preencheram o formulário), e clicar em salvar.
+2. Verificar se não há mais o erro `500 Internal Server Error` na rota `PUT /members/{id}`.
+3. Checar se as tabelas de "Histórico Maçônico", "Familiares" e "Decorações" exibem os dados gravados ao recarregar a página do membro recém-salvo.
+4. **Erros Menores Pendentes**: O navegador acusou um aviso de acessibilidade (`Blocked aria-hidden on an element...`). Ele não afeta o funcionamento lógico, mas pode ser resolvido trocando a abordagem do modal se desejado no futuro.
 
-## Problemas Pendentes / Próximos Passos
-1. **Verificação de Regras de UI e Refatoração**: Para a próxima sessão, pode ser necessário remover alguns dos campos antigos se as regras mudarem e unificar as janelas do UI, caso o cliente queira migrar o layout do frontend (que atualmente foi mantido inalterado).
-2. **Dados Legados**: Verificar se a importação em massa pelo modal se comporta bem ao vivo.
-
-Tudo testado e documentado!
-
-## Atualização Extra (Família e Telefones)
-- O parser foi ajustado para extrair corretamente os dados familiares em formato de tabela, distinguindo Cônjuge (Data de Casamento, Profissão, Telefone) de Filhos.
-- Incluída formatação internacional E.164 (+55) no backend e UI para persistência de números de telefone.
-- Ajustado o carregamento e salvamento no MemberForm.tsx para apresentar a máscara local (XX) XXXXX-XXXX no frontend e re-injetar o +55 invisivelmente no submit.
+## Próximos Passos
+- Aguardar o retorno dos testes do usuário sobre a persistência da ficha.
+- Caso o usuário enfrente qualquer `ERR_CONNECTION_REFUSED`, lembrá-lo de garantir que o `uvicorn` está rodando (possivelmente iniciando-o com `uvicorn main:app --reload` dentro de `backend`).
+- Prosseguir para novas implementações na plataforma Sigma (ex: novas abas, relatórios) conforme direcionamento do usuário.
