@@ -1,0 +1,67 @@
+{
+  "cim": "272875",
+  "name": "André Luiz Mendes",
+  "email": "mendesalm@gmail.com",
+  "cpf": "831.059.806-87",
+  "rg": "470291",
+  "degree": "3",
+  "marital_status": "CASADO",
+  "father_name": "",
+  "mother_name": "Lucy Mendes",
+  "blood_type": null,
+  "mother_lodge": "União e Justiça Anapolina",
+  "collecting_lodge": "João Pedro Junqueira",
+  "initiation_certificate": "2604",
+  "birth_date": "1974-07-23",
+  "place_of_birth": "Barbacena - Mg Ci",
+  "education_level": "Superior",
+  "occupation": "Militar",
+  "phone": "+556291809133",
+  "zip_code": "75070-540",
+  "street_address": "RUA G N. 127",
+  "neighborhood": "Vila dos Oficiais",
+  "city": "Anápolis - Go",
+  "masonic_history": [
+    {
+      "event_type": "INITIATION",
+      "session_date": "2012-02-10",
+      "entry_date": "2012-03-26",
+      "process_number": null,
+      "registry_number": null,
+      "raw_lodge_name": null,
+      "placet_number": "2604"
+    },
+    {
+      "event_type": "ELEVATION",
+      "session_date": "2013-04-26",
+      "entry_date": "2014-03-17",
+      "process_number": "070320141539000471-1907",
+      "registry_number": null,
+      "raw_lodge_name": null
+    },
+    {
+      "event_type": "EXALTATION",
+      "session_date": "2013-12-06",
+      "entry_date": "2014-05-27",
+      "process_number": "220520141447001233-1907 M",
+      "registry_number": "139373",
+      "raw_lodge_name": "União e Justiça Anapolina (Nº 1907)"
+    }
+  ],
+  "family_members": [],
+  "decorations": [
+    {
+      "title": "DIPLOM5A DE MESTRE MAÇOM",
+      "award_date": "2014-06-03",
+      "remarks": "Loja: UNIÃO E JUSTIÇA ANAPOLINA (Nº 1907), Registro: 139538"
+    },
+    {
+      "title": "7DIPLOMA DE COMPANHEIRO",
+      "award_date": "2014-06-10",
+      "remarks": "Loja: UNIÃO E JUSTIÇA ANAPOLINA (Nº 1907), Registro: 139946"
+    }
+  ],
+  "is_valid": true,
+  "errors": [],
+  "warnings": []
+}

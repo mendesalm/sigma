@@ -53,11 +53,18 @@ def format_international_phone(phone_str: str) -> Optional[str]:
 
 def format_lodge_string(lodge: str) -> str:
     if not lodge: return lodge
-    match = re.match(r'^(\d+)\s*[^\w\s]+\s*(.+)$', lodge)
-    if match:
-        numero = match.group(1).strip()
-        nome = match.group(2).strip()
+    match1 = re.match(r'^(\d+)\s*[^\w\s]+\s*(.+)$', lodge)
+    if match1:
+        numero = match1.group(1).strip()
+        nome = match1.group(2).strip()
         return f"Loja {nome}, nº {numero}"
+    match2 = re.match(r'^(.*?)\s*\(N.\s*(\d+)\)$', lodge, flags=re.IGNORECASE)
+    if match2:
+        nome = match2.group(1).strip()
+        numero = match2.group(2).strip()
+        if not nome.lower().startswith('loja'):
+            nome = f"Loja {nome}"
+        return f"{nome}, nº {numero}"
     return lodge
 
 def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
@@ -117,10 +124,20 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     if bd_match: row.birth_date = parse_date(bd_match.group(1))
     
     pb_match = re.search(r'Naturalidade\s+(.*?)(?:\n|$)', text)
-    if pb_match: row.place_of_birth = to_title_case(clean_garbage(pb_match.group(1)))
-    
+    if pb_match: 
+        pb = to_title_case(clean_garbage(pb_match.group(1)).strip())
+        row.place_of_birth = re.sub(r'\s+-\s+([A-Za-z]{2})\b.*', lambda m: '/' + m.group(1).upper(), pb)
+        
     prof_match = re.search(r'Profiss.o\s+(.*?)(?:\n|$)', text)
     if prof_match: row.occupation = to_title_case(clean_garbage(prof_match.group(1)))
+    
+    ms_match = re.search(r'Estado Civil\s+(.*?)(?:\n|$)', text)
+    if ms_match:
+        ms = clean_garbage(ms_match.group(1)).strip().upper()
+        if "ESTAVEL" in ms or "ESTÁVEL" in ms or "ESTVEL" in ms:
+            row.marital_status = "União Estável"
+        else:
+            row.marital_status = to_title_case(ms)
     
     edu_match = re.search(r'Escolaridade\s+(.*?)(?:\n|$)', text)
     if edu_match: row.education_level = to_title_case(clean_garbage(edu_match.group(1)))
@@ -140,8 +157,11 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     bairro_match = re.search(r'Bairro\s+(.*?)(?:\n|$)', text)
     if bairro_match: row.neighborhood = to_title_case(clean_garbage(bairro_match.group(1)))
     
-    cidade_match = re.search(r'Cidade\s+(.*?)(?:\n|$)', text)
-    if cidade_match: row.city = to_title_case(clean_garbage(cidade_match.group(1)))
+    city_match = re.search(r'Cidade\s+(.*?)(?:\n|$)', text)
+    if city_match: 
+        city = clean_garbage(city_match.group(1)).strip()
+        city = re.sub(r'\s+-\s+[A-Za-z]{2}\b.*', '', city)
+        row.city = to_title_case(city)
 
     # LODGE INFO
     mother_lodge_match = re.search(r'Loja M.e:\s*(.*?)(?:\n|$)', text)
@@ -169,7 +189,7 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
         reg_match = re.search(r'Registro\s+(.*?)(?=\n|Loja|Data|Processo|$)', block_text, re.IGNORECASE)
         if reg_match: data['registry_number'] = clean_garbage(reg_match.group(1).strip())
         loja_match = re.search(r'Loja\s+(.*?)(?=\n|Data|Processo|Registro|CIM|$)', block_text, re.IGNORECASE)
-        if loja_match: data['raw_lodge_name'] = to_title_case(clean_garbage(loja_match.group(1).strip()))
+        if loja_match: data['raw_lodge_name'] = format_lodge_string(to_title_case(clean_garbage(loja_match.group(1).strip())))
         return data
 
     def add_event(event_type_enum: str, regex: str):
@@ -191,6 +211,22 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     add_event("ELEVATION", r'Eleva..o \(Grau 2\)')
     add_event("EXALTATION", r'Exalta..o \(Grau 3\)')
     add_event("INSTALLATION", r'Instala..o \(Grau')
+    
+    # DESLIGAMENTOS
+    deslig_match = re.search(r'DESLIGAMENTOS.*?Loja\s+Data\s+Processo\s+Registro(.*?)(?=T.TULOS E DIPLOMAS|FAM.LIA|$)', text, re.DOTALL | re.IGNORECASE)
+    if deslig_match:
+        deslig_text = deslig_match.group(1).strip()
+        lines = [line.strip() for line in deslig_text.split('\n') if line.strip()]
+        for line in lines:
+            line = clean_garbage(line)
+            m = re.search(r'^(.*?)\s+(\d{2}/\d{2}/\d{4})\s+(.*?)\s+(\d+)$', line)
+            if m:
+                row.dismissals.append({
+                    'lodge': format_lodge_string(to_title_case(m.group(1).strip())),
+                    'date': parse_date(m.group(2)),
+                    'process': m.group(3).strip(),
+                    'registry': m.group(4).strip()
+                })
     
     # ITERATIVE BLOCKS (AFFILIATIONS, DISMISSALS)
     def parse_tabular_events(header_regex, event_type):
@@ -265,7 +301,7 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
                     lodge = ""
                 
                 dec = {}
-                dec["title"] = clean_garbage(title)
+                dec["title"] = clean_garbage(title).replace("DIPLOM5A", "DIPLOMA")
                 dec["award_date"] = parse_date(date_str)
                 
                 remarks_parts = []
@@ -286,15 +322,23 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
         
         # Spouse
         c_match = re.search(r'C.njuge\s+(.*?)(?:\n|$)', block, re.IGNORECASE)
-        if c_match and c_match.group(1).strip() and not c_match.group(1).strip().startswith('ù'):
+        if c_match and c_match.group(1).strip():
             spouse = {"relationship_type": "Esposa", "full_name": to_title_case(clean_garbage(c_match.group(1)))}
             
             b_match = re.search(r'C.njuge.*?Nascimento\s+([\d/]{10})', block, re.DOTALL | re.IGNORECASE)
             if b_match: spouse["birth_date"] = parse_date(b_match.group(1))
             
-            t_match = re.search(r'C.njuge.*?Telefone\s+(.*?)(?:\n|$)', block, re.DOTALL | re.IGNORECASE)
-            if t_match and t_match.group(1).strip() and not t_match.group(1).strip().startswith('ù'):
+            t_match = re.search(r'Telefone\s+([^\n]+)', block, re.IGNORECASE)
+            if t_match and t_match.group(1).strip():
                 spouse["phone"] = format_international_phone(t_match.group(1).strip())
+                
+            prof_match = re.search(r'Profiss.o\s+([^\n]+)', block, re.IGNORECASE)
+            if prof_match and prof_match.group(1).strip():
+                spouse["occupation"] = to_title_case(clean_garbage(prof_match.group(1).strip()))
+                
+            mdate_match = re.search(r'Data Casamento\s+([\d/]{10})', block, re.IGNORECASE)
+            if mdate_match:
+                row.marriage_date = parse_date(mdate_match.group(1))
                 
             row.family_members.append(spouse)
             

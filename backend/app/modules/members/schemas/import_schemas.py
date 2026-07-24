@@ -18,6 +18,7 @@ class ImportMemberRow(BaseModel):
     
     # New Fields
     birth_date: Optional[str] = None
+    marriage_date: Optional[str] = None
     place_of_birth: Optional[str] = None
     education_level: Optional[str] = None
     occupation: Optional[str] = None
@@ -30,6 +31,7 @@ class ImportMemberRow(BaseModel):
     masonic_history: List[dict] = []
     family_members: List[dict] = []
     decorations: List[dict] = []
+    dismissals: List[dict] = []
     
     is_valid: bool = False
     errors: List[str] = []

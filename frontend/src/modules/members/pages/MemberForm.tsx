@@ -697,6 +697,17 @@ const MemberForm: React.FC = () => {
             setFamilyMembers(extractedData.family_members);
           } else if (key === 'decorations') {
             setDecorations(extractedData.decorations);
+          } else if (key === 'dismissals' && extractedData.dismissals.length > 0) {
+            const ev = extractedData.dismissals[0];
+            updated['dismissal_data'] = {
+              data_sessao: ev.date || '',
+              data_entrada: '',
+              processo: ev.process || '',
+              registro: ev.registry || '',
+              loja: ev.lodge || '',
+              placet: '',
+              quit_placet: ''
+            };
           } else {
             updated[key] = extractedData[key];
           }
@@ -713,10 +724,14 @@ const MemberForm: React.FC = () => {
     degree: 'Grau', marital_status: 'Estado Civil', father_name: 'Nome do Pai',
     mother_name: 'Nome da Mãe', mother_lodge: 'Loja Mãe', collecting_lodge: 'Loja de Recolhimento',
     initiation_certificate: 'Placet de Iniciação',
+    birth_date: 'Data de Nascimento', marriage_date: 'Data de Casamento',
+    place_of_birth: 'Naturalidade', occupation: 'Profissão', phone: 'Telefone',
+    zip_code: 'CEP', street_address: 'Endereço', neighborhood: 'Bairro', city: 'Cidade',
     initiation_data: 'Dados Iniciação', elevation_data: 'Dados Elevação',
     exaltation_data: 'Dados Exaltação', installation_data: 'Dados Instalação',
     affiliation_data: 'Dados Filiação', regularization_data: 'Dados Regularização',
-    dismissal_data: 'Dados Desligamento'
+    dismissal_data: 'Dados Desligamento', dismissals: 'Desligamentos',
+    family_members: 'Familiares', decorations: 'Títulos e Diplomas'
   };
 
   // --- CIM SEARCH STEP ---
@@ -1333,6 +1348,8 @@ const MemberForm: React.FC = () => {
         onClose={() => setImportDiffModalOpen(false)}
         maxWidth="md"
         fullWidth
+        disableRestoreFocus
+        disableEnforceFocus
         PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
       >
         <DialogTitle sx={{ fontWeight: 700, fontFamily: '"Playfair Display", serif' }}>
