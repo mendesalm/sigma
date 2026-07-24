@@ -189,29 +189,51 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     add_event("INSTALLATION", r'Instala..o \(Grau')
     
     # ITERATIVE BLOCKS (AFFILIATIONS, DISMISSALS)
-    def parse_list_events(header_regex: str, event_type: str):
-        match = re.search(rf'{header_regex}(.*?)(?=\n[A-ZÀ-Ú ]+$|\n[A-ZÀ-Ú ]+\s*\(Grau|\Z)', text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
-        if not match: return
-        block = match.group(1).strip()
-        chunks = re.split(r'\n(?=Loja)', block)
-        for chunk in chunks:
-            if not chunk.strip(): continue
-            ev = {"event_type": event_type}
-            lj = re.search(r'^Loja\s+(.*?)(?:\n|$)', chunk)
-            if lj: ev["raw_lodge_name"] = format_lodge_string(to_title_case(clean_garbage(lj.group(1))))
-            de = re.search(r'Data\s+E[\s\S]{0,15}?a\s+([\d/]{10})', chunk, re.IGNORECASE)
-            if de: ev["entry_date"] = parse_date(de.group(1))
-            pr = re.search(r'Processo\s+(.*?)(?:\n|$)', chunk, re.IGNORECASE)
-            if pr: ev["process_number"] = clean_garbage(pr.group(1))
-            rg = re.search(r'Registro\s+(.*?)(?:\n|$)', chunk, re.IGNORECASE)
-            if rg: ev["registry_number"] = clean_garbage(rg.group(1))
-            if ev.get("raw_lodge_name"): row.masonic_history.append(ev)
+    def parse_tabular_events(header_regex, event_type):
+        match = re.search(header_regex + r'\n(.*?)(?=\n[A-ZÀ-Ú ]+\n|\Z)', text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
+        if match:
+            block = match.group(1).strip()
+            lines = [ln.strip() for ln in block.split('\n') if ln.strip()]
+            for line in lines:
+                if re.match(r'^(?:Loja|Data|Processo|Registro|Status|Entrada|Nenhuma(?:\s+informa..o.*)?)$', line, re.IGNORECASE):
+                    continue
+                if re.match(r'^(?:Loja\s+Data.*)$', line, re.IGNORECASE):
+                    continue
+                
+                date_match = re.search(r'(\d{2}/\d{2}/\d{4})', line)
+                if not date_match:
+                    continue
+                    
+                date_str = date_match.group(1)
+                before_date = line[:date_match.start()].strip()
+                after_date = line[date_match.end():].strip()
+                
+                ev = {"event_type": event_type}
+                ev["raw_lodge_name"] = format_lodge_string(to_title_case(clean_garbage(before_date)))
+                if event_type == "AFFILIATION":
+                    ev["entry_date"] = parse_date(date_str)
+                else:
+                    ev["session_date"] = parse_date(date_str)
+                    
+                status_match = re.search(r'(ATIVO|INATIVO|REGULAR|IRREGULAR|DESLIGADO|SUSPENSO)$', after_date, re.IGNORECASE)
+                if status_match:
+                    after_date = after_date[:status_match.start()].strip()
+                    
+                reg_match = re.search(r'(\d+)\s*$', after_date)
+                if reg_match:
+                    ev["registry_number"] = reg_match.group(1)
+                    after_date = after_date[:reg_match.start()].strip()
+                    
+                if after_date:
+                    ev["process_number"] = clean_garbage(after_date)
+                    
+                row.masonic_history.append(ev)
 
-    parse_list_events(r'FILIA..ES\n', "AFFILIATION")
-    parse_list_events(r'DESLIGAMENTOS\n', "DISMISSAL")
+    parse_tabular_events(r'FILIA..ES', "AFFILIATION")
+    parse_tabular_events(r'DESLIGAMENTOS', "DISMISSAL")
 
     # TITLES AND DIPLOMAS
-    dip_match = re.search(r'T.TULOS E DIPLOMAS\n(.*?)(?=\n[A-ZÀ-Ú ]+$|\Z)', text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
+    dip_match = re.search(r'T.TULOS E DIPLOMAS\n(.*?)(?=\n[A-ZÀ-Ú ]+\n|\Z)', text, flags=re.DOTALL | re.MULTILINE | re.IGNORECASE)
     if dip_match:
         block = dip_match.group(1).strip()
         lines = [ln.strip() for ln in block.split('\n') if ln.strip()]
@@ -219,6 +241,8 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
             if re.match(r'^(?:T.tulo|Loja|Data|Registro|Nenhuma(?:\s+informa..o.*)?)$', line, re.IGNORECASE):
                 continue
             if re.match(r'^(?:Loja\s+Data\s+Registro)$', line, re.IGNORECASE):
+                continue
+            if re.match(r'^(?:T.tulo\s+Loja\s+Data\s+Registro)$', line, re.IGNORECASE):
                 continue
             
             date_match = re.search(r'(\d{2}/\d{2}/\d{4})', line)
@@ -228,11 +252,27 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
                 title_and_lodge = parts[0].strip()
                 registry = parts[1].strip() if len(parts) > 1 else ""
                 
+                m = re.match(r'^(.*?)(APRENDIZ|COMPANHEIRO|MA.OM)\s+(.*)$', title_and_lodge, re.IGNORECASE)
+                if m:
+                    title = m.group(1) + m.group(2)
+                    lodge = m.group(3)
+                else:
+                    title = title_and_lodge
+                    lodge = ""
+                
                 dec = {}
-                dec["title"] = clean_garbage(title_and_lodge)
+                dec["title"] = clean_garbage(title)
                 dec["award_date"] = parse_date(date_str)
+                
+                remarks_parts = []
+                if lodge:
+                    remarks_parts.append(f"Loja: {clean_garbage(lodge)}")
                 if registry:
-                    dec["remarks"] = f"Registro: {clean_garbage(registry)}"
+                    remarks_parts.append(f"Registro: {clean_garbage(registry)}")
+                
+                if remarks_parts:
+                    dec["remarks"] = ", ".join(remarks_parts)
+                    
                 row.decorations.append(dec)
 
     # FAMILY MEMBERS
