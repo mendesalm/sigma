@@ -170,7 +170,8 @@ class Decoration(BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     award_date = Column(Date, nullable=False)
-    remarks = Column(Text, nullable=True)
+    lodge = Column(String(255), nullable=True)
+    registry = Column(String(255), nullable=True)
     member_id = Column(Integer, ForeignKey("members.id"), nullable=False)
     member = relationship("Member", back_populates="decorations")
 

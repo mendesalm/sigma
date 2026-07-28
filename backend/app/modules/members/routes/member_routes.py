@@ -502,32 +502,113 @@ def update_member(
 
         update_data = member.model_dump(exclude_unset=True)
         
-        # Security Fix: Filter out fields that are not in MemberSelfUpdate
-        from app.modules.members.schemas.member_schema import MemberSelfUpdate
+        active_role = current_user.get("active_role_name")
+        is_acting_as_admin = active_role in ["Secretário", "Chanceler", "Venerável Mestre", "Hospitaleiro"]
 
-        self_update_data = MemberSelfUpdate(**member.model_dump(exclude_unset=True))
-        
-        for key, value in self_update_data.model_dump(exclude_unset=True).items():
-            if key == "password":
-                db_member.password_hash = hash_password(value)
-                continue
-            setattr(db_member, key, value)
+        if is_acting_as_admin:
+            print('\n=== BACKEND RECEIVED MASONIC HISTORY (ACTING AS ADMIN) ===')
+            import pprint
+            pprint.pprint(update_data.get('masonic_history'))
+            print('========================================\n')
             
-        db.commit()
-        db.refresh(db_member)
-        
-        log_action(
-            db=db,
-            user_id=current_user.get("user_id"),
-            user_type=user_type,
-            action="SELF_UPDATE_MEMBER",
-            resource_type="MEMBER",
-            resource_id=member_id,
-            details={"updated_fields": list(self_update_data.model_dump(exclude_unset=True).keys())},
-            ip_address=request.client.host if request.client else None
-        )
-        
-        return db_member
+            if "password" in update_data:
+                db_member.password_hash = hash_password(update_data.pop("password"))
+
+            family_members_data = update_data.pop('family_members', None)
+            masonic_history_data = update_data.pop('masonic_history', None)
+            decorations_data = update_data.pop('decorations', None)
+
+            for key, value in update_data.items():
+                setattr(db_member, key, value)
+                
+            import app.modules.members.models as members_models
+            if family_members_data is not None:
+                existing_fms = {fm.id: fm for fm in db_member.family_members}
+                incoming_fms = []
+                for fm in family_members_data:
+                    fm_id = fm.pop('id', None)
+                    if fm_id and fm_id in existing_fms:
+                        incoming_fms.append(fm_id)
+                        for k, v in fm.items():
+                            setattr(existing_fms[fm_id], k, v)
+                    else:
+                        db.add(members_models.FamilyMember(**fm, member_id=db_member.id))
+                for fm_id, fm in existing_fms.items():
+                    if fm_id not in incoming_fms:
+                        db.delete(fm)
+
+            if masonic_history_data is not None:
+                existing_mhs = {mh.id: mh for mh in db_member.masonic_history}
+                incoming_mhs = []
+                for mh in masonic_history_data:
+                    mh_id = mh.pop('id', None)
+                    mh.pop('diploma', None)
+                    if mh_id and mh_id in existing_mhs:
+                        incoming_mhs.append(mh_id)
+                        for k, v in mh.items():
+                            setattr(existing_mhs[mh_id], k, v)
+                    else:
+                        db.add(members_models.MasonicEvent(**mh, member_id=db_member.id))
+                for mh_id, mh in existing_mhs.items():
+                    if mh_id not in incoming_mhs:
+                        db.delete(mh)
+                    
+            if decorations_data is not None:
+                existing_decs = {dec.id: dec for dec in db_member.decorations}
+                incoming_decs = []
+                for dec in decorations_data:
+                    dec_id = dec.pop('id', None)
+                    if dec_id and dec_id in existing_decs:
+                        incoming_decs.append(dec_id)
+                        for k, v in dec.items():
+                            setattr(existing_decs[dec_id], k, v)
+                    else:
+                        db.add(members_models.Decoration(**dec, member_id=db_member.id))
+                for dec_id, dec in existing_decs.items():
+                    if dec_id not in incoming_decs:
+                        db.delete(dec)
+
+            db.commit()
+            db.refresh(db_member)
+            
+            log_action(
+                db=db,
+                user_id=current_user.get("user_id"),
+                user_type=user_type,
+                action="UPDATE_MEMBER",
+                resource_type="MEMBER",
+                resource_id=member_id,
+                details={"updated_by": f"member_admin_{active_role}"},
+                ip_address=request.client.host if request.client else None
+            )
+            return db_member
+        else:
+            # Security Fix: Filter out fields that are not in MemberSelfUpdate
+            from app.modules.members.schemas.member_schema import MemberSelfUpdate
+    
+            self_update_data = MemberSelfUpdate(**member.model_dump(exclude_unset=True))
+            
+            for key, value in self_update_data.model_dump(exclude_unset=True).items():
+                if key == "password":
+                    db_member.password_hash = hash_password(value)
+                    continue
+                setattr(db_member, key, value)
+                
+            db.commit()
+            db.refresh(db_member)
+            
+            log_action(
+                db=db,
+                user_id=current_user.get("user_id"),
+                user_type=user_type,
+                action="SELF_UPDATE_MEMBER",
+                resource_type="MEMBER",
+                resource_id=member_id,
+                details={"updated_fields": list(self_update_data.model_dump(exclude_unset=True).keys())},
+                ip_address=request.client.host if request.client else None
+            )
+            
+            return db_member
 
     else:
         raise HTTPException(status_code=403, detail="Not authorized")

@@ -1,7 +1,7 @@
 import enum
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator, field_serializer
 
 from app.modules.members.schemas.decoration_schema import DecorationCreate, DecorationResponse
 from app.modules.members.schemas.family_member_schema import FamilyMemberCreate, FamilyMemberResponse
@@ -42,6 +42,22 @@ class EventTypeEnum(enum.StrEnum):
 
 class MasonicEventBase(BaseModel):
     event_type: EventTypeEnum | str
+    
+    @field_serializer('event_type', when_used='always')
+    def serialize_event_type(self, v):
+        if hasattr(v, 'name'):
+            return v.name
+        
+        translation_map = {
+            'Iniciação': 'INITIATION',
+            'Elevação': 'ELEVATION',
+            'Exaltação': 'EXALTATION',
+            'Instalação': 'INSTALLATION',
+            'Filiação': 'AFFILIATION',
+            'Regularização': 'REGULARIZATION',
+            'Desligamento': 'DISMISSAL'
+        }
+        return translation_map.get(str(v), str(v))
     session_date: date | None = None
     entry_date: date | None = None
     process_number: str | None = None
@@ -88,6 +104,7 @@ class MemberLodgeAssociationBase(BaseModel):
     end_date: date | None = None
     status: MemberStatusEnum = MemberStatusEnum.ACTIVE
     member_class: MemberClassEnum = MemberClassEnum.REGULAR
+
 
 
 class MemberLodgeAssociationCreate(MemberLodgeAssociationBase):

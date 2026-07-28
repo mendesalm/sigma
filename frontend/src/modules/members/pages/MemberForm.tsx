@@ -30,7 +30,7 @@ import {
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import api from '@/shared/services/api';
 import { MemberResponse, RegistrationStatusEnum, RelationshipTypeEnum, RoleHistoryResponse, MemberStatusEnum, MemberClassEnum, MemberLodgeAssociationResponse } from '@/types';
-import { formatCPF, formatPhone, formatCEP } from '@/shared/utils/formatters';
+import { formatCPF, formatPhone, toTitleCase, formatCEP } from '@/shared/utils/formatters';
 import { validateCPF, validateEmail } from '@/shared/utils/validators';
 import { fetchAddressByCep } from '@/shared/services/cepService';
 import { useAuth } from '@/modules/access_control/hooks/useAuth';
@@ -57,7 +57,8 @@ interface DecorationLocal {
   id?: number;
   title: string;
   award_date: string;
-  remarks: string;
+  lodge?: string;
+  registry?: string;
 }
 
 interface TabPanelProps {
@@ -230,8 +231,12 @@ const MemberForm: React.FC = () => {
             };
           };
 
+          const safeMemberData = Object.fromEntries(
+            Object.entries(memberData).map(([key, val]) => [key, val === null ? '' : val])
+          );
+
           setFormState({
-            ...memberData,
+            ...safeMemberData,
             initiation_data: mapEvent('INITIATION'),
             elevation_data: mapEvent('ELEVATION'),
             exaltation_data: mapEvent('EXALTATION'),
@@ -265,7 +270,8 @@ const MemberForm: React.FC = () => {
               id: d.id,
               title: d.title,
               award_date: d.award_date || '',
-              remarks: d.remarks || ''
+              lodge: d.lodge || '',
+              registry: d.registry || ''
             })));
           }
 
@@ -352,9 +358,14 @@ const MemberForm: React.FC = () => {
       const response = await api.get<MemberResponse>(`/members/check-cim/${formState.cim}`);
       const memberData = response.data;
       setExistingMemberId(memberData.id);
+
+      const safeMemberData = Object.fromEntries(
+        Object.entries(memberData).map(([key, val]) => [key, val === null ? '' : val])
+      );
+
       setFormState((prev: any) => ({
         ...prev,
-        ...memberData,
+        ...safeMemberData,
         lodge_id: prev.lodge_id,
         role_id: '',
         status: MemberStatusEnum.ACTIVE,
@@ -416,7 +427,7 @@ const MemberForm: React.FC = () => {
     setDecorations(updated);
   };
   const addDecoration = () => {
-    setDecorations([...decorations, { title: '', award_date: '', remarks: '' }]);
+    setDecorations([...decorations, { title: '', award_date: '', lodge: '', registry: '' }]);
   };
   const removeDecoration = (index: number) => {
     const updated = [...decorations];
@@ -577,7 +588,8 @@ const MemberForm: React.FC = () => {
     const formattedDecorations = decorations.map(d => ({
       ...d,
       award_date: d.award_date || undefined,
-      remarks: d.remarks || undefined
+      lodge: d.lodge || undefined,
+      registry: d.registry || undefined
     }));
 
     const memberData = {
@@ -1220,7 +1232,6 @@ const MemberForm: React.FC = () => {
             </Box>
           </CardContent>
         </Card>
-      </TabPanel>
       {/* DECORATIONS */}
       <Card sx={{ bgcolor: alpha(theme.palette.background.paper, 0.4), backdropFilter: 'blur(10px)', border: `1px solid ${alpha(theme.palette.divider, 0.1)}`, borderRadius: 2, mb: 3 }}>
         <CardContent sx={{ p: 4 }}>
@@ -1237,9 +1248,10 @@ const MemberForm: React.FC = () => {
                     <IconButton size="small" color="error" onClick={() => removeDecoration(index)}><DeleteIcon fontSize="small" /></IconButton>
                   </Box>
                   <Grid container spacing={1}>
-                    <Grid size={{ xs: 12, sm: 8 }}><TextField label="Título" size="small" value={dec.title} onChange={(e) => handleDecorationChange(index, 'title', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid size={{ xs: 12, sm: 8 }}><TextField label="Título" size="small" value={dec.title} onChange={(e) => handleDecorationChange(index, 'title', toTitleCase(e.target.value))} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
                     <Grid size={{ xs: 12, sm: 4 }}><TextField label="Data" type="date" size="small" value={dec.award_date} onChange={(e) => handleDecorationChange(index, 'award_date', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
-                    <Grid size={{ xs: 12 }}><TextField label="Observações (Loja, Registro)" size="small" value={dec.remarks} onChange={(e) => handleDecorationChange(index, 'remarks', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid size={{ xs: 12, sm: 8 }}><TextField label="Loja" size="small" value={dec.lodge || ''} onChange={(e) => handleDecorationChange(index, 'lodge', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
+                    <Grid size={{ xs: 12, sm: 4 }}><TextField label="Registro" size="small" value={dec.registry || ''} onChange={(e) => handleDecorationChange(index, 'registry', e.target.value)} fullWidth sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} /></Grid>
                   </Grid>
                 </Paper>
               </Grid>
@@ -1247,6 +1259,8 @@ const MemberForm: React.FC = () => {
           </Grid>
         </CardContent>
       </Card>
+
+      </TabPanel>
 
       {/* FAMILY */}
       <TabPanel value={tabValue} index={3}>

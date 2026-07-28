@@ -1,23 +1,25 @@
-# Handoff da Sessão
+# Documento de Handoff - Sigma 2.0 (Arquitetura SaaS)
 
-## Contexto Atual
-- A funcionalidade de **Importação de Ficha Maçônica (PDF)** foi implementada e refinada.
-- O parser de PDF extrai com sucesso os dados (informações pessoais, histórico maçônico, familiares, decorações).
-- O backend (`member_routes.py` e `member_service.py`) foi ajustado para salvar corretamente as entidades relacionadas (`MasonicEvent`, `FamilyMember`, `Decoration`) recebidas no payload, apagando os registros antigos e recriando-os (para espelhar a ficha).
-- Foram corrigidos bugs críticos no backend:
-  - Erro 500 por importação errada (`app.modules.members.models` corrigido).
-  - Erro 500 (`TypeError`) causado por um campo fantasma (`raw_lodge_name`) que o frontend enviava, mas que o banco não aceitava.
-  - Correções de indentação no `member_service.py` que impediam a inicialização do `uvicorn`.
-- O frontend (`MemberForm.tsx`) foi refatorado para preencher corretamente o formulário com os dados extraídos, distribuindo o array `masonic_history` para os sub-campos do estado, e atualizando os estados independentes de `family_members` e `decorations`. O payload submetido agora envia todos esses arrays corretamente.
-- Na última sessão, os bugs de extração e formatação apontados pelo usuário (como o enum de Estado Civil em maiúsculas, a extração de profissão da esposa, o formato da cidade e naturalidade, a extração de Desligamentos, e o formato de nome de Lojas) foram sanados em `import_gobgo_parser.py`.
-- O campo `marriage_date` foi mapeado corretamente no formulário e no backend.
-- O erro de acessibilidade (`Blocked aria-hidden`) no React Modal foi contornado usando as propriedades `disableRestoreFocus` e `disableEnforceFocus` no componente `Dialog`.
+**Última Atualização:** Migração da Landing Page V1, Estrutura de Pastas e Roteamento dos Dashboards.
 
-## O que testar / observar na próxima sessão
-1. **Validar a Persistência de Ponta a Ponta**: Fazer o upload de uma ficha, aceitar os dados no Modal de visualização (garantindo que preencheram o formulário), e clicar em salvar.
-2. Verificar se todos os campos estão sendo populados no modal: Histórico Maçônico (Processo e Registro), Familiares (incluindo esposa com profissão e data de casamento), Decorações e Desligamentos.
-3. Checar se as tabelas de "Histórico Maçônico", "Familiares" e "Decorações" exibem os dados gravados ao recarregar a página do membro recém-salvo.
+## 🎯 Contexto Atual
+O escopo do Sigma revelou-se um verdadeiro **Sistema ERP Multi-Tenant**. Construímos a infraestrutura base para suportar Lojas (Tenant Local), Obediências (Tenant Global) e a gestão comercial das assinaturas (Sistêmico/SaaS). Além disso, a Landing Page inteira da versão legada (V1) foi perfeitamente transposta e traduzida para a V2.
 
-## Próximos Passos
-- Aguardar o retorno dos testes do usuário sobre a persistência da ficha.
-- Continuar qualquer customização necessária de exibição ou edição.
+## 🛠️ O Que Foi Feito
+- [x] **File System Isolado (Backend):** O `main.py` agora expõe a rota estática `/armazenamento`. No `servicos.py` (Organizações), ativamos o script que gera a pasta isolada do tenant (`loja_{uuid}/[logo, documentos, fotos...]`) usando `os.makedirs` no momento do cadastro.
+- [x] **Roteador Principal (Frontend):** Desenhamos os esqueletos dos Dashboards e configuramos o `Roteador.tsx` com as rotas `/sistemico`, `/global` e `/local`.
+- [x] **Clonagem e Refatoração (Landing Page):** Copiamos as imagens, layouts e os componentes (`SigmaAnimatedLogo`, `HeroBackground`) da V1. Através de um script de engenharia reversa, nós renomeamos as dezenas de referências para a **Regra de Ouro em PT-BR** (`LogoAnimadaSigma`, `FundoHero`, `Rodape`) reconstruindo a `PaginaAterrissagem.tsx`.
+- [x] **Acesso Híbrido:** Conforme definido, todos os membros acessarão o Dashboard da Loja, mas a UI será montada condicionalmente baseada no token JWT.
+
+## 🚧 Onde Paramos / Próximos Passos
+As rotas de base e o comercial do sistema já estão respirando sob as engrenagens da V2. A Landing Page está online e transpôs seus primeiros componentes com sucesso.
+
+**O que deve ser feito na retomada (Próxima Sessão):**
+1. **Ajustes Visuais Restantes:** Refinar eventuais anomalias visuais da Landing Page que vieram na transição da V1 para a V2 (espaçamentos, ícones não alinhados).
+2. **Sistema de Login:** Criar a interface de Autenticação (Email/CIM) e injetar o token JWT no roteamento.
+3. **Dashboard Local:** Iniciar a construção visual (React/MUI) do Painel da Loja, garantindo o filtro de funcionalidades via RBAC para Veneráveis vs Obreiros comuns.
+4. Ligar os servidores novamente (`npm run dev` e `uvicorn`) para prosseguir.
+
+## ⚠️ Regras de Ouro Ativas
+1. **Nomenclatura PT-BR:** Tudo na UI da V2 está adotando o idioma português.
+2. **Dashboard Híbrido:** As funcionalidades devem ter verificadores lógicos de credencial (ex: `if (usuario.nivel == 'VENERAVEL') { <MenuTesouraria /> }`).

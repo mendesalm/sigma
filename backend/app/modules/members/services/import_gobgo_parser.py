@@ -57,15 +57,17 @@ def format_lodge_string(lodge: str) -> str:
     if match1:
         numero = match1.group(1).strip()
         nome = match1.group(2).strip()
-        return f"Loja {nome}, nº {numero}"
+        nome = re.sub(r'^Loja\s+', '', nome, flags=re.IGNORECASE).strip()
+        return f"Loja Maçônica {nome}, nº {numero}"
     match2 = re.match(r'^(.*?)\s*\(N.\s*(\d+)\)$', lodge, flags=re.IGNORECASE)
     if match2:
         nome = match2.group(1).strip()
         numero = match2.group(2).strip()
-        if not nome.lower().startswith('loja'):
-            nome = f"Loja {nome}"
-        return f"{nome}, nº {numero}"
-    return lodge
+        nome = re.sub(r'^Loja\s+', '', nome, flags=re.IGNORECASE).strip()
+        return f"Loja Maçônica {nome}, nº {numero}"
+    
+    nome = re.sub(r'^Loja\s+', '', lodge, flags=re.IGNORECASE).strip()
+    return f"Loja Maçônica {nome}"
 
 def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
     if "FICHA CADASTRAL" not in text and "GRANDE ORIENTE" not in text:
@@ -304,14 +306,10 @@ def extract_gob_go_data(text: str) -> Optional[ImportMemberRow]:
                 dec["title"] = clean_garbage(title).replace("DIPLOM5A", "DIPLOMA")
                 dec["award_date"] = parse_date(date_str)
                 
-                remarks_parts = []
                 if lodge:
-                    remarks_parts.append(f"Loja: {clean_garbage(lodge)}")
+                    dec["lodge"] = format_lodge_string(to_title_case(clean_garbage(lodge)))
                 if registry:
-                    remarks_parts.append(f"Registro: {clean_garbage(registry)}")
-                
-                if remarks_parts:
-                    dec["remarks"] = ", ".join(remarks_parts)
+                    dec["registry"] = clean_garbage(registry)
                     
                 row.decorations.append(dec)
 

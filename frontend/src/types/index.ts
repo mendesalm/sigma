@@ -96,7 +96,8 @@ export interface DecorationResponse {
   id: number;
   title: string;
   award_date: string;
-  remarks?: string;
+  lodge?: string;
+  registry?: string;
   member_id: number;
 }
 

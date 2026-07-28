@@ -6,7 +6,8 @@ const DecorationForm: React.FC = () => {
   const [formState, setFormState] = useState({
     title: '',
     award_date: '',
-    remarks: '',
+    lodge: '',
+    registry: '',
   });
   const navigate = useNavigate();
   const { memberId, id } = useParams<{ memberId: string, id: string }>();
@@ -60,14 +61,20 @@ const DecorationForm: React.FC = () => {
           }}
         />
         <TextField
-          name="remarks"
-          label="Remarks"
-          value={formState.remarks}
+          name="lodge"
+          label="Loja"
+          value={formState.lodge}
           onChange={handleChange}
           fullWidth
           margin="normal"
-          multiline
-          rows={4}
+        />
+        <TextField
+          name="registry"
+          label="Registro"
+          value={formState.registry}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
         />
         <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
           Save

@@ -1,7 +1,7 @@
 import enum
 from datetime import date
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, field_serializer, EmailStr, Field
 
 
 class RelationshipTypeEnum(enum.StrEnum):

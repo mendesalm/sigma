@@ -51,3 +51,18 @@ export const formatDegree = (degree?: number | null, isInstalled?: boolean | nul
   if (degree === 3) return isInstalled ? "Mestre Instalado" : "Mestre";
   return isInstalled ? `Grau ${degree} - Mestre Instalado` : `Grau ${degree}`;
 };
+
+export const toTitleCase = (text: string): string => {
+  if (!text) return '';
+  const prepositions = ['de', 'da', 'do', 'das', 'dos', 'para', 'com', 'por', 'em', 'e', 'a', 'o', 'as', 'os'];
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word, index) => {
+      if (index > 0 && prepositions.includes(word)) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+};
