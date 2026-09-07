@@ -15,7 +15,7 @@ load_dotenv()
 sys.path.append(os.getcwd())
 
 # Import the Base and models
-from database import Base
+from database import Base, DATABASE_URL
 import models.models # This registers the models to Base.metadata
 
 # this is the Alembic Config object, which provides
@@ -49,7 +49,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = os.getenv("DATABASE_URL")
+    url = DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -69,7 +69,7 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = os.getenv("DATABASE_URL")
+    configuration["sqlalchemy.url"] = DATABASE_URL
     
     connectable = engine_from_config(
         configuration,

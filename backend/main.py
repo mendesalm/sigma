@@ -1,3 +1,4 @@
+# EM CONFORMIDADE COM AS REGRAS DE OURO DO E-SIGMA
 import sys
 import asyncio
 
@@ -5,6 +6,7 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
 
@@ -178,8 +180,9 @@ app = FastAPI(
 @app.on_event("startup")
 def startup_event():
     """Inicia o agendador de tarefas quando a aplicação é iniciada."""
+    logger.info("Iniciando e-Sigma e verificando agendadores")
     if "pytest" in sys.modules:
-        print("Test environment detected. Skipping background scheduler.")
+        logger.info("Test environment detected. Skipping background scheduler.")
         return
     initialize_scheduler()
 
