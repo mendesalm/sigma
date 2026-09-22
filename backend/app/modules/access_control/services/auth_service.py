@@ -51,9 +51,18 @@ def authenticate_user(db: Session, identifier: str, password: str, potencia_id: 
 
             return webmaster, "webmaster"
 
-    # 3. Checa por Member (por e-mail ou CIM)
-    # Se potencia_id foi fornecido, o login de membro é restrito a esta potência para evitar colisão de CIM
-    member_query = db.query(models.Member).filter(or_(models.Member.email == identifier, models.Member.cim == identifier))
+    # 3. Checa por Member (por e-mail, CIM ou CPF com/sem pontuação)
+    import re
+    digitos = re.sub(r"\D", "", identifier)
+    cpf_formatado = f"{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}" if len(digitos) == 11 else None
+
+    condicoes = [models.Member.email == identifier, models.Member.cim == identifier, models.Member.cpf == identifier]
+    if cpf_formatado:
+        condicoes.append(models.Member.cpf == cpf_formatado)
+    if digitos and digitos != identifier:
+        condicoes.append(models.Member.cim == digitos)
+
+    member_query = db.query(models.Member).filter(or_(*condicoes))
     
     if potencia_id is not None:
         member_query = member_query.outerjoin(

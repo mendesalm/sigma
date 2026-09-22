@@ -13,11 +13,14 @@ from api.sessoes.rotas import router as router_sessoes
 from api.comunicacao.rotas import router as router_comunicacao
 from api.documentos.rotas import router as router_documentos
 from api.biblioteca.rotas import router as router_biblioteca
+from api.auth.rotas import router as router_auth
+from api.saas.rotas import router as router_saas
 from fastapi.staticfiles import StaticFiles
 import os
 
 # Garante que a pasta base de armazenamento estático exista
-os.makedirs("armazenamento/instancias", exist_ok=True)
+os.makedirs("armazenamento/instancias/public", exist_ok=True)
+os.makedirs("armazenamento/instancias/private", exist_ok=True)
 
 # Instanciação da aplicação FastAPI com configurações ricas para o Swagger (Regra de Ouro)
 app = FastAPI(
@@ -40,10 +43,17 @@ app = FastAPI(
     }
 )
 
-# Configuração de CORS para permitir requisições do Frontend React (Vite) na porta 5173
+# Configuração de CORS para permitir requisições do Frontend React (Vite)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Atenção: em produção deve ser restrito ao IP/Domínio do frontend!
+    allow_origins=[
+        "http://localhost:5173", "http://127.0.0.1:5173",
+        "http://localhost:5174", "http://127.0.0.1:5174",
+        "http://localhost:5175", "http://127.0.0.1:5175",
+        "http://localhost:5176", "http://127.0.0.1:5176",
+        "http://localhost:5177", "http://127.0.0.1:5177",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,8 +63,8 @@ app.add_middleware(
 # REGISTRO DE ROTAS (MONOLITO MODULAR E ARQUIVOS)
 # ==========================================
 
-# Monta o sistema de arquivos para acesso público no frontend
-app.mount("/armazenamento", StaticFiles(directory="armazenamento"), name="armazenamento")
+# Monta o sistema de arquivos para acesso público no frontend (somente pasta public)
+app.mount("/storage", StaticFiles(directory="armazenamento/instancias/public"), name="public_storage")
 
 app.include_router(router_organizacoes, prefix="/api/v1")
 app.include_router(router_pessoas, prefix="/api/v1")
@@ -63,6 +73,8 @@ app.include_router(router_sessoes, prefix="/api/v1")
 app.include_router(router_comunicacao, prefix="/api/v1")
 app.include_router(router_documentos, prefix="/api/v1")
 app.include_router(router_biblioteca, prefix="/api/v1")
+app.include_router(router_auth, prefix="/api/v1")
+app.include_router(router_saas, prefix="/api/v1")
 
 @app.get("/", tags=["Health"])
 def root():

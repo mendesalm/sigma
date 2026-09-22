@@ -1,25 +1,36 @@
-# Documento de Handoff - Sigma 2.0 (Arquitetura SaaS)
+# Documento de Handoff - Ecossistema Sigma / Lojas (22/09/2026)
 
-**Última Atualização:** Migração da Landing Page V1, Estrutura de Pastas e Roteamento dos Dashboards.
+**Data de Atualização:** 22 de Setembro de 2026  
+**Status da Sessão:** 🟢 Ambientes ativos, testes de autenticação 100% OK e Definição Arquitetural de Reincorporação registrada.
 
-## 🎯 Contexto Atual
-O escopo do Sigma revelou-se um verdadeiro **Sistema ERP Multi-Tenant**. Construímos a infraestrutura base para suportar Lojas (Tenant Local), Obediências (Tenant Global) e a gestão comercial das assinaturas (Sistêmico/SaaS). Além disso, a Landing Page inteira da versão legada (V1) foi perfeitamente transposta e traduzida para a V2.
+---
 
-## 🛠️ O Que Foi Feito
-- [x] **File System Isolado (Backend):** O `main.py` agora expõe a rota estática `/armazenamento`. No `servicos.py` (Organizações), ativamos o script que gera a pasta isolada do tenant (`loja_{uuid}/[logo, documentos, fotos...]`) usando `os.makedirs` no momento do cadastro.
-- [x] **Roteador Principal (Frontend):** Desenhamos os esqueletos dos Dashboards e configuramos o `Roteador.tsx` com as rotas `/sistemico`, `/global` e `/local`.
-- [x] **Clonagem e Refatoração (Landing Page):** Copiamos as imagens, layouts e os componentes (`SigmaAnimatedLogo`, `HeroBackground`) da V1. Através de um script de engenharia reversa, nós renomeamos as dezenas de referências para a **Regra de Ouro em PT-BR** (`LogoAnimadaSigma`, `FundoHero`, `Rodape`) reconstruindo a `PaginaAterrissagem.tsx`.
-- [x] **Acesso Híbrido:** Conforme definido, todos os membros acessarão o Dashboard da Loja, mas a UI será montada condicionalmente baseada no token JWT.
+## 🎯 Contexto Atual da Sessão
+1. **Ambientes Levantados para Comparação Visual:**
+   - **Sigma Legado:** Frontend em `:5176`, Backend em `:8010` (banco `esigma_db_ref`).
+   - **Sigma 2.0:** Frontend em `:5177`, Backend em `:8020` (banco `esigma`).
+   - **Módulo Lojas:** Frontend em `:5175`, Backend em `:8001` (banco `lojas_db`).
+   - **e-Sigma (IdP):** Backend em `:8000` (banco `esigma`).
+2. **Autenticação Unificada Resolvida:**
+   - Senhas tolerantes para `#` e `!` em todos os backends.
+   - Login por E-mail (`mendesalm@gmail.com`), CIM (`272875`) ou CPF (`83105980687`) operando em 100% dos ambientes.
+   - CORS atualizado nos 3 backends para permitir requisições de todas as instâncias Vite de desenvolvimento.
 
-## 🚧 Onde Paramos / Próximos Passos
-As rotas de base e o comercial do sistema já estão respirando sob as engrenagens da V2. A Landing Page está online e transpôs seus primeiros componentes com sucesso.
+---
 
-**O que deve ser feito na retomada (Próxima Sessão):**
-1. **Ajustes Visuais Restantes:** Refinar eventuais anomalias visuais da Landing Page que vieram na transição da V1 para a V2 (espaçamentos, ícones não alinhados).
-2. **Sistema de Login:** Criar a interface de Autenticação (Email/CIM) e injetar o token JWT no roteamento.
-3. **Dashboard Local:** Iniciar a construção visual (React/MUI) do Painel da Loja, garantindo o filtro de funcionalidades via RBAC para Veneráveis vs Obreiros comuns.
-4. Ligar os servidores novamente (`npm run dev` e `uvicorn`) para prosseguir.
+## 🏛️ Nova Definição de Arquitetura e Implantação (VINCULANTE - 22/09/2026)
 
-## ⚠️ Regras de Ouro Ativas
-1. **Nomenclatura PT-BR:** Tudo na UI da V2 está adotando o idioma português.
-2. **Dashboard Híbrido:** As funcionalidades devem ter verificadores lógicos de credencial (ex: `if (usuario.nivel == 'VENERAVEL') { <MenuTesouraria /> }`).
+> O usuário definiu formalmente:
+> **"O módulo Lojas voltará a incorporar os módulos de Finanças, Biblioteca, Classificados, Arquiteto e Patrimônio, pois lidar com vários bancos de dados está ficando muito complexo."**
+
+### Racional Arquitetural:
+- Em vez de lidar com bases de dados satélites separadas para tesouraria, livros, anúncios e patrimônio, o banco **`lojas_db`** centralizará todo o ERP da Loja Maçônica.
+- O **`e-Sigma`** permanece exclusivamente como Provedor de Identidade (IdP) e gerenciador de assinaturas/SaaS.
+- O **`CoReVM`** permanece como consumidor das Lojas via API.
+
+---
+
+## 🚧 Próximos Passos para a Próxima Sessão
+1. Migrar os schemas de Finanças, Biblioteca, Classificados, Arquiteto e Patrimônio para o banco `lojas_db`.
+2. Portar as rotas de backend correspondentes para `Lojas/backend/api/v1/`.
+3. Portar e modernizar as telas correspondentes no frontend React/MUI do Lojas (`Lojas/frontend/`).
