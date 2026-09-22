@@ -27,10 +27,12 @@
 - Em vez de lidar com bases de dados satélites separadas para tesouraria, livros, anúncios e patrimônio, o banco **`lojas_db`** centralizará todo o ERP da Loja Maçônica.
 - O **`e-Sigma`** permanece exclusivamente como Provedor de Identidade (IdP) e gerenciador de assinaturas/SaaS.
 - O **`CoReVM`** permanece como consumidor das Lojas via API.
+- **Design do Dashboard:** O dashboard do Lojas deve ser **praticamente um clone do dashboard do sistema legado Sigma** (`sigma/frontend`), preservando sua disposição de tabelas, cartões e forma de apresentação de dados.
 
 ---
 
 ## 🚧 Próximos Passos para a Próxima Sessão
 1. Migrar os schemas de Finanças, Biblioteca, Classificados, Arquiteto e Patrimônio para o banco `lojas_db`.
 2. Portar as rotas de backend correspondentes para `Lojas/backend/api/v1/`.
-3. Portar e modernizar as telas correspondentes no frontend React/MUI do Lojas (`Lojas/frontend/`).
+3. Ajustar o Dashboard do Lojas para espelhar como clone exato a apresentação de dados do legado Sigma.
+4. Portar e modernizar as telas correspondentes no frontend React/MUI do Lojas (`Lojas/frontend/`).
