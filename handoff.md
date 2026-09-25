@@ -1,11 +1,33 @@
-# Documento de Handoff - Ecossistema Sigma / Lojas / CoReVM (24/09/2026)
+# Documento de Handoff - Ecossistema Sigma / Lojas / CoReVM / Harmonia (25/09/2026)
 
-**Data de Atualização:** 24 de Setembro de 2026  
-**Status da Sessão:** 🟢 SSO Multi-Domínio operando, decomposição modular do CoReVM concluída, barramento SSE/Auditoria ativo e integração API-First bidirecional CoReVM <-> Lojas consolidada.
+**Data de Atualização:** 25 de Setembro de 2026  
+**Status da Sessão:** 🟢 Design System Soberano implantado, Favicons em ouro maçônico padronizados, Telas de Login de todo o ecossistema unificadas (clones visuais do e-Sigma) e Deploys automáticos ativos e validados na VPS (`srv854308`).
 
 ---
 
-## 🎯 Contexto Consolidado da Sessão (24/09/2026)
+## 🎯 Contexto Consolidado da Sessão (25/09/2026)
+
+### 1. Design System Soberano (Glassmorphism & Ouro Maçônico)
+- **Visual Dark Soberano**: Fundo Abissal (`#050508`), partículas animadas em canvas (`HeroBackground`), cards em Deep Blue Glass (`.card-deep-blue-glass`), tipografia alternando Branco Puro e Ouro Maçônico (`#FDE68A` -> `#DDB96B` -> `#B8862D`).
+- **Botões Pill com Aro Chanfrado Metálico**: Implementadas classes `.btn-masonic-pill .btn-pill-blue` e `.btn-pill-gold` em todos os frontends (`e-sigma`, `Lojas`, `CoReVM`, `Harmonia`).
+- **Padronização de Favicons e Logotipos**: Favicons dourados e `favicon.ico` gerados para todos os 4 domínios com versionamento `?v=3` contra cache.
+
+### 2. Telas de Login Unificadas (Clones Visuais do e-Sigma)
+- Padronização rigorosa de layout, cards, proporções e tipografia em `e-sigma`, `Lojas`, `CoReVM` e `Harmonia`.
+- Diferenciação exclusiva pelos logotipos oficiais de cada aplicação: `LogoAnimadaSigma`, `LogoAnimadaLojas`, `LogoAnimadaCore` e `LogoAnimadaHarmonia`.
+- Preservação total de regras de autenticação (OAuth Google, IdP e-Sigma, seleção multi-lojas e troca de senha obrigatória).
+
+### 3. Pipeline de Deploy Contínuo na VPS (`srv854308`)
+- Todos os repositórios com automação GitHub Actions via SSH (`appleboy/ssh-action`).
+- Testado e validado via requisições HTTP diretas nos domínios de produção:
+  - `https://e-sigma.app` (HTTP 200)
+  - `https://lojas.e-sigma.app` (HTTP 200)
+  - `https://core.e-sigma.app` (HTTP 200)
+  - `https://harmonia.e-sigma.app` (HTTP 200)
+
+---
+
+## 🎯 Contexto das Sessões Anteriores (24/09/2026)
 
 ### 1. Identidade & SSO Multi-Domínio (e-Sigma IdP)
 - **Cookie HttpOnly Transversal (`sigma_sso_token`)**: Ao efetuar login (credenciais ou passkey) no e-Sigma IdP (`:8000`), a resposta injeta o cookie seguro `sigma_sso_token` com escopo transversal (`.e-sigma.app` em produção ou `localhost` em desenvolvimento).
