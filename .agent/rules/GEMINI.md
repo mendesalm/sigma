@@ -275,5 +275,5 @@ When user's prompt is NOT in English:
 
 ---
 
-### ?? ConfiguraÁıes Default de MÛdulos (Global Mandatory)
-- **Regra**: Todos os mÛdulos e recursos opcionais do sistema (ex: notificaÁıes de whatsapp whatsapp_notifications_enabled, chancelaria extra, etc) devem ter uma flag is_active ou similar associada e vir desativados (False) por default na modelagem (banco de dados/Alembic) e nos Schemas.
+### ‚öôÔ∏è Configura√ß√µes Default de M√≥dulos (Global Mandatory)
+- **Regra**: Todos os m√≥dulos e recursos opcionais do sistema (ex: notifica√ß√µes de whatsapp whatsapp_notifications_enabled, chancelaria extra, etc) devem ter uma flag is_active ou similar associada e vir desativados (False) por default na modelagem (banco de dados/Alembic) e nos Schemas.
